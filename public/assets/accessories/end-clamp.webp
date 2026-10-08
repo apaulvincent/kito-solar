@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#090D16"/>
+    </linearGradient>
+    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(148, 163, 184, 0.08)" stroke-width="0.5"/>
+    </pattern>
+  </defs>
+  <rect width="200" height="200" rx="12" fill="url(#bgGrad)"/>
+  <rect width="200" height="200" rx="12" fill="url(#grid)"/>
+  <rect x="2" y="2" width="196" height="196" rx="10" fill="none" stroke="rgba(148, 163, 184, 0.15)" stroke-width="1"/>
+  
+  <!-- Header Bar -->
+  <rect x="12" y="12" width="176" height="20" rx="4" fill="rgba(30, 41, 59, 0.7)"/>
+  <text x="20" y="26" fill="#94A3B8" font-size="8" font-weight="700" font-family="monospace" letter-spacing="1">MOUNTING</text>
+  <text x="180" y="26" text-anchor="end" fill="#94A3B8" font-size="8" font-family="monospace">30-40MM FRAME</text>
+
+  <!-- Technical Schematic Icon -->
+  <g transform="translate(0, 0)">
+    <path d="M65 60 L120 60 L120 78 L95 78 L95 130 L65 130 Z" fill="#334155" stroke="#94A3B8" stroke-width="2"/>
+           <circle cx="80" cy="95" r="5" fill="#0F172A" stroke="#F59E0B" stroke-width="1.5"/>
+           <line x1="120" y1="78" x2="155" y2="78" stroke="#F59E0B" stroke-width="3"/>
+           <text x="100" y="150" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="monospace">TERMINAL CLAMP</text>
+  </g>
+
+  <!-- Title Pill -->
+  <rect x="12" y="172" width="176" height="18" rx="4" fill="rgba(15, 23, 42, 0.85)" stroke="rgba(148, 163, 184, 0.2)" stroke-width="1"/>
+  <text x="100" y="184" text-anchor="middle" fill="#F8FAFC" font-size="8" font-weight="600" font-family="system-ui, sans-serif" letter-spacing="0.5">SOLAR PANEL END-CLAMP</text>
+</svg>

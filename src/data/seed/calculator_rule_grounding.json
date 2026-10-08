@@ -1,0 +1,134 @@
+[
+  {
+    "min_current_a": 0,
+    "max_current_a": 20,
+    "conductor_spec": "14 AWG Copper / 12 AWG Aluminum",
+    "rod_spec": "5/8 inches x 8 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 21,
+    "max_current_a": 28,
+    "conductor_spec": "12 AWG Copper / 10 AWG Aluminum",
+    "rod_spec": "5/8 inches x 8 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 30,
+    "max_current_a": 38,
+    "conductor_spec": "10 AWG Copper / 8 AWG Aluminum",
+    "rod_spec": "5/8 inches x 8 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 40,
+    "max_current_a": 53,
+    "conductor_spec": "8 AWG Copper / 6 AWG Aluminum",
+    "rod_spec": "5/8 inches x 8 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 55,
+    "max_current_a": 68,
+    "conductor_spec": "6 AWG Copper / 4 AWG Aluminum",
+    "rod_spec": "5/8 inches x 8 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 70,
+    "max_current_a": 88,
+    "conductor_spec": "4 AWG Copper / 2 AWG Aluminum",
+    "rod_spec": "3/4 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 90,
+    "max_current_a": 113,
+    "conductor_spec": "2 AWG Copper / 1 AWG Aluminum",
+    "rod_spec": "3/4 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 115,
+    "max_current_a": 128,
+    "conductor_spec": "1 AWG Copper / 1/0 AWG Aluminum",
+    "rod_spec": "3/4 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 130,
+    "max_current_a": 148,
+    "conductor_spec": "1/0 AWG Copper / 2/0 AWG Aluminum",
+    "rod_spec": "3/4 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 150,
+    "max_current_a": 168,
+    "conductor_spec": "2/0 AWG Copper / 3/0 AWG Aluminum",
+    "rod_spec": "3/4 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 170,
+    "max_current_a": 203,
+    "conductor_spec": "3/0 AWG Copper / 4/0 AWG Aluminum",
+    "rod_spec": "3/4 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 205,
+    "max_current_a": 223,
+    "conductor_spec": "4/0 AWG Copper / 250 MCM Aluminum",
+    "rod_spec": "3/4 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 225,
+    "max_current_a": 263,
+    "conductor_spec": "250 MCM Copper / 300 MCM Aluminum",
+    "rod_spec": "1 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 265,
+    "max_current_a": 293,
+    "conductor_spec": "300 MCM Copper / 350 MCM Aluminum",
+    "rod_spec": "1 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 295,
+    "max_current_a": 323,
+    "conductor_spec": "350 MCM Copper / 400 MCM Aluminum",
+    "rod_spec": "1 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 325,
+    "max_current_a": 353,
+    "conductor_spec": "400 MCM Copper / 500 MCM Aluminum",
+    "rod_spec": "1 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 355,
+    "max_current_a": 398,
+    "conductor_spec": "500 MCM Copper / 600 MCM Aluminum",
+    "rod_spec": "1 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 400,
+    "max_current_a": 446,
+    "conductor_spec": "600 MCM Copper / 750 MCM Aluminum",
+    "rod_spec": "1 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 447,
+    "max_current_a": 468,
+    "conductor_spec": "650 MCM Copper / 750 MCM Aluminum",
+    "rod_spec": "1 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 470,
+    "max_current_a": 498,
+    "conductor_spec": "750 MCM Copper / 850 MCM Aluminum",
+    "rod_spec": "1 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 500,
+    "max_current_a": 513,
+    "conductor_spec": "800 MCM Copper / 1000 MCM Aluminum",
+    "rod_spec": "1 inches x 10 feet Copper-Clad Steel"
+  },
+  {
+    "min_current_a": 515,
+    "max_current_a": 580,
+    "conductor_spec": "1000 MCM Copper / 1200 MCM Aluminum",
+    "rod_spec": "1 inches x 10 feet Copper-Clad Steel"
+  }
+]

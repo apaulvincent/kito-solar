@@ -1,0 +1,222 @@
+[
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 15,
+    "isolator_rating_a": 20
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 20,
+    "isolator_rating_a": 25
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 25,
+    "isolator_rating_a": 32
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 32,
+    "isolator_rating_a": 40
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 40,
+    "isolator_rating_a": 50
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 50,
+    "isolator_rating_a": 63
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 63,
+    "isolator_rating_a": 80
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 70,
+    "isolator_rating_a": 80
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 80,
+    "isolator_rating_a": 100
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 90,
+    "isolator_rating_a": 100
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 100,
+    "isolator_rating_a": 125
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 115,
+    "isolator_rating_a": 125
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 125,
+    "isolator_rating_a": 150
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 130,
+    "isolator_rating_a": 150
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 150,
+    "isolator_rating_a": 175
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 170,
+    "isolator_rating_a": 200
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 190,
+    "isolator_rating_a": 200
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 225,
+    "isolator_rating_a": 250
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 265,
+    "isolator_rating_a": 300
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 295,
+    "isolator_rating_a": 350
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 355,
+    "isolator_rating_a": 400
+  },
+  {
+    "system_side": "dc",
+    "breaker_rating_a": 400,
+    "isolator_rating_a": 500
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 15,
+    "isolator_rating_a": 20
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 20,
+    "isolator_rating_a": 25
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 25,
+    "isolator_rating_a": 32
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 32,
+    "isolator_rating_a": 40
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 40,
+    "isolator_rating_a": 50
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 50,
+    "isolator_rating_a": 63
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 63,
+    "isolator_rating_a": 80
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 70,
+    "isolator_rating_a": 80
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 80,
+    "isolator_rating_a": 100
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 90,
+    "isolator_rating_a": 100
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 100,
+    "isolator_rating_a": 125
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 115,
+    "isolator_rating_a": 125
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 125,
+    "isolator_rating_a": 150
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 130,
+    "isolator_rating_a": 150
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 150,
+    "isolator_rating_a": 175
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 170,
+    "isolator_rating_a": 200
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 190,
+    "isolator_rating_a": 200
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 225,
+    "isolator_rating_a": 250
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 265,
+    "isolator_rating_a": 300
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 295,
+    "isolator_rating_a": 350
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 355,
+    "isolator_rating_a": 400
+  },
+  {
+    "system_side": "ac",
+    "breaker_rating_a": 400,
+    "isolator_rating_a": 500
+  }
+]

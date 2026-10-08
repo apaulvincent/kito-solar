@@ -1,0 +1,182 @@
+[
+  {
+    "nominal_voltage_v": 12,
+    "model": "12V-50 Ah",
+    "capacity_ah": 50,
+    "energy_wh": 600,
+    "discharge_current_a": 50,
+    "recommended_breaker_a": 63,
+    "notes": "Suitable for small backup systems."
+  },
+  {
+    "nominal_voltage_v": 12,
+    "model": "12V-75 Ah",
+    "capacity_ah": 75,
+    "energy_wh": 900,
+    "discharge_current_a": 75,
+    "recommended_breaker_a": 94,
+    "notes": "Good for small-scale residential setups."
+  },
+  {
+    "nominal_voltage_v": 12,
+    "model": "12V-100 Ah",
+    "capacity_ah": 100,
+    "energy_wh": 1200,
+    "discharge_current_a": 100,
+    "recommended_breaker_a": 125,
+    "notes": "Ideal for portable solar kits or RV setups."
+  },
+  {
+    "nominal_voltage_v": 12,
+    "model": "12V-150 Ah",
+    "capacity_ah": 150,
+    "energy_wh": 1800,
+    "discharge_current_a": 150,
+    "recommended_breaker_a": 188,
+    "notes": "Suitable for medium-sized battery banks."
+  },
+  {
+    "nominal_voltage_v": 12,
+    "model": "12V-200 Ah",
+    "capacity_ah": 200,
+    "energy_wh": 2400,
+    "discharge_current_a": 200,
+    "recommended_breaker_a": 250,
+    "notes": "Used for off-grid homes or backup systems."
+  },
+  {
+    "nominal_voltage_v": 24,
+    "model": "24V-50 Ah",
+    "capacity_ah": 50,
+    "energy_wh": 1200,
+    "discharge_current_a": 50,
+    "recommended_breaker_a": 63,
+    "notes": "Appropriate for moderate solar setups."
+  },
+  {
+    "nominal_voltage_v": 24,
+    "model": "24V-75 Ah",
+    "capacity_ah": 75,
+    "energy_wh": 1800,
+    "discharge_current_a": 75,
+    "recommended_breaker_a": 94,
+    "notes": "Good for medium-sized residential systems."
+  },
+  {
+    "nominal_voltage_v": 24,
+    "model": "24V-100 Ah",
+    "capacity_ah": 100,
+    "energy_wh": 2400,
+    "discharge_current_a": 100,
+    "recommended_breaker_a": 125,
+    "notes": "Common for standalone or hybrid systems."
+  },
+  {
+    "nominal_voltage_v": 24,
+    "model": "24V-150 Ah",
+    "capacity_ah": 150,
+    "energy_wh": 3600,
+    "discharge_current_a": 150,
+    "recommended_breaker_a": 188,
+    "notes": "Reliable for larger homes or farms."
+  },
+  {
+    "nominal_voltage_v": 24,
+    "model": "24V-200 Ah",
+    "capacity_ah": 200,
+    "energy_wh": 4800,
+    "discharge_current_a": 200,
+    "recommended_breaker_a": 250,
+    "notes": "Designed for larger off-grid installations."
+  },
+  {
+    "nominal_voltage_v": 51.2,
+    "model": "51.2V-50 Ah",
+    "capacity_ah": 50,
+    "energy_wh": 2400,
+    "discharge_current_a": 50,
+    "recommended_breaker_a": 63,
+    "notes": "Suitable for light loads or backup use."
+  },
+  {
+    "nominal_voltage_v": 51.2,
+    "model": "51.2V-75 Ah",
+    "capacity_ah": 75,
+    "energy_wh": 3600,
+    "discharge_current_a": 75,
+    "recommended_breaker_a": 94,
+    "notes": "Good for medium residential systems."
+  },
+  {
+    "nominal_voltage_v": 51.2,
+    "model": "51.2V-100 Ah",
+    "capacity_ah": 100,
+    "energy_wh": 5100,
+    "discharge_current_a": 100,
+    "recommended_breaker_a": 125,
+    "notes": "Common choice for small-scale solar setups."
+  },
+  {
+    "nominal_voltage_v": 51.2,
+    "model": "51.2V-150 Ah",
+    "capacity_ah": 150,
+    "energy_wh": 7200,
+    "discharge_current_a": 150,
+    "recommended_breaker_a": 188,
+    "notes": "Suitable for moderate continuous loads."
+  },
+  {
+    "nominal_voltage_v": 51.2,
+    "model": "51.2V-200 Ah",
+    "capacity_ah": 200,
+    "energy_wh": 9600,
+    "discharge_current_a": 200,
+    "recommended_breaker_a": 250,
+    "notes": "Ideal for mid-sized solar systems or off-grid."
+  },
+  {
+    "nominal_voltage_v": 51.2,
+    "model": "51.2V-220 Ah",
+    "capacity_ah": 220,
+    "energy_wh": 10560,
+    "discharge_current_a": 220,
+    "recommended_breaker_a": 275,
+    "notes": "Supports higher capacity storage setups."
+  },
+  {
+    "nominal_voltage_v": 51.2,
+    "model": "51.2V-250 Ah",
+    "capacity_ah": 250,
+    "energy_wh": 12000,
+    "discharge_current_a": 250,
+    "recommended_breaker_a": 313,
+    "notes": "Used in large residential or small commercial systems."
+  },
+  {
+    "nominal_voltage_v": 51.2,
+    "model": "51.2V-300 Ah",
+    "capacity_ah": 300,
+    "energy_wh": 14400,
+    "discharge_current_a": 300,
+    "recommended_breaker_a": 375,
+    "notes": "Designed for commercial-grade applications."
+  },
+  {
+    "nominal_voltage_v": 51.2,
+    "model": "51.2V-400 Ah",
+    "capacity_ah": 400,
+    "energy_wh": 19200,
+    "discharge_current_a": 400,
+    "recommended_breaker_a": 500,
+    "notes": "For high-demand, large-scale installations."
+  },
+  {
+    "nominal_voltage_v": 51.2,
+    "model": "51.2V-500 Ah",
+    "capacity_ah": 500,
+    "energy_wh": 24000,
+    "discharge_current_a": 500,
+    "recommended_breaker_a": 625,
+    "notes": "Suited for industrial or very large setups."
+  }
+]

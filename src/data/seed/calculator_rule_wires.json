@@ -1,0 +1,317 @@
+[
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 20,
+    "wire_spec": "4.0mm² THHN/THWN cable or 12 AWG"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 29,
+    "wire_spec": "6.0mm² THHN/THWN cable or 12 AWG"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 40,
+    "wire_spec": "8.0mm² THHN/THWN cable or 10 AWG"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 54,
+    "wire_spec": "14.0mm² THHN/THWN cable or 8 AWG"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 69,
+    "wire_spec": "16.0mm² THHN/THWN cable or 6 AWG"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 89,
+    "wire_spec": "22.0mm² THHN/THWN cable or 4 AWG"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 114,
+    "wire_spec": "30.0mm² THHN/THWN cable or 2 AWG"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 129,
+    "wire_spec": "38.0mm² THHN/THWN cable or 1 AWG"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 149,
+    "wire_spec": "50.0mm² THHN/THWN cable or 1/0 AWG"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 169,
+    "wire_spec": "60.0mm² THHN/THWN cable or 2/0 AWG"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 204,
+    "wire_spec": "80.0mm² THHN/THWN cable or 3/0 AWG"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 224,
+    "wire_spec": "100.0mm² THHN/THWN cable or 4/0 AWG"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 264,
+    "wire_spec": "125.0mm² THHN/THWN cable or 250MCM"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 294,
+    "wire_spec": "150.0mm² THHN/THWN cable or 300MCM"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 324,
+    "wire_spec": "175.0mm² THHN/THWN cable or 350MCM"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 354,
+    "wire_spec": "200.0mm² THHN/THWN cable or 400MCM"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 399,
+    "wire_spec": "250.0mm² THHN/THWN cable or 500MCM"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 446,
+    "wire_spec": "300.0mm² THHN/THWN cable or 600MCM"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 469,
+    "wire_spec": "325.0mm² THHN/THWN cable or 650MCM"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 499,
+    "wire_spec": "375.0mm² THHN/THWN cable or 750MCM"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 514,
+    "wire_spec": "400.0mm² THHN/THWN cable or 800MCM"
+  },
+  {
+    "wire_group": "dc_pv",
+    "max_current_a": 580,
+    "wire_spec": "500.0mm² THHN/THWN cable or 1000MCM"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 14,
+    "wire_spec": "4.0mm² THHN/THWN cable or 12 AWG"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 19,
+    "wire_spec": "4.0mm² THHN/THWN cable or 12 AWG"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 25,
+    "wire_spec": "6.0mm² THHN/THWN cable or 12 AWG"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 32,
+    "wire_spec": "8.0mm² THHN/THWN cable or 10 AWG"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 40,
+    "wire_spec": "14.0mm² THHN/THWN cable or 8 AWG"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 50,
+    "wire_spec": "16.0mm² THHN/THWN cable or 6 AWG"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 63,
+    "wire_spec": "22.0mm² THHN/THWN cable or 4 AWG"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 69,
+    "wire_spec": "30.0mm² THHN/THWN cable or 2 AWG"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 79,
+    "wire_spec": "38.0mm² THHN/THWN cable or 1 AWG"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 89,
+    "wire_spec": "50.0mm² THHN/THWN cable or 1/0 AWG"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 99,
+    "wire_spec": "60.0mm² THHN/THWN cable or 2/0 AWG"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 114,
+    "wire_spec": "80.0mm² THHN/THWN cable or 3/0 AWG"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 124,
+    "wire_spec": "100.0mm² THHN/THWN cable or 4/0 AWG"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 129,
+    "wire_spec": "125.0mm² THHN/THWN cable or 250MCM"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 149,
+    "wire_spec": "150.0mm² THHN/THWN cable or 300MCM"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 169,
+    "wire_spec": "175.0mm² THHN/THWN cable or 350MCM"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 204,
+    "wire_spec": "200.0mm² THHN/THWN cable or 400MCM"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 224,
+    "wire_spec": "250.0mm² THHN/THWN cable or 500MCM"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 264,
+    "wire_spec": "300.0mm² THHN/THWN cable or 600MCM"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 294,
+    "wire_spec": "325.0mm² THHN/THWN cable or 650MCM"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 354,
+    "wire_spec": "375.0mm² THHN/THWN cable or 750MCM"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 399,
+    "wire_spec": "400.0mm² THHN/THWN cable or 800MCM"
+  },
+  {
+    "wire_group": "ac",
+    "max_current_a": 580,
+    "wire_spec": "500.0mm² THHN/THWN cable or 1000MCM"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 16,
+    "wire_spec": "4 mm² THHN/THWN cable or 12 AWG"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 32,
+    "wire_spec": "6 mm² THHN/THWN cable or 10 AWG"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 40,
+    "wire_spec": "8 mm² THHN/THWN cable or 8 AWG"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 50,
+    "wire_spec": "8 mm² THHN/THWN cable or 8 AWG"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 63,
+    "wire_spec": "16 mm² THHN/THWN cable or 6 AWG"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 80,
+    "wire_spec": "16 mm² THHN/THWN cable or 6 AWG"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 94,
+    "wire_spec": "25 mm² THHN/THWN cable or 4 AWG"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 100,
+    "wire_spec": "25 mm² THHN/THWN cable or 4 AWG"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 125,
+    "wire_spec": "35 mm² THHN/THWN cable or 2 AWG"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 160,
+    "wire_spec": "50 mm² THHN/THWN cable or 1 AWG"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 188,
+    "wire_spec": "70 mm² THHN/THWN cable or 2/0 AWG"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 250,
+    "wire_spec": "95 mm² THHN/THWN cable or 3/0 AWG"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 275,
+    "wire_spec": "95 mm² THHN/THWN cable or 3/0 AWG"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 313,
+    "wire_spec": "120 mm² THHN/THWN cable or 350 kcmil"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 375,
+    "wire_spec": "150 mm² THHN/THWN cable or 500 kcmil"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 400,
+    "wire_spec": "150 mm² THHN/THWN cable or 500 kcmil"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 500,
+    "wire_spec": "200 mm² THHN/THWN cable or 600 kcmil"
+  },
+  {
+    "wire_group": "battery",
+    "max_current_a": 625,
+    "wire_spec": "250 mm² THHN/THWN cable or 750 kcmil"
+  }
+]

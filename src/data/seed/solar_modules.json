@@ -1,0 +1,1882 @@
+[
+  {
+    "brand": "Trina",
+    "model": "Vertex N 720W",
+    "pv_wattage_w": 720,
+    "voc_v": 48.1,
+    "vmp_v": 40.4,
+    "isc_a": 19.5,
+    "imp_a": 17.8,
+    "efficiency_pct": 21.5
+  },
+  {
+    "brand": "Trina",
+    "model": "Vertex N 650W",
+    "pv_wattage_w": 650,
+    "voc_v": 48,
+    "vmp_v": 40.2,
+    "isc_a": 19,
+    "imp_a": 16.9,
+    "efficiency_pct": 21.2
+  },
+  {
+    "brand": "Trina",
+    "model": "Vertex N 625W",
+    "pv_wattage_w": 625,
+    "voc_v": 48,
+    "vmp_v": 40,
+    "isc_a": 18.5,
+    "imp_a": 16.4,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "Trina",
+    "model": "Vertex S 620W",
+    "pv_wattage_w": 620,
+    "voc_v": 49,
+    "vmp_v": 40.6,
+    "isc_a": 19,
+    "imp_a": 16.9,
+    "efficiency_pct": 21.9
+  },
+  {
+    "brand": "Trina",
+    "model": "Vertex S 600W",
+    "pv_wattage_w": 600,
+    "voc_v": 48.8,
+    "vmp_v": 40.4,
+    "isc_a": 18.8,
+    "imp_a": 16.4,
+    "efficiency_pct": 21.7
+  },
+  {
+    "brand": "Trina",
+    "model": "Vertex S 580W",
+    "pv_wattage_w": 580,
+    "voc_v": 48.7,
+    "vmp_v": 40.3,
+    "isc_a": 18.6,
+    "imp_a": 16.1,
+    "efficiency_pct": 21.5
+  },
+  {
+    "brand": "Trina",
+    "model": "TSM-400-DE15H(II)",
+    "pv_wattage_w": 400,
+    "voc_v": 44,
+    "vmp_v": 36.6,
+    "isc_a": 11.7,
+    "imp_a": 10.9,
+    "efficiency_pct": 19.7
+  },
+  {
+    "brand": "Trina",
+    "model": "TSM-485-DE18M.08(II)",
+    "pv_wattage_w": 485,
+    "voc_v": 48.7,
+    "vmp_v": 40.4,
+    "isc_a": 19,
+    "imp_a": 16.7,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "Trina",
+    "model": "TSM-490-DE18M.08(II)",
+    "pv_wattage_w": 490,
+    "voc_v": 48.9,
+    "vmp_v": 40.5,
+    "isc_a": 19.1,
+    "imp_a": 16.8,
+    "efficiency_pct": 21.1
+  },
+  {
+    "brand": "Trina",
+    "model": "TSM-495-DE18M.08(II)",
+    "pv_wattage_w": 495,
+    "voc_v": 49,
+    "vmp_v": 40.6,
+    "isc_a": 19.2,
+    "imp_a": 16.9,
+    "efficiency_pct": 21.2
+  },
+  {
+    "brand": "Trina",
+    "model": "TSM-500-DE18M.08(II)",
+    "pv_wattage_w": 500,
+    "voc_v": 49.1,
+    "vmp_v": 40.7,
+    "isc_a": 19.3,
+    "imp_a": 17,
+    "efficiency_pct": 21.3
+  },
+  {
+    "brand": "Trina",
+    "model": "TSM-550W-DE19",
+    "pv_wattage_w": 550,
+    "voc_v": 49,
+    "vmp_v": 41.2,
+    "isc_a": 13.6,
+    "imp_a": 13.35,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "Trina",
+    "model": "TSM-505-DE18M.08(II)",
+    "pv_wattage_w": 505,
+    "voc_v": 49.2,
+    "vmp_v": 40.8,
+    "isc_a": 19.4,
+    "imp_a": 17.1,
+    "efficiency_pct": 21.4
+  },
+  {
+    "brand": "Trina",
+    "model": "TSM-510-DE18M.08(II)",
+    "pv_wattage_w": 510,
+    "voc_v": 49.3,
+    "vmp_v": 40.9,
+    "isc_a": 19.5,
+    "imp_a": 17.2,
+    "efficiency_pct": 21.5
+  },
+  {
+    "brand": "Trina",
+    "model": "TSM-395-DE15H(II)",
+    "pv_wattage_w": 395,
+    "voc_v": 43.5,
+    "vmp_v": 36,
+    "isc_a": 11.5,
+    "imp_a": 10.7,
+    "efficiency_pct": 19.5
+  },
+  {
+    "brand": "Trina",
+    "model": "TSM-390-DE15H(II)",
+    "pv_wattage_w": 390,
+    "voc_v": 43,
+    "vmp_v": 35.8,
+    "isc_a": 11.3,
+    "imp_a": 10.5,
+    "efficiency_pct": 19.3
+  },
+  {
+    "brand": "Trina",
+    "model": "TSM-375-DE15H(II)",
+    "pv_wattage_w": 375,
+    "voc_v": 42.5,
+    "vmp_v": 35.3,
+    "isc_a": 11,
+    "imp_a": 10.2,
+    "efficiency_pct": 19.1
+  },
+  {
+    "brand": "Trina",
+    "model": "TALLMAX Plus 525W",
+    "pv_wattage_w": 525,
+    "voc_v": 48.8,
+    "vmp_v": 40,
+    "isc_a": 13.5,
+    "imp_a": 13.1,
+    "efficiency_pct": 20.8
+  },
+  {
+    "brand": "Trina",
+    "model": "TALLMAX Plus 500W",
+    "pv_wattage_w": 500,
+    "voc_v": 48.6,
+    "vmp_v": 39.7,
+    "isc_a": 13,
+    "imp_a": 12.7,
+    "efficiency_pct": 20.5
+  },
+  {
+    "brand": "Trina",
+    "model": "TALLMAX Plus 485W",
+    "pv_wattage_w": 485,
+    "voc_v": 48.5,
+    "vmp_v": 39.4,
+    "isc_a": 12.8,
+    "imp_a": 12.5,
+    "efficiency_pct": 20.2
+  },
+  {
+    "brand": "Trina",
+    "model": "TALLMAX 450W",
+    "pv_wattage_w": 450,
+    "voc_v": 48,
+    "vmp_v": 38.8,
+    "isc_a": 12.3,
+    "imp_a": 12,
+    "efficiency_pct": 19.9
+  },
+  {
+    "brand": "Trina",
+    "model": "TALLMAX 440W",
+    "pv_wattage_w": 440,
+    "voc_v": 47.8,
+    "vmp_v": 38.5,
+    "isc_a": 12.1,
+    "imp_a": 11.8,
+    "efficiency_pct": 19.7
+  },
+  {
+    "brand": "Trina",
+    "model": "TSM-415NE09RC.05",
+    "pv_wattage_w": 415,
+    "voc_v": 48,
+    "vmp_v": 39.8,
+    "isc_a": 11.9,
+    "imp_a": 11.6,
+    "efficiency_pct": 20.5
+  },
+  {
+    "brand": "Trina",
+    "model": "TSM-400NE09RC.05",
+    "pv_wattage_w": 400,
+    "voc_v": 47.5,
+    "vmp_v": 39.3,
+    "isc_a": 11.7,
+    "imp_a": 11.4,
+    "efficiency_pct": 20.3
+  },
+  {
+    "brand": "Jinko",
+    "model": "Eagle+ 400W",
+    "pv_wattage_w": 400,
+    "voc_v": 45.4,
+    "vmp_v": 36.5,
+    "isc_a": 11.4,
+    "imp_a": 10.9,
+    "efficiency_pct": 20.6
+  },
+  {
+    "brand": "Jinko",
+    "model": "Eagle+ 405W",
+    "pv_wattage_w": 405,
+    "voc_v": 45.6,
+    "vmp_v": 36.7,
+    "isc_a": 11.5,
+    "imp_a": 11,
+    "efficiency_pct": 20.7
+  },
+  {
+    "brand": "Jinko",
+    "model": "Eagle+ 410W",
+    "pv_wattage_w": 410,
+    "voc_v": 45.8,
+    "vmp_v": 36.9,
+    "isc_a": 11.6,
+    "imp_a": 11.1,
+    "efficiency_pct": 20.8
+  },
+  {
+    "brand": "Jinko",
+    "model": "Eagle+ 415W",
+    "pv_wattage_w": 415,
+    "voc_v": 46,
+    "vmp_v": 37.1,
+    "isc_a": 11.7,
+    "imp_a": 11.2,
+    "efficiency_pct": 20.9
+  },
+  {
+    "brand": "Jinko",
+    "model": "Eagle+ 420W",
+    "pv_wattage_w": 420,
+    "voc_v": 46.2,
+    "vmp_v": 37.3,
+    "isc_a": 11.8,
+    "imp_a": 11.3,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "Jinko",
+    "model": "Tiger Pro 530W",
+    "pv_wattage_w": 530,
+    "voc_v": 48.7,
+    "vmp_v": 39.8,
+    "isc_a": 13.6,
+    "imp_a": 13.3,
+    "efficiency_pct": 21.4
+  },
+  {
+    "brand": "Jinko",
+    "model": "Tiger Pro 535W",
+    "pv_wattage_w": 535,
+    "voc_v": 48.9,
+    "vmp_v": 40,
+    "isc_a": 13.7,
+    "imp_a": 13.4,
+    "efficiency_pct": 21.5
+  },
+  {
+    "brand": "Jinko",
+    "model": "Tiger Pro 540W",
+    "pv_wattage_w": 540,
+    "voc_v": 49.1,
+    "vmp_v": 40.2,
+    "isc_a": 13.8,
+    "imp_a": 13.5,
+    "efficiency_pct": 21.6
+  },
+  {
+    "brand": "Jinko",
+    "model": "Tiger Pro 545W",
+    "pv_wattage_w": 545,
+    "voc_v": 49.3,
+    "vmp_v": 40.4,
+    "isc_a": 13.9,
+    "imp_a": 13.6,
+    "efficiency_pct": 21.7
+  },
+  {
+    "brand": "Jinko",
+    "model": "Tiger Pro 550W",
+    "pv_wattage_w": 550,
+    "voc_v": 49.5,
+    "vmp_v": 40.6,
+    "isc_a": 14,
+    "imp_a": 13.7,
+    "efficiency_pct": 21.8
+  },
+  {
+    "brand": "Jinko",
+    "model": "Cheetah 395W",
+    "pv_wattage_w": 395,
+    "voc_v": 44.8,
+    "vmp_v": 36.1,
+    "isc_a": 11.3,
+    "imp_a": 10.8,
+    "efficiency_pct": 19.8
+  },
+  {
+    "brand": "Jinko",
+    "model": "Cheetah 400W",
+    "pv_wattage_w": 400,
+    "voc_v": 45,
+    "vmp_v": 36.3,
+    "isc_a": 11.4,
+    "imp_a": 10.9,
+    "efficiency_pct": 19.9
+  },
+  {
+    "brand": "Jinko",
+    "model": "Cheetah 405W",
+    "pv_wattage_w": 405,
+    "voc_v": 45.2,
+    "vmp_v": 36.5,
+    "isc_a": 11.5,
+    "imp_a": 11,
+    "efficiency_pct": 20
+  },
+  {
+    "brand": "Jinko",
+    "model": "Cheetah 410W",
+    "pv_wattage_w": 410,
+    "voc_v": 45.4,
+    "vmp_v": 36.7,
+    "isc_a": 11.6,
+    "imp_a": 11.1,
+    "efficiency_pct": 20.1
+  },
+  {
+    "brand": "Jinko",
+    "model": "Swan 330W",
+    "pv_wattage_w": 330,
+    "voc_v": 43.1,
+    "vmp_v": 34.5,
+    "isc_a": 9.7,
+    "imp_a": 9.5,
+    "efficiency_pct": 19.3
+  },
+  {
+    "brand": "Jinko",
+    "model": "Swan 335W",
+    "pv_wattage_w": 335,
+    "voc_v": 43.3,
+    "vmp_v": 34.7,
+    "isc_a": 9.8,
+    "imp_a": 9.6,
+    "efficiency_pct": 19.4
+  },
+  {
+    "brand": "Jinko",
+    "model": "Swan 340W",
+    "pv_wattage_w": 340,
+    "voc_v": 43.5,
+    "vmp_v": 34.9,
+    "isc_a": 9.9,
+    "imp_a": 9.7,
+    "efficiency_pct": 19.5
+  },
+  {
+    "brand": "Jinko",
+    "model": "Swan 345W",
+    "pv_wattage_w": 345,
+    "voc_v": 43.7,
+    "vmp_v": 35.1,
+    "isc_a": 10,
+    "imp_a": 9.8,
+    "efficiency_pct": 19.6
+  },
+  {
+    "brand": "Jinko",
+    "model": "JKM370M-72",
+    "pv_wattage_w": 370,
+    "voc_v": 44.5,
+    "vmp_v": 36.1,
+    "isc_a": 10.9,
+    "imp_a": 10.4,
+    "efficiency_pct": 19.8
+  },
+  {
+    "brand": "Jinko",
+    "model": "JKM375M-72",
+    "pv_wattage_w": 375,
+    "voc_v": 44.7,
+    "vmp_v": 36.3,
+    "isc_a": 11,
+    "imp_a": 10.5,
+    "efficiency_pct": 19.9
+  },
+  {
+    "brand": "Jinko",
+    "model": "JKM380M-72",
+    "pv_wattage_w": 380,
+    "voc_v": 44.9,
+    "vmp_v": 36.5,
+    "isc_a": 11.1,
+    "imp_a": 10.6,
+    "efficiency_pct": 20
+  },
+  {
+    "brand": "Jinko",
+    "model": "JKM385M-72",
+    "pv_wattage_w": 385,
+    "voc_v": 45.1,
+    "vmp_v": 36.7,
+    "isc_a": 11.2,
+    "imp_a": 10.7,
+    "efficiency_pct": 20.1
+  },
+  {
+    "brand": "Jinko",
+    "model": "JKM390M-72",
+    "pv_wattage_w": 390,
+    "voc_v": 45.3,
+    "vmp_v": 36.9,
+    "isc_a": 11.3,
+    "imp_a": 10.8,
+    "efficiency_pct": 20.2
+  },
+  {
+    "brand": "Jinko",
+    "model": "JKM575N-72HL4",
+    "pv_wattage_w": 575,
+    "voc_v": 50.88,
+    "vmp_v": 42.22,
+    "isc_a": 14.39,
+    "imp_a": 13.62,
+    "efficiency_pct": 22.26
+  },
+  {
+    "brand": "Jinko",
+    "model": "JKM580N-72HL4",
+    "pv_wattage_w": 580,
+    "voc_v": 51.02,
+    "vmp_v": 42.37,
+    "isc_a": 14.47,
+    "imp_a": 13.69,
+    "efficiency_pct": 22.45
+  },
+  {
+    "brand": "Jinko",
+    "model": "JKM585N-72HL4",
+    "pv_wattage_w": 585,
+    "voc_v": 51.16,
+    "vmp_v": 42.52,
+    "isc_a": 14.55,
+    "imp_a": 13.76,
+    "efficiency_pct": 22.65
+  },
+  {
+    "brand": "Jinko",
+    "model": "JKM590N-72HL4",
+    "pv_wattage_w": 590,
+    "voc_v": 51.3,
+    "vmp_v": 42.67,
+    "isc_a": 14.63,
+    "imp_a": 13.83,
+    "efficiency_pct": 22.84
+  },
+  {
+    "brand": "Jinko",
+    "model": "JKM595N-72HL4",
+    "pv_wattage_w": 595,
+    "voc_v": 51.41,
+    "vmp_v": 42.81,
+    "isc_a": 14.71,
+    "imp_a": 13.9,
+    "efficiency_pct": 23.03
+  },
+  {
+    "brand": "Jinko",
+    "model": "Giga 430W",
+    "pv_wattage_w": 430,
+    "voc_v": 46.2,
+    "vmp_v": 38.3,
+    "isc_a": 11.4,
+    "imp_a": 10.8,
+    "efficiency_pct": 20.8
+  },
+  {
+    "brand": "Jinko",
+    "model": "Giga 435W",
+    "pv_wattage_w": 435,
+    "voc_v": 46.4,
+    "vmp_v": 38.5,
+    "isc_a": 11.5,
+    "imp_a": 10.9,
+    "efficiency_pct": 20.9
+  },
+  {
+    "brand": "Jinko",
+    "model": "Giga 440W",
+    "pv_wattage_w": 440,
+    "voc_v": 46.6,
+    "vmp_v": 38.7,
+    "isc_a": 11.6,
+    "imp_a": 11,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "Jinko",
+    "model": "Giga 445W",
+    "pv_wattage_w": 445,
+    "voc_v": 46.8,
+    "vmp_v": 38.9,
+    "isc_a": 11.7,
+    "imp_a": 11.1,
+    "efficiency_pct": 21.1
+  },
+  {
+    "brand": "Jinko",
+    "model": "SHP-300W",
+    "pv_wattage_w": 300,
+    "voc_v": 36,
+    "vmp_v": 30.5,
+    "isc_a": 8.5,
+    "imp_a": 8.2,
+    "efficiency_pct": 19.4
+  },
+  {
+    "brand": "Jinko",
+    "model": "SHP-305W",
+    "pv_wattage_w": 305,
+    "voc_v": 36.2,
+    "vmp_v": 30.7,
+    "isc_a": 8.6,
+    "imp_a": 8.3,
+    "efficiency_pct": 19.5
+  },
+  {
+    "brand": "Jinko",
+    "model": "SHP-310W",
+    "pv_wattage_w": 310,
+    "voc_v": 36.4,
+    "vmp_v": 30.9,
+    "isc_a": 8.7,
+    "imp_a": 8.4,
+    "efficiency_pct": 19.6
+  },
+  {
+    "brand": "Jinko",
+    "model": "SHP-315W",
+    "pv_wattage_w": 315,
+    "voc_v": 36.6,
+    "vmp_v": 31.1,
+    "isc_a": 8.8,
+    "imp_a": 8.5,
+    "efficiency_pct": 19.7
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72S30-545/MR/1500V",
+    "pv_wattage_w": 545,
+    "voc_v": 49.8,
+    "vmp_v": 41.7,
+    "isc_a": 11.5,
+    "imp_a": 13.05,
+    "efficiency_pct": 20.6
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-545/MB",
+    "pv_wattage_w": 545,
+    "voc_v": 49.7,
+    "vmp_v": 41.5,
+    "isc_a": 11.6,
+    "imp_a": 13.1,
+    "efficiency_pct": 20.6
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-540/MB",
+    "pv_wattage_w": 540,
+    "voc_v": 49.5,
+    "vmp_v": 41.3,
+    "isc_a": 11.6,
+    "imp_a": 13,
+    "efficiency_pct": 20.5
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-535/MB",
+    "pv_wattage_w": 535,
+    "voc_v": 49.4,
+    "vmp_v": 41.1,
+    "isc_a": 11.5,
+    "imp_a": 12.9,
+    "efficiency_pct": 20.5
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-530/MB",
+    "pv_wattage_w": 530,
+    "voc_v": 49.2,
+    "vmp_v": 40.9,
+    "isc_a": 11.4,
+    "imp_a": 12.8,
+    "efficiency_pct": 20.4
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-525/MB",
+    "pv_wattage_w": 525,
+    "voc_v": 49,
+    "vmp_v": 40.7,
+    "isc_a": 11.3,
+    "imp_a": 12.7,
+    "efficiency_pct": 20.3
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-520/MB",
+    "pv_wattage_w": 520,
+    "voc_v": 48.9,
+    "vmp_v": 40.5,
+    "isc_a": 11.2,
+    "imp_a": 12.6,
+    "efficiency_pct": 20.3
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-515/MB",
+    "pv_wattage_w": 515,
+    "voc_v": 48.7,
+    "vmp_v": 40.3,
+    "isc_a": 11.1,
+    "imp_a": 12.5,
+    "efficiency_pct": 20.2
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-510/MB",
+    "pv_wattage_w": 510,
+    "voc_v": 48.5,
+    "vmp_v": 40.1,
+    "isc_a": 11,
+    "imp_a": 12.4,
+    "efficiency_pct": 20.1
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-505/MB",
+    "pv_wattage_w": 505,
+    "voc_v": 48.3,
+    "vmp_v": 39.9,
+    "isc_a": 10.9,
+    "imp_a": 12.3,
+    "efficiency_pct": 20.1
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-500/MB",
+    "pv_wattage_w": 500,
+    "voc_v": 48.1,
+    "vmp_v": 39.7,
+    "isc_a": 10.8,
+    "imp_a": 12.2,
+    "efficiency_pct": 20
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-495/MB",
+    "pv_wattage_w": 495,
+    "voc_v": 47.9,
+    "vmp_v": 39.5,
+    "isc_a": 10.7,
+    "imp_a": 12.1,
+    "efficiency_pct": 20
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-490/MB",
+    "pv_wattage_w": 490,
+    "voc_v": 47.7,
+    "vmp_v": 39.3,
+    "isc_a": 10.6,
+    "imp_a": 12,
+    "efficiency_pct": 19.9
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-485/MB",
+    "pv_wattage_w": 485,
+    "voc_v": 47.5,
+    "vmp_v": 39.1,
+    "isc_a": 10.5,
+    "imp_a": 11.9,
+    "efficiency_pct": 19.8
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-480/MB",
+    "pv_wattage_w": 480,
+    "voc_v": 47.3,
+    "vmp_v": 38.9,
+    "isc_a": 10.4,
+    "imp_a": 11.8,
+    "efficiency_pct": 19.8
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-475/MB",
+    "pv_wattage_w": 475,
+    "voc_v": 47.1,
+    "vmp_v": 38.7,
+    "isc_a": 10.3,
+    "imp_a": 11.7,
+    "efficiency_pct": 19.7
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-470/MB",
+    "pv_wattage_w": 470,
+    "voc_v": 46.9,
+    "vmp_v": 38.5,
+    "isc_a": 10.2,
+    "imp_a": 11.6,
+    "efficiency_pct": 19.6
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-465/MB",
+    "pv_wattage_w": 465,
+    "voc_v": 46.7,
+    "vmp_v": 38.3,
+    "isc_a": 10.1,
+    "imp_a": 11.5,
+    "efficiency_pct": 19.5
+  },
+  {
+    "brand": "JA Solar",
+    "model": "JAM72D30-460/MB",
+    "pv_wattage_w": 460,
+    "voc_v": 46.5,
+    "vmp_v": 38.1,
+    "isc_a": 10,
+    "imp_a": 11.4,
+    "efficiency_pct": 19.5
+  },
+  {
+    "brand": "Seraphim",
+    "model": "Seraphim Sable 182mm TOPCon",
+    "pv_wattage_w": 410,
+    "voc_v": 48.4,
+    "vmp_v": 39.5,
+    "isc_a": 10.9,
+    "imp_a": 11.7,
+    "efficiency_pct": 21.1
+  },
+  {
+    "brand": "Seraphim",
+    "model": "Seraphim Sable 210mm",
+    "pv_wattage_w": 540,
+    "voc_v": 49.2,
+    "vmp_v": 41.1,
+    "isc_a": 13,
+    "imp_a": 13.2,
+    "efficiency_pct": 21.2
+  },
+  {
+    "brand": "Seraphim",
+    "model": "SRP-600-BMB-HV",
+    "pv_wattage_w": 600,
+    "voc_v": 49.7,
+    "vmp_v": 41.8,
+    "isc_a": 14.96,
+    "imp_a": 14.36,
+    "efficiency_pct": 21.89
+  },
+  {
+    "brand": "Seraphim",
+    "model": "Seraphim S3 Bifacial Half-Cell",
+    "pv_wattage_w": 400,
+    "voc_v": 48.6,
+    "vmp_v": 39.8,
+    "isc_a": 10.8,
+    "imp_a": 11.5,
+    "efficiency_pct": 20.9
+  },
+  {
+    "brand": "Seraphim",
+    "model": "Series 4 Bifacial 132 Cells",
+    "pv_wattage_w": 585,
+    "voc_v": 45.2,
+    "vmp_v": 36.8,
+    "isc_a": 14.5,
+    "imp_a": 13.89,
+    "efficiency_pct": 21.9
+  },
+  {
+    "brand": "Seraphim",
+    "model": "SEG-405-BMD-HV",
+    "pv_wattage_w": 405,
+    "voc_v": 49.1,
+    "vmp_v": 39.6,
+    "isc_a": 10.9,
+    "imp_a": 11.5,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "Seraphim",
+    "model": "S3 330W Series",
+    "pv_wattage_w": 330,
+    "voc_v": 46.8,
+    "vmp_v": 37.9,
+    "isc_a": 9.7,
+    "imp_a": 8.7,
+    "efficiency_pct": 20.8
+  },
+  {
+    "brand": "Seraphim",
+    "model": "S3 320W Series",
+    "pv_wattage_w": 320,
+    "voc_v": 46.6,
+    "vmp_v": 37.7,
+    "isc_a": 9.5,
+    "imp_a": 8.5,
+    "efficiency_pct": 20.7
+  },
+  {
+    "brand": "Seraphim",
+    "model": "S3 310W Series",
+    "pv_wattage_w": 310,
+    "voc_v": 46.4,
+    "vmp_v": 37.5,
+    "isc_a": 9.3,
+    "imp_a": 8.4,
+    "efficiency_pct": 20.6
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS3W-440MS",
+    "pv_wattage_w": 440,
+    "voc_v": 48.7,
+    "vmp_v": 40,
+    "isc_a": 10.7,
+    "imp_a": 11,
+    "efficiency_pct": 20.9
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS3W-430MS",
+    "pv_wattage_w": 430,
+    "voc_v": 48.6,
+    "vmp_v": 39.9,
+    "isc_a": 10.6,
+    "imp_a": 10.9,
+    "efficiency_pct": 20.8
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS3W-420MS",
+    "pv_wattage_w": 420,
+    "voc_v": 48.5,
+    "vmp_v": 39.8,
+    "isc_a": 10.5,
+    "imp_a": 10.8,
+    "efficiency_pct": 20.7
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS3W-410MS",
+    "pv_wattage_w": 410,
+    "voc_v": 48.4,
+    "vmp_v": 39.7,
+    "isc_a": 10.4,
+    "imp_a": 10.7,
+    "efficiency_pct": 20.6
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6R-550MS",
+    "pv_wattage_w": 550,
+    "voc_v": 41.9,
+    "vmp_v": 34.8,
+    "isc_a": 13.67,
+    "imp_a": 13.25,
+    "efficiency_pct": 21.3
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6W-500MS",
+    "pv_wattage_w": 500,
+    "voc_v": 49.1,
+    "vmp_v": 40.2,
+    "isc_a": 13.58,
+    "imp_a": 12.43,
+    "efficiency_pct": 20
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6W-550MS",
+    "pv_wattage_w": 550,
+    "voc_v": 49.5,
+    "vmp_v": 40.5,
+    "isc_a": 14.05,
+    "imp_a": 13.58,
+    "efficiency_pct": 20.8
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6W-555MS",
+    "pv_wattage_w": 555,
+    "voc_v": 49.7,
+    "vmp_v": 40.7,
+    "isc_a": 14.1,
+    "imp_a": 13.63,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6R-580MS",
+    "pv_wattage_w": 580,
+    "voc_v": 42.5,
+    "vmp_v": 35.5,
+    "isc_a": 14,
+    "imp_a": 13.6,
+    "efficiency_pct": 21.8
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6R-600MS",
+    "pv_wattage_w": 600,
+    "voc_v": 43,
+    "vmp_v": 36,
+    "isc_a": 14.23,
+    "imp_a": 13.9,
+    "efficiency_pct": 22
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6R-605MS",
+    "pv_wattage_w": 605,
+    "voc_v": 43.1,
+    "vmp_v": 36.2,
+    "isc_a": 14.3,
+    "imp_a": 14,
+    "efficiency_pct": 22.1
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6R-585MS",
+    "pv_wattage_w": 585,
+    "voc_v": 42.8,
+    "vmp_v": 35.7,
+    "isc_a": 14.1,
+    "imp_a": 13.65,
+    "efficiency_pct": 21.9
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS3W-400MS",
+    "pv_wattage_w": 400,
+    "voc_v": 48.3,
+    "vmp_v": 39.6,
+    "isc_a": 10.3,
+    "imp_a": 10.5,
+    "efficiency_pct": 20.5
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6W-445MS",
+    "pv_wattage_w": 445,
+    "voc_v": 49.1,
+    "vmp_v": 40.2,
+    "isc_a": 11,
+    "imp_a": 11.3,
+    "efficiency_pct": 21.1
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6W-435MS",
+    "pv_wattage_w": 435,
+    "voc_v": 49,
+    "vmp_v": 40.1,
+    "isc_a": 10.9,
+    "imp_a": 11.2,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6W-425MS",
+    "pv_wattage_w": 425,
+    "voc_v": 48.9,
+    "vmp_v": 40,
+    "isc_a": 10.8,
+    "imp_a": 11.1,
+    "efficiency_pct": 20.9
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6W-415MS",
+    "pv_wattage_w": 415,
+    "voc_v": 48.8,
+    "vmp_v": 39.9,
+    "isc_a": 10.7,
+    "imp_a": 11,
+    "efficiency_pct": 20.8
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS3W-445BMS",
+    "pv_wattage_w": 445,
+    "voc_v": 49.1,
+    "vmp_v": 40.2,
+    "isc_a": 11,
+    "imp_a": 11.3,
+    "efficiency_pct": 21.1
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS3W-435BMS",
+    "pv_wattage_w": 435,
+    "voc_v": 49,
+    "vmp_v": 40.1,
+    "isc_a": 10.9,
+    "imp_a": 11.2,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS3W-425BMS",
+    "pv_wattage_w": 425,
+    "voc_v": 48.9,
+    "vmp_v": 40,
+    "isc_a": 10.8,
+    "imp_a": 11.1,
+    "efficiency_pct": 20.9
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS3W-415BMS",
+    "pv_wattage_w": 415,
+    "voc_v": 48.8,
+    "vmp_v": 39.9,
+    "isc_a": 10.7,
+    "imp_a": 11,
+    "efficiency_pct": 20.8
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6U-325P",
+    "pv_wattage_w": 325,
+    "voc_v": 46.1,
+    "vmp_v": 37.7,
+    "isc_a": 8.8,
+    "imp_a": 8.6,
+    "efficiency_pct": 20.6
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6U-315P",
+    "pv_wattage_w": 315,
+    "voc_v": 45.9,
+    "vmp_v": 37.6,
+    "isc_a": 8.6,
+    "imp_a": 8.4,
+    "efficiency_pct": 20.5
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6U-305P",
+    "pv_wattage_w": 305,
+    "voc_v": 45.7,
+    "vmp_v": 37.5,
+    "isc_a": 8.5,
+    "imp_a": 8.2,
+    "efficiency_pct": 20.4
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6U-295P",
+    "pv_wattage_w": 295,
+    "voc_v": 45.5,
+    "vmp_v": 37.4,
+    "isc_a": 8.3,
+    "imp_a": 8,
+    "efficiency_pct": 20.3
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS3K-315P",
+    "pv_wattage_w": 315,
+    "voc_v": 46,
+    "vmp_v": 37.6,
+    "isc_a": 8.8,
+    "imp_a": 8.5,
+    "efficiency_pct": 20.7
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS3K-305P",
+    "pv_wattage_w": 305,
+    "voc_v": 45.8,
+    "vmp_v": 37.5,
+    "isc_a": 8.6,
+    "imp_a": 8.3,
+    "efficiency_pct": 20.6
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS3K-295P",
+    "pv_wattage_w": 295,
+    "voc_v": 45.6,
+    "vmp_v": 37.4,
+    "isc_a": 8.5,
+    "imp_a": 8.1,
+    "efficiency_pct": 20.5
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS3K-285P",
+    "pv_wattage_w": 285,
+    "voc_v": 45.4,
+    "vmp_v": 37.3,
+    "isc_a": 8.4,
+    "imp_a": 8,
+    "efficiency_pct": 20.4
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6U-355M",
+    "pv_wattage_w": 355,
+    "voc_v": 46.3,
+    "vmp_v": 37.8,
+    "isc_a": 9.1,
+    "imp_a": 9,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6U-345M",
+    "pv_wattage_w": 345,
+    "voc_v": 46.1,
+    "vmp_v": 37.7,
+    "isc_a": 8.9,
+    "imp_a": 8.8,
+    "efficiency_pct": 20.9
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6U-335M",
+    "pv_wattage_w": 335,
+    "voc_v": 45.9,
+    "vmp_v": 37.6,
+    "isc_a": 8.8,
+    "imp_a": 8.6,
+    "efficiency_pct": 20.8
+  },
+  {
+    "brand": "Canadian Solar",
+    "model": "CS6U-325M",
+    "pv_wattage_w": 325,
+    "voc_v": 45.7,
+    "vmp_v": 37.5,
+    "isc_a": 8.7,
+    "imp_a": 8.5,
+    "efficiency_pct": 20.7
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-325M",
+    "pv_wattage_w": 325,
+    "voc_v": 44.5,
+    "vmp_v": 36.5,
+    "isc_a": 9.6,
+    "imp_a": 8.9,
+    "efficiency_pct": 20.5
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-320M",
+    "pv_wattage_w": 320,
+    "voc_v": 44.4,
+    "vmp_v": 36.4,
+    "isc_a": 9.5,
+    "imp_a": 8.8,
+    "efficiency_pct": 20.4
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-315M",
+    "pv_wattage_w": 315,
+    "voc_v": 44.3,
+    "vmp_v": 36.3,
+    "isc_a": 9.4,
+    "imp_a": 8.7,
+    "efficiency_pct": 20.3
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-310M",
+    "pv_wattage_w": 310,
+    "voc_v": 44.2,
+    "vmp_v": 36.2,
+    "isc_a": 9.3,
+    "imp_a": 8.6,
+    "efficiency_pct": 20.2
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-305M",
+    "pv_wattage_w": 305,
+    "voc_v": 44.1,
+    "vmp_v": 36.1,
+    "isc_a": 9.2,
+    "imp_a": 8.5,
+    "efficiency_pct": 20.1
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-300P",
+    "pv_wattage_w": 300,
+    "voc_v": 44,
+    "vmp_v": 36,
+    "isc_a": 9,
+    "imp_a": 8.4,
+    "efficiency_pct": 19.8
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-295P",
+    "pv_wattage_w": 295,
+    "voc_v": 43.9,
+    "vmp_v": 35.9,
+    "isc_a": 8.9,
+    "imp_a": 8.3,
+    "efficiency_pct": 19.7
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-290P",
+    "pv_wattage_w": 290,
+    "voc_v": 43.8,
+    "vmp_v": 35.8,
+    "isc_a": 8.8,
+    "imp_a": 8.2,
+    "efficiency_pct": 19.6
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-285P",
+    "pv_wattage_w": 285,
+    "voc_v": 43.7,
+    "vmp_v": 35.7,
+    "isc_a": 8.7,
+    "imp_a": 8.1,
+    "efficiency_pct": 19.5
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-280P",
+    "pv_wattage_w": 280,
+    "voc_v": 43.6,
+    "vmp_v": 35.6,
+    "isc_a": 8.6,
+    "imp_a": 8,
+    "efficiency_pct": 19.4
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES550",
+    "pv_wattage_w": 550,
+    "voc_v": 49.8,
+    "vmp_v": 41.6,
+    "isc_a": 13.23,
+    "imp_a": 13.2,
+    "efficiency_pct": 21.1
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES580",
+    "pv_wattage_w": 580,
+    "voc_v": 50.2,
+    "vmp_v": 42,
+    "isc_a": 13.85,
+    "imp_a": 13.81,
+    "efficiency_pct": 21.6
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-340M",
+    "pv_wattage_w": 340,
+    "voc_v": 44.8,
+    "vmp_v": 36.7,
+    "isc_a": 9.9,
+    "imp_a": 9.1,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-335M",
+    "pv_wattage_w": 335,
+    "voc_v": 44.7,
+    "vmp_v": 36.6,
+    "isc_a": 9.8,
+    "imp_a": 9,
+    "efficiency_pct": 20.9
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-330M",
+    "pv_wattage_w": 330,
+    "voc_v": 44.6,
+    "vmp_v": 36.5,
+    "isc_a": 9.7,
+    "imp_a": 8.9,
+    "efficiency_pct": 20.8
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-325M",
+    "pv_wattage_w": 325,
+    "voc_v": 44.5,
+    "vmp_v": 36.4,
+    "isc_a": 9.6,
+    "imp_a": 8.8,
+    "efficiency_pct": 20.7
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-600M",
+    "pv_wattage_w": 600,
+    "voc_v": 48.4,
+    "vmp_v": 40.3,
+    "isc_a": 15.89,
+    "imp_a": 14.91,
+    "efficiency_pct": 22.23
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-340BF",
+    "pv_wattage_w": 340,
+    "voc_v": 45,
+    "vmp_v": 37,
+    "isc_a": 9.9,
+    "imp_a": 9.2,
+    "efficiency_pct": 21.2
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-330BF",
+    "pv_wattage_w": 330,
+    "voc_v": 44.9,
+    "vmp_v": 36.9,
+    "isc_a": 9.8,
+    "imp_a": 9.1,
+    "efficiency_pct": 21.1
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-320BF",
+    "pv_wattage_w": 320,
+    "voc_v": 44.8,
+    "vmp_v": 36.8,
+    "isc_a": 9.7,
+    "imp_a": 9,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "AESOLAR",
+    "model": "AES-310BF",
+    "pv_wattage_w": 310,
+    "voc_v": 44.7,
+    "vmp_v": 36.7,
+    "isc_a": 9.6,
+    "imp_a": 8.9,
+    "efficiency_pct": 20.9
+  },
+  {
+    "brand": "Tongwei",
+    "model": "TW6M-340",
+    "pv_wattage_w": 340,
+    "voc_v": 43.5,
+    "vmp_v": 36,
+    "isc_a": 9.8,
+    "imp_a": 9.4,
+    "efficiency_pct": 20.4
+  },
+  {
+    "brand": "Tongwei",
+    "model": "TW6M-370",
+    "pv_wattage_w": 370,
+    "voc_v": 44,
+    "vmp_v": 36.5,
+    "isc_a": 10,
+    "imp_a": 9.7,
+    "efficiency_pct": 20.6
+  },
+  {
+    "brand": "Tongwei",
+    "model": "TW6M-400",
+    "pv_wattage_w": 400,
+    "voc_v": 44.5,
+    "vmp_v": 37,
+    "isc_a": 10.2,
+    "imp_a": 9.9,
+    "efficiency_pct": 20.8
+  },
+  {
+    "brand": "Tongwei",
+    "model": "TW6M-420",
+    "pv_wattage_w": 420,
+    "voc_v": 45,
+    "vmp_v": 37.5,
+    "isc_a": 10.4,
+    "imp_a": 10.1,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "Tongwei",
+    "model": "TW6M-440",
+    "pv_wattage_w": 440,
+    "voc_v": 45.5,
+    "vmp_v": 38,
+    "isc_a": 10.5,
+    "imp_a": 10.3,
+    "efficiency_pct": 21.2
+  },
+  {
+    "brand": "Tongwei",
+    "model": "TW6P-310",
+    "pv_wattage_w": 340,
+    "voc_v": 43,
+    "vmp_v": 35.7,
+    "isc_a": 9.5,
+    "imp_a": 9.2,
+    "efficiency_pct": 19.8
+  },
+  {
+    "brand": "Tongwei",
+    "model": "TW6P-340",
+    "pv_wattage_w": 370,
+    "voc_v": 43.5,
+    "vmp_v": 36,
+    "isc_a": 9.8,
+    "imp_a": 9.5,
+    "efficiency_pct": 20
+  },
+  {
+    "brand": "Tongwei",
+    "model": "TW6P-370",
+    "pv_wattage_w": 400,
+    "voc_v": 44,
+    "vmp_v": 36.5,
+    "isc_a": 10,
+    "imp_a": 9.8,
+    "efficiency_pct": 20.2
+  },
+  {
+    "brand": "Tongwei",
+    "model": "TW6P-420",
+    "pv_wattage_w": 420,
+    "voc_v": 44.5,
+    "vmp_v": 37,
+    "isc_a": 10.2,
+    "imp_a": 10,
+    "efficiency_pct": 20.4
+  },
+  {
+    "brand": "Tongwei",
+    "model": "TW6P-440",
+    "pv_wattage_w": 440,
+    "voc_v": 45,
+    "vmp_v": 37.5,
+    "isc_a": 10.4,
+    "imp_a": 10.2,
+    "efficiency_pct": 20.6
+  },
+  {
+    "brand": "Tongwei",
+    "model": "TW6M-450",
+    "pv_wattage_w": 450,
+    "voc_v": 45.5,
+    "vmp_v": 38,
+    "isc_a": 10.6,
+    "imp_a": 10.4,
+    "efficiency_pct": 21.4
+  },
+  {
+    "brand": "Tongwei",
+    "model": "TW6M-470",
+    "pv_wattage_w": 470,
+    "voc_v": 46,
+    "vmp_v": 38.5,
+    "isc_a": 10.8,
+    "imp_a": 10.6,
+    "efficiency_pct": 21.6
+  },
+  {
+    "brand": "Tongwei",
+    "model": "TW6BF-360",
+    "pv_wattage_w": 360,
+    "voc_v": 45.5,
+    "vmp_v": 37,
+    "isc_a": 9.9,
+    "imp_a": 9.6,
+    "efficiency_pct": 21.2
+  },
+  {
+    "brand": "Tongwei",
+    "model": "TW6BF-380",
+    "pv_wattage_w": 380,
+    "voc_v": 46,
+    "vmp_v": 37.5,
+    "isc_a": 10,
+    "imp_a": 9.9,
+    "efficiency_pct": 21.4
+  },
+  {
+    "brand": "Tongwei",
+    "model": "TW6BF-400",
+    "pv_wattage_w": 400,
+    "voc_v": 46.5,
+    "vmp_v": 38,
+    "isc_a": 10.2,
+    "imp_a": 10,
+    "efficiency_pct": 21.6
+  },
+  {
+    "brand": "Longi",
+    "model": "Hi-MO 4 390-420W",
+    "pv_wattage_w": "390-420",
+    "voc_v": 46,
+    "vmp_v": 37.2,
+    "isc_a": 9.8,
+    "imp_a": 9.6,
+    "efficiency_pct": 20.4
+  },
+  {
+    "brand": "Longi",
+    "model": "Hi-MO 4 430-460W",
+    "pv_wattage_w": "430-460",
+    "voc_v": 46.3,
+    "vmp_v": 37.5,
+    "isc_a": 10,
+    "imp_a": 9.8,
+    "efficiency_pct": 20.6
+  },
+  {
+    "brand": "Longi",
+    "model": "Hi-MO 4 460-485W",
+    "pv_wattage_w": "460-485",
+    "voc_v": 46.5,
+    "vmp_v": 37.7,
+    "isc_a": 10.3,
+    "imp_a": 9.9,
+    "efficiency_pct": 20.8
+  },
+  {
+    "brand": "Longi",
+    "model": "Hi-MO X 405-430W",
+    "pv_wattage_w": "405-430",
+    "voc_v": 46.5,
+    "vmp_v": 37.2,
+    "isc_a": 9.9,
+    "imp_a": 9.6,
+    "efficiency_pct": 20.6
+  },
+  {
+    "brand": "Longi",
+    "model": "Hi-MO X 435-460W",
+    "pv_wattage_w": "435-460",
+    "voc_v": 46.8,
+    "vmp_v": 37.4,
+    "isc_a": 10,
+    "imp_a": 9.7,
+    "efficiency_pct": 20.8
+  },
+  {
+    "brand": "Longi",
+    "model": "Hi-MO 5 545-570W",
+    "pv_wattage_w": "545-570",
+    "voc_v": 49,
+    "vmp_v": 39.5,
+    "isc_a": 11.1,
+    "imp_a": 10.6,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "Longi",
+    "model": "Hi-MO 5 570-590W",
+    "pv_wattage_w": "570-590",
+    "voc_v": 49.2,
+    "vmp_v": 39.8,
+    "isc_a": 11.3,
+    "imp_a": 10.8,
+    "efficiency_pct": 21.2
+  },
+  {
+    "brand": "Longi",
+    "model": "LR6-60HP-345-375W",
+    "pv_wattage_w": "345-375",
+    "voc_v": 41,
+    "vmp_v": 34.8,
+    "isc_a": 9.3,
+    "imp_a": 9.1,
+    "efficiency_pct": 19.8
+  },
+  {
+    "brand": "Longi",
+    "model": "LR6-72HP-430-455W",
+    "pv_wattage_w": "430-455",
+    "voc_v": 43,
+    "vmp_v": 36.5,
+    "isc_a": 10.1,
+    "imp_a": 9.7,
+    "efficiency_pct": 20
+  },
+  {
+    "brand": "Longi",
+    "model": "LR4-60HP-330-355W",
+    "pv_wattage_w": "330-355",
+    "voc_v": 41.5,
+    "vmp_v": 34.9,
+    "isc_a": 9,
+    "imp_a": 8.8,
+    "efficiency_pct": 19.6
+  },
+  {
+    "brand": "Longi",
+    "model": "LR4-72HP-400-420W",
+    "pv_wattage_w": "400-420",
+    "voc_v": 43.2,
+    "vmp_v": 36.7,
+    "isc_a": 10,
+    "imp_a": 9.6,
+    "efficiency_pct": 19.9
+  },
+  {
+    "brand": "LVTOPSUN",
+    "model": "LVTS144M-525",
+    "pv_wattage_w": 525,
+    "voc_v": 48.8,
+    "vmp_v": 40.6,
+    "isc_a": 13.71,
+    "imp_a": 12.94,
+    "efficiency_pct": 20
+  },
+  {
+    "brand": "LVTOPSUN",
+    "model": "LVTS144M-530",
+    "pv_wattage_w": 530,
+    "voc_v": 49,
+    "vmp_v": 40.8,
+    "isc_a": 13.76,
+    "imp_a": 13,
+    "efficiency_pct": 20.4
+  },
+  {
+    "brand": "LVTOPSUN",
+    "model": "LVTS144M-535",
+    "pv_wattage_w": 535,
+    "voc_v": 49.2,
+    "vmp_v": 41,
+    "isc_a": 13.81,
+    "imp_a": 13.05,
+    "efficiency_pct": 20.6
+  },
+  {
+    "brand": "LVTOPSUN",
+    "model": "LVTS144M-540",
+    "pv_wattage_w": 540,
+    "voc_v": 49.4,
+    "vmp_v": 41.2,
+    "isc_a": 13.87,
+    "imp_a": 13.11,
+    "efficiency_pct": 20.8
+  },
+  {
+    "brand": "LVTOPSUN",
+    "model": "LVTS144M-545",
+    "pv_wattage_w": 545,
+    "voc_v": 49.6,
+    "vmp_v": 41.4,
+    "isc_a": 13.93,
+    "imp_a": 13.17,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "LVTOPSUN",
+    "model": "LVTS144M-550",
+    "pv_wattage_w": 550,
+    "voc_v": 49.8,
+    "vmp_v": 41.6,
+    "isc_a": 13.99,
+    "imp_a": 13.23,
+    "efficiency_pct": 21.2
+  },
+  {
+    "brand": "LVTOPSUN",
+    "model": "LVTS144M-500",
+    "pv_wattage_w": 500,
+    "voc_v": 49.4,
+    "vmp_v": 40,
+    "isc_a": 13.3,
+    "imp_a": 12.5,
+    "efficiency_pct": 20.2
+  },
+  {
+    "brand": "LVTOPSUN",
+    "model": "LVTS144M-400",
+    "pv_wattage_w": 400,
+    "voc_v": 48.2,
+    "vmp_v": 39,
+    "isc_a": 13.15,
+    "imp_a": 10.26,
+    "efficiency_pct": 19.5
+  },
+  {
+    "brand": "LVTOPSUN",
+    "model": "LVTS144M-450",
+    "pv_wattage_w": 450,
+    "voc_v": 48.6,
+    "vmp_v": 39.4,
+    "isc_a": 13.5,
+    "imp_a": 11.5,
+    "efficiency_pct": 19.8
+  },
+  {
+    "brand": "LVTOPSUN",
+    "model": "LVTS144M-600",
+    "pv_wattage_w": 600,
+    "voc_v": 50.4,
+    "vmp_v": 41.8,
+    "isc_a": 14.3,
+    "imp_a": 14.4,
+    "efficiency_pct": 21.5
+  },
+  {
+    "brand": "LVTOPSUN",
+    "model": "LVTS144M-330",
+    "pv_wattage_w": 330,
+    "voc_v": 47,
+    "vmp_v": 38,
+    "isc_a": 11.5,
+    "imp_a": 8.7,
+    "efficiency_pct": 18.5
+  },
+  {
+    "brand": "AIKO",
+    "model": "AIKO-M-350",
+    "pv_wattage_w": 350,
+    "voc_v": 45.2,
+    "vmp_v": 37.4,
+    "isc_a": 9.68,
+    "imp_a": 9.36,
+    "efficiency_pct": 19.8
+  },
+  {
+    "brand": "AIKO",
+    "model": "AIKO-M-400",
+    "pv_wattage_w": 400,
+    "voc_v": 46.5,
+    "vmp_v": 38.5,
+    "isc_a": 10.4,
+    "imp_a": 10.13,
+    "efficiency_pct": 20.2
+  },
+  {
+    "brand": "AIKO",
+    "model": "AIKO-M-450",
+    "pv_wattage_w": 450,
+    "voc_v": 47.8,
+    "vmp_v": 39.6,
+    "isc_a": 11.13,
+    "imp_a": 11.38,
+    "efficiency_pct": 20.5
+  },
+  {
+    "brand": "AIKO",
+    "model": "AIKO-M-500",
+    "pv_wattage_w": 500,
+    "voc_v": 48.9,
+    "vmp_v": 40.8,
+    "isc_a": 12,
+    "imp_a": 12.25,
+    "efficiency_pct": 20.8
+  },
+  {
+    "brand": "AIKO",
+    "model": "AIKO-M-550",
+    "pv_wattage_w": 550,
+    "voc_v": 49.5,
+    "vmp_v": 41.2,
+    "isc_a": 13,
+    "imp_a": 13.35,
+    "efficiency_pct": 21
+  },
+  {
+    "brand": "AIKO",
+    "model": "AIKO-M-600",
+    "pv_wattage_w": 600,
+    "voc_v": 50,
+    "vmp_v": 41.8,
+    "isc_a": 13.8,
+    "imp_a": 14.35,
+    "efficiency_pct": 21.2
+  },
+  {
+    "brand": "AIKO",
+    "model": "AIKO-M-650",
+    "pv_wattage_w": 650,
+    "voc_v": 50.6,
+    "vmp_v": 42.5,
+    "isc_a": 14.65,
+    "imp_a": 15.3,
+    "efficiency_pct": 21.5
+  },
+  {
+    "brand": "AIKO",
+    "model": "AIKO-M-700",
+    "pv_wattage_w": 700,
+    "voc_v": 51.2,
+    "vmp_v": 43.1,
+    "isc_a": 15.5,
+    "imp_a": 16.2,
+    "efficiency_pct": 21.8
+  },
+  {
+    "brand": "AIKO",
+    "model": "AIKO-M-750",
+    "pv_wattage_w": 750,
+    "voc_v": 51.8,
+    "vmp_v": 43.8,
+    "isc_a": 16.35,
+    "imp_a": 17.12,
+    "efficiency_pct": 22
+  }
+]

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#090D16"/>
+    </linearGradient>
+    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(148, 163, 184, 0.08)" stroke-width="0.5"/>
+    </pattern>
+  </defs>
+  <rect width="200" height="200" rx="12" fill="url(#bgGrad)"/>
+  <rect width="200" height="200" rx="12" fill="url(#grid)"/>
+  <rect x="2" y="2" width="196" height="196" rx="10" fill="none" stroke="rgba(148, 163, 184, 0.15)" stroke-width="1"/>
+  
+  <!-- Header Bar -->
+  <rect x="12" y="12" width="176" height="20" rx="4" fill="rgba(30, 41, 59, 0.7)"/>
+  <text x="20" y="26" fill="#10B981" font-size="8" font-weight="700" font-family="monospace" letter-spacing="1">WIRING</text>
+  <text x="180" y="26" text-anchor="end" fill="#94A3B8" font-size="8" font-family="monospace">35mm²-95mm² THHN</text>
+
+  <!-- Technical Schematic Icon -->
+  <g transform="translate(0, 0)">
+    <path d="M45 130 C 60 70, 90 70, 110 100 C 130 130, 150 110, 155 80" stroke="#EF4444" stroke-width="12" fill="none" stroke-linecap="round"/>
+           <path d="M45 150 C 60 90, 90 90, 110 120 C 130 150, 150 130, 155 100" stroke="#1E293B" stroke-width="12" fill="none" stroke-linecap="round"/>
+           <circle cx="45" cy="130" r="10" fill="#F59E0B" stroke="#FFFFFF" stroke-width="2"/>
+           <circle cx="155" cy="80" r="10" fill="#F59E0B" stroke="#FFFFFF" stroke-width="2"/>
+           <text x="100" y="50" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="monospace">COPPER LUG TERMINAL</text>
+  </g>
+
+  <!-- Title Pill -->
+  <rect x="12" y="172" width="176" height="18" rx="4" fill="rgba(15, 23, 42, 0.85)" stroke="rgba(148, 163, 184, 0.2)" stroke-width="1"/>
+  <text x="100" y="184" text-anchor="middle" fill="#F8FAFC" font-size="8" font-weight="600" font-family="system-ui, sans-serif" letter-spacing="0.5">HEAVY DC BATTERY WIRE</text>
+</svg>

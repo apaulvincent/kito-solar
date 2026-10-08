@@ -1,0 +1,287 @@
+[
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "4.0mm² THHN/THWN cable or 12 AWG",
+    "conduit_spec": "32mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "6.0mm² THHN/THWN cable or 12 AWG",
+    "conduit_spec": "40mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "8.0mm² THHN/THWN cable or 10 AWG",
+    "conduit_spec": "50mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "14.0mm² THHN/THWN cable or 8 AWG",
+    "conduit_spec": "63mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "16.0mm² THHN/THWN cable or 6 AWG",
+    "conduit_spec": "80mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "22.0mm² THHN/THWN cable or 4 AWG",
+    "conduit_spec": "100mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "30.0mm² THHN/THWN cable or 2 AWG",
+    "conduit_spec": "125mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "38.0mm² THHN/THWN cable or 1 AWG",
+    "conduit_spec": "150mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "50.0mm² THHN/THWN cable or 1/0 AWG",
+    "conduit_spec": "200mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "60.0mm² THHN/THWN cable or 2/0 AWG",
+    "conduit_spec": "250mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "80.0mm² THHN/THWN cable or 3/0 AWG",
+    "conduit_spec": "300mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "100.0mm² THHN/THWN cable or 4/0 AWG",
+    "conduit_spec": "350mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "125.0mm² THHN/THWN cable or 250MCM",
+    "conduit_spec": "400mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "150.0mm² THHN/THWN cable or 300MCM",
+    "conduit_spec": "450mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "175.0mm² THHN/THWN cable or 350MCM",
+    "conduit_spec": "500mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "200.0mm² THHN/THWN cable or 400MCM",
+    "conduit_spec": "550mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "250.0mm² THHN/THWN cable or 500MCM",
+    "conduit_spec": "600mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "300.0mm² THHN/THWN cable or 600MCM",
+    "conduit_spec": "700mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "325.0mm² THHN/THWN cable or 650MCM",
+    "conduit_spec": "750mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "375.0mm² THHN/THWN cable or 750MCM",
+    "conduit_spec": "800mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "400.0mm² THHN/THWN cable or 800MCM",
+    "conduit_spec": "850mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "dc_pv",
+    "wire_spec": "500.0mm² THHN/THWN cable or 1000MCM",
+    "conduit_spec": "1000mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "4.0mm² THHN/THWN cable or 12 AWG",
+    "conduit_spec": "32mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "6.0mm² THHN/THWN cable or 12 AWG",
+    "conduit_spec": "40mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "8.0mm² THHN/THWN cable or 10 AWG",
+    "conduit_spec": "50mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "14.0mm² THHN/THWN cable or 8 AWG",
+    "conduit_spec": "63mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "16.0mm² THHN/THWN cable or 6 AWG",
+    "conduit_spec": "80mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "22.0mm² THHN/THWN cable or 4 AWG",
+    "conduit_spec": "100mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "30.0mm² THHN/THWN cable or 2 AWG",
+    "conduit_spec": "125mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "38.0mm² THHN/THWN cable or 1 AWG",
+    "conduit_spec": "150mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "50.0mm² THHN/THWN cable or 1/0 AWG",
+    "conduit_spec": "200mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "60.0mm² THHN/THWN cable or 2/0 AWG",
+    "conduit_spec": "250mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "80.0mm² THHN/THWN cable or 3/0 AWG",
+    "conduit_spec": "300mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "100.0mm² THHN/THWN cable or 4/0 AWG",
+    "conduit_spec": "350mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "125.0mm² THHN/THWN cable or 250MCM",
+    "conduit_spec": "400mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "150.0mm² THHN/THWN cable or 300MCM",
+    "conduit_spec": "450mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "175.0mm² THHN/THWN cable or 350MCM",
+    "conduit_spec": "500mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "200.0mm² THHN/THWN cable or 400MCM",
+    "conduit_spec": "550mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "250.0mm² THHN/THWN cable or 500MCM",
+    "conduit_spec": "600mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "300.0mm² THHN/THWN cable or 600MCM",
+    "conduit_spec": "700mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "325.0mm² THHN/THWN cable or 650MCM",
+    "conduit_spec": "750mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "375.0mm² THHN/THWN cable or 750MCM",
+    "conduit_spec": "800mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "400.0mm² THHN/THWN cable or 800MCM",
+    "conduit_spec": "850mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "ac",
+    "wire_spec": "500.0mm² THHN/THWN cable or 1000MCM",
+    "conduit_spec": "1000mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "battery",
+    "wire_spec": "4 mm² THHN/THWN cable or 12 AWG",
+    "conduit_spec": "32mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "battery",
+    "wire_spec": "6 mm² THHN/THWN cable or 10 AWG",
+    "conduit_spec": "40mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "battery",
+    "wire_spec": "8 mm² THHN/THWN cable or 8 AWG",
+    "conduit_spec": "50mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "battery",
+    "wire_spec": "16 mm² THHN/THWN cable or 6 AWG",
+    "conduit_spec": "80mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "battery",
+    "wire_spec": "25 mm² THHN/THWN cable or 4 AWG",
+    "conduit_spec": "100mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "battery",
+    "wire_spec": "35 mm² THHN/THWN cable or 2 AWG",
+    "conduit_spec": "125mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "battery",
+    "wire_spec": "50 mm² THHN/THWN cable or 1 AWG",
+    "conduit_spec": "200mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "battery",
+    "wire_spec": "70 mm² THHN/THWN cable or 2/0 AWG",
+    "conduit_spec": "300mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "battery",
+    "wire_spec": "95 mm² THHN/THWN cable or 3/0 AWG",
+    "conduit_spec": "350mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "battery",
+    "wire_spec": "120 mm² THHN/THWN cable or 350 kcmil",
+    "conduit_spec": "400mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "battery",
+    "wire_spec": "150 mm² THHN/THWN cable or 500 kcmil",
+    "conduit_spec": "450mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "battery",
+    "wire_spec": "200 mm² THHN/THWN cable or 600 kcmil",
+    "conduit_spec": "550mm² diameter PVC pipe"
+  },
+  {
+    "wire_group": "battery",
+    "wire_spec": "250 mm² THHN/THWN cable or 750 kcmil",
+    "conduit_spec": "600mm² diameter PVC pipe"
+  }
+]

@@ -1,0 +1,27 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Sensitive project files, specs & spreadsheets
+V10.4_Solar PV Excel Calculator*
+*.xlsx
+*.xls
+Solar_PV_Hybrid_Ongrid_PRD.md
+supabase_hybrid_ongrid_seed.sql
+*.sql
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

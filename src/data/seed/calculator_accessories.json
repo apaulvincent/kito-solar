@@ -1,0 +1,182 @@
+[
+  {
+    "accessory_key": "pv_dc_breaker",
+    "name": "Solar PV Breaker",
+    "category": "protection",
+    "side": "dc",
+    "description": "Protects the PV DC circuit.",
+    "image_path": "/assets/accessories/pv-dc-breaker.webp",
+    "diagram_node_key": "dc.pv_breaker"
+  },
+  {
+    "accessory_key": "pv_dc_wire",
+    "name": "Solar PV DC Wire",
+    "category": "wiring",
+    "side": "dc",
+    "description": "Two conductors: 1 red and 1 black.",
+    "image_path": "/assets/accessories/dc-cable.webp",
+    "diagram_node_key": "dc.pv_wire"
+  },
+  {
+    "accessory_key": "pv_dc_isolator",
+    "name": "Solar Panel DC Isolator",
+    "category": "isolation",
+    "side": "dc",
+    "description": "Manual DC isolation device.",
+    "image_path": "/assets/accessories/dc-isolator.webp",
+    "diagram_node_key": "dc.pv_isolator"
+  },
+  {
+    "accessory_key": "pv_dc_spd",
+    "name": "DC Surge Protection Device",
+    "category": "protection",
+    "side": "dc",
+    "description": "DC surge protection selected from inverter Vmax.",
+    "image_path": "/assets/accessories/dc-spd.webp",
+    "diagram_node_key": "dc.spd"
+  },
+  {
+    "accessory_key": "dc_conduit",
+    "name": "DC Electrical Conduit",
+    "category": "conduit",
+    "side": "dc",
+    "description": "Default PVC conduit recommendation.",
+    "image_path": "/assets/accessories/conduit.webp",
+    "diagram_node_key": "dc.conduit"
+  },
+  {
+    "accessory_key": "grounding",
+    "name": "Ground Cable & Ground Rod",
+    "category": "grounding",
+    "side": "both",
+    "description": "Grounding conductor and rod recommendation.",
+    "image_path": "/assets/accessories/ground-rod.webp",
+    "diagram_node_key": "grounding"
+  },
+  {
+    "accessory_key": "battery_breaker",
+    "name": "Battery DC MCCB",
+    "category": "protection",
+    "side": "dc",
+    "description": "Battery-side breaker.",
+    "image_path": "/assets/accessories/battery-breaker.webp",
+    "diagram_node_key": "battery.breaker"
+  },
+  {
+    "accessory_key": "battery_wire",
+    "name": "Battery DC Wire",
+    "category": "wiring",
+    "side": "dc",
+    "description": "Battery conductor recommendation.",
+    "image_path": "/assets/accessories/battery-cable.webp",
+    "diagram_node_key": "battery.wire"
+  },
+  {
+    "accessory_key": "ac_grid_breaker",
+    "name": "Inverter Input/Output Grid Breaker",
+    "category": "protection",
+    "side": "ac",
+    "description": "AC breaker with workbook safety factor.",
+    "image_path": "/assets/accessories/ac-breaker.webp",
+    "diagram_node_key": "ac.grid_breaker"
+  },
+  {
+    "accessory_key": "ac_wire",
+    "name": "Inverter Input/Output AC Wire",
+    "category": "wiring",
+    "side": "ac",
+    "description": "AC conductor recommendation.",
+    "image_path": "/assets/accessories/ac-cable.webp",
+    "diagram_node_key": "ac.wire"
+  },
+  {
+    "accessory_key": "ac_isolator",
+    "name": "AC Isolator",
+    "category": "isolation",
+    "side": "ac",
+    "description": "AC isolator recommendation.",
+    "image_path": "/assets/accessories/ac-isolator.webp",
+    "diagram_node_key": "ac.isolator"
+  },
+  {
+    "accessory_key": "ac_spd",
+    "name": "AC Surge Protection Device",
+    "category": "protection",
+    "side": "ac",
+    "description": "AC surge protection.",
+    "image_path": "/assets/accessories/ac-spd.webp",
+    "diagram_node_key": "ac.spd"
+  },
+  {
+    "accessory_key": "ats",
+    "name": "Automatic Transfer Switch",
+    "category": "transfer",
+    "side": "ac",
+    "description": "Optional ATS based on main panel breaker.",
+    "image_path": "/assets/accessories/ats.webp",
+    "diagram_node_key": "ac.ats"
+  },
+  {
+    "accessory_key": "eps_breaker",
+    "name": "Inverter EPS Output Breaker",
+    "category": "protection",
+    "side": "ac",
+    "description": "Backup output breaker.",
+    "image_path": "/assets/accessories/ac-breaker.webp",
+    "diagram_node_key": "ac.eps_breaker"
+  },
+  {
+    "accessory_key": "roof_rail",
+    "name": "Solar Panel Roof Rail",
+    "category": "mounting",
+    "side": "dc",
+    "description": "2.2 m rail.",
+    "image_path": "/assets/accessories/roof-rail.webp",
+    "diagram_node_key": "mount.rail"
+  },
+  {
+    "accessory_key": "l_foot",
+    "name": "Solar Panel L-Foot",
+    "category": "mounting",
+    "side": "dc",
+    "description": "84 x 40 x 40 mm reference.",
+    "image_path": "/assets/accessories/l-foot.webp",
+    "diagram_node_key": "mount.l_foot"
+  },
+  {
+    "accessory_key": "mid_clamp",
+    "name": "Solar Panel Mid-Clamp",
+    "category": "mounting",
+    "side": "dc",
+    "description": "30–40 mm module thickness.",
+    "image_path": "/assets/accessories/mid-clamp.webp",
+    "diagram_node_key": "mount.mid_clamp"
+  },
+  {
+    "accessory_key": "splice",
+    "name": "Solar Rail Splice Connector",
+    "category": "mounting",
+    "side": "dc",
+    "description": "150 mm aluminum splice.",
+    "image_path": "/assets/accessories/rail-splice.webp",
+    "diagram_node_key": "mount.splice"
+  },
+  {
+    "accessory_key": "mc4",
+    "name": "Solar Panel MC4 Connectors",
+    "category": "connector",
+    "side": "dc",
+    "description": "1–1.5 kV, 30–80 A reference.",
+    "image_path": "/assets/accessories/mc4.webp",
+    "diagram_node_key": "mount.mc4"
+  },
+  {
+    "accessory_key": "end_clamp",
+    "name": "Solar Panel End-Clamp",
+    "category": "mounting",
+    "side": "dc",
+    "description": "30–40 mm module thickness.",
+    "image_path": "/assets/accessories/end-clamp.webp",
+    "diagram_node_key": "mount.end_clamp"
+  }
+]
