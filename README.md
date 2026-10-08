@@ -1,6 +1,6 @@
 # Kito Solar — Solar PV Hybrid & On-Grid Engineering Calculator
 
-An interactive, high-precision engineering configurator for Solar Photovoltaic (PV) systems, designed for solar engineers, electrical contractors, and system designers. Rebuilt from the official `V10.4_Solar PV Excel Calculator.xlsx` (HYBRID & ONGRID worksheet) into a modern web application following:
+An interactive, high-precision engineering configurator for Solar Photovoltaic (PV) systems, designed for solar engineers, electrical contractors, and system designers. Built into a modern web application following:
 
 > **Configure → Calculate → Understand → Visualize → Review**
 
@@ -101,10 +101,7 @@ The application runs immediately using bundled offline data without requiring a 
 
 1. Create a new Supabase project at [database.new](https://database.new).
 2. Open the **SQL Editor** in the Supabase Dashboard.
-3. Paste and run the seed script:
-   ```bash
-   supabase_hybrid_ongrid_seed.sql
-   ```
+3. Execute your database schema and catalog seed migrations.
 4. Copy your project URL and public Anon key, then create a `.env` file in the root folder:
    ```env
    VITE_SUPABASE_URL=https://your-project.supabase.co
@@ -114,9 +111,9 @@ The application runs immediately using bundled offline data without requiring a 
 
 ---
 
-## 🔬 Regression Fixture Verification (PRD Section 21)
+## 🔬 Regression Fixture Verification
 
-The calculation engine is strictly validated against the official Excel reference case:
+The calculation engine is strictly validated against engineering reference test cases:
 
 | Parameter | Input | Expected Output | Engine Status |
 | :--- | :--- | :--- | :--- |

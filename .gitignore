@@ -3,13 +3,8 @@
 .env.local
 .env.*.local
 
-# Sensitive project files, specs & spreadsheets
-V10.4_Solar PV Excel Calculator*
-*.xlsx
-*.xls
-Solar_PV_Hybrid_Ongrid_PRD.md
-supabase_hybrid_ongrid_seed.sql
-*.sql
+# Private documentation & resources
+_docs/
 
 # Node
 node_modules/

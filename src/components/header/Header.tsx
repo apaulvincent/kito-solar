@@ -37,7 +37,7 @@ export function Header() {
                 ) : (
                   <span
                     className="text-[10px] font-mono px-2 py-0.5 rounded font-medium flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
-                    title="Using bundled local seed catalog. Execute supabase_hybrid_ongrid_seed.sql in Supabase to switch to live cloud database."
+                    title="Using bundled local catalog. Connect Supabase to switch to live cloud database."
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                     LOCAL SEED

@@ -2,8 +2,15 @@
 import fs from 'fs';
 import path from 'path';
 
-const sqlPath = path.resolve('supabase_hybrid_ongrid_seed.sql');
-const content = fs.readFileSync(sqlPath, 'utf-8');
+const docsDir = path.resolve('_docs');
+let sqlPath = path.resolve('seed.sql');
+if (fs.existsSync(docsDir)) {
+  const sqlFiles = fs.readdirSync(docsDir).filter(f => f.endsWith('.sql'));
+  if (sqlFiles.length > 0) {
+    sqlPath = path.join(docsDir, sqlFiles[0]);
+  }
+}
+const content = fs.existsSync(sqlPath) ? fs.readFileSync(sqlPath, 'utf-8') : '';
 
 function extractInserts(tableName) {
   const regex = new RegExp(`insert into ${tableName}\\s*\\(([^)]+)\\)\\s*values\\s*\\((.+?)\\)\\s*on conflict`, 'gi');
