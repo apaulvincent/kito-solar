@@ -146,24 +146,12 @@ export function ComponentInspector() {
     case 'ats':
       title = 'Automatic Transfer Switch (ATS)';
       category = 'Emergency Power Transfer';
-      purpose = 'Critical loads transfer switch that receives Normal Grid power from the Main Service Panel (Source 1) and Emergency Backup power from the Solar Inverter (Source 2), seamlessly switching the Critical Loads Subpanel to solar/battery power during a grid outage.';
+      purpose = 'Automatic transfer switch that selects between Utility Grid (Source 1) and Main Service Panel Solar Feed (Source 2) to power the building loads.';
       calculatedInput = calculationResult.ac.atsConfigured ? `Main service breaker size: ${calculationResult.ac.atsRatingA} A` : 'Main breaker omitted';
       recommendedRating = calculationResult.ac.atsConfigured ? `${calculationResult.ac.atsRatingA} A Dual-Power ATS` : 'ATS Not Configured';
       explanation = calculationResult.ac.explanation.ats;
-      wireConduit = `Input 1 from Main Panel (Grid) • Input 2 from Solar Inverter AC • Output to Critical Loads Subpanel`;
+      wireConduit = `Input 1 from Utility Grid • Input 2 from Main Service Panel • Output to Building Loads`;
       codeReference = 'NEC Article 702 (Optional Standby Systems) & UL 1008 (Transfer Switch Equipment)';
-      imagePath = '/assets/accessories/ats.svg';
-      break;
-
-    case 'eps_breaker':
-      title = 'Critical Loads Subpanel (EPS Backup Panel)';
-      category = 'Emergency Power Distribution';
-      purpose = 'Dedicated electrical subpanel housing essential branch circuits (refrigeration, lighting, networking, medical devices) kept continuously energized by the ATS during utility grid blackouts.';
-      calculatedInput = calculationResult.ac.atsConfigured ? `ATS Backup Feeder: ${calculationResult.ac.atsRatingA} A` : 'Standard 60A Subpanel Feeder';
-      recommendedRating = `${calculationResult.ac.atsConfigured ? calculationResult.ac.atsRatingA : 60} A NEMA 1 Indoor Subpanel (Split-Bus / 8-16 Circuits)`;
-      explanation = 'Powers priority circuits when the utility grid is offline. Non-essential high-draw appliances remain on the Main Panel to protect battery capacity.';
-      wireConduit = 'Fed from ATS load terminals • Distributes to essential home branch circuits';
-      codeReference = 'NEC Article 702 (Optional Standby Systems) & NEC 705.12';
       imagePath = '/assets/accessories/ats.svg';
       break;
 

@@ -118,14 +118,6 @@ export function DiagramComponentList() {
       icon: Cable,
     },
     {
-      key: 'eps_breaker',
-      title: 'Critical Loads Subpanel',
-      category: 'Emergency Circuits',
-      calculatedValue: 'Backup Branch Circuits',
-      wireOrRating: `${calculationResult.ac.atsConfigured ? calculationResult.ac.atsRatingA : 60} A Subpanel`,
-      icon: Shield,
-    },
-    {
       key: 'grounding',
       title: 'Equipment Grounding Busbar',
       category: 'System Grounding',

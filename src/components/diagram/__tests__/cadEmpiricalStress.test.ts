@@ -19,9 +19,9 @@ const NODE_POSITIONS: Record<DiagramNodeKey, [number, number, number]> = {
   ac_breaker: [1.4, 2.9, 0.0],
   ac_spd: [1.4, 1.4, 0.0],
   ac_isolator: [2.9, 2.9, 0.0],
-  ats: [4.6, 2.9, 0.0],
-  eps_breaker: [4.6, 1.4, 0.0],
-  main_panel: [6.8, 2.5, 0.0],
+  main_panel: [4.6, 2.5, 0.0],
+  ats: [6.8, 2.5, 0.0],
+  eps_breaker: [6.8, 1.4, 0.0],
   grid: [10.2, 1.6, 0.0],
   load: [10.2, 0.8, 2.2],
   grounding: [0.7, 0.25, 0.0],
@@ -136,7 +136,7 @@ describe('Empirical Adversarial Stress Suite: CAD Subsystem & Electrical Safety'
         }
       }
 
-      expect(totalSegments).toBe(35);
+      expect(totalSegments).toBe(30);
     });
 
     it('verifies all corner transitions form exact 90-degree angles', () => {
@@ -159,8 +159,8 @@ describe('Empirical Adversarial Stress Suite: CAD Subsystem & Electrical Safety'
         }
       }
 
-      // Verified 20 intermediate corners across all multi-segment routes
-      expect(totalCorners).toBe(20);
+      // Verified 17 intermediate corners across all multi-segment routes
+      expect(totalCorners).toBe(17);
     });
   });
 
@@ -171,12 +171,15 @@ describe('Empirical Adversarial Stress Suite: CAD Subsystem & Electrical Safety'
         'dc_breaker',
         'ac_breaker',
         'ac_isolator',
-        'ats',
       ];
 
       for (const key of upperSwitchgear) {
         expect(NODE_POSITIONS[key][1], `${key} not at Y=2.9m`).toBe(2.9);
       }
+
+      // Verifies ATS and Main Panel are leveled at Y = 2.5m for clean horizontal interconnect
+      expect(NODE_POSITIONS.ats[1]).toBe(2.5);
+      expect(NODE_POSITIONS.main_panel[1]).toBe(2.5);
 
       expect(NODE_POSITIONS.inverter[1], 'Inverter not elevated at Y=3.35m').toBe(3.35);
     });

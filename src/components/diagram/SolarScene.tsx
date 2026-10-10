@@ -166,9 +166,9 @@ export function SolarScene({ isAnimationPaused = false }: SolarSceneProps) {
       ac_breaker: [1.4, 2.9, 0.0],
       ac_spd: [1.4, 1.4, 0.0],
       ac_isolator: [2.9, 2.9, 0.0],
-      ats: [4.6, 2.9, 0.0],
-      eps_breaker: [4.6, 1.4, 0.0],
-      main_panel: [6.8, 2.5, 0.0],
+      main_panel: [4.6, 2.5, 0.0],
+      ats: [6.8, 2.5, 0.0],
+      eps_breaker: [6.8, 1.4, 0.0],
       grid: [10.2, 1.6, 0.0],
       load: [10.2, 0.8, 2.2],
       grounding: [0.7, 0.25, 0.0],
@@ -373,28 +373,20 @@ export function SolarScene({ isAnimationPaused = false }: SolarSceneProps) {
         nodeType="isolator"
       />
       <DiagramNodeMesh
+        nodeKey="main_panel"
+        label="MAIN SERVICE PANEL"
+        sublabel="Distribution"
+        position={nodePositions.main_panel}
+        color="#475569"
+        nodeType="panel"
+      />
+      <DiagramNodeMesh
         nodeKey="ats"
         label="AUTOMATIC TRANSFER SWITCH"
         sublabel={calculationResult.ac.atsConfigured ? `${calculationResult.ac.atsRatingA}A` : 'BYPASS'}
         position={nodePositions.ats}
         color="#7C3AED"
         nodeType="ats"
-      />
-      <DiagramNodeMesh
-        nodeKey="eps_breaker"
-        label="CRITICAL LOADS SUBPANEL"
-        sublabel="Emergency Circuits"
-        position={nodePositions.eps_breaker}
-        color="#2563EB"
-        nodeType="panel"
-      />
-      <DiagramNodeMesh
-        nodeKey="main_panel"
-        label="MAIN SERVICE PANEL"
-        sublabel="Utility Distribution"
-        position={nodePositions.main_panel}
-        color="#475569"
-        nodeType="panel"
       />
       <DiagramNodeMesh
         nodeKey="grid"

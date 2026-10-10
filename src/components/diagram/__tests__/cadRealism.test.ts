@@ -15,12 +15,10 @@ describe('3D Solar CAD Studio Electrical & Mechanical Realism', () => {
     expect(routeOrder).toContain('inverter->ac_breaker');
     expect(routeOrder).toContain('ac_breaker->ac_spd');
     expect(routeOrder).toContain('ac_breaker->ac_isolator');
-    expect(routeOrder).toContain('ac_isolator->ats');
+    expect(routeOrder).toContain('ac_isolator->main_panel');
+    expect(routeOrder).toContain('grid->main_panel');
     expect(routeOrder).toContain('main_panel->ats');
-    expect(routeOrder).toContain('ats->eps_breaker');
-    expect(routeOrder).toContain('eps_breaker->load');
-    expect(routeOrder).toContain('main_panel->grid');
-    expect(routeOrder).toContain('main_panel->load');
+    expect(routeOrder).toContain('ats->load');
   });
 
   it('ensures all conduit routes have orthogonal 3D waypoints for realistic EMT pipe bending', () => {
