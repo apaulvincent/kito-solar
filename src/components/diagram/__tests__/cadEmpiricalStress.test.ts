@@ -159,8 +159,8 @@ describe('Empirical Adversarial Stress Suite: CAD Subsystem & Electrical Safety'
         }
       }
 
-      // Verified 18 intermediate corners across all multi-segment routes
-      expect(totalCorners).toBe(18);
+      // Verified 19 intermediate corners across all multi-segment routes
+      expect(totalCorners).toBe(19);
     });
   });
 

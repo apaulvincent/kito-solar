@@ -93,7 +93,7 @@ export const CONDUIT_ROUTES: ConduitRoute[] = [
       [2.9, 2.9, 0.0],
     ],
   },
-  // 8. AC Isolator to ATS (Horizontal Service Run)
+  // 8. AC Isolator to ATS (Inverter AC Backup Source to ATS Left Knockout)
   {
     id: 'c-iso-ats',
     from: 'ac_isolator',
@@ -105,19 +105,23 @@ export const CONDUIT_ROUTES: ConduitRoute[] = [
       [4.6, 2.9, 0.0],
     ],
   },
-  // 9. ATS to EPS Backup Sub-Panel (Vertical Critical Loads Drop)
+  // 9. Utility Grid to ATS (Outdoor Pole entering plant room, running along upper wall to ATS Normal Source 1)
   {
-    id: 'c-ats-eps',
-    from: 'ats',
-    to: 'eps_breaker',
+    id: 'c-grid-ats',
+    from: 'grid',
+    to: 'ats',
     type: 'ac',
-    color: '#0284C7',
+    color: '#64748B',
+    bidirectional: true,
     waypoints: [
+      [10.2, 1.6, 0.0],
+      [8.6, 1.6, 0.0],
+      [8.6, 3.6, 0.0],
+      [4.6, 3.6, 0.0],
       [4.6, 2.9, 0.0],
-      [4.6, 1.4, 0.0],
     ],
   },
-  // 10. ATS to Main Utility Panel (Horizontal Feeder)
+  // 10. ATS to Main Distribution Panel (Protected Whole-Home Feeder Run)
   {
     id: 'c-ats-panel',
     from: 'ats',
@@ -131,22 +135,7 @@ export const CONDUIT_ROUTES: ConduitRoute[] = [
       [6.8, 2.5, 0.0],
     ],
   },
-  // 11. Main Panel to Utility Grid (Exit Wall to Outdoor Pole at Z=0.0)
-  {
-    id: 'c-panel-grid',
-    from: 'main_panel',
-    to: 'grid',
-    type: 'ac',
-    color: '#64748B',
-    bidirectional: true,
-    waypoints: [
-      [6.8, 2.5, 0.0],
-      [8.6, 2.5, 0.0],
-      [8.6, 1.6, 0.0],
-      [10.2, 1.6, 0.0],
-    ],
-  },
-  // 12. Main Panel to Building Household Load (Exit Wall to Front Service Entrance at Z=2.2)
+  // 11. Main Panel to Building Household Load (Exit Wall to Front Service Entrance at Z=2.2)
   {
     id: 'c-panel-load',
     from: 'main_panel',

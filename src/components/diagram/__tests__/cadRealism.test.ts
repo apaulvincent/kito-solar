@@ -16,8 +16,8 @@ describe('3D Solar CAD Studio Electrical & Mechanical Realism', () => {
     expect(routeOrder).toContain('ac_breaker->ac_spd');
     expect(routeOrder).toContain('ac_breaker->ac_isolator');
     expect(routeOrder).toContain('ac_isolator->ats');
+    expect(routeOrder).toContain('grid->ats');
     expect(routeOrder).toContain('ats->main_panel');
-    expect(routeOrder).toContain('main_panel->grid');
     expect(routeOrder).toContain('main_panel->load');
   });
 

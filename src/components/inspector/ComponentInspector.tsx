@@ -146,11 +146,11 @@ export function ComponentInspector() {
     case 'ats':
       title = 'Automatic Transfer Switch (ATS)';
       category = 'Emergency Power Transfer';
-      purpose = 'Seamlessly transfers critical facility subpanels between utility grid power and inverter EPS backup within milliseconds of a blackout.';
+      purpose = 'Whole-home service entrance transfer switch that selects between Utility Grid (Source 1) and Inverter AC Backup (Source 2) to supply the main distribution panel during power outages.';
       calculatedInput = calculationResult.ac.atsConfigured ? `Main service breaker size: ${calculationResult.ac.atsRatingA} A` : 'Main breaker omitted';
       recommendedRating = calculationResult.ac.atsConfigured ? `${calculationResult.ac.atsRatingA} A Dual-Power ATS` : 'ATS Not Configured';
       explanation = calculationResult.ac.explanation.ats;
-      wireConduit = `Connected to utility main panel and inverter EPS port`;
+      wireConduit = `Input 1 from Utility Grid • Input 2 from Solar Inverter AC • Output to Main Panel`;
       codeReference = 'NEC Article 702 (Optional Standby Systems) & UL 1008 (Transfer Switch Equipment)';
       imagePath = '/assets/accessories/ats.svg';
       break;
