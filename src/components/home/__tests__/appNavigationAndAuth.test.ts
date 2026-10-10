@@ -34,6 +34,21 @@ describe('App Navigation & Supabase Authentication Suite', () => {
     expect(useCalculatorStore.getState().activeView).toBe('account');
   });
 
+  it('correctly maps URL pathnames to views without requiring hashes', async () => {
+    const { pathToView } = await import('@/store/useCalculatorStore');
+    expect(pathToView('/')).toBe('home');
+    expect(pathToView('/home')).toBe('home');
+    expect(pathToView('/tool')).toBe('tool');
+    expect(pathToView('/tool/')).toBe('tool');
+    expect(pathToView('/studio')).toBe('tool');
+    expect(pathToView('/login')).toBe('login');
+    expect(pathToView('/register')).toBe('register');
+    expect(pathToView('/account')).toBe('account');
+    // Legacy hash support
+    expect(pathToView('/', '#tool')).toBe('tool');
+    expect(pathToView('', '#login')).toBe('login');
+  });
+
   it('verifies AuthPage contains Google OAuth and Email options', () => {
     const authPagePath = path.resolve(process.cwd(), 'src/components/auth/AuthPage.tsx');
     const content = fs.readFileSync(authPagePath, 'utf-8');

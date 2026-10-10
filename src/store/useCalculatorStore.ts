@@ -73,13 +73,35 @@ const getInitialTheme = (): 'light' | 'dark' => {
   return 'light';
 };
 
+export const pathToView = (pathname: string, hash?: string): ActiveView => {
+  const cleanPath = pathname.toLowerCase().replace(/^\/+|\/+$/g, '');
+  if (cleanPath === 'tool' || cleanPath === 'studio') return 'tool';
+  if (cleanPath === 'login') return 'login';
+  if (cleanPath === 'register') return 'register';
+  if (cleanPath === 'account') return 'account';
+
+  // If at root or /home, check if a legacy hash was passed
+  if (cleanPath === 'home' || cleanPath === '') {
+    if (hash) {
+      const cleanHash = hash.replace(/^#+/, '').toLowerCase();
+      if (cleanHash === 'tool' || cleanHash === 'studio') return 'tool';
+      if (cleanHash === 'login') return 'login';
+      if (cleanHash === 'register') return 'register';
+      if (cleanHash === 'account') return 'account';
+    }
+    return 'home';
+  }
+  return 'home';
+};
+
 const getInitialView = (): ActiveView => {
   if (typeof window !== 'undefined') {
-    const hash = window.location.hash.replace('#', '').toLowerCase();
-    if (hash === 'tool' || hash === 'studio') return 'tool';
-    if (hash === 'login') return 'login';
-    if (hash === 'register') return 'register';
-    if (hash === 'account') return 'account';
+    const view = pathToView(window.location.pathname, window.location.hash);
+    if (window.location.hash && window.history?.replaceState) {
+      const targetPath = view === 'home' ? '/' : `/${view}`;
+      window.history.replaceState({ view }, '', targetPath);
+    }
+    return view;
   }
   return 'home';
 };
@@ -400,7 +422,11 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
   setActiveView: (view) => {
     if (typeof window !== 'undefined') {
       try {
-        window.location.hash = view === 'home' ? '' : view;
+        const targetPath = view === 'home' ? '/' : `/${view}`;
+        const currentPath = window.location.pathname;
+        if (currentPath !== targetPath || window.location.hash) {
+          window.history.pushState({ view }, '', targetPath);
+        }
       } catch (e) {}
     }
     set({ activeView: view });
