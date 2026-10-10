@@ -94,10 +94,16 @@ export const pathToView = (pathname: string, hash?: string): ActiveView => {
   return 'home';
 };
 
+export const isOAuthHash = (hash: string): boolean => {
+  return hash.includes('access_token') || hash.includes('refresh_token') || hash.includes('error=');
+};
+
 const getInitialView = (): ActiveView => {
   if (typeof window !== 'undefined') {
-    const view = pathToView(window.location.pathname, window.location.hash);
-    if (window.location.hash && window.history?.replaceState) {
+    const hash = window.location.hash;
+    const view = pathToView(window.location.pathname, hash);
+    // Don't strip OAuth tokens so Supabase client can authenticate the user
+    if (hash && !isOAuthHash(hash) && window.history?.replaceState) {
       const targetPath = view === 'home' ? '/' : `/${view}`;
       window.history.replaceState({ view }, '', targetPath);
     }

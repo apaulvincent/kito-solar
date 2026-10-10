@@ -157,8 +157,17 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       set({ session, user: session?.user ?? null, isLoading: false });
+      // Clean OAuth token fragment from URL once parsed and signed in
+      if (typeof window !== 'undefined' && (event === 'SIGNED_IN' || session)) {
+        if (window.location.hash.includes('access_token')) {
+          try {
+            const cleanPath = window.location.pathname || '/';
+            window.history.replaceState({}, document.title, cleanPath);
+          } catch (e) {}
+        }
+      }
     });
 
     return () => {

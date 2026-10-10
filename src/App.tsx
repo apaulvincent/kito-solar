@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useCalculatorStore, pathToView } from '@/store/useCalculatorStore';
+import { useCalculatorStore, pathToView, isOAuthHash } from '@/store/useCalculatorStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Header } from '@/components/header/Header';
 import { HomePage } from '@/components/home/HomePage';
@@ -31,16 +31,17 @@ export function App() {
   // Sync browser back/forward (popstate) with store view & strip legacy hash if any
   useEffect(() => {
     const handlePopState = () => {
-      const view = pathToView(window.location.pathname, window.location.hash);
-      if (window.location.hash && window.history?.replaceState) {
+      const hash = window.location.hash;
+      const view = pathToView(window.location.pathname, hash);
+      if (hash && !isOAuthHash(hash) && window.history?.replaceState) {
         const targetPath = view === 'home' ? '/' : `/${view}`;
         window.history.replaceState({ view }, '', targetPath);
       }
       setActiveView(view);
     };
 
-    // If an initial load arrived with a legacy hash, cleanly remove it right away
-    if (typeof window !== 'undefined' && window.location.hash && window.history?.replaceState) {
+    // If an initial load arrived with a legacy hash (not an OAuth callback), cleanly remove it
+    if (typeof window !== 'undefined' && window.location.hash && !isOAuthHash(window.location.hash) && window.history?.replaceState) {
       const view = pathToView(window.location.pathname, window.location.hash);
       const targetPath = view === 'home' ? '/' : `/${view}`;
       window.history.replaceState({ view }, '', targetPath);
