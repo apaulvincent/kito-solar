@@ -143,6 +143,14 @@ function getNodeTelemetry(
         conductor: `${calculationResult.ac.wireSpec}`,
         prompt: 'Click to inspect automatic transfer switch',
       };
+    case 'eps_breaker':
+      return {
+        category: 'CRITICAL LOADS SUBPANEL',
+        rating: `${calculationResult.ac.atsConfigured ? calculationResult.ac.atsRatingA : 60}A Emergency Subpanel`,
+        voltage: `${gridVoltageV}V Protected Subpanel Bus`,
+        conductor: 'Dedicated Emergency Circuits (Fridge, Lights, Comms)',
+        prompt: 'Click to inspect critical loads subpanel',
+      };
     case 'main_panel':
       return {
         category: 'FACILITY MAIN PANEL',

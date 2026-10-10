@@ -381,9 +381,17 @@ export function SolarScene({ isAnimationPaused = false }: SolarSceneProps) {
         nodeType="ats"
       />
       <DiagramNodeMesh
+        nodeKey="eps_breaker"
+        label="CRITICAL LOADS SUBPANEL"
+        sublabel="Emergency Circuits"
+        position={nodePositions.eps_breaker}
+        color="#2563EB"
+        nodeType="panel"
+      />
+      <DiagramNodeMesh
         nodeKey="main_panel"
-        label="MAIN PANEL"
-        sublabel="Distribution"
+        label="MAIN SERVICE PANEL"
+        sublabel="Utility Distribution"
         position={nodePositions.main_panel}
         color="#475569"
         nodeType="panel"

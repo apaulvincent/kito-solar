@@ -146,12 +146,24 @@ export function ComponentInspector() {
     case 'ats':
       title = 'Automatic Transfer Switch (ATS)';
       category = 'Emergency Power Transfer';
-      purpose = 'Whole-home service entrance transfer switch that selects between Utility Grid (Source 1) and Inverter AC Backup (Source 2) to supply the main distribution panel during power outages.';
+      purpose = 'Critical loads transfer switch that receives Normal Grid power from the Main Service Panel (Source 1) and Emergency Backup power from the Solar Inverter (Source 2), seamlessly switching the Critical Loads Subpanel to solar/battery power during a grid outage.';
       calculatedInput = calculationResult.ac.atsConfigured ? `Main service breaker size: ${calculationResult.ac.atsRatingA} A` : 'Main breaker omitted';
       recommendedRating = calculationResult.ac.atsConfigured ? `${calculationResult.ac.atsRatingA} A Dual-Power ATS` : 'ATS Not Configured';
       explanation = calculationResult.ac.explanation.ats;
-      wireConduit = `Input 1 from Utility Grid • Input 2 from Solar Inverter AC • Output to Main Panel`;
+      wireConduit = `Input 1 from Main Panel (Grid) • Input 2 from Solar Inverter AC • Output to Critical Loads Subpanel`;
       codeReference = 'NEC Article 702 (Optional Standby Systems) & UL 1008 (Transfer Switch Equipment)';
+      imagePath = '/assets/accessories/ats.svg';
+      break;
+
+    case 'eps_breaker':
+      title = 'Critical Loads Subpanel (EPS Backup Panel)';
+      category = 'Emergency Power Distribution';
+      purpose = 'Dedicated electrical subpanel housing essential branch circuits (refrigeration, lighting, networking, medical devices) kept continuously energized by the ATS during utility grid blackouts.';
+      calculatedInput = calculationResult.ac.atsConfigured ? `ATS Backup Feeder: ${calculationResult.ac.atsRatingA} A` : 'Standard 60A Subpanel Feeder';
+      recommendedRating = `${calculationResult.ac.atsConfigured ? calculationResult.ac.atsRatingA : 60} A NEMA 1 Indoor Subpanel (Split-Bus / 8-16 Circuits)`;
+      explanation = 'Powers priority circuits when the utility grid is offline. Non-essential high-draw appliances remain on the Main Panel to protect battery capacity.';
+      wireConduit = 'Fed from ATS load terminals • Distributes to essential home branch circuits';
+      codeReference = 'NEC Article 702 (Optional Standby Systems) & NEC 705.12';
       imagePath = '/assets/accessories/ats.svg';
       break;
 
@@ -225,18 +237,6 @@ export function ComponentInspector() {
       wireConduit = `High-strand class K flexible copper with heavy-duty heat-shrink sealed ring terminals`;
       codeReference = 'NEC 706.31 & Table 310.16 (Ampacity of conductors in free air and raceways)';
       imagePath = '/assets/accessories/battery-cable.svg';
-      break;
-
-    case 'eps_breaker':
-      title = 'Inverter EPS / Backup AC Breaker';
-      category = 'Backup Circuit Protection';
-      purpose = 'Protects the off-grid / emergency power supply (EPS) auxiliary AC output of the hybrid inverter feeding dedicated critical load subpanels.';
-      calculatedInput = `Inverter EPS rated capacity = ${calculationResult.summary.inverterPowerKw} kW AC`;
-      recommendedRating = `${calculationResult.ac.epsBreakerRatingA} A 2-Pole AC MCB (Curve C)`;
-      explanation = calculationResult.ac.explanation.eps;
-      wireConduit = `Backup Feeder: ${calculationResult.ac.wireSpec}`;
-      codeReference = 'NEC 702.5 & 705.12 (Dedicated critical branch overcurrent protection)';
-      imagePath = '/assets/accessories/ac-breaker.svg';
       break;
 
     default: {

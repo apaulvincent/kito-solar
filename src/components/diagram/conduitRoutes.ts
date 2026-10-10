@@ -93,7 +93,7 @@ export const CONDUIT_ROUTES: ConduitRoute[] = [
       [2.9, 2.9, 0.0],
     ],
   },
-  // 8. AC Isolator to ATS (Inverter AC Backup Source to ATS Left Knockout)
+  // 8. AC Isolator to ATS (Inverter AC Backup Source 2 to ATS Left Knockout)
   {
     id: 'c-iso-ats',
     from: 'ac_isolator',
@@ -105,37 +105,62 @@ export const CONDUIT_ROUTES: ConduitRoute[] = [
       [4.6, 2.9, 0.0],
     ],
   },
-  // 9. Utility Grid to ATS (Outdoor Pole entering plant room, running along upper wall to ATS Normal Source 1)
+  // 9. Main Panel to ATS (Grid Normal Source 1 from Main Panel Feeder Breaker to ATS Right Knockout)
   {
-    id: 'c-grid-ats',
-    from: 'grid',
+    id: 'c-panel-ats',
+    from: 'main_panel',
     to: 'ats',
     type: 'ac',
-    color: '#64748B',
-    bidirectional: true,
+    color: '#0284C7',
     waypoints: [
-      [10.2, 1.6, 0.0],
-      [8.6, 1.6, 0.0],
-      [8.6, 3.6, 0.0],
-      [4.6, 3.6, 0.0],
+      [6.8, 2.5, 0.0],
+      [5.6, 2.5, 0.0],
+      [5.6, 2.9, 0.0],
       [4.6, 2.9, 0.0],
     ],
   },
-  // 10. ATS to Main Distribution Panel (Protected Whole-Home Feeder Run)
+  // 10. ATS to Critical Loads Subpanel (Vertical Protected Feeder Drop)
   {
-    id: 'c-ats-panel',
+    id: 'c-ats-eps',
     from: 'ats',
-    to: 'main_panel',
+    to: 'eps_breaker',
     type: 'ac',
     color: '#0284C7',
     waypoints: [
       [4.6, 2.9, 0.0],
-      [5.6, 2.9, 0.0],
-      [5.6, 2.5, 0.0],
-      [6.8, 2.5, 0.0],
+      [4.6, 1.4, 0.0],
     ],
   },
-  // 11. Main Panel to Building Household Load (Exit Wall to Front Service Entrance at Z=2.2)
+  // 11. Critical Loads Subpanel to Building Essential Circuits (Exit Wall to Front Service at Y=0.6m)
+  {
+    id: 'c-eps-load',
+    from: 'eps_breaker',
+    to: 'load',
+    type: 'ac',
+    color: '#0284C7',
+    waypoints: [
+      [4.6, 1.4, 0.0],
+      [4.6, 0.6, 0.0],
+      [4.6, 0.6, 2.2],
+      [10.2, 0.6, 2.2],
+    ],
+  },
+  // 12. Main Panel to Utility Grid (Service Entrance Feeder from Outdoor Pole at Z=0.0)
+  {
+    id: 'c-panel-grid',
+    from: 'main_panel',
+    to: 'grid',
+    type: 'ac',
+    color: '#64748B',
+    bidirectional: true,
+    waypoints: [
+      [6.8, 2.5, 0.0],
+      [8.6, 2.5, 0.0],
+      [8.6, 1.6, 0.0],
+      [10.2, 1.6, 0.0],
+    ],
+  },
+  // 13. Main Panel to Building Household General Loads (Exit Wall to Front Service at Y=1.1m)
   {
     id: 'c-panel-load',
     from: 'main_panel',
@@ -145,9 +170,9 @@ export const CONDUIT_ROUTES: ConduitRoute[] = [
     waypoints: [
       [6.8, 2.5, 0.0],
       [7.6, 2.5, 0.0],
-      [7.6, 0.8, 0.0],
-      [7.6, 0.8, 2.2],
-      [10.2, 0.8, 2.2],
+      [7.6, 1.1, 0.0],
+      [7.6, 1.1, 2.2],
+      [10.2, 1.1, 2.2],
     ],
   },
 ];

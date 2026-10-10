@@ -136,7 +136,7 @@ describe('Empirical Adversarial Stress Suite: CAD Subsystem & Electrical Safety'
         }
       }
 
-      expect(totalSegments).toBe(32);
+      expect(totalSegments).toBe(35);
     });
 
     it('verifies all corner transitions form exact 90-degree angles', () => {
@@ -159,8 +159,8 @@ describe('Empirical Adversarial Stress Suite: CAD Subsystem & Electrical Safety'
         }
       }
 
-      // Verified 19 intermediate corners across all multi-segment routes
-      expect(totalCorners).toBe(19);
+      // Verified 20 intermediate corners across all multi-segment routes
+      expect(totalCorners).toBe(20);
     });
   });
 
