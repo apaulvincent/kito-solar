@@ -1,7 +1,19 @@
 // src/components/header/Header.tsx
 import { useState } from 'react';
-import { RotateCcw, HelpCircle, Zap, Sun, Moon, Coffee } from 'lucide-react';
+import {
+  RotateCcw,
+  HelpCircle,
+  Zap,
+  Sun,
+  Moon,
+  Coffee,
+  LogOut,
+  Box,
+  Home,
+  User as UserIcon,
+} from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { CalculationHelpModal } from './CalculationHelpModal';
 
 export function Header() {
@@ -11,109 +23,199 @@ export function Header() {
   const theme = useCalculatorStore((s) => s.theme);
   const toggleTheme = useCalculatorStore((s) => s.toggleTheme);
   const catalogSource = useCalculatorStore((s) => s.catalogSource);
+  const activeView = useCalculatorStore((s) => s.activeView);
+  const setActiveView = useCalculatorStore((s) => s.setActiveView);
+
+  const user = useAuthStore((s) => s.user);
+  const signOut = useAuthStore((s) => s.signOut);
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-subtle dark:shadow-card-dark transition-colors duration-200">
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 h-16 flex items-center justify-between">
-          {/* Logo & Branding */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center shadow-sm font-bold flex-shrink-0">
-              <Zap className="w-5 h-5 fill-current" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white font-sans">
-                  KITO SOLAR
-                </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase tracking-wider bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60">
-                  HYBRID & ONGRID
-                </span>
-                {catalogSource === 'supabase' ? (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded font-semibold flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    SUPABASE LIVE
-                  </span>
-                ) : (
-                  <span
-                    className="text-[10px] font-mono px-2 py-0.5 rounded font-medium flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
-                    title="Using bundled local catalog. Connect Supabase to switch to live cloud database."
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                    LOCAL SEED
-                  </span>
-                )}
+      <header className="sticky top-0 z-40 w-full border-b border-slate-200/90 dark:border-slate-800/90 bg-white/95 dark:bg-[#090D16]/95 backdrop-blur-md shadow-xs transition-colors duration-200">
+        <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 h-16 flex items-center justify-between gap-4">
+          {/* Logo & Navigation */}
+          <div className="flex items-center gap-6">
+            <button
+              type="button"
+              onClick={() => setActiveView('home')}
+              className="flex items-center gap-2.5 text-left group"
+            >
+              <div className="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center shadow-sm font-bold flex-shrink-0 group-hover:scale-105 transition-transform">
+                <Zap className="w-5 h-5 fill-current" />
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono hidden sm:block">
-                Solar PV Engineering, Sizing & Protection Studio
-              </p>
-            </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white font-sans">
+                    KITO SOLAR
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase tracking-wider bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 hidden sm:inline-block">
+                    STUDIO
+                  </span>
+                  {catalogSource === 'supabase' ? (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded font-semibold flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 hidden sm:inline-flex" title="Connected to live Supabase database">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      SUPABASE LIVE
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded font-medium flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hidden sm:inline-flex" title="Using bundled local fallback">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      LOCAL SEED
+                    </span>
+                  )}
+                </div>
+              </div>
+            </button>
+
+            {/* Navigation Links: Home, Tool, Account */}
+            <nav className="flex items-center gap-1 font-sans text-xs font-semibold text-slate-600 dark:text-slate-300">
+              <button
+                type="button"
+                onClick={() => setActiveView('home')}
+                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                  activeView === 'home'
+                    ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/70 dark:bg-indigo-950/50'
+                    : 'hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <Home className="w-3.5 h-3.5" />
+                <span>Home</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveView('tool')}
+                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                  activeView === 'tool'
+                    ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/70 dark:bg-indigo-950/50'
+                    : 'hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <Box className="w-3.5 h-3.5 text-amber-500" />
+                <span>Solar Tool</span>
+              </button>
+
+              {user && (
+                <button
+                  type="button"
+                  onClick={() => setActiveView('account')}
+                  className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                    activeView === 'account'
+                      ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/70 dark:bg-indigo-950/50'
+                      : 'hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                  }`}
+                >
+                  <UserIcon className="w-3.5 h-3.5" />
+                  <span>Account</span>
+                </button>
+              )}
+            </nav>
           </div>
 
-          {/* Quick Metrics & Actions */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            <div className="hidden lg:flex items-center gap-3 pr-3 border-r border-slate-200 dark:border-slate-800 text-xs font-mono">
-              <span className="text-slate-400 dark:text-slate-500">
-                ACTIVE CONFIG:
-              </span>
-              <span className="font-bold text-slate-800 dark:text-slate-200">
-                {calculationResult.summary.inverterModel}
-              </span>
-              <span className="text-slate-300 dark:text-slate-700">•</span>
-              <span className="font-bold text-amber-600 dark:text-amber-400">
-                {calculationResult.summary.totalArrayPowerKw} kWp
-              </span>
-            </div>
+          {/* Right Action Area */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* When on Tool page: Show Active Telemetry & Reset */}
+            {activeView === 'tool' && (
+              <>
+                <div className="hidden lg:flex items-center gap-2.5 pr-3 border-r border-slate-200 dark:border-slate-800 text-xs font-mono">
+                  <span className="text-slate-400">ACTIVE:</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {calculationResult.summary.inverterModel}
+                  </span>
+                  <span className="text-slate-300 dark:text-slate-700">•</span>
+                  <span className="font-bold text-amber-600 dark:text-amber-400">
+                    {calculationResult.summary.totalArrayPowerKw} kWp
+                  </span>
+                </div>
 
-            {/* Buy Me a Coffee */}
+                <button
+                  onClick={resetToDefaults}
+                  title="Reset to Excel Reference Scenario"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-xs font-mono font-medium text-slate-700 dark:text-slate-200 shadow-xs transition-colors"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                  <span className="hidden xl:inline">Reset</span>
+                </button>
+
+                <button
+                  onClick={() => setHelpOpen(true)}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-xs font-mono font-medium text-slate-700 dark:text-slate-200 shadow-xs transition-colors"
+                >
+                  <HelpCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  <span className="hidden xl:inline">Help</span>
+                </button>
+              </>
+            )}
+
+            {/* Coffee Support */}
             <a
               href="https://ko-fi.com/mepapap"
               target="_blank"
               rel="noopener noreferrer"
               title="Support development on Ko-fi"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-xs font-mono font-medium text-amber-800 dark:text-amber-300 shadow-sm transition-colors"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-xs font-mono font-medium text-amber-800 dark:text-amber-300 shadow-xs transition-colors"
             >
-              <Coffee className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <span className="hidden sm:inline">Buy me coffee</span>
+              <Coffee className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span className="hidden xl:inline">Coffee</span>
             </a>
 
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
               title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-xs font-mono font-medium text-slate-700 dark:text-slate-200 shadow-sm transition-colors"
+              className="p-2 sm:px-3 sm:py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-xs font-mono font-medium text-slate-700 dark:text-slate-200 shadow-xs transition-colors"
             >
               {theme === 'dark' ? (
-                <>
-                  <Sun className="w-4 h-4 text-amber-400" />
-                  <span className="hidden md:inline">Light</span>
-                </>
+                <Sun className="w-4 h-4 text-amber-400" />
               ) : (
-                <>
-                  <Moon className="w-4 h-4 text-slate-600" />
-                  <span className="hidden md:inline">Dark</span>
-                </>
+                <Moon className="w-4 h-4 text-slate-600 dark:text-slate-300" />
               )}
             </button>
 
-            {/* Calculation Help */}
-            <button
-              onClick={() => setHelpOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-xs font-mono font-medium text-slate-700 dark:text-slate-200 shadow-sm transition-colors"
-            >
-              <HelpCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <span className="hidden sm:inline">Calculation Help</span>
-            </button>
+            {/* Auth Buttons / Profile Indicator */}
+            {user ? (
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setActiveView('account')}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-xs hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+                  title="View your account"
+                >
+                  <div className="w-5 h-5 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-[10px]">
+                    {user.email?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200 max-w-[120px] truncate hidden sm:inline">
+                    {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                  </span>
+                </button>
+                <button
+                  onClick={signOut}
+                  title="Sign out"
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
+                {/* PakiPrint Styled "Log in" pill button */}
+                <button
+                  type="button"
+                  onClick={() => setActiveView('login')}
+                  className="px-4 py-1.5 rounded-full text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50/90 dark:bg-rose-950/60 border border-rose-200/90 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/40 active:scale-95 transition-all"
+                >
+                  Log in
+                </button>
 
-            {/* Reset */}
-            <button
-              onClick={resetToDefaults}
-              title="Reset to Excel Reference Scenario"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-xs font-mono font-medium text-slate-700 dark:text-slate-200 shadow-sm transition-colors"
-            >
-              <RotateCcw className="w-4 h-4 text-slate-400 dark:text-slate-400" />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
+                {/* PakiPrint Styled "Register" blue pill button */}
+                <button
+                  type="button"
+                  onClick={() => setActiveView('register')}
+                  className="px-4 py-1.5 rounded-full text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm active:scale-95 transition-all"
+                >
+                  Register
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>

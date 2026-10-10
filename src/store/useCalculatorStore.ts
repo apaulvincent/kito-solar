@@ -16,6 +16,7 @@ import { catalogService } from '@/services/catalogService';
 import { isSupabaseConfigured } from '@/lib/supabase';
 
 export type WorkbenchTabKey = 'electrical' | 'pv_sizing' | 'mounting_bom' | 'warnings';
+export type ActiveView = 'home' | 'tool' | 'login' | 'register' | 'account';
 
 interface CalculatorState {
   // Catalogs
@@ -40,12 +41,14 @@ interface CalculatorState {
   isInspectorOpen: boolean;
   theme: 'dark' | 'light';
   activeWorkbenchTab: WorkbenchTabKey;
+  activeView: ActiveView;
 
   // Derived Calculation
   calculationResult: SystemCalculationResult;
 
   // Actions
   initializeCatalog: () => Promise<void>;
+  setActiveView: (view: ActiveView) => void;
   setInverter: (inverter: SolarInverterRecord) => void;
   setModule: (module: SolarModuleRecord) => void;
   setBattery: (battery: BatteryRecord | null) => void;
@@ -68,6 +71,17 @@ const getInitialTheme = (): 'light' | 'dark' => {
     if (saved === 'dark') return 'dark';
   }
   return 'light';
+};
+
+const getInitialView = (): ActiveView => {
+  if (typeof window !== 'undefined') {
+    const hash = window.location.hash.replace('#', '').toLowerCase();
+    if (hash === 'tool' || hash === 'studio') return 'tool';
+    if (hash === 'login') return 'login';
+    if (hash === 'register') return 'register';
+    if (hash === 'account') return 'account';
+  }
+  return 'home';
 };
 
 const initialTheme = getInitialTheme();
@@ -132,6 +146,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
   isInspectorOpen: false,
   theme: initialTheme,
   activeWorkbenchTab: 'electrical',
+  activeView: getInitialView(),
 
   calculationResult: compute(
     defaultInverter,
@@ -380,6 +395,15 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
       }
       return { theme: next };
     });
+  },
+
+  setActiveView: (view) => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.location.hash = view === 'home' ? '' : view;
+      } catch (e) {}
+    }
+    set({ activeView: view });
   },
 
   resetToDefaults: () => {

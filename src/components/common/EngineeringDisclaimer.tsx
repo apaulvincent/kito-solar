@@ -7,8 +7,8 @@ export function EngineeringDisclaimer() {
       <div className="flex items-start gap-2.5">
         <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
         <p className="leading-relaxed text-[11px]">
-          <strong className="text-slate-900 dark:text-slate-100 font-bold font-mono">Engineering Disclaimer: </strong>
-          Calculations are based on the configured component specifications and this calculator's rule set. Final equipment selection, conductor sizing, protection, grounding, installation, and code compliance must be verified by a qualified electrical professional and applicable local requirements.
+          <strong className="text-slate-900 dark:text-slate-100 font-bold font-mono">Comprehensive Guide Disclaimer: </strong>
+          This application serves strictly as an educational and engineering guide for building solar systems. Calculations, sizing tables, and 3D schematics are planning references based on user-configured component specifications. They do not constitute a guaranteed or certified installation. Final equipment selection, conductor sizing, protection, grounding, physical installation, and electrical code compliance must be inspected and certified by a qualified licensed electrical professional and applicable local authorities.
         </p>
       </div>
     </footer>

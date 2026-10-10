@@ -350,7 +350,7 @@ export function ComponentInspector() {
         {/* Footer */}
         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 flex items-center justify-between">
           <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-            Compliant with standard 125% continuous duty rule
+            Planning guide based on standard 125% continuous duty rule
           </span>
           <button
             onClick={() => setSelectedNodeKey(null)}

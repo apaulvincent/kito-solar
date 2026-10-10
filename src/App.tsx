@@ -1,6 +1,10 @@
 import { useEffect } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { Header } from '@/components/header/Header';
+import { HomePage } from '@/components/home/HomePage';
+import { AuthPage } from '@/components/auth/AuthPage';
+import { AccountPage } from '@/components/account/AccountPage';
 import { SystemSummary } from '@/components/summary/SystemSummary';
 import { SolarDiagramCanvas } from '@/components/diagram/SolarDiagramCanvas';
 import { DiagramComponentList } from '@/components/diagram/DiagramComponentList';
@@ -8,46 +12,102 @@ import { ConfigurationPanel } from '@/components/config/ConfigurationPanel';
 import { CalculationWorkbench } from '@/components/results/CalculationWorkbench';
 import { ComponentInspector } from '@/components/inspector/ComponentInspector';
 import { EngineeringDisclaimer } from '@/components/common/EngineeringDisclaimer';
+import { ArrowLeft, Box } from 'lucide-react';
 
 export function App() {
   const initializeCatalog = useCalculatorStore((state) => state.initializeCatalog);
+  const activeView = useCalculatorStore((state) => state.activeView);
+  const setActiveView = useCalculatorStore((state) => state.setActiveView);
+  const initAuth = useAuthStore((state) => state.initAuth);
 
   useEffect(() => {
     initializeCatalog();
-  }, [initializeCatalog]);
+    const unsubscribeAuth = initAuth();
+    return () => {
+      unsubscribeAuth();
+    };
+  }, [initializeCatalog, initAuth]);
+
+  // Sync hash changes with store view
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '').toLowerCase();
+      if (hash === 'tool' || hash === 'studio') {
+        setActiveView('tool');
+      } else if (hash === 'login') {
+        setActiveView('login');
+      } else if (hash === 'register') {
+        setActiveView('register');
+      } else if (hash === 'account') {
+        setActiveView('account');
+      } else if (hash === 'home' || hash === '') {
+        setActiveView('home');
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [setActiveView]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090D16] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
       <Header />
 
-      <main className="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 space-y-6">
-        {/* Step 1: Live System Summary Telemetry HUD */}
-        <section aria-label="System Summary">
-          <SystemSummary />
-        </section>
+      {activeView === 'home' && <HomePage />}
 
-        {/* Step 2: First-Class Interactive 3D Solar Diagram */}
-        <section aria-label="Interactive 3D Solar Diagram" className="space-y-4">
-          <SolarDiagramCanvas />
-          <DiagramComponentList />
-        </section>
+      {activeView === 'login' && <AuthPage defaultMode="signin" />}
 
-        {/* Step 3: Equipment Configurator & Segmented Calculation Workbench (2-Column Studio) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Column 1 (lg: 4 cols): Configuration Workbench */}
-          <section className="lg:col-span-4 space-y-6" aria-label="Configuration Panel">
-            <ConfigurationPanel />
+      {activeView === 'register' && <AuthPage defaultMode="signup" />}
+
+      {activeView === 'account' && <AccountPage />}
+
+      {activeView === 'tool' && (
+        <main className="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 space-y-6">
+          {/* Quick Breadcrumb back to Home */}
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => setActiveView('home')}
+              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Home</span>
+            </button>
+
+            <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
+              <Box className="w-3.5 h-3.5 text-amber-500" />
+              <span className="font-bold text-slate-700 dark:text-slate-300">Solar Engineering Tool</span>
+            </div>
+          </div>
+
+          {/* Step 1: Live System Summary Telemetry HUD */}
+          <section aria-label="System Summary">
+            <SystemSummary />
           </section>
 
-          {/* Column 2 (lg: 8 cols): Segmented Engineering Calculation Workbench */}
-          <section className="lg:col-span-8 space-y-6" aria-label="Engineering Calculation Workbench">
-            <CalculationWorkbench />
+          {/* Step 2: First-Class Interactive 3D Solar Diagram */}
+          <section aria-label="Interactive 3D Solar Diagram" className="space-y-4">
+            <SolarDiagramCanvas />
+            <DiagramComponentList />
           </section>
-        </div>
 
-        {/* Step 4: Engineering Disclaimer */}
-        <EngineeringDisclaimer />
-      </main>
+          {/* Step 3: Equipment Configurator & Segmented Calculation Workbench (2-Column Studio) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Column 1 (lg: 4 cols): Configuration Workbench */}
+            <section className="lg:col-span-4 space-y-6" aria-label="Configuration Panel">
+              <ConfigurationPanel />
+            </section>
+
+            {/* Column 2 (lg: 8 cols): Segmented Engineering Calculation Workbench */}
+            <section className="lg:col-span-8 space-y-6" aria-label="Engineering Calculation Workbench">
+              <CalculationWorkbench />
+            </section>
+          </div>
+
+          {/* Step 4: Engineering Disclaimer */}
+          <EngineeringDisclaimer />
+        </main>
+      )}
 
       {/* Slide-out Component Inspector Modal */}
       <ComponentInspector />
