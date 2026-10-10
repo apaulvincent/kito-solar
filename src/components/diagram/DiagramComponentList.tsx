@@ -1,7 +1,7 @@
 // src/components/diagram/DiagramComponentList.tsx
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { DiagramNodeKey } from '@/types/diagram';
-import { ShieldAlert, Zap, Cpu, Battery, Cable, ArrowRight } from 'lucide-react';
+import { ShieldAlert, Shield, Zap, Cpu, Battery, Cable, ArrowRight } from 'lucide-react';
 
 interface ComponentListItem {
   key: DiagramNodeKey;
@@ -15,9 +15,11 @@ interface ComponentListItem {
 export function DiagramComponentList() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
+  const hoveredNodeKey = useCalculatorStore((s) => s.hoveredNodeKey);
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
   const setHoveredNodeKey = useCalculatorStore((s) => s.setHoveredNodeKey);
 
+  // Correct DC Sequence: PV Array -> DC Isolator -> DC Breaker -> DC SPD -> Inverter
   const items: ComponentListItem[] = [
     {
       key: 'pv_array',
@@ -28,19 +30,19 @@ export function DiagramComponentList() {
       icon: Zap,
     },
     {
+      key: 'dc_isolator',
+      title: 'PV DC Isolator',
+      category: 'DC Disconnect',
+      calculatedValue: 'Load-Break Switch (NEC 690.13)',
+      wireOrRating: `${calculationResult.dc.isolatorRatingA} A Rotary Switch`,
+      icon: ShieldAlert,
+    },
+    {
       key: 'dc_breaker',
       title: 'PV DC Breaker',
       category: 'DC Protection',
       calculatedValue: `${calculationResult.dc.computedCurrentA} A (Continuous)`,
       wireOrRating: `${calculationResult.dc.breakerRatingA} A Rating`,
-      icon: ShieldAlert,
-    },
-    {
-      key: 'dc_isolator',
-      title: 'PV DC Isolator',
-      category: 'DC Disconnect',
-      calculatedValue: 'Load-Break Switch',
-      wireOrRating: `${calculationResult.dc.isolatorRatingA} A Switch`,
       icon: ShieldAlert,
     },
     {
@@ -92,19 +94,19 @@ export function DiagramComponentList() {
       icon: ShieldAlert,
     },
     {
-      key: 'ac_isolator',
-      title: 'AC Isolator Switch',
-      category: 'AC Disconnect',
-      calculatedValue: 'Manual Rotary Switch',
-      wireOrRating: `${calculationResult.ac.isolatorRatingA} A Switch`,
-      icon: ShieldAlert,
-    },
-    {
       key: 'ac_spd',
       title: 'AC Surge Protector (SPD)',
       category: 'AC Surge',
       calculatedValue: 'Type 2 AC Arrester',
       wireOrRating: calculationResult.ac.spdRating,
+      icon: ShieldAlert,
+    },
+    {
+      key: 'ac_isolator',
+      title: 'AC Isolator Switch',
+      category: 'AC Disconnect',
+      calculatedValue: 'Manual Rotary Switch',
+      wireOrRating: `${calculationResult.ac.isolatorRatingA} A Switch`,
       icon: ShieldAlert,
     },
     {
@@ -114,6 +116,14 @@ export function DiagramComponentList() {
       calculatedValue: calculationResult.ac.atsConfigured ? 'Dual Power Transfer' : 'Bypass',
       wireOrRating: calculationResult.ac.atsConfigured ? `${calculationResult.ac.atsRatingA} A ATS` : 'Not Configured',
       icon: Cable,
+    },
+    {
+      key: 'grounding',
+      title: 'Equipment Grounding Busbar',
+      category: 'System Grounding',
+      calculatedValue: 'Solid Earth Bond (NEC 250 / PEC 2.50)',
+      wireOrRating: `${calculationResult.dc.groundConductorSpec} Ground Bus`,
+      icon: Shield,
     }
   );
 
@@ -131,6 +141,7 @@ export function DiagramComponentList() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5">
         {items.map((item) => {
           const isSelected = selectedNodeKey === item.key;
+          const isHovered = hoveredNodeKey === item.key;
           const IconComponent = item.icon;
 
           return (
@@ -141,7 +152,9 @@ export function DiagramComponentList() {
               onMouseLeave={() => setHoveredNodeKey(null)}
               className={`flex items-start gap-2.5 p-3 rounded-xl border text-left transition-all ${
                 isSelected
-                  ? 'border-amber-600 dark:border-amber-500 bg-amber-50/80 dark:bg-amber-950/40 ring-2 ring-amber-400/20 shadow-sm'
+                  ? 'border-amber-600 dark:border-amber-500 bg-amber-50/80 dark:bg-amber-950/40 ring-2 ring-amber-400/20 shadow-sm scale-[1.02]'
+                  : isHovered
+                  ? 'border-amber-400 dark:border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 shadow-subtle scale-[1.01]'
                   : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 hover:bg-white dark:hover:bg-slate-950/80 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-subtle'
               }`}
             >
@@ -149,6 +162,8 @@ export function DiagramComponentList() {
                 className={`p-2 rounded-lg flex-shrink-0 ${
                   isSelected
                     ? 'bg-amber-600 text-white'
+                    : isHovered
+                    ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
                     : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 shadow-subtle'
                 }`}
               >
@@ -156,15 +171,15 @@ export function DiagramComponentList() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                  <span className="text-xs font-bold text-slate-900 dark:text-slate-100 break-words">
                     {item.title}
                   </span>
                   <ArrowRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 flex-shrink-0 ml-1" />
                 </div>
-                <div className="text-[11px] font-mono text-amber-600 dark:text-amber-400 font-bold truncate mt-0.5">
+                <div className="text-[11px] font-mono text-amber-700 dark:text-amber-400 font-bold break-words mt-0.5">
                   {item.wireOrRating}
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5 font-medium">
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 break-words mt-0.5 font-medium">
                   {item.calculatedValue}
                 </div>
               </div>

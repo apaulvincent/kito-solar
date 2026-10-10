@@ -1,33 +1,81 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 280" width="100%" height="100%" fill="none">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0F172A"/>
-      <stop offset="100%" stop-color="#090D16"/>
+    <linearGradient id="mc4Plastic" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="25%" stop-color="#334155"/>
+      <stop offset="65%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
     </linearGradient>
-    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(148, 163, 184, 0.08)" stroke-width="0.5"/>
-    </pattern>
+    <linearGradient id="copperPin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FED7AA"/>
+      <stop offset="40%" stop-color="#F97316"/>
+      <stop offset="80%" stop-color="#C2410C"/>
+      <stop offset="100%" stop-color="#7C2D12"/>
+    </linearGradient>
+    <linearGradient id="glandNut" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="50%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <filter id="mc4Shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0F172A" flood-opacity="0.22"/>
+    </filter>
   </defs>
-  <rect width="200" height="200" rx="12" fill="url(#bgGrad)"/>
-  <rect width="200" height="200" rx="12" fill="url(#grid)"/>
-  <rect x="2" y="2" width="196" height="196" rx="10" fill="none" stroke="rgba(148, 163, 184, 0.15)" stroke-width="1"/>
-  
-  <!-- Header Bar -->
-  <rect x="12" y="12" width="176" height="20" rx="4" fill="rgba(30, 41, 59, 0.7)"/>
-  <text x="20" y="26" fill="#F59E0B" font-size="8" font-weight="700" font-family="monospace" letter-spacing="1">CONNECTOR</text>
-  <text x="180" y="26" text-anchor="end" fill="#94A3B8" font-size="8" font-family="monospace">1000V-1500V IP68</text>
 
-  <!-- Technical Schematic Icon -->
-  <g transform="translate(0, 0)">
-    <rect x="45" y="85" width="50" height="30" rx="4" fill="#0F172A" stroke="#F59E0B" stroke-width="2"/>
-           <rect x="95" y="90" width="20" height="20" fill="#334155"/>
-           <rect x="115" y="85" width="45" height="30" rx="4" fill="#0F172A" stroke="#F59E0B" stroke-width="2"/>
-           <line x1="30" y1="100" x2="45" y2="100" stroke="#EF4444" stroke-width="6"/>
-           <line x1="160" y1="100" x2="175" y2="100" stroke="#EF4444" stroke-width="6"/>
-           <text x="100" y="145" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="monospace">SNAP-LOCK IP68</text>
+  <!-- Ground Shadow -->
+  <ellipse cx="160" cy="225" rx="115" ry="18" fill="#0F172A" opacity="0.16" filter="blur(5px)"/>
+
+  <!-- Male & Female Mating Connector Assembly -->
+  <g filter="url(#mc4Shadow)">
+    <!-- LEFT CONNECTOR: Male Plug (-) with Compression Gland -->
+    <!-- Rubber Cable Input (Left) -->
+    <rect x="25" y="115" width="25" height="18" rx="2" fill="#0F172A" stroke="#1E293B" stroke-width="1"/>
+    <!-- Dome Compression Nut -->
+    <path d="M 50 108 L 75 108 L 80 114 L 80 134 L 75 140 L 50 140 Z" fill="url(#glandNut)" stroke="#334155" stroke-width="1"/>
+    <!-- Grip Ribs on Nut -->
+    <line x1="56" y1="110" x2="56" y2="138" stroke="#64748B" stroke-width="1.5"/>
+    <line x1="63" y1="110" x2="63" y2="138" stroke="#64748B" stroke-width="1.5"/>
+    <line x1="70" y1="110" x2="70" y2="138" stroke="#64748B" stroke-width="1.5"/>
+
+    <!-- Main Barrel Body -->
+    <rect x="80" y="112" width="65" height="24" rx="3" fill="url(#mc4Plastic)" stroke="#334155" stroke-width="1"/>
+    <!-- Blue Negative Polarity Band -->
+    <rect x="85" y="112" width="6" height="24" fill="#3B82F6"/>
+
+    <!-- Locking Prong Latch Arms (Snap-Lock Clip) -->
+    <path d="M 130 104 L 160 104 L 163 109 L 145 109 L 145 112 L 130 112 Z" fill="#475569" stroke="#1E293B" stroke-width="0.8"/>
+    <path d="M 130 144 L 160 144 L 163 139 L 145 139 L 145 136 L 130 136 Z" fill="#475569" stroke="#1E293B" stroke-width="0.8"/>
+
+    <!-- Male Inner Contact Pin (Tinned Copper Silver/Gold) -->
+    <path d="M 145 121 L 168 121 L 168 127 L 145 127 Z" fill="url(#copperPin)" stroke="#7C2D12" stroke-width="0.8"/>
+
+    <!-- RIGHT CONNECTOR: Female Socket (+) with Compression Gland -->
+    <!-- Female Receptacle Housing Overlap -->
+    <rect x="155" y="110" width="75" height="28" rx="4" fill="url(#mc4Plastic)" stroke="#334155" stroke-width="1.2"/>
+    <!-- Red Positive Polarity Band -->
+    <rect x="215" y="110" width="6" height="28" fill="#EF4444"/>
+
+    <!-- Lock Slot Windows -->
+    <rect x="165" y="107" width="10" height="5" rx="1" fill="#0F172A" stroke="#475569" stroke-width="0.8"/>
+    <rect x="165" y="136" width="10" height="5" rx="1" fill="#0F172A" stroke="#475569" stroke-width="0.8"/>
+
+    <!-- Compression Nut on Female End -->
+    <path d="M 230 108 L 255 108 L 260 114 L 260 134 L 255 140 L 230 140 Z" fill="url(#glandNut)" stroke="#334155" stroke-width="1"/>
+    <!-- Grip Ribs -->
+    <line x1="236" y1="110" x2="236" y2="138" stroke="#64748B" stroke-width="1.5"/>
+    <line x1="243" y1="110" x2="243" y2="138" stroke="#64748B" stroke-width="1.5"/>
+    <line x1="250" y1="110" x2="250" y2="138" stroke="#64748B" stroke-width="1.5"/>
+
+    <!-- Rubber Cable Input (Right) -->
+    <rect x="260" y="115" width="25" height="18" rx="2" fill="#0F172A" stroke="#1E293B" stroke-width="1"/>
+
+    <!-- Specular Highlight across body -->
+    <line x1="82" y1="115" x2="225" y2="115" stroke="#94A3B8" stroke-width="1" opacity="0.4"/>
   </g>
 
-  <!-- Title Pill -->
-  <rect x="12" y="172" width="176" height="18" rx="4" fill="rgba(15, 23, 42, 0.85)" stroke="rgba(148, 163, 184, 0.2)" stroke-width="1"/>
-  <text x="100" y="184" text-anchor="middle" fill="#F8FAFC" font-size="8" font-weight="600" font-family="system-ui, sans-serif" letter-spacing="0.5">MC4 CONNECTORS (M+F)</text>
+  <!-- Technical Spec Indicator Tag -->
+  <g transform="translate(20, 24)">
+    <rect x="0" y="0" width="118" height="20" rx="4" fill="#0F172A" opacity="0.85"/>
+    <text x="59" y="14" fill="#F59E0B" font-family="system-ui, sans-serif" font-size="10" font-weight="700" text-anchor="middle" letter-spacing="0.5">MC4 IP68 1500V</text>
+  </g>
 </svg>

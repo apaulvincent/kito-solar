@@ -1,32 +1,103 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 280" width="100%" height="100%" fill="none">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0F172A"/>
-      <stop offset="100%" stop-color="#090D16"/>
+    <!-- Metallic Aluminum Gradients -->
+    <linearGradient id="alFace" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E2E8F0"/>
+      <stop offset="35%" stop-color="#CBD5E1"/>
+      <stop offset="70%" stop-color="#94A3B8"/>
+      <stop offset="100%" stop-color="#64748B"/>
     </linearGradient>
-    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(148, 163, 184, 0.08)" stroke-width="0.5"/>
-    </pattern>
+    <linearGradient id="alTop" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#CBD5E1"/>
+      <stop offset="50%" stop-color="#F1F5F9"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+    <linearGradient id="alSide" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#64748B"/>
+      <stop offset="50%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    <linearGradient id="steelBolt" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="40%" stop-color="#94A3B8"/>
+      <stop offset="80%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="epdmPad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="50%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0F172A" flood-opacity="0.25"/>
+    </filter>
   </defs>
-  <rect width="200" height="200" rx="12" fill="url(#bgGrad)"/>
-  <rect width="200" height="200" rx="12" fill="url(#grid)"/>
-  <rect x="2" y="2" width="196" height="196" rx="10" fill="none" stroke="rgba(148, 163, 184, 0.15)" stroke-width="1"/>
-  
-  <!-- Header Bar -->
-  <rect x="12" y="12" width="176" height="20" rx="4" fill="rgba(30, 41, 59, 0.7)"/>
-  <text x="20" y="26" fill="#94A3B8" font-size="8" font-weight="700" font-family="monospace" letter-spacing="1">MOUNTING</text>
-  <text x="180" y="26" text-anchor="end" fill="#94A3B8" font-size="8" font-family="monospace">84 x 40 x 40 MM</text>
 
-  <!-- Technical Schematic Icon -->
-  <g transform="translate(0, 0)">
-    <path d="M70 40 L90 40 L90 120 L135 120 L135 140 L70 140 Z" fill="#334155" stroke="#94A3B8" stroke-width="2"/>
-           <circle cx="80" cy="65" r="5" fill="#0F172A" stroke="#F59E0B" stroke-width="1.5"/>
-           <circle cx="115" cy="130" r="5" fill="#0F172A" stroke="#F59E0B" stroke-width="1.5"/>
-           <rect x="68" y="140" width="70" height="4" fill="#0F172A"/>
-           <text x="100" y="25" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="monospace">EPDM WATERPROOF PAD</text>
+  <!-- Ambient Shadow -->
+  <ellipse cx="160" cy="245" rx="100" ry="20" fill="#0F172A" opacity="0.18" filter="blur(6px)"/>
+
+  <!-- EPDM Waterproof Rubber Gasket Base -->
+  <g filter="url(#shadow)">
+    <!-- Base Pad Bottom & Side -->
+    <path d="M 60 215 L 160 215 L 235 185 L 135 185 Z" fill="url(#epdmPad)"/>
+    <path d="M 60 215 L 60 225 L 160 225 L 160 215 Z" fill="#0F172A"/>
+    <path d="M 160 225 L 235 195 L 235 185 L 160 215 Z" fill="#020617"/>
+    <!-- Pad Texture ribs -->
+    <path d="M 70 212 L 155 212 L 225 184" stroke="#475569" stroke-width="1" opacity="0.6"/>
+    <path d="M 75 217 L 158 217" stroke="#0F172A" stroke-width="1.5"/>
   </g>
 
-  <!-- Title Pill -->
-  <rect x="12" y="172" width="176" height="18" rx="4" fill="rgba(15, 23, 42, 0.85)" stroke="rgba(148, 163, 184, 0.2)" stroke-width="1"/>
-  <text x="100" y="184" text-anchor="middle" fill="#F8FAFC" font-size="8" font-weight="600" font-family="system-ui, sans-serif" letter-spacing="0.5">ALUMINUM L-FOOT BRACKET</text>
+  <!-- L-Foot Aluminum Body (Extruded 6005-T5 Profile) -->
+  <g filter="url(#shadow)">
+    <!-- Horizontal Base Leg Front -->
+    <path d="M 70 205 L 160 205 L 225 178 L 135 178 Z" fill="url(#alTop)" stroke="#94A3B8" stroke-width="1"/>
+    
+    <!-- Base Front Edge Thickness -->
+    <path d="M 70 205 L 70 215 L 160 215 L 160 205 Z" fill="url(#alSide)" stroke="#475569" stroke-width="0.8"/>
+    <!-- Base Right Edge Thickness -->
+    <path d="M 160 215 L 225 188 L 225 178 L 160 205 Z" fill="#334155"/>
+
+    <!-- Vertical Upright Leg Front Face -->
+    <path d="M 70 70 L 105 70 L 105 205 L 70 205 Z" fill="url(#alFace)" stroke="#94A3B8" stroke-width="1"/>
+    <!-- Vertical Top Face -->
+    <path d="M 70 70 L 135 45 L 170 45 L 105 70 Z" fill="url(#alTop)" stroke="#CBD5E1" stroke-width="1"/>
+    <!-- Vertical Side Face (Right) -->
+    <path d="M 105 70 L 170 45 L 170 180 L 105 205 Z" fill="url(#alSide)" stroke="#334155" stroke-width="1"/>
+
+    <!-- Chamfer Bevel Highlight on Vertical Corner -->
+    <path d="M 105 70 L 105 205" stroke="#F8FAFC" stroke-width="1.5" opacity="0.8"/>
+
+    <!-- Slotted Hole in Vertical Leg (for Rail Height Adjustment) -->
+    <path d="M 82 95 C 82 90, 92 90, 92 95 L 92 155 C 92 160, 82 160, 82 155 Z" fill="#1E293B" stroke="#0F172A" stroke-width="1.5"/>
+    <path d="M 84 96 L 84 154" stroke="#475569" stroke-width="1.5"/>
+
+    <!-- Slotted Hole in Horizontal Base Leg (for Roof Lag Screw) -->
+    <path d="M 140 193 C 143 192, 150 189, 153 190 L 175 181 C 178 180, 185 183, 182 184 Z" fill="#0F172A"/>
+
+    <!-- Stainless Steel M8 Rail Mounting Bolt & Flange Nut through Vertical Slot -->
+    <g transform="translate(87, 125)">
+      <!-- Hex Bolt Head -->
+      <polygon points="0,-14 12,-7 12,7 0,14 -12,7 -12,-7" fill="url(#steelBolt)" stroke="#1E293B" stroke-width="1"/>
+      <polygon points="0,-11 9,-5 9,5 0,11 -9,5 -9,-5" fill="#E2E8F0" opacity="0.4"/>
+      <!-- Serrated Flange Washer -->
+      <circle cx="0" cy="0" r="18" fill="none" stroke="#64748B" stroke-width="2.5"/>
+      <circle cx="0" cy="0" r="18" fill="none" stroke="#F1F5F9" stroke-width="1" stroke-dasharray="2 3"/>
+      <!-- Internal Hex Drive -->
+      <polygon points="0,-6 5,-3 5,3 0,6 -5,3 -5,-3" fill="#0F172A"/>
+    </g>
+
+    <!-- Roof Fastener Hex Head on Base -->
+    <g transform="translate(162, 186)">
+      <ellipse cx="0" cy="0" rx="9" ry="5" fill="url(#steelBolt)" stroke="#334155" stroke-width="1"/>
+      <ellipse cx="0" cy="-2" rx="6" ry="3" fill="#F8FAFC" opacity="0.6"/>
+      <!-- EPDM Sealing Washer Ring -->
+      <ellipse cx="0" cy="2" rx="11" ry="5.5" fill="none" stroke="#0F172A" stroke-width="1.5"/>
+    </g>
+  </g>
+
+  <!-- Technical Spec Indicator Tag -->
+  <g transform="translate(20, 24)">
+    <rect x="0" y="0" width="84" height="20" rx="4" fill="#0F172A" opacity="0.85"/>
+    <text x="42" y="14" fill="#F59E0B" font-family="system-ui, sans-serif" font-size="10" font-weight="700" text-anchor="middle" letter-spacing="0.5">AL 6005-T5</text>
+  </g>
 </svg>

@@ -178,5 +178,14 @@
     "description": "30–40 mm module thickness.",
     "image_path": "/assets/accessories/end-clamp.webp",
     "diagram_node_key": "mount.end_clamp"
+  },
+  {
+    "accessory_key": "grounding_lug",
+    "name": "Grounding Lugs & Rail Bonding Jumpers",
+    "category": "mounting",
+    "side": "dc",
+    "description": "Tin-plated copper/aluminum lugs (14–4 AWG wire) with 150 mm braided stainless bonding jumpers for equipment grounding and rail equipotential bonding.",
+    "image_path": "/assets/accessories/grounding-lug.webp",
+    "diagram_node_key": "mount.grounding_lug"
   }
 ]

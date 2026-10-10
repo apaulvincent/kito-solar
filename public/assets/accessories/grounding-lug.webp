@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 280" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- Metallic Gradients for Tin-Plated Copper & Stainless Steel -->
+    <linearGradient id="tinLugFace" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="25%" stop-color="#E2E8F0"/>
+      <stop offset="60%" stop-color="#CBD5E1"/>
+      <stop offset="100%" stop-color="#94A3B8"/>
+    </linearGradient>
+    <linearGradient id="tinLugTop" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#CBD5E1"/>
+      <stop offset="50%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+    <linearGradient id="tinLugSide" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#64748B"/>
+      <stop offset="50%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    
+    <!-- Braided Stainless Steel Jumper Gradient -->
+    <linearGradient id="braidMetallic" x1="0%" y1="0%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#CBD5E1"/>
+      <stop offset="25%" stop-color="#F1F5F9"/>
+      <stop offset="50%" stop-color="#94A3B8"/>
+      <stop offset="75%" stop-color="#E2E8F0"/>
+      <stop offset="100%" stop-color="#64748B"/>
+    </linearGradient>
+
+    <!-- Copper / Brass Ground Terminal Clamp -->
+    <linearGradient id="copperCore" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FED7AA"/>
+      <stop offset="40%" stop-color="#F97316"/>
+      <stop offset="80%" stop-color="#C2410C"/>
+      <stop offset="100%" stop-color="#7C2D12"/>
+    </linearGradient>
+
+    <!-- Stainless Fastener Hardware -->
+    <linearGradient id="ssLugHardware" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="45%" stop-color="#CBD5E1"/>
+      <stop offset="80%" stop-color="#64748B"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+
+    <pattern id="braidPattern" width="12" height="8" patternUnits="userSpaceOnUse">
+      <path d="M 0,0 L 6,4 L 0,8 Z" fill="#94A3B8" opacity="0.4"/>
+      <path d="M 6,0 L 12,4 L 6,8 Z" fill="#E2E8F0" opacity="0.6"/>
+      <line x1="0" y1="4" x2="12" y2="4" stroke="#64748B" stroke-width="0.8"/>
+    </pattern>
+
+    <filter id="lugDropShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0F172A" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <!-- Ground Ambient Contact Shadow -->
+  <ellipse cx="160" cy="240" rx="115" ry="20" fill="#0F172A" opacity="0.16" filter="blur(6px)"/>
+
+  <!-- Braided Stainless Steel Bonding Jumper Strap (Arcs across background) -->
+  <g filter="url(#lugDropShadow)">
+    <!-- Flexible Braided Grounding Strap -->
+    <path d="
+      M 45 195 
+      C 60 145, 95 90, 165 95 
+      C 220 98, 260 145, 275 190
+      L 265 198
+      C 250 155, 215 110, 165 108
+      C 105 105, 75 155, 55 202
+      Z" 
+      fill="url(#braidMetallic)" stroke="#64748B" stroke-width="1.2"/>
+    
+    <!-- Braided Texture Overlay -->
+    <path d="
+      M 45 195 
+      C 60 145, 95 90, 165 95 
+      C 220 98, 260 145, 275 190
+      L 265 198
+      C 250 155, 215 110, 165 108
+      C 105 105, 75 155, 55 202
+      Z" 
+      fill="url(#braidPattern)" opacity="0.65"/>
+
+    <!-- Right Jumper Terminal Lug Eyelet -->
+    <g transform="translate(268, 195)">
+      <path d="M -15,-10 L 12,-10 L 18,12 L -9,12 Z" fill="url(#tinLugFace)" stroke="#64748B" stroke-width="1"/>
+      <circle cx="2" cy="1" r="7" fill="url(#ssLugHardware)" stroke="#334155" stroke-width="1"/>
+      <circle cx="2" cy="1" r="3.5" fill="#0F172A"/>
+    </g>
+  </g>
+
+  <!-- Primary Tin-Plated Grounding Lug Body (Isometric Foreground) -->
+  <g filter="url(#lugDropShadow)" transform="translate(25, 0)">
+    <!-- Aluminum / Rail Mounting Base Plate with Slotted Foot -->
+    <!-- Base Plate Face -->
+    <polygon points="75,175 165,175 195,145 105,145" fill="url(#tinLugTop)" stroke="#CBD5E1" stroke-width="1"/>
+    <polygon points="75,175 165,175 165,195 75,195" fill="url(#tinLugFace)" stroke="#94A3B8" stroke-width="1"/>
+    <polygon points="165,175 195,145 195,165 165,195" fill="url(#tinLugSide)" stroke="#475569" stroke-width="1"/>
+
+    <!-- Serrated Teeth (Anodize-Piercing Star Washer Impression) -->
+    <g transform="translate(145, 158)">
+      <circle cx="0" cy="0" r="14" fill="none" stroke="#F59E0B" stroke-width="1.2" stroke-dasharray="2 2"/>
+      <ellipse cx="0" cy="0" rx="9" ry="6" fill="#1E293B"/>
+    </g>
+
+    <!-- Upright Lug Body (Lay-in Wire Channel block) -->
+    <polygon points="70,115 135,115 155,90 90,90" fill="url(#tinLugTop)" stroke="#FFFFFF" stroke-width="0.8"/>
+    <polygon points="70,115 135,115 135,175 70,175" fill="url(#tinLugFace)" stroke="#94A3B8" stroke-width="1"/>
+    <polygon points="135,115 155,90 155,150 135,175" fill="url(#tinLugSide)" stroke="#475569" stroke-width="1"/>
+
+    <!-- Lay-In Wire Duct Channel (Accommodates 14 AWG - 4 AWG bare copper) -->
+    <path d="M 80,135 Q 102,125 125,135 L 125,158 Q 102,148 80,158 Z" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+
+    <!-- Bare Ground Conductor Wire Passing Through (Solid Green/Bare Copper) -->
+    <g opacity="0.95">
+      <path d="M 40,165 C 60,155 75,142 102,144 C 130,146 150,158 190,150" 
+            fill="none" stroke="url(#copperCore)" stroke-width="6" stroke-linecap="round"/>
+      <!-- Conductor Highlights -->
+      <path d="M 42,163 C 61,153 76,140 102,142 C 128,144 148,156 188,148" 
+            fill="none" stroke="#FEF08A" stroke-width="1.2" stroke-linecap="round"/>
+    </g>
+
+    <!-- Stainless Steel Lay-In Wire Clamping Set Screw -->
+    <g transform="translate(108, 92)">
+      <!-- Hex Socket Head Bolt Body -->
+      <path d="M -14,-25 L 14,-25 L 14,0 L -14,0 Z" fill="url(#ssLugHardware)" stroke="#334155" stroke-width="1"/>
+      <ellipse cx="0" cy="-25" rx="14" ry="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
+      <!-- Hex Drive Hole (5mm Allen Key Socket) -->
+      <polygon points="0,-28 5,-25 5,-21 0,-18 -5,-21 -5,-25" fill="#0F172A"/>
+      <!-- Thread Grooves on Bolt Shank -->
+      <line x1="-13" y1="-18" x2="13" y2="-15" stroke="#475569" stroke-width="1"/>
+      <line x1="-13" y1="-12" x2="13" y2="-9" stroke="#475569" stroke-width="1"/>
+      <line x1="-13" y1="-6" x2="13" y2="-3" stroke="#475569" stroke-width="1"/>
+    </g>
+
+    <!-- M8 Rail Mounting Bolt & Serrated Flange Nut Assembly -->
+    <g transform="translate(145, 158)">
+      <!-- M8 Hex Bolt Head -->
+      <path d="M -12,-20 L 12,-20 L 16,-4 L 0,6 L -16,-4 Z" fill="url(#ssLugHardware)" stroke="#475569" stroke-width="1"/>
+      <polygon points="0,-18 7,-14 7,-8 0,-4 -7,-8 -7,-14" fill="#0F172A"/>
+    </g>
+
+    <!-- Specular Highlight Lines -->
+    <line x1="71" y1="116" x2="134" y2="116" stroke="#FFFFFF" stroke-width="1" opacity="0.8"/>
+    <line x1="71" y1="175" x2="164" y2="175" stroke="#FFFFFF" stroke-width="0.8" opacity="0.6"/>
+  </g>
+
+  <!-- Technical Spec Indicator Tag -->
+  <g transform="translate(20, 24)">
+    <rect x="0" y="0" width="138" height="20" rx="4" fill="#0F172A" opacity="0.85"/>
+    <text x="69" y="14" fill="#F59E0B" font-family="system-ui, sans-serif" font-size="10" font-weight="700" text-anchor="middle" letter-spacing="0.5">GROUNDING LUG &amp; STRAP</text>
+  </g>
+</svg>

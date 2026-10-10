@@ -19,11 +19,11 @@ export function AcResultsCard() {
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-card dark:shadow-card-dark space-y-5 transition-colors duration-200">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800/60 shadow-sm">
+          <div className="p-2 rounded-lg bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800/60 shadow-sm">
             <Network className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] font-mono tracking-wider uppercase text-sky-600 dark:text-sky-400 font-bold">
+            <span className="text-[10px] font-mono tracking-wider uppercase text-sky-700 dark:text-sky-400 font-bold">
               ALTERNATING CURRENT DISTRIBUTION & UTILITY INTERCONNECT
             </span>
             <h3 className="text-base font-bold text-slate-900 dark:text-white">AC Electrical Calculations</h3>
@@ -32,7 +32,7 @@ export function AcResultsCard() {
 
         <button
           onClick={() => triggerLocate('ac_breaker')}
-          className="text-xs font-mono font-semibold text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1 transition-colors"
+          className="text-xs font-mono font-semibold text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:underline flex items-center gap-1 transition-colors"
         >
           Locate on 3D Diagram <ArrowRight className="w-3.5 h-3.5" />
         </button>
@@ -60,7 +60,7 @@ export function AcResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Computed: {ac.computedCurrentA} A ({ac.rawCurrentA} A × 125%)
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-sans line-clamp-2">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
             {ac.explanation.breaker}
           </p>
         </div>
@@ -71,13 +71,13 @@ export function AcResultsCard() {
             <span>Inverter AC Feeder Conductor</span>
             <Cable className="w-4 h-4 text-sky-600 dark:text-sky-400" />
           </div>
-          <div className="text-lg font-bold font-mono text-slate-900 dark:text-white mt-1 truncate" title={ac.wireSpec}>
-            {ac.wireSpec.split(' cable')[0]}
+          <div className="text-sm font-bold font-mono text-slate-900 dark:text-white mt-1 break-words leading-tight">
+            {ac.wireSpec}
           </div>
-          <div className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-1">
+          <div className="text-xs font-mono text-slate-600 dark:text-slate-400 mt-1">
             THHN/THWN Copper Multi-Conductor
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-sans line-clamp-2">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
             {ac.explanation.wire}
           </p>
         </div>
@@ -103,7 +103,7 @@ export function AcResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Manual Rotary Lockable
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-sans line-clamp-2">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
             {ac.explanation.isolator}
           </p>
         </div>
@@ -129,7 +129,7 @@ export function AcResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Type 2 Cartridge (Grid Matched)
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-sans line-clamp-2">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
             {ac.explanation.spd}
           </p>
         </div>
@@ -152,10 +152,10 @@ export function AcResultsCard() {
           <div className="text-2xl font-black font-mono text-slate-900 dark:text-white mt-1">
             {ac.atsConfigured ? `${ac.atsRatingA} A` : 'Optional'}
           </div>
-          <div className="text-xs font-mono text-purple-600 dark:text-purple-400 font-semibold mt-1">
+          <div className="text-xs font-mono text-purple-700 dark:text-purple-400 font-semibold mt-1">
             {ac.atsNote}
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-sans line-clamp-2">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
             {ac.explanation.ats}
           </p>
         </div>
@@ -172,7 +172,7 @@ export function AcResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Dedicated Critical Loads Port
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-sans line-clamp-2">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
             {ac.explanation.eps}
           </p>
         </div>

@@ -65,6 +65,52 @@ describe('Calculator Engine Unit Test Suite', () => {
       expect(bom.totalMc4Pairs).toBe(4);
       expect(bom.items.length).toBe(6);
     });
+
+    it('reconciles all 6 R4 mounting hardware accessories in expected order with grounding lugs and bonding jumpers', () => {
+      const bom = calculateMounting(10, 2);
+      const itemKeys = bom.items.map((i) => i.key);
+      expect(itemKeys).toEqual([
+        'roof_rail',
+        'rail_splice',
+        'l_foot',
+        'mid_clamp',
+        'end_clamp',
+        'grounding_lug',
+      ]);
+
+      const groundingLug = bom.items.find((i) => i.key === 'grounding_lug');
+      expect(groundingLug).toBeDefined();
+      // For 10 modules in 2 strings: rows = 2 -> 4 lugs + 7 bonding jumpers = 11 sets
+      expect(groundingLug?.quantity).toBe(11);
+      expect(groundingLug?.unit).toBe('sets');
+      expect(groundingLug?.specification).toContain('Tin-plated');
+
+      // Verify dimensional schemas and standards on all 6 items
+      bom.items.forEach((item) => {
+        expect(item.dimensions).toBeDefined();
+        expect(item.dimensions?.lengthMm).toBeGreaterThan(0);
+        expect(item.dimensions?.widthMm).toBeGreaterThan(0);
+        expect(item.dimensions?.heightMm).toBeGreaterThan(0);
+        expect(item.dimensions?.fastenerSpec).toBeDefined();
+        expect(item.dimensions?.torqueNm).toBeDefined();
+        expect(item.standards).toBeDefined();
+        expect(item.standards?.length).toBeGreaterThan(0);
+        expect(item.material).toBeDefined();
+        expect(item.finish).toBeDefined();
+      });
+    });
+
+    it('calculates single-row boundary conditions for grounding lugs and clamps', () => {
+      const bom = calculateMounting(2, 1);
+      expect(bom.panelCount).toBe(2);
+      expect(bom.totalEndClamps).toBe(4); // 1 row * 4
+      expect(bom.totalMidClamps).toBe(2); // 2 * (2 - 1)
+      expect(bom.items.length).toBe(6);
+
+      const groundingLug = bom.items.find((i) => i.key === 'grounding_lug');
+      // Minimum 2 grounding lugs for 1 row
+      expect(groundingLug?.quantity).toBeGreaterThanOrEqual(2);
+    });
   });
 
   describe('ATS Calculation', () => {

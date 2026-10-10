@@ -17,9 +17,9 @@ export interface SolarInverterRecord {
   max_operating_pv_input_current: string | null;
   max_input_short_circuit_current: string | null;
   mppt_tracker_string_config: string | null;
-  rated_ac_power_w: number;
-  rated_ac_current_a: number | null;
-  max_ac_current_a: number;
+  rated_ac_power_w: number | string;
+  rated_ac_current_a: number | string | null;
+  max_ac_current_a: number | string;
   rated_voltage_range: string | null;
   grid_connection_form: string | null;
   is_active?: boolean;
@@ -29,7 +29,7 @@ export interface SolarModuleRecord {
   id?: string;
   brand: string;
   model: string;
-  pv_wattage_w: number;
+  pv_wattage_w: number | string;
   voc_v: number;
   vmp_v: number;
   isc_a: number;

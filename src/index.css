@@ -12,7 +12,7 @@
 
 body {
   margin: 0;
-  font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif;
 }
 
 /* Technical scrollbars */

@@ -1,33 +1,100 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 280" width="100%" height="100%" fill="none">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0F172A"/>
-      <stop offset="100%" stop-color="#090D16"/>
+    <linearGradient id="clampAl" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F1F5F9"/>
+      <stop offset="35%" stop-color="#CBD5E1"/>
+      <stop offset="80%" stop-color="#94A3B8"/>
+      <stop offset="100%" stop-color="#64748B"/>
     </linearGradient>
-    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(148, 163, 184, 0.08)" stroke-width="0.5"/>
-    </pattern>
+    <linearGradient id="clampTop" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#CBD5E1"/>
+      <stop offset="50%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+    <linearGradient id="ssScrew" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="45%" stop-color="#94A3B8"/>
+      <stop offset="85%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="brassClip" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE68A"/>
+      <stop offset="50%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#B45309"/>
+    </linearGradient>
+    <filter id="clampShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0F172A" flood-opacity="0.22"/>
+    </filter>
   </defs>
-  <rect width="200" height="200" rx="12" fill="url(#bgGrad)"/>
-  <rect width="200" height="200" rx="12" fill="url(#grid)"/>
-  <rect x="2" y="2" width="196" height="196" rx="10" fill="none" stroke="rgba(148, 163, 184, 0.15)" stroke-width="1"/>
-  
-  <!-- Header Bar -->
-  <rect x="12" y="12" width="176" height="20" rx="4" fill="rgba(30, 41, 59, 0.7)"/>
-  <text x="20" y="26" fill="#94A3B8" font-size="8" font-weight="700" font-family="monospace" letter-spacing="1">MOUNTING</text>
-  <text x="180" y="26" text-anchor="end" fill="#94A3B8" font-size="8" font-family="monospace">30-40MM FRAME</text>
 
-  <!-- Technical Schematic Icon -->
-  <g transform="translate(0, 0)">
-    <rect x="65" y="60" width="70" height="18" rx="2" fill="#334155" stroke="#94A3B8" stroke-width="2"/>
-           <rect x="92" y="78" width="16" height="50" fill="#1E293B" stroke="#94A3B8" stroke-width="1.5"/>
-           <circle cx="100" cy="69" r="4" fill="#0F172A" stroke="#F59E0B" stroke-width="1.5"/>
-           <line x1="45" y1="78" x2="85" y2="78" stroke="#F59E0B" stroke-width="3"/>
-           <line x1="115" y1="78" x2="155" y2="78" stroke="#F59E0B" stroke-width="3"/>
-           <text x="100" y="150" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="monospace">INNER JOIN CLAMP</text>
+  <!-- Ground Shadow -->
+  <ellipse cx="160" cy="235" rx="90" ry="18" fill="#0F172A" opacity="0.16" filter="blur(5px)"/>
+
+  <!-- T-Nut Slider (Beneath Rail Channel) -->
+  <g transform="translate(160, 215)" opacity="0.95">
+    <polygon points="-40,0 40,0 32,15 -32,15" fill="#334155" stroke="#1E293B" stroke-width="1"/>
+    <!-- Threaded hole -->
+    <ellipse cx="0" cy="8" rx="8" ry="4" fill="#0F172A"/>
   </g>
 
-  <!-- Title Pill -->
-  <rect x="12" y="172" width="176" height="18" rx="4" fill="rgba(15, 23, 42, 0.85)" stroke="rgba(148, 163, 184, 0.2)" stroke-width="1"/>
-  <text x="100" y="184" text-anchor="middle" fill="#F8FAFC" font-size="8" font-weight="600" font-family="system-ui, sans-serif" letter-spacing="0.5">SOLAR PANEL MID-CLAMP</text>
+  <!-- Grounding Clip / Bonding Washer with Piercing Pins -->
+  <g transform="translate(160, 185)" filter="url(#clampShadow)">
+    <rect x="-48" y="-4" width="96" height="8" rx="2" fill="url(#brassClip)" stroke="#B45309" stroke-width="1"/>
+    <!-- Piercing Teeth on Left Wing -->
+    <polygon points="-38,-4 -34,-9 -30,-4" fill="#B45309"/>
+    <polygon points="-26,-4 -22,-9 -18,-4" fill="#B45309"/>
+    <!-- Piercing Teeth on Right Wing -->
+    <polygon points="18,-4 22,-9 26,-4" fill="#B45309"/>
+    <polygon points="30,-4 34,-9 38,-4" fill="#B45309"/>
+  </g>
+
+  <!-- Anodized Aluminum Mid-Clamp Body (35mm-40mm Range) -->
+  <g filter="url(#clampShadow)">
+    <!-- Main Center Bar Profile -->
+    <!-- Top Face -->
+    <polygon points="100,85 220,85 245,65 125,65" fill="url(#clampTop)" stroke="#CBD5E1" stroke-width="1"/>
+    <!-- Front Face -->
+    <polygon points="100,85 220,85 220,115 100,115" fill="url(#clampAl)" stroke="#94A3B8" stroke-width="1"/>
+    <!-- Right Face -->
+    <polygon points="220,85 245,65 245,95 220,115" fill="#64748B" stroke="#475569" stroke-width="1"/>
+
+    <!-- Left Wing (Presses Module Frame Left) -->
+    <polygon points="65,115 100,115 100,130 65,130" fill="url(#clampAl)" stroke="#94A3B8" stroke-width="1"/>
+    <polygon points="65,115 90,95 125,95 100,115" fill="url(#clampTop)" stroke="#CBD5E1" stroke-width="0.8"/>
+    <polygon points="65,130 100,130 100,135 65,135" fill="#475569"/>
+
+    <!-- Right Wing (Presses Module Frame Right) -->
+    <polygon points="220,115 255,115 255,130 220,130" fill="url(#clampAl)" stroke="#94A3B8" stroke-width="1"/>
+    <polygon points="220,115 245,95 280,95 255,115" fill="url(#clampTop)" stroke="#CBD5E1" stroke-width="0.8"/>
+    <polygon points="255,115 280,95 280,110 255,130" fill="#475569"/>
+    <polygon points="220,130 255,130 255,135 220,135" fill="#334155"/>
+
+    <!-- Grip Serrations on Underside of Wings -->
+    <line x1="70" y1="130" x2="95" y2="130" stroke="#0F172A" stroke-width="1.5" stroke-dasharray="2 2"/>
+    <line x1="225" y1="130" x2="250" y2="130" stroke="#0F172A" stroke-width="1.5" stroke-dasharray="2 2"/>
+
+    <!-- Central Stainless Steel M8 Allen Bolt -->
+    <g transform="translate(172, 75)">
+      <!-- Cylindrical Socket Cap Head -->
+      <ellipse cx="0" cy="0" rx="18" ry="10" fill="url(#ssScrew)" stroke="#334155" stroke-width="1.2"/>
+      <path d="M -18 0 L -18 16 C -18 21, 18 21, 18 16 L 18 0 Z" fill="url(#ssScrew)" stroke="#334155" stroke-width="1.2"/>
+      <ellipse cx="0" cy="0" rx="18" ry="10" fill="#FFFFFF" opacity="0.3"/>
+      <!-- Knurled Outer Ring Texture -->
+      <line x1="-16" y1="3" x2="-16" y2="14" stroke="#64748B" stroke-width="1"/>
+      <line x1="-10" y1="6" x2="-10" y2="17" stroke="#64748B" stroke-width="1"/>
+      <line x1="-4" y1="8" x2="-4" y2="19" stroke="#64748B" stroke-width="1"/>
+      <line x1="4" y1="8" x2="4" y2="19" stroke="#64748B" stroke-width="1"/>
+      <line x1="10" y1="6" x2="10" y2="17" stroke="#64748B" stroke-width="1"/>
+      <line x1="16" y1="3" x2="16" y2="14" stroke="#64748B" stroke-width="1"/>
+      <!-- Hex Socket Drive Hole -->
+      <polygon points="0,-4 6,-1 6,5 0,8 -6,5 -6,-1" fill="#0F172A"/>
+      <polygon points="0,-3 4,-1 4,4 0,6 -4,4 -4,-1" fill="#1E293B"/>
+    </g>
+  </g>
+
+  <!-- Technical Spec Indicator Tag -->
+  <g transform="translate(20, 24)">
+    <rect x="0" y="0" width="112" height="20" rx="4" fill="#0F172A" opacity="0.85"/>
+    <text x="56" y="14" fill="#F59E0B" font-family="system-ui, sans-serif" font-size="10" font-weight="700" text-anchor="middle" letter-spacing="0.5">30-40MM MID-CLAMP</text>
+  </g>
 </svg>

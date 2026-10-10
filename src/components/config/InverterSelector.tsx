@@ -2,6 +2,7 @@
 import { useMemo } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { Cpu } from 'lucide-react';
+import { parseNumericValue } from '@/lib/utils';
 
 export function InverterSelector() {
   const inverters = useCalculatorStore((s) => s.inverters);
@@ -76,7 +77,7 @@ export function InverterSelector() {
           >
             {models.map((m) => (
               <option key={m.model} value={m.model} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
-                {m.model} ({(m.rated_ac_power_w / 1000).toFixed(1)} kW)
+                {m.model} ({(parseNumericValue(m.rated_ac_power_w) / 1000).toFixed(1)} kW)
               </option>
             ))}
           </select>
@@ -96,7 +97,7 @@ export function InverterSelector() {
           <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
             <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Rated AC Power</span>
             <span className="font-bold text-slate-900 dark:text-white">
-              {(selectedInverter.rated_ac_power_w / 1000).toFixed(1)} kW
+              {(parseNumericValue(selectedInverter.rated_ac_power_w) / 1000).toFixed(1)} kW
             </span>
           </div>
 

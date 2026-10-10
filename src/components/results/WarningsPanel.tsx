@@ -24,7 +24,7 @@ export function WarningsPanel() {
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-card dark:shadow-card-dark space-y-4 transition-colors duration-200">
       <div className="flex items-center justify-between">
         <div>
-          <span className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 font-bold">
+          <span className="text-[10px] font-mono tracking-wider uppercase text-amber-700 dark:text-amber-400 font-bold">
             AUTOMATED AUDIT
           </span>
           <h3 className="text-base font-bold text-slate-900 dark:text-white">Design Health & Safety Advisories</h3>
@@ -83,7 +83,7 @@ export function WarningsPanel() {
 
                 {w.recommendation && (
                   <div className="text-[11px] font-mono text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-800 shadow-subtle mt-2">
-                    <span className="text-amber-600 dark:text-amber-400 font-bold">Action: </span>
+                    <span className="text-amber-700 dark:text-amber-400 font-bold">Action: </span>
                     {w.recommendation}
                   </div>
                 )}

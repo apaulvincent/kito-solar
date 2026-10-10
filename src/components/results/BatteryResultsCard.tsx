@@ -33,11 +33,11 @@ export function BatteryResultsCard() {
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-card dark:shadow-card-dark space-y-5 transition-colors duration-200">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 shadow-sm">
+          <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 shadow-sm">
             <BatteryCharging className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400 font-bold">
+            <span className="text-[10px] font-mono tracking-wider uppercase text-emerald-700 dark:text-emerald-400 font-bold">
               ENERGY STORAGE PROTECTION & DC BUS CONDUCTION
             </span>
             <h3 className="text-base font-bold text-slate-900 dark:text-white">Battery Electrical Calculations</h3>
@@ -46,7 +46,7 @@ export function BatteryResultsCard() {
 
         <button
           onClick={() => triggerLocate('battery')}
-          className="text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 transition-colors"
+          className="text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:underline flex items-center gap-1 transition-colors"
         >
           Locate on 3D Diagram <ArrowRight className="w-3.5 h-3.5" />
         </button>
@@ -74,7 +74,7 @@ export function BatteryResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Discharge Rating: {battery.dischargeCurrentA} A
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-sans line-clamp-2">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
             {battery.explanation.breaker}
           </p>
         </div>
@@ -83,15 +83,15 @@ export function BatteryResultsCard() {
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-mono font-medium">
             <span>Battery DC Conductor</span>
-            <Cable className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <Cable className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
           </div>
-          <div className="text-lg font-bold font-mono text-slate-900 dark:text-white mt-1 truncate" title={battery.wireSpec}>
-            {battery.wireSpec.split(' cable')[0]}
+          <div className="text-sm font-bold font-mono text-slate-900 dark:text-white mt-1 break-words leading-tight">
+            {battery.wireSpec}
           </div>
-          <div className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
+          <div className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-semibold mt-1">
             High-Amp Flexible Welding / THHN
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-sans line-clamp-2">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
             {battery.explanation.wire}
           </p>
         </div>
@@ -117,7 +117,7 @@ export function BatteryResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             {battery.bankVoltageV} V Nominal / {battery.totalCapacityAh} Ah
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-sans line-clamp-2">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
             {battery.explanation.sizing}
           </p>
         </div>

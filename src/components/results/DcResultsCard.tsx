@@ -19,11 +19,11 @@ export function DcResultsCard() {
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-card dark:shadow-card-dark space-y-5 transition-colors duration-200">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 shadow-sm">
+          <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 shadow-sm">
             <Zap className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 font-bold">
+            <span className="text-[10px] font-mono tracking-wider uppercase text-amber-700 dark:text-amber-400 font-bold">
               PHOTOVOLTAIC DC SIDE PROTECTION & CONDUCTION
             </span>
             <h3 className="text-base font-bold text-slate-900 dark:text-white">DC Electrical Calculations</h3>
@@ -32,7 +32,7 @@ export function DcResultsCard() {
 
         <button
           onClick={() => triggerLocate('dc_breaker')}
-          className="text-xs font-mono font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 transition-colors"
+          className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 hover:underline flex items-center gap-1 transition-colors"
         >
           Locate on 3D Diagram <ArrowRight className="w-3.5 h-3.5" />
         </button>
@@ -60,7 +60,7 @@ export function DcResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Computed: {dc.computedCurrentA} A ({dc.rawCurrentA} A Isc × 125%)
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-sans line-clamp-2">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
             {dc.explanation.breaker}
           </p>
         </div>
@@ -74,15 +74,15 @@ export function DcResultsCard() {
         >
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-mono font-medium">
             <span>PV Homerun Conductor</span>
-            <Cable className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <Cable className="w-4 h-4 text-amber-700 dark:text-amber-400" />
           </div>
-          <div className="text-lg font-bold font-mono text-slate-900 dark:text-white mt-1 truncate" title={dc.wireSpec}>
-            {dc.wireSpec.split(' cable')[0]}
+          <div className="text-sm font-bold font-mono text-slate-900 dark:text-white mt-1 break-words leading-tight">
+            {dc.wireSpec}
           </div>
-          <div className="text-xs font-mono text-amber-600 dark:text-amber-400 font-semibold mt-1">
+          <div className="text-xs font-mono text-amber-700 dark:text-amber-400 font-semibold mt-1">
             {dc.wireNote}
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-sans line-clamp-2">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
             {dc.explanation.wire}
           </p>
         </div>
@@ -100,7 +100,7 @@ export function DcResultsCard() {
         >
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-mono font-medium">
             <span>DC Isolator Switch</span>
-            <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <Shield className="w-4 h-4 text-amber-700 dark:text-amber-400" />
           </div>
           <div className="text-2xl font-black font-mono text-slate-900 dark:text-white mt-1">
             {dc.isolatorRatingA} A
@@ -108,7 +108,7 @@ export function DcResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Load-Break 1000V DC 4-Pole
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-sans line-clamp-2">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
             {dc.explanation.isolator}
           </p>
         </div>
@@ -134,7 +134,7 @@ export function DcResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Type 2 Cartridge (Inverter Vmax)
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-sans line-clamp-2">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
             {dc.explanation.spd}
           </p>
         </div>
@@ -151,7 +151,7 @@ export function DcResultsCard() {
           <div className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-1">
             Standard: PVC (RMC / EMT / HDPE alt)
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-sans line-clamp-2">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
             {dc.explanation.conduit}
           </p>
         </div>
@@ -162,13 +162,13 @@ export function DcResultsCard() {
             <span>Ground Conductor & Rod</span>
             <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div className="text-xs font-bold font-mono text-slate-900 dark:text-white mt-1 truncate" title={dc.groundConductorSpec}>
+          <div className="text-xs font-bold font-mono text-slate-900 dark:text-white mt-1 break-words">
             Wire: {dc.groundConductorSpec}
           </div>
-          <div className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold mt-1 truncate" title={dc.groundRodSpec}>
+          <div className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-bold mt-1 break-words">
             Rod: {dc.groundRodSpec}
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-sans line-clamp-2">
+          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
             {dc.explanation.grounding}
           </p>
         </div>

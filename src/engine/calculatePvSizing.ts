@@ -1,6 +1,7 @@
 // src/engine/calculatePvSizing.ts
 import { SolarInverterRecord, SolarModuleRecord } from '@/types/supabase';
 import { PvSizingResult } from '@/types/calculator';
+import { parseNumericValue } from '@/lib/utils';
 
 export function calculatePvSizing(
   inverter: SolarInverterRecord,
@@ -9,8 +10,8 @@ export function calculatePvSizing(
 ): PvSizingResult {
   const vmp = Number(module.vmp_v) || 1;
   const voc = Number(module.voc_v) || 1;
-  const moduleWattage = Number(module.pv_wattage_w) || 1;
-  const ratedAcPower = Number(inverter.rated_ac_power_w) || 0;
+  const moduleWattage = parseNumericValue(module.pv_wattage_w) || 1;
+  const ratedAcPower = parseNumericValue(inverter.rated_ac_power_w) || 0;
   const maxPvPower = Number(inverter.max_pv_input_power_w) || ratedAcPower * 1.5;
 
   // Extract min MPPT voltage from mppt_voltage_range (e.g., '120-450' -> 120) or startup_voltage_v

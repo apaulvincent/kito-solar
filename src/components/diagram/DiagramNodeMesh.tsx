@@ -1,10 +1,12 @@
 // src/components/diagram/DiagramNodeMesh.tsx
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { DiagramNodeKey } from '@/types/diagram';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { SystemCalculationResult } from '@/types/calculator';
+import { NodeGeometry, NodeType } from './NodeGeometry';
 
 interface DiagramNodeMeshProps {
   nodeKey: DiagramNodeKey;
@@ -12,13 +14,182 @@ interface DiagramNodeMeshProps {
   sublabel?: string;
   position: [number, number, number];
   color?: string;
-  nodeType?: 'pv' | 'breaker' | 'isolator' | 'spd' | 'inverter' | 'battery' | 'panel' | 'grid' | 'load';
+  nodeType?: NodeType;
+}
+
+interface NodeDimensionConfig {
+  width: number;
+  height: number;
+  depth: number;
+  isWall: boolean;
+  yOffset: number;
+}
+
+const NODE_DIMENSIONS: Record<string, NodeDimensionConfig> = {
+  inverter: { width: 1.56, height: 1.76, depth: 0.55, isWall: true, yOffset: 1.15 },
+  battery: { width: 1.38, height: 1.56, depth: 0.55, isWall: true, yOffset: 1.05 },
+  isolator: { width: 0.85, height: 1.05, depth: 0.55, isWall: true, yOffset: 1.0 },
+  spd: { width: 0.8, height: 0.95, depth: 0.5, isWall: true, yOffset: 1.0 },
+  breaker: { width: 0.78, height: 0.98, depth: 0.55, isWall: true, yOffset: 1.0 },
+  ats: { width: 0.95, height: 1.25, depth: 0.52, isWall: true, yOffset: 1.15 },
+  panel: { width: 1.15, height: 1.65, depth: 0.45, isWall: true, yOffset: 1.35 },
+  pv: { width: 3.9, height: 1.1, depth: 2.0, isWall: false, yOffset: 1.0 },
+  grid: { width: 1.4, height: 3.2, depth: 0.6, isWall: false, yOffset: 1.7 },
+  load: { width: 1.8, height: 1.6, depth: 1.8, isWall: false, yOffset: 1.1 },
+  grounding: { width: 13.0, height: 0.08, depth: 0.05, isWall: true, yOffset: 0.45 },
+};
+
+interface NodeTelemetry {
+  category: string;
+  rating: string;
+  voltage: string;
+  conductor: string;
+  prompt: string;
+}
+
+function getNodeTelemetry(
+  nodeKey: DiagramNodeKey,
+  calculationResult: SystemCalculationResult,
+  gridVoltageV: number
+): NodeTelemetry {
+  switch (nodeKey) {
+    case 'pv_array':
+      return {
+        category: 'GENERATION • DC',
+        rating: `${calculationResult.summary.totalPanels} Panels • ${calculationResult.summary.totalArrayPowerKw} kWp`,
+        voltage: `Voc: ${(calculationResult.dc.rawCurrentA * 38).toFixed(0)}V • Vmp: ~370V`,
+        conductor: `${calculationResult.dc.wireSpec.split(' ')[0] || '10 AWG'} • ${calculationResult.dc.conduitSpec}`,
+        prompt: 'Click to inspect PV array sizing',
+      };
+    case 'dc_isolator':
+      return {
+        category: 'DC POINT OF ENTRY',
+        rating: `${calculationResult.dc.isolatorRatingA}A • 1000V DC rated`,
+        voltage: '1000V DC Max • 4-Pole Rotary',
+        conductor: `${calculationResult.dc.wireSpec.split(' ')[0] || '10 AWG'} Homerun`,
+        prompt: 'Click to inspect DC isolation specs',
+      };
+    case 'dc_breaker':
+      return {
+        category: 'DC OVERCURRENT',
+        rating: `${calculationResult.dc.breakerRatingA}A • 1.25x Continuous`,
+        voltage: '1000V DC • 10kA Icu',
+        conductor: `${calculationResult.dc.wireSpec}`,
+        prompt: 'Click to inspect DC breaker calculations',
+      };
+    case 'dc_spd':
+      return {
+        category: 'SURGE PROTECTION',
+        rating: calculationResult.dc.spdRating,
+        voltage: 'Uc: 1000V DC • Type II Arrester',
+        conductor: '6 mm² Earth to Busbar',
+        prompt: 'Click to inspect surge protection',
+      };
+    case 'inverter':
+      return {
+        category: 'CENTRAL INVERTER',
+        rating: `${calculationResult.summary.inverterPowerKw} kW ${calculationResult.systemType.toUpperCase()}`,
+        voltage: `DC Input → ${gridVoltageV}V AC Output`,
+        conductor: `AC Feeder: ${calculationResult.ac.wireSpec}`,
+        prompt: 'Click to inspect inverter sizing',
+      };
+    case 'battery_breaker':
+      return {
+        category: 'BATTERY OVERCURRENT',
+        rating: `${calculationResult.battery.recommendedBreakerA}A DC MCCB`,
+        voltage: `${calculationResult.battery.bankVoltageV}V DC Nominal`,
+        conductor: `${calculationResult.battery.wireSpec}`,
+        prompt: 'Click to inspect battery breaker specs',
+      };
+    case 'battery':
+      return {
+        category: 'ENERGY STORAGE (ESS)',
+        rating: `${(calculationResult.battery.totalEnergyWh / 1000).toFixed(1)} kWh Storage`,
+        voltage: `${calculationResult.battery.bankVoltageV}V Nominal Bank`,
+        conductor: `${calculationResult.battery.dischargeCurrentA.toFixed(0)}A Max Discharge`,
+        prompt: 'Click to inspect battery bank sizing',
+      };
+    case 'ac_breaker':
+      return {
+        category: 'AC INVERTER MCB',
+        rating: `${calculationResult.ac.breakerRatingA}A AC Breaker`,
+        voltage: `${gridVoltageV}V AC 50/60Hz`,
+        conductor: `${calculationResult.ac.wireSpec}`,
+        prompt: 'Click to inspect AC breaker calculations',
+      };
+    case 'ac_spd':
+      return {
+        category: 'AC TRANSIENT PROTECTION',
+        rating: calculationResult.ac.spdRating,
+        voltage: `Uc: ${gridVoltageV}V AC • Type II Arrester`,
+        conductor: '6 mm² Earth to Busbar',
+        prompt: 'Click to inspect AC surge arresters',
+      };
+    case 'ac_isolator':
+      return {
+        category: 'AC GRID DISCONNECT',
+        rating: `${calculationResult.ac.isolatorRatingA}A AC-23A rated`,
+        voltage: `${gridVoltageV}V AC • Lockable Rotary`,
+        conductor: `${calculationResult.ac.wireSpec}`,
+        prompt: 'Click to inspect AC disconnect specs',
+      };
+    case 'ats':
+      return {
+        category: 'AUTOMATIC TRANSFER SWITCH',
+        rating: calculationResult.ac.atsConfigured
+          ? `${calculationResult.ac.atsRatingA}A Transfer Switch`
+          : 'ATS Optional',
+        voltage: `${gridVoltageV}V Dual-Source Grid/EPS`,
+        conductor: `${calculationResult.ac.wireSpec}`,
+        prompt: 'Click to inspect automatic transfer switch',
+      };
+    case 'main_panel':
+      return {
+        category: 'FACILITY MAIN PANEL',
+        rating: '120% Busbar Interconnection Compliant',
+        voltage: `${gridVoltageV}V AC Bus Distribution`,
+        conductor: 'Solar + Grid Interconnection',
+        prompt: 'Click to inspect panel distribution',
+      };
+    case 'grid':
+      return {
+        category: 'UTILITY INTERCONNECT',
+        rating: `${gridVoltageV}V Utility Supply`,
+        voltage: `${gridVoltageV}V Single/Split Phase`,
+        conductor: 'Bi-directional Feed',
+        prompt: 'Click to inspect grid parameters',
+      };
+    case 'load':
+      return {
+        category: 'FACILITY DEMAND',
+        rating: 'Critical & General Loads',
+        voltage: `${gridVoltageV}V AC Circuits`,
+        conductor: 'Subpanel Branch Circuits',
+        prompt: 'Click to inspect facility loads',
+      };
+    case 'grounding':
+      return {
+        category: 'EQUIPOTENTIAL GROUNDING',
+        rating: 'Solid Copper Ground Busbar • UL 467 Listed',
+        voltage: '0V Earth Ground Equipotential Reference',
+        conductor: 'Solid Copper Conductor to Driven Earth Rod',
+        prompt: 'Click to inspect grounding system specs',
+      };
+    default:
+      return {
+        category: 'EQUIPMENT',
+        rating: 'Standard Rating',
+        voltage: `${gridVoltageV}V`,
+        conductor: 'Standard Conductor',
+        prompt: 'Click to inspect component',
+      };
+  }
 }
 
 export function DiagramNodeMesh({
   nodeKey,
   label,
-  sublabel,
+  sublabel: _sublabel,
   position,
   color = '#D97706',
   nodeType = 'breaker',
@@ -28,6 +199,8 @@ export function DiagramNodeMesh({
   const hoveredNodeKey = useCalculatorStore((s) => s.hoveredNodeKey);
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
   const setHoveredNodeKey = useCalculatorStore((s) => s.setHoveredNodeKey);
+  const calculationResult = useCalculatorStore((s) => s.calculationResult);
+  const gridVoltageV = useCalculatorStore((s) => s.gridVoltageV);
 
   const [hovered, setHovered] = useState(false);
   const isSelected = selectedNodeKey === nodeKey;
@@ -35,226 +208,28 @@ export function DiagramNodeMesh({
   const isAnyActive = Boolean(selectedNodeKey || hoveredNodeKey);
   const isDimmed = isAnyActive && !isSelected && !isHovered;
 
-  // Spring physics scaling
+  const dim = NODE_DIMENSIONS[nodeType] || {
+    width: 0.75,
+    height: 0.95,
+    depth: 0.55,
+    isWall: true,
+    yOffset: 1.0,
+  };
+
+  const haloWidth = dim.width + 0.35;
+  const haloHeight = dim.height + 0.35;
+
+  // Spring physics scaling on focus/hover
   useFrame((_, delta) => {
     if (!meshRef.current) return;
     const targetScale = isSelected ? 1.15 : isHovered ? 1.08 : isDimmed ? 0.95 : 1.0;
     meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), delta * 14);
   });
 
-  const renderGeometry = () => {
-    switch (nodeType) {
-      case 'pv':
-        return (
-          <group>
-            {/* Aluminum Outer Mounting Frame */}
-            <mesh rotation={[-0.4, 0, 0]} castShadow receiveShadow>
-              <boxGeometry args={[2.5, 0.08, 1.6]} />
-              <meshStandardMaterial color="#94A3B8" metalness={0.7} roughness={0.3} />
-            </mesh>
-            {/* Dark Blue Crystalline Solar Cells */}
-            <mesh position={[0, 0.05, 0]} rotation={[-0.4, 0, 0]}>
-              <boxGeometry args={[2.38, 0.02, 1.48]} />
-              <meshStandardMaterial
-                color={isSelected || isHovered ? '#0284C7' : '#0F2B5C'}
-                roughness={0.15}
-                metalness={0.6}
-              />
-            </mesh>
-            {/* Busbar grid lines */}
-            <mesh position={[0, 0.065, 0]} rotation={[-0.4, 0, 0]}>
-              <boxGeometry args={[2.35, 0.01, 1.45]} />
-              <meshStandardMaterial color="#CBD5E1" wireframe transparent opacity={0.35} />
-            </mesh>
-            {/* Rear Mounting Strut */}
-            <mesh position={[0, -0.4, -0.5]}>
-              <cylinderGeometry args={[0.04, 0.04, 0.8, 8]} />
-              <meshStandardMaterial color="#64748B" metalness={0.8} />
-            </mesh>
-          </group>
-        );
-
-      case 'inverter':
-        return (
-          <group>
-            {/* Modern White Wall Inverter Chassis */}
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[1.6, 2.2, 0.7]} />
-              <meshStandardMaterial
-                color={isSelected || isHovered ? '#FFFFFF' : '#F8FAFC'}
-                roughness={0.2}
-                metalness={0.2}
-              />
-            </mesh>
-            {/* Subtle Metallic Bevel Rim */}
-            <mesh position={[0, 0, 0]}>
-              <boxGeometry args={[1.62, 2.22, 0.1]} />
-              <meshStandardMaterial color="#E2E8F0" metalness={0.6} roughness={0.3} />
-            </mesh>
-            {/* Dark Status Screen Display */}
-            <mesh position={[0, 0.35, 0.36]}>
-              <planeGeometry args={[0.8, 0.55]} />
-              <meshStandardMaterial color="#0F172A" roughness={0.1} />
-            </mesh>
-            {/* Cyan Telemetry Line on Screen */}
-            <mesh position={[0, 0.35, 0.37]}>
-              <planeGeometry args={[0.65, 0.25]} />
-              <meshStandardMaterial color="#0284C7" emissive="#0284C7" emissiveIntensity={0.6} />
-            </mesh>
-            {/* Status LED */}
-            <mesh position={[0.5, 0.8, 0.36]}>
-              <circleGeometry args={[0.05, 16]} />
-              <meshBasicMaterial color="#059669" />
-            </mesh>
-          </group>
-        );
-
-      case 'battery':
-        return (
-          <group>
-            {/* Clean White Powerwall Enclosure */}
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[1.4, 1.8, 0.6]} />
-              <meshStandardMaterial
-                color={isSelected || isHovered ? '#FFFFFF' : '#F1F5F9'}
-                roughness={0.25}
-                metalness={0.2}
-              />
-            </mesh>
-            {/* Graphite Side Accents */}
-            <mesh position={[-0.71, 0, 0]}>
-              <boxGeometry args={[0.04, 1.75, 0.58]} />
-              <meshStandardMaterial color="#475569" />
-            </mesh>
-            <mesh position={[0.71, 0, 0]}>
-              <boxGeometry args={[0.04, 1.75, 0.58]} />
-              <meshStandardMaterial color="#475569" />
-            </mesh>
-            {/* Glowing Green SOC Bar */}
-            <mesh position={[0, 0.45, 0.31]}>
-              <boxGeometry args={[0.85, 0.08, 0.02]} />
-              <meshStandardMaterial color="#059669" emissive="#059669" emissiveIntensity={0.8} />
-            </mesh>
-          </group>
-        );
-
-      case 'isolator':
-        return (
-          <group>
-            {/* Industrial Weatherproof Enclosure */}
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[0.85, 1.05, 0.55]} />
-              <meshStandardMaterial color="#E2E8F0" roughness={0.3} metalness={0.2} />
-            </mesh>
-            {/* Rotary Switch Base */}
-            <mesh position={[0, 0, 0.29]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.26, 0.26, 0.08, 24]} />
-              <meshStandardMaterial color="#FBBF24" />
-            </mesh>
-            {/* Red Lockable Switch Knob */}
-            <mesh position={[0, 0, 0.35]}>
-              <boxGeometry args={[0.1, 0.36, 0.12]} />
-              <meshStandardMaterial color="#DC2626" />
-            </mesh>
-          </group>
-        );
-
-      case 'spd':
-        return (
-          <group>
-            {/* Modular DIN Rail Surge Protector */}
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[0.8, 0.95, 0.5]} />
-              <meshStandardMaterial color="#F8FAFC" roughness={0.3} />
-            </mesh>
-            {/* Cartridge 1 Indicator */}
-            <mesh position={[-0.18, 0.1, 0.26]}>
-              <boxGeometry args={[0.22, 0.4, 0.04]} />
-              <meshStandardMaterial color="#059669" />
-            </mesh>
-            {/* Cartridge 2 Indicator */}
-            <mesh position={[0.18, 0.1, 0.26]}>
-              <boxGeometry args={[0.22, 0.4, 0.04]} />
-              <meshStandardMaterial color="#059669" />
-            </mesh>
-          </group>
-        );
-
-      case 'panel':
-        return (
-          <group>
-            {/* Steel Subpanel Cabinet */}
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[1.1, 1.6, 0.45]} />
-              <meshStandardMaterial color="#64748B" metalness={0.7} roughness={0.3} />
-            </mesh>
-            {/* Door seam */}
-            <mesh position={[0, 0, 0.23]}>
-              <boxGeometry args={[0.95, 1.45, 0.02]} />
-              <meshStandardMaterial color="#475569" metalness={0.5} roughness={0.4} />
-            </mesh>
-          </group>
-        );
-
-      case 'grid':
-        return (
-          <group>
-            {/* Utility Transformer Post */}
-            <mesh position={[0, 0.6, 0]} castShadow receiveShadow>
-              <cylinderGeometry args={[0.08, 0.15, 1.6, 12]} />
-              <meshStandardMaterial color="#64748B" metalness={0.6} roughness={0.4} />
-            </mesh>
-            {/* Crossarm */}
-            <mesh position={[0, 1.25, 0]}>
-              <boxGeometry args={[1.2, 0.08, 0.08]} />
-              <meshStandardMaterial color="#475569" />
-            </mesh>
-            {/* Insulators */}
-            <mesh position={[-0.5, 1.35, 0]}>
-              <cylinderGeometry args={[0.04, 0.04, 0.14, 8]} />
-              <meshStandardMaterial color="#E2E8F0" />
-            </mesh>
-            <mesh position={[0.5, 1.35, 0]}>
-              <cylinderGeometry args={[0.04, 0.04, 0.14, 8]} />
-              <meshStandardMaterial color="#E2E8F0" />
-            </mesh>
-          </group>
-        );
-
-      case 'load':
-        return (
-          <group>
-            {/* Architectural Building Structure */}
-            <mesh position={[0, 0.35, 0]} castShadow receiveShadow>
-              <boxGeometry args={[1.3, 0.7, 1.1]} />
-              <meshStandardMaterial color="#F8FAFC" roughness={0.3} />
-            </mesh>
-            {/* Roof Pitch */}
-            <mesh position={[0, 0.95, 0]} rotation={[0, Math.PI / 4, 0]}>
-              <coneGeometry args={[1.05, 0.55, 4]} />
-              <meshStandardMaterial color="#475569" roughness={0.5} />
-            </mesh>
-          </group>
-        );
-
-      case 'breaker':
-      default:
-        return (
-          <group>
-            {/* Standard Light Gray DIN-Rail MCB */}
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[0.75, 0.95, 0.55]} />
-              <meshStandardMaterial color="#F1F5F9" roughness={0.25} metalness={0.15} />
-            </mesh>
-            {/* Mechanical Switch Toggle */}
-            <mesh position={[0, 0.12, 0.3]}>
-              <boxGeometry args={[0.2, 0.28, 0.12]} />
-              <meshStandardMaterial color={color} roughness={0.3} />
-            </mesh>
-          </group>
-        );
-    }
-  };
+  const telemetry = useMemo(
+    () => getNodeTelemetry(nodeKey, calculationResult, gridVoltageV),
+    [nodeKey, calculationResult, gridVoltageV]
+  );
 
   return (
     <group
@@ -276,69 +251,81 @@ export function DiagramNodeMesh({
         document.body.style.cursor = 'auto';
       }}
     >
-      {renderGeometry()}
+      <NodeGeometry
+        nodeType={nodeType}
+        nodeKey={nodeKey}
+        isSelected={isSelected}
+        isHovered={isHovered}
+        color={color}
+      />
 
-      {/* Subtle selection pedestal ring on ground */}
+      {/* Architectural Wall Backplate Glow Halo (Only shown on hover or selection) */}
       {(isSelected || isHovered) && (
-        <mesh position={[0, -0.62, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.9, 1.15, 32]} />
-          <meshBasicMaterial color={color} transparent opacity={0.6} side={THREE.DoubleSide} />
-        </mesh>
+        <>
+          {dim.isWall ? (
+            <group position={[0, 0, -0.08]}>
+              {/* Mounting Backplate Glow Backdrop */}
+              <mesh>
+                <planeGeometry args={[haloWidth, haloHeight]} />
+                <meshBasicMaterial
+                  color={isSelected ? '#F59E0B' : '#38BDF8'}
+                  transparent
+                  opacity={isSelected ? 0.45 : 0.25}
+                  side={THREE.DoubleSide}
+                />
+              </mesh>
+              {/* Architectural Bracket Outline Border */}
+              <lineSegments>
+                <edgesGeometry args={[new THREE.PlaneGeometry(haloWidth, haloHeight)]} />
+                <lineBasicMaterial
+                  color={isSelected ? '#F59E0B' : '#38BDF8'}
+                  transparent
+                  opacity={isSelected ? 0.9 : 0.6}
+                />
+              </lineSegments>
+            </group>
+          ) : (
+            /* Outdoor Ground Footprint Ring for ground-mounted equipment */
+            <mesh
+              position={[0, nodeType === 'pv' ? -1.05 : nodeType === 'grid' ? -1.55 : -0.75, 0]}
+              rotation={[-Math.PI / 2, 0, 0]}
+            >
+              <ringGeometry args={[0.9, 1.15, 32]} />
+              <meshBasicMaterial
+                color={isSelected ? '#F59E0B' : color}
+                transparent
+                opacity={0.6}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+          )}
+        </>
       )}
 
-      {/* Details Tooltip: ONLY shown when hovered or selected */}
-      {(isHovered || isSelected) && (
+      {/* Sleek Floating Hover Badge: ONLY shown when hovering in idle mode (disappears when clicked or modal is open) */}
+      {isHovered && !selectedNodeKey && (
         <Html
-          position={[
-            0,
-            nodeType === 'inverter'
-              ? 2.2
-              : nodeType === 'battery'
-              ? 1.9
-              : nodeType === 'pv'
-              ? 1.7
-              : 1.3,
-            0,
-          ]}
+          position={[0, dim.yOffset + 0.35, 0]}
           center
-          distanceFactor={18}
-          className="pointer-events-none select-none z-50"
+          distanceFactor={16}
+          zIndexRange={[15, 0]}
+          className="pointer-events-none select-none"
         >
-          <div
-            className={`flex flex-col items-center px-3 py-2 rounded-xl border text-center whitespace-nowrap shadow-xl transition-all duration-200 transform scale-105 backdrop-blur-md ${
-              isSelected
-                ? 'bg-amber-600 text-white border-amber-400 ring-4 ring-amber-500/25'
-                : 'bg-slate-900/95 dark:bg-slate-800/95 text-white border-slate-700/80 ring-2 ring-slate-900/30'
-            }`}
-          >
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-              <span className="text-[11px] font-mono font-bold tracking-wide uppercase">
-                {label}
-              </span>
+          <div className="pointer-events-none select-none px-3 py-1.5 rounded-lg border border-slate-700/80 bg-slate-900/90 text-white shadow-xl backdrop-blur-md whitespace-nowrap animate-in fade-in duration-150">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+              <div className="flex items-baseline gap-1.5 font-mono text-[11px]">
+                <span className="font-bold text-white tracking-tight">{label}</span>
+                <span className="text-slate-500">•</span>
+                <span className="text-amber-300 font-semibold">{telemetry.rating}</span>
+              </div>
             </div>
-            {sublabel && (
-              <span
-                className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded ${
-                  isSelected
-                    ? 'bg-amber-700/70 text-amber-100'
-                    : 'bg-slate-800 dark:bg-slate-900/80 text-amber-300 border border-slate-700'
-                }`}
-              >
-                {sublabel}
-              </span>
-            )}
-            <span className="text-[8px] font-mono text-slate-300 dark:text-slate-400 mt-1 uppercase tracking-wider">
-              {isSelected ? 'Focused • Click to inspect' : 'Click to inspect specs'}
-            </span>
-            {/* Pointer arrow tip */}
-            <div
-              className={`w-2 h-2 rotate-45 border-b border-r -mb-3 mt-1.5 ${
-                isSelected
-                  ? 'bg-amber-600 border-amber-400'
-                  : 'bg-slate-900/95 dark:bg-slate-800/95 border-slate-700'
-              }`}
-            />
+            <div className="text-[9px] font-mono text-slate-400 mt-0.5 flex items-center justify-between gap-3">
+              <span className="text-slate-400">{telemetry.category}</span>
+              <span className="text-sky-300">Click to inspect</span>
+            </div>
+            {/* Subtle Downward Pointer Indicator */}
+            <div className="w-2 h-2 mx-auto rotate-45 border-b border-r border-slate-700/80 bg-slate-900/90 -mb-2.5 mt-1" />
           </div>
         </Html>
       )}

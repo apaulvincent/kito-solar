@@ -37,4 +37,9 @@ export interface CableConnection {
   type: 'dc' | 'ac' | 'battery' | 'ground';
   color: string;
   bidirectional?: boolean;
+  waypoints?: [number, number, number][];
+}
+
+export interface ConduitRoute extends CableConnection {
+  waypoints: [number, number, number][];
 }

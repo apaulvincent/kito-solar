@@ -103,6 +103,16 @@ export interface StringSizingResult {
   explanation: string;
 }
 
+export interface MountingItemDimensions {
+  lengthMm?: number;
+  widthMm?: number;
+  heightMm?: number;
+  thicknessMm?: number;
+  holeDiameterMm?: number;
+  fastenerSpec?: string;
+  torqueNm?: string;
+}
+
 export interface MountingItem {
   key: string;
   name: string;
@@ -112,6 +122,10 @@ export interface MountingItem {
   explanation: string;
   calculationBasis: string;
   imagePath: string;
+  dimensions?: MountingItemDimensions;
+  material?: string;
+  finish?: string;
+  standards?: string[];
 }
 
 export interface MountingCalculationResult {

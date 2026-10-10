@@ -13,7 +13,7 @@ export function SystemSummary() {
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-card dark:shadow-card-dark transition-colors duration-200">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
-          <span className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 font-bold">
+          <span className="text-[10px] font-mono tracking-wider uppercase text-amber-700 dark:text-amber-400 font-bold">
             TELEMETRY HUD
           </span>
           <h2 className="text-base font-bold text-slate-900 dark:text-white">Live Engineering Summary</h2>
@@ -46,12 +46,12 @@ export function SystemSummary() {
         <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 hover:bg-slate-50 dark:hover:bg-slate-950/80 transition-colors">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
             <span className="text-[11px] font-mono font-medium">Array Peak</span>
-            <Sun className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <Sun className="w-4 h-4 text-amber-700 dark:text-amber-400" />
           </div>
           <div className="text-2xl font-black font-mono text-slate-900 dark:text-white">
             {summary.totalArrayPowerKw} <span className="text-xs font-normal text-slate-400">kWp</span>
           </div>
-          <div className="text-[10px] font-mono text-amber-700 dark:text-amber-400 font-semibold mt-1 truncate">
+          <div className="text-[10px] font-mono text-amber-700 dark:text-amber-400 font-semibold mt-1 break-words">
             {summary.totalPanels}x {summary.moduleModel}
           </div>
         </div>
@@ -65,7 +65,7 @@ export function SystemSummary() {
           <div className="text-2xl font-black font-mono text-slate-900 dark:text-white">
             {summary.inverterPowerKw} <span className="text-xs font-normal text-slate-400">kW</span>
           </div>
-          <div className="text-[10px] font-mono text-sky-700 dark:text-sky-400 font-semibold mt-1 truncate">
+          <div className="text-[10px] font-mono text-sky-700 dark:text-sky-400 font-semibold mt-1 break-words">
             {summary.inverterModel}
           </div>
         </div>
@@ -74,7 +74,7 @@ export function SystemSummary() {
         <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 hover:bg-slate-50 dark:hover:bg-slate-950/80 transition-colors">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
             <span className="text-[11px] font-mono font-medium">DC/AC Ratio</span>
-            <Ratio className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <Ratio className="w-4 h-4 text-amber-700 dark:text-amber-400" />
           </div>
           <div className="text-2xl font-black font-mono text-slate-900 dark:text-white">
             {summary.dcAcRatio}
@@ -96,7 +96,7 @@ export function SystemSummary() {
               : '0.0'}{' '}
             <span className="text-xs font-normal text-slate-400">kWh</span>
           </div>
-          <div className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold mt-1 truncate">
+          <div className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold mt-1 break-words">
             {calculationResult.battery.hasBattery
               ? `${calculationResult.battery.bankVoltageV}V / ${calculationResult.battery.totalCapacityAh}Ah`
               : 'Grid-Tied Direct'}
@@ -107,13 +107,13 @@ export function SystemSummary() {
         <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 hover:bg-slate-50 dark:hover:bg-slate-950/80 transition-colors">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
             <span className="text-[11px] font-mono font-medium">DC Breaker</span>
-            <Zap className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <Zap className="w-4 h-4 text-amber-700 dark:text-amber-400" />
           </div>
-          <div className="text-2xl font-black font-mono text-amber-600 dark:text-amber-400">
+          <div className="text-2xl font-black font-mono text-amber-700 dark:text-amber-400">
             {calculationResult.dc.breakerRatingA}{' '}
             <span className="text-xs font-normal text-slate-400">A</span>
           </div>
-          <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 mt-1 truncate">
+          <div className="text-[10px] font-mono text-slate-600 dark:text-slate-400 mt-1">
             Load: {calculationResult.dc.computedCurrentA} A
           </div>
         </div>
@@ -128,7 +128,7 @@ export function SystemSummary() {
             {calculationResult.ac.breakerRatingA}{' '}
             <span className="text-xs font-normal text-slate-400">A</span>
           </div>
-          <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 mt-1 truncate">
+          <div className="text-[10px] font-mono text-slate-600 dark:text-slate-400 mt-1">
             Load: {calculationResult.ac.computedCurrentA} A
           </div>
         </div>

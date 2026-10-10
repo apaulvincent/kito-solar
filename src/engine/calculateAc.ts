@@ -2,13 +2,14 @@
 import { SolarInverterRecord } from '@/types/supabase';
 import { AcCalculationResult } from '@/types/calculator';
 import { ruleService } from '@/services/ruleService';
+import { parseNumericValue } from '@/lib/utils';
 
 export function calculateAc(
   inverter: SolarInverterRecord,
   gridVoltageV: number = 230,
   mainBreakerA: number | null = null
 ): AcCalculationResult {
-  const rawCurrentA = Number(inverter.max_ac_current_a) || Number(inverter.rated_ac_current_a) || 0;
+  const rawCurrentA = parseNumericValue(inverter.max_ac_current_a) || parseNumericValue(inverter.rated_ac_current_a) || 0;
   // Continuous duty factor of 125%
   const computedCurrentA = Number((rawCurrentA * 1.25).toFixed(3));
 

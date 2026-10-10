@@ -5,12 +5,7 @@ import { SystemSummary } from '@/components/summary/SystemSummary';
 import { SolarDiagramCanvas } from '@/components/diagram/SolarDiagramCanvas';
 import { DiagramComponentList } from '@/components/diagram/DiagramComponentList';
 import { ConfigurationPanel } from '@/components/config/ConfigurationPanel';
-import { PvSizingCard } from '@/components/results/PvSizingCard';
-import { DcResultsCard } from '@/components/results/DcResultsCard';
-import { AcResultsCard } from '@/components/results/AcResultsCard';
-import { BatteryResultsCard } from '@/components/results/BatteryResultsCard';
-import { MountingBomCard } from '@/components/results/MountingBomCard';
-import { WarningsPanel } from '@/components/results/WarningsPanel';
+import { CalculationWorkbench } from '@/components/results/CalculationWorkbench';
 import { ComponentInspector } from '@/components/inspector/ComponentInspector';
 import { EngineeringDisclaimer } from '@/components/common/EngineeringDisclaimer';
 
@@ -37,25 +32,16 @@ export function App() {
           <DiagramComponentList />
         </section>
 
-        {/* Step 3: Equipment Configurator & Calculation Results (Widescreen 3-Column Studio) */}
+        {/* Step 3: Equipment Configurator & Segmented Calculation Workbench (2-Column Studio) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Column 1 (lg: 5 cols, xl: 4 cols): Configuration Workbench */}
-          <section className="lg:col-span-5 xl:col-span-4 space-y-6" aria-label="Configuration Panel">
+          {/* Column 1 (lg: 4 cols): Configuration Workbench */}
+          <section className="lg:col-span-4 space-y-6" aria-label="Configuration Panel">
             <ConfigurationPanel />
           </section>
 
-          {/* Column 2 (lg: 7 cols, xl: 4 cols): Electrical Protection & Schedules */}
-          <section className="lg:col-span-7 xl:col-span-4 space-y-6" aria-label="Electrical Protection Schedules">
-            <DcResultsCard />
-            <AcResultsCard />
-            <BatteryResultsCard />
-          </section>
-
-          {/* Column 3 (lg: 12 cols, xl: 4 cols): Compliance Warnings, PV Array Sizing & Mounting BOM */}
-          <section className="lg:col-span-12 xl:col-span-4 space-y-6" aria-label="Array Sizing, Compliance and BOM">
-            <WarningsPanel />
-            <PvSizingCard />
-            <MountingBomCard />
+          {/* Column 2 (lg: 8 cols): Segmented Engineering Calculation Workbench */}
+          <section className="lg:col-span-8 space-y-6" aria-label="Engineering Calculation Workbench">
+            <CalculationWorkbench />
           </section>
         </div>
 

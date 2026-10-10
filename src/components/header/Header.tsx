@@ -1,6 +1,6 @@
 // src/components/header/Header.tsx
 import { useState } from 'react';
-import { RotateCcw, HelpCircle, Zap, Sun, Moon } from 'lucide-react';
+import { RotateCcw, HelpCircle, Zap, Sun, Moon, Coffee } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { CalculationHelpModal } from './CalculationHelpModal';
 
@@ -64,6 +64,18 @@ export function Header() {
                 {calculationResult.summary.totalArrayPowerKw} kWp
               </span>
             </div>
+
+            {/* Buy Me a Coffee */}
+            <a
+              href="https://ko-fi.com/mepapap"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Support development on Ko-fi"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-xs font-mono font-medium text-amber-800 dark:text-amber-300 shadow-sm transition-colors"
+            >
+              <Coffee className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <span className="hidden sm:inline">Buy me coffee</span>
+            </a>
 
             {/* Theme Toggle Button */}
             <button

@@ -15,6 +15,8 @@ import batteriesSeed from '@/data/seed/batteries.json';
 import { catalogService } from '@/services/catalogService';
 import { isSupabaseConfigured } from '@/lib/supabase';
 
+export type WorkbenchTabKey = 'electrical' | 'pv_sizing' | 'mounting_bom' | 'warnings';
+
 interface CalculatorState {
   // Catalogs
   inverters: SolarInverterRecord[];
@@ -37,6 +39,7 @@ interface CalculatorState {
   hoveredNodeKey: DiagramNodeKey | null;
   isInspectorOpen: boolean;
   theme: 'dark' | 'light';
+  activeWorkbenchTab: WorkbenchTabKey;
 
   // Derived Calculation
   calculationResult: SystemCalculationResult;
@@ -55,14 +58,14 @@ interface CalculatorState {
   setIsInspectorOpen: (open: boolean) => void;
   setTheme: (theme: 'light' | 'dark') => void;
   toggleTheme: () => void;
+  setActiveWorkbenchTab: (tab: WorkbenchTabKey) => void;
   resetToDefaults: () => void;
 }
 
 const getInitialTheme = (): 'light' | 'dark' => {
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem('kito_solar_theme');
-    if (saved === 'light' || saved === 'dark') return saved;
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+    if (saved === 'dark') return 'dark';
   }
   return 'light';
 };
@@ -128,6 +131,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
   hoveredNodeKey: null,
   isInspectorOpen: false,
   theme: initialTheme,
+  activeWorkbenchTab: 'electrical',
 
   calculationResult: compute(
     defaultInverter,
@@ -308,6 +312,31 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
       selectedNodeKey: key,
       isInspectorOpen: Boolean(key),
     });
+    if (key) {
+      if (key === 'pv_array') {
+        set({ activeWorkbenchTab: 'pv_sizing' });
+      } else if (
+        key === 'battery' ||
+        key === 'battery_breaker' ||
+        key === 'battery_wire' ||
+        key === 'dc_breaker' ||
+        key === 'dc_isolator' ||
+        key === 'dc_spd' ||
+        key === 'dc_conduit' ||
+        key === 'inverter' ||
+        key === 'ac_breaker' ||
+        key === 'ac_isolator' ||
+        key === 'ac_spd' ||
+        key === 'ats' ||
+        key === 'eps_breaker' ||
+        key === 'main_panel' ||
+        key === 'grid' ||
+        key === 'load' ||
+        key === 'grounding'
+      ) {
+        set({ activeWorkbenchTab: 'electrical' });
+      }
+    }
   },
 
   setHoveredNodeKey: (key) => {
@@ -316,6 +345,10 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
 
   setIsInspectorOpen: (open) => {
     set({ isInspectorOpen: open });
+  },
+
+  setActiveWorkbenchTab: (tab) => {
+    set({ activeWorkbenchTab: tab });
   },
 
   setTheme: (theme) => {
@@ -361,6 +394,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
       selectedNodeKey: null,
       hoveredNodeKey: null,
       isInspectorOpen: false,
+      activeWorkbenchTab: 'electrical',
       calculationResult: compute(
         defaultInverter,
         defaultModule,

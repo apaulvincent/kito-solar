@@ -12,6 +12,7 @@ import { calculateBattery } from './calculateBattery';
 import { calculatePvSizing } from './calculatePvSizing';
 import { calculateStringSizing } from './calculateStringSizing';
 import { calculateMounting } from './calculateMounting';
+import { parseNumericValue } from '@/lib/utils';
 
 export function calculateSystem(input: CalculationInput): SystemCalculationResult {
   const {
@@ -136,9 +137,9 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
   // Summary Metrics
   const summary = {
     inverterModel: inverter.model,
-    inverterPowerKw: Number(((Number(inverter.rated_ac_power_w) || 0) / 1000).toFixed(1)),
+    inverterPowerKw: Number(((parseNumericValue(inverter.rated_ac_power_w) / 1000) || 0).toFixed(1)),
     moduleModel: module.model,
-    modulePowerW: Number(module.pv_wattage_w) || 0,
+    modulePowerW: parseNumericValue(module.pv_wattage_w) || 0,
     totalPanels: pvSizing.activePanelCount,
     totalArrayPowerKw: Number((pvSizing.totalPvPowerW / 1000).toFixed(2)),
     dcAcRatio: pvSizing.dcAcRatio,

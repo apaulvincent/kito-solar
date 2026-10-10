@@ -1,31 +1,82 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 280" width="100%" height="100%" fill="none">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0F172A"/>
-      <stop offset="100%" stop-color="#090D16"/>
+    <linearGradient id="endAlFace" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="35%" stop-color="#E2E8F0"/>
+      <stop offset="70%" stop-color="#CBD5E1"/>
+      <stop offset="100%" stop-color="#94A3B8"/>
     </linearGradient>
-    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(148, 163, 184, 0.08)" stroke-width="0.5"/>
-    </pattern>
+    <linearGradient id="endAlTop" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#CBD5E1"/>
+      <stop offset="50%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+    <linearGradient id="endAlSide" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#64748B"/>
+      <stop offset="50%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    <linearGradient id="boltSteel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="45%" stop-color="#94A3B8"/>
+      <stop offset="85%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <filter id="endShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0F172A" flood-opacity="0.22"/>
+    </filter>
   </defs>
-  <rect width="200" height="200" rx="12" fill="url(#bgGrad)"/>
-  <rect width="200" height="200" rx="12" fill="url(#grid)"/>
-  <rect x="2" y="2" width="196" height="196" rx="10" fill="none" stroke="rgba(148, 163, 184, 0.15)" stroke-width="1"/>
-  
-  <!-- Header Bar -->
-  <rect x="12" y="12" width="176" height="20" rx="4" fill="rgba(30, 41, 59, 0.7)"/>
-  <text x="20" y="26" fill="#94A3B8" font-size="8" font-weight="700" font-family="monospace" letter-spacing="1">MOUNTING</text>
-  <text x="180" y="26" text-anchor="end" fill="#94A3B8" font-size="8" font-family="monospace">30-40MM FRAME</text>
 
-  <!-- Technical Schematic Icon -->
-  <g transform="translate(0, 0)">
-    <path d="M65 60 L120 60 L120 78 L95 78 L95 130 L65 130 Z" fill="#334155" stroke="#94A3B8" stroke-width="2"/>
-           <circle cx="80" cy="95" r="5" fill="#0F172A" stroke="#F59E0B" stroke-width="1.5"/>
-           <line x1="120" y1="78" x2="155" y2="78" stroke="#F59E0B" stroke-width="3"/>
-           <text x="100" y="150" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="monospace">TERMINAL CLAMP</text>
+  <!-- Ground Shadow -->
+  <ellipse cx="160" cy="235" rx="90" ry="18" fill="#0F172A" opacity="0.16" filter="blur(5px)"/>
+
+  <!-- T-Nut Slider (Beneath Rail Channel) -->
+  <g transform="translate(160, 215)" opacity="0.95">
+    <polygon points="-35,0 35,0 28,15 -28,15" fill="#334155" stroke="#1E293B" stroke-width="1"/>
+    <ellipse cx="0" cy="8" rx="8" ry="4" fill="#0F172A"/>
   </g>
 
-  <!-- Title Pill -->
-  <rect x="12" y="172" width="176" height="18" rx="4" fill="rgba(15, 23, 42, 0.85)" stroke="rgba(148, 163, 184, 0.2)" stroke-width="1"/>
-  <text x="100" y="184" text-anchor="middle" fill="#F8FAFC" font-size="8" font-weight="600" font-family="system-ui, sans-serif" letter-spacing="0.5">SOLAR PANEL END-CLAMP</text>
+  <!-- Anodized Aluminum End-Clamp Body (Stepped Z-Profile) -->
+  <g filter="url(#endShadow)">
+    <!-- Base Plate Section (Rests over Rail Channel) -->
+    <polygon points="110,130 190,130 220,105 140,105" fill="url(#endAlTop)" stroke="#CBD5E1" stroke-width="1"/>
+    <polygon points="110,130 190,130 190,150 110,150" fill="url(#endAlFace)" stroke="#94A3B8" stroke-width="1"/>
+    <polygon points="190,130 220,105 220,125 190,150" fill="url(#endAlSide)" stroke="#475569" stroke-width="1"/>
+
+    <!-- Upright Stepped Leg (Reaches Frame Lip Height ~35mm) -->
+    <polygon points="75,85 110,85 110,150 75,150" fill="url(#endAlFace)" stroke="#94A3B8" stroke-width="1"/>
+    <polygon points="75,85 105,60 140,60 110,85" fill="url(#endAlTop)" stroke="#CBD5E1" stroke-width="1"/>
+    <polygon points="110,85 140,60 140,105 110,130" fill="url(#endAlSide)" stroke="#475569" stroke-width="1"/>
+
+    <!-- Clamping Overhang Lip (Hooks over Solar Panel Frame) -->
+    <polygon points="45,85 75,85 105,60 75,60" fill="url(#endAlTop)" stroke="#CBD5E1" stroke-width="1"/>
+    <polygon points="45,85 75,85 75,98 45,98" fill="url(#endAlFace)" stroke="#94A3B8" stroke-width="1"/>
+    <polygon points="45,98 75,98 75,103 45,103" fill="#475569"/>
+
+    <!-- Serrated Anti-Slip Gripper Grooves on Underside of Lip -->
+    <line x1="48" y1="98" x2="72" y2="98" stroke="#0F172A" stroke-width="1.5" stroke-dasharray="2 2"/>
+
+    <!-- Central Stainless Steel M8 Socket Head Cap Screw -->
+    <g transform="translate(165, 115)">
+      <!-- Bolt Head Body -->
+      <ellipse cx="0" cy="0" rx="16" ry="9" fill="url(#boltSteel)" stroke="#334155" stroke-width="1.2"/>
+      <path d="M -16 0 L -16 15 C -16 20, 16 20, 16 15 L 16 0 Z" fill="url(#boltSteel)" stroke="#334155" stroke-width="1.2"/>
+      <ellipse cx="0" cy="0" rx="16" ry="9" fill="#FFFFFF" opacity="0.3"/>
+      <!-- Knurled Texture -->
+      <line x1="-14" y1="3" x2="-14" y2="13" stroke="#64748B" stroke-width="1"/>
+      <line x1="-8" y1="5" x2="-8" y2="15" stroke="#64748B" stroke-width="1"/>
+      <line x1="0" y1="7" x2="0" y2="17" stroke="#64748B" stroke-width="1"/>
+      <line x1="8" y1="5" x2="8" y2="15" stroke="#64748B" stroke-width="1"/>
+      <line x1="14" y1="3" x2="14" y2="13" stroke="#64748B" stroke-width="1"/>
+      <!-- Hex Socket Drive -->
+      <polygon points="0,-4 5,-1 5,5 0,8 -5,5 -5,-1" fill="#0F172A"/>
+      <polygon points="0,-3 3,-1 3,4 0,6 -3,4 -3,-1" fill="#1E293B"/>
+    </g>
+  </g>
+
+  <!-- Technical Spec Indicator Tag -->
+  <g transform="translate(20, 24)">
+    <rect x="0" y="0" width="115" height="20" rx="4" fill="#0F172A" opacity="0.85"/>
+    <text x="57" y="14" fill="#F59E0B" font-family="system-ui, sans-serif" font-size="10" font-weight="700" text-anchor="middle" letter-spacing="0.5">30-40MM END-CLAMP</text>
+  </g>
 </svg>

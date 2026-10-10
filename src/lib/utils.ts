@@ -20,3 +20,44 @@ export function formatAmps(amps: number): string {
 export function formatVolts(volts: number): string {
   return `${volts.toFixed(volts % 1 === 0 ? 0 : 1)} V`;
 }
+
+/**
+ * Parses numeric values safely from either pure numbers or string ratings/ranges
+ * (e.g., '7.6/7.2', '8.4/8', '390-420', '300-6000', '13+13').
+ */
+export function parseNumericValue(
+  val: number | string | null | undefined,
+  strategy: 'max' | 'min' | 'first' = 'max'
+): number {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  const str = String(val).trim();
+  if (!str) return 0;
+
+  const num = Number(str);
+  if (!isNaN(num)) return num;
+
+  if (str.includes('/')) {
+    const parts = str.split('/').map((p) => Number(p.trim())).filter((n) => !isNaN(n));
+    if (parts.length > 0) {
+      return strategy === 'max' ? Math.max(...parts) : parts[0];
+    }
+  }
+
+  if (str.includes('-') && !str.startsWith('-')) {
+    const parts = str.split('-').map((p) => Number(p.trim())).filter((n) => !isNaN(n));
+    if (parts.length > 0) {
+      return strategy === 'max' ? Math.max(...parts) : parts[0];
+    }
+  }
+
+  if (str.includes('+')) {
+    const parts = str.split('+').map((p) => Number(p.trim())).filter((n) => !isNaN(n));
+    if (parts.length > 0) {
+      return parts.reduce((a, b) => a + b, 0);
+    }
+  }
+
+  const match = str.match(/[-+]?\d*\.?\d+/);
+  return match ? Number(match[0]) : 0;
+}

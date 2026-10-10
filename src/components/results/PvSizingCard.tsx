@@ -13,11 +13,11 @@ export function PvSizingCard() {
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-card dark:shadow-card-dark space-y-5 transition-colors duration-200">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 shadow-sm">
+          <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 shadow-sm">
             <Sun className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 font-bold">
+            <span className="text-[10px] font-mono tracking-wider uppercase text-amber-700 dark:text-amber-400 font-bold">
               ARRAY CAPACITY & STRING TOPOLOGY
             </span>
             <h3 className="text-base font-bold text-slate-900 dark:text-white">Photovoltaic Sizing Matrix</h3>
@@ -26,7 +26,7 @@ export function PvSizingCard() {
 
         <button
           onClick={() => setSelectedNodeKey('pv_array')}
-          className="text-xs font-mono font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 transition-colors"
+          className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 hover:underline flex items-center gap-1 transition-colors"
         >
           Locate on 3D Diagram <ArrowRight className="w-3.5 h-3.5" />
         </button>
@@ -144,7 +144,7 @@ export function PvSizingCard() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-mono">
           <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-subtle">
             <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Recommended Strings</span>
-            <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
+            <span className="text-sm font-bold text-amber-700 dark:text-amber-400">
               {stringSizing.recommendedStrings} Strings
             </span>
           </div>
@@ -158,7 +158,7 @@ export function PvSizingCard() {
 
           <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-subtle">
             <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Operating Vmp per String</span>
-            <span className="text-sm font-bold text-sky-600 dark:text-sky-400">
+            <span className="text-sm font-bold text-sky-700 dark:text-sky-400">
               {stringSizing.voltagePerStringVmp} V
             </span>
           </div>
