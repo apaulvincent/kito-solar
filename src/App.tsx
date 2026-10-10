@@ -13,6 +13,7 @@ import { CalculationWorkbench } from '@/components/results/CalculationWorkbench'
 import { ComponentInspector } from '@/components/inspector/ComponentInspector';
 import { EngineeringDisclaimer } from '@/components/common/EngineeringDisclaimer';
 import { ArrowLeft, Box } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 
 export function App() {
   const initializeCatalog = useCalculatorStore((state) => state.initializeCatalog);
@@ -114,6 +115,9 @@ export function App() {
 
       {/* Slide-out Component Inspector Modal */}
       <ComponentInspector />
+
+      {/* Vercel Web Analytics */}
+      <Analytics />
     </div>
   );
 }
