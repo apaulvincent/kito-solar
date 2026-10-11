@@ -151,35 +151,68 @@ export function AuthPage({ defaultMode = 'signin' }: AuthPageProps) {
 
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100/80 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-mono text-[10px] font-bold uppercase tracking-wider mb-3 border border-indigo-200 dark:border-indigo-800">
               <Shield className="w-3 h-3 text-indigo-500" />
-              Easy Size your PV system
+              {isSignUp ? 'Solar PV Engineering Studio' : 'Saved Projects & Engineering Hub'}
             </div>
 
             <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-snug">
-              Everything your{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-amber-500">
-                solar installation
-              </span>{' '}
-              needs in one place.
+              {isSignUp ? (
+                <>
+                  Precision PV sizing &{' '}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-amber-500">
+                    electrical design
+                  </span>{' '}
+                  in one studio.
+                </>
+              ) : (
+                <>
+                  Welcome back to your{' '}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-amber-500">
+                    solar engineering
+                  </span>{' '}
+                  studio.
+                </>
+              )}
             </h2>
 
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-3 leading-relaxed">
-              A comprehensive guide for building solar systems. KitoSolar gives engineers, installers, and project owners a modern workspace to simulate 3D equipment layouts, review recommended protection sequences, and prepare planning bills of materials.
+              {isSignUp
+                ? 'Built for solar engineers, installers, and system designers. Calculate string configurations, verify DC and AC protection schedules, simulate 3D plant-room layouts, and generate itemized mounting hardware BOMs.'
+                : 'Sign in to access your saved setups, reload equipment backboards into the 3D simulator, adjust electrical protection parameters, and export updated engineering schedules.'}
             </p>
           </div>
 
           <div className="space-y-3 pt-6 border-t border-slate-200/80 dark:border-slate-800">
-            <div className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-              <span>Interactive 3D Wall CAD & Conduit Simulator</span>
-            </div>
-            <div className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-              <span>Recommended DC Isolator → DC MCB Protection Sequence</span>
-            </div>
-            <div className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-              <span>Accurate Mounting BOM & Hardware Specs</span>
-            </div>
+            {isSignUp ? (
+              <>
+                <div className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>Interactive 3D Wall CAD & Conduit Simulator</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>Recommended DC Isolator → DC MCB Protection Sequence</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>Accurate Mounting BOM & Hardware Specs</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>One-Click Project Reloading into Studio Workbench</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>Synchronized 2D Single-Line Schematics & 3D Wall CAD</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>Technical Sizing & Mounting BOM PDF Exports</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -269,8 +302,8 @@ export function AuthPage({ defaultMode = 'signin' }: AuthPageProps) {
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       {isSignUp
-                        ? 'Register to save your project planning configurations.'
-                        : 'Sign in to access your saved solar projects.'}
+                        ? 'Register to save up to 20 project configurations and sync across devices.'
+                        : 'Sign in to access your saved solar projects and engineering workbench.'}
                     </p>
                   </div>
 
@@ -459,7 +492,9 @@ export function AuthPage({ defaultMode = 'signin' }: AuthPageProps) {
                 {/* Mode switch */}
                 <div className="space-y-3 pt-2 text-center">
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    After creating your account, your solar designs, calculations, and BOM exports are saved securely in the cloud.
+                    {isSignUp
+                      ? 'Creating an account lets you save up to 20 complete solar sizing configurations, reload them anytime, and export technical PDF schedules.'
+                      : 'Pick up where you left off with full access to your saved solar designs and export history.'}
                   </p>
 
                   <div className="text-xs text-slate-600 dark:text-slate-400">
