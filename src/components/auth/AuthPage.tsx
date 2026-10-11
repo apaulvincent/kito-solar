@@ -425,9 +425,6 @@ export function AuthPage({ defaultMode = 'signin' }: AuthPageProps) {
                         placeholder="e.g. Engr. Juan Dela Cruz"
                         className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
                       />
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
-                        Optional. If left blank, a random solar-themed alias (e.g. Solar Spark, Sun Voltage, Electrical Pioneer) will be assigned automatically.
-                      </p>
                     </div>
                   )}
 
