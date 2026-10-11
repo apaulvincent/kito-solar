@@ -1,5 +1,5 @@
-// src/components/common/SaveProjectModal.tsx
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Bookmark,
@@ -150,10 +150,10 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
     setActiveView('account');
   };
 
-  return (
+  const modalContent = (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-150"
     >
       <div
         role="dialog"
@@ -424,4 +424,10 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined' && document.body) {
+    return createPortal(modalContent, document.body);
+  }
+
+  return modalContent;
 }
