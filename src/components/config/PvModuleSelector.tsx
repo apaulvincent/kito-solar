@@ -71,32 +71,31 @@ export function PvModuleSelector() {
             renderOption={(mod, { inputValue }) => {
               const w = parseNumericValue(mod.pv_wattage_w);
               return (
-                <div className="w-full py-1 space-y-1">
-                  {/* Full-width module model name without ellipsis */}
+                <div className="w-full py-1.5 space-y-1.5">
+                  {/* Full-width module model name */}
                   <div className="font-mono text-xs font-bold text-slate-900 dark:text-white leading-snug break-words">
                     <HighlightMatch text={mod.model} query={inputValue} />
                   </div>
 
-                  {/* Secondary specs row placed underneath */}
-                  <div className="flex items-center justify-between gap-2 text-[10px] text-slate-500 dark:text-slate-400">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span>Voc: {mod.voc_v}V</span>
-                      <span>•</span>
-                      <span>Vmp: {mod.vmp_v}V</span>
-                      <span>•</span>
-                      <span>Isc: {mod.isc_a}A</span>
-                    </div>
+                  {/* Full-width electrical specs */}
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 flex-wrap">
+                    <span>Voc: {mod.voc_v}V</span>
+                    <span>•</span>
+                    <span>Vmp: {mod.vmp_v}V</span>
+                    <span>•</span>
+                    <span>Isc: {mod.isc_a}A</span>
+                  </div>
 
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <span className="font-mono px-1.5 py-0.5 rounded font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-                        {w} Wp
+                  {/* Chips placed below on their own row */}
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                      {w} Wp
+                    </span>
+                    {mod.efficiency_pct && (
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20">
+                        {mod.efficiency_pct}%
                       </span>
-                      {mod.efficiency_pct && (
-                        <span className="text-[9px] font-mono px-1 py-0.5 rounded font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20">
-                          {mod.efficiency_pct}%
-                        </span>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
               );
