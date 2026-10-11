@@ -146,10 +146,10 @@ if (typeof document !== 'undefined') {
   }
 }
 
-// Initial default equipment selection (Deye Inverter & Aiko Solar Module)
+// Initial default equipment selection (Deye Inverter, Aiko Solar Module, 51.2V Battery)
 const defaultInverter =
   (invertersSeed as SolarInverterRecord[]).find(
-    (i) => i.brand.toUpperCase() === 'DEYE' && i.model === 'SUN-5K-SG05LP1-EU'
+    (i) => i.brand.toUpperCase() === 'DEYE' && i.model === 'SUN-6K-SG05LP1-EU'
   ) ||
   (invertersSeed as SolarInverterRecord[]).find(
     (i) => i.brand.toUpperCase() === 'DEYE'
@@ -166,7 +166,7 @@ const defaultModule =
   (modulesSeed[0] as SolarModuleRecord);
 
 const defaultBattery =
-  (batteriesSeed as BatteryRecord[]).find((b) => b.model === '24V-150 Ah') ||
+  (batteriesSeed as BatteryRecord[]).find((b) => b.model === '51.2V-200 Ah') ||
   (batteriesSeed[0] as BatteryRecord);
 
 function compute(
