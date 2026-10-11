@@ -111,33 +111,5 @@ The application runs immediately using bundled offline data without requiring a 
 
 ---
 
-## 🔬 Regression Fixture Verification
-
-The calculation engine is strictly validated against engineering reference test cases:
-
-| Parameter | Input | Expected Output | Engine Status |
-| :--- | :--- | :--- | :--- |
-| **Inverter** | `SRNE HESP4860S100-H` | 6.0 kW AC / 9.0 kW PV Max | ✅ Verified |
-| **PV Module** | `Canadian Solar CS6R-585MS` | 585 Wp / 14.1 A Isc | ✅ Verified |
-| **Battery** | `24V-150 Ah` | 150 A Discharge | ✅ Verified |
-| **Grid Voltage** | `230 V` | Utility Single-Phase | ✅ Verified |
-| **Main Breaker**| `100 A` | Residential Service | ✅ Verified |
-| **DC Continuous Current** | `14.1 A × 125%` | **17.625 A** | ✅ Verified |
-| **DC Breaker** | Mapped | **20 A** | ✅ Verified |
-| **DC Homerun Cable** | Mapped | **4.0mm² THHN/THWN (12 AWG)** | ✅ Verified |
-| **DC SPD** | Inverter Vmax | **600V DC SPD** | ✅ Verified |
-| **AC Continuous Current** | `28.6 A × 125%` | **35.75 A** | ✅ Verified |
-| **AC Grid Breaker** | Mapped | **40 A** | ✅ Verified |
-| **AC Feeder Cable** | Mapped | **14.0mm² THHN/THWN (8 AWG)** | ✅ Verified |
-| **AC SPD** | Grid Matched | **440V AC SPD** | ✅ Verified |
-| **Recommended Panels** | `6000 W / 585 W` | **10 Modules** | ✅ Verified |
-| **Maximum Panels** | `9000 W / 585 W` | **15 Modules** | ✅ Verified |
-| **Recommended Strings**| Dual MPPT | **2 Strings** (5 panels each) | ✅ Verified |
-| **Battery MCCB** | Battery Spec | **188 A** | ✅ Verified |
-| **Battery Wire** | Mapped | **70 mm² THHN/THWN (2/0 AWG)** | ✅ Verified |
-| **ATS Switch** | Mapped | **100 A ATS** | ✅ Verified |
-
----
-
 ## 📜 Engineering Disclaimer
 Calculations are based on the configured component specifications and this calculator's rule set. Final equipment selection, conductor sizing, protection, grounding, installation, and code compliance must be verified by a qualified electrical professional and applicable local requirements.
