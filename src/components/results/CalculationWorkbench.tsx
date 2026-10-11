@@ -65,7 +65,7 @@ export function CalculationWorkbench() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
           <div>
             <span className="text-[10px] font-mono tracking-wider uppercase text-amber-700 dark:text-amber-400 font-bold block">
-              CALCULATION DECK & ENGINEERING SPECIFICATIONS
+              STEP 2: CALCULATION RESULTS &amp; SCHEDULES
             </span>
             <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
               Engineering Calculation Workbench

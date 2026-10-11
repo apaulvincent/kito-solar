@@ -95,15 +95,21 @@ export function App() {
             <DiagramComponentList />
           </section>
 
-          {/* Step 3: Equipment Configurator & Segmented Calculation Workbench (2-Column Studio) */}
+          {/* Step 3: Equipment Configurator & Segmented Calculation Workbench (2-Column Studio with Independent Scrolling) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Column 1 (lg: 4 cols): Configuration Workbench */}
-            <section className="lg:col-span-4 space-y-6" aria-label="Configuration Panel">
+            {/* Column 1 (lg: 4 cols): Configuration Workbench (Step 1) */}
+            <section
+              className="lg:col-span-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1 space-y-6 overscroll-contain"
+              aria-label="Configuration Panel"
+            >
               <ConfigurationPanel />
             </section>
 
-            {/* Column 2 (lg: 8 cols): Segmented Engineering Calculation Workbench */}
-            <section className="lg:col-span-8 space-y-6" aria-label="Engineering Calculation Workbench">
+            {/* Column 2 (lg: 8 cols): Segmented Engineering Calculation Workbench (Step 2) */}
+            <section
+              className="lg:col-span-8 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1 space-y-6 overscroll-contain"
+              aria-label="Engineering Calculation Workbench"
+            >
               <CalculationWorkbench />
             </section>
           </div>
