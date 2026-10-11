@@ -156,9 +156,9 @@ export function SolarDiagramCanvas() {
       <div className="absolute bottom-2.5 left-3 right-3 z-20 flex items-center justify-between text-[11px] font-mono text-slate-600 dark:text-slate-400 pointer-events-none">
         <span className="hidden sm:inline bg-white/95 dark:bg-slate-900/95 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-sm">
           {viewMode === '3d'
-            ? 'Hover accessories to inspect ratings • Orbit: Drag • Zoom: Scroll • Click node to open full calculations'
+            ? 'Hover accessories to inspect ratings • Flow: 🟡 Solar DC • 🟢 Battery • 🔵 AC • Click node for derivations'
             : viewMode === 'split'
-            ? 'Synchronized 3D CAD & 2D Schematic • Live 2-way hover & selection parity across both views'
+            ? 'Synchronized 3D CAD & 2D Schematic • Flow: 🟡 Solar DC • 🟢 Battery • 🔵 AC'
             : 'Click any schematic component to open equipment sizing and calculation derivations'}
         </span>
         <span className="bg-white/95 dark:bg-slate-900/95 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm font-semibold text-slate-800 dark:text-slate-200 backdrop-blur-sm">

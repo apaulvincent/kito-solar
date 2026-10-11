@@ -1,5 +1,5 @@
 // src/components/diagram/PowerFlowCables.tsx
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
@@ -13,7 +13,6 @@ interface PowerFlowCablesProps {
 }
 
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
-const PARTICLES_PER_ROUTE = 8;
 
 interface RoutePathData {
   cableId: string;
@@ -29,6 +28,13 @@ interface RoutePathData {
   }[];
 }
 
+interface ParticleInstance {
+  pathIndex: number;
+  phase: number;
+  type: string;
+  isCableActive: boolean;
+}
+
 export function PowerFlowCables({
   cables,
   nodePositions,
@@ -37,7 +43,9 @@ export function PowerFlowCables({
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
   const hoveredNodeKey = useCalculatorStore((s) => s.hoveredNodeKey);
 
-  const particlesRef = useRef<THREE.Points>(null);
+  const instancedMeshRef = useRef<THREE.InstancedMesh>(null);
+  const hasInitializedRef = useRef(false);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
 
   // Compute waypoint segments and cumulative distances for each conduit route
   const paths = useMemo<RoutePathData[]>(() => {
@@ -87,54 +95,109 @@ export function PowerFlowCables({
     });
   }, [cables, nodePositions]);
 
-  // Piecewise particle animation navigating along multi-segment conduits and 90-degree corners
-  useFrame((state) => {
-    if (isAnimationPaused || !particlesRef.current) return;
-    const t = state.clock.getElapsedTime();
-    const geo = particlesRef.current.geometry;
-    const pos = geo.attributes.position;
-    if (!pos) return;
+  // Generate particle slots along routes with density proportional to distance
+  const particles = useMemo<ParticleInstance[]>(() => {
+    const list: ParticleInstance[] = [];
 
-    let particleIdx = 0;
+    paths.forEach((path, r) => {
+      if (path.segments.length === 0 || path.totalDistance <= 0.001) return;
+      const cable = cables.find((c) => c.id === path.cableId);
+      const isCableActive = Boolean(
+        cable &&
+          (selectedNodeKey === cable.from ||
+            selectedNodeKey === cable.to ||
+            hoveredNodeKey === cable.from ||
+            hoveredNodeKey === cable.to)
+      );
 
-    for (let r = 0; r < paths.length; r++) {
-      const path = paths[r];
-      if (path.segments.length === 0 || path.totalDistance <= 0.001) continue;
+      // Spacing: roughly 1 bead per 0.65m of conduit, clamped between 2 and 8 beads
+      const count = Math.max(2, Math.min(8, Math.round(path.totalDistance * 1.5)));
 
-      for (let p = 0; p < PARTICLES_PER_ROUTE; p++) {
-        const arrayIdx = particleIdx * 3;
-        particleIdx++;
-        if (arrayIdx + 2 >= pos.array.length) break;
-
-        const phase = p / PARTICLES_PER_ROUTE;
-        const progress = (phase + t * 0.32) % 1.0;
-        const targetDist = progress * path.totalDistance;
-
-        // Find active waypoint segment
-        let activeSeg = path.segments[0];
-        for (let s = 0; s < path.segments.length; s++) {
-          const seg = path.segments[s];
-          if (targetDist >= seg.cumStart && targetDist <= seg.cumEnd) {
-            activeSeg = seg;
-            break;
-          }
-        }
-
-        const segLen = activeSeg.length;
-        const u = segLen > 0 ? (targetDist - activeSeg.cumStart) / segLen : 0;
-        const clampedU = Math.max(0, Math.min(1, u));
-
-        pos.array[arrayIdx] = activeSeg.pStart[0] + clampedU * (activeSeg.pEnd[0] - activeSeg.pStart[0]);
-        pos.array[arrayIdx + 1] = activeSeg.pStart[1] + clampedU * (activeSeg.pEnd[1] - activeSeg.pStart[1]);
-        pos.array[arrayIdx + 2] = activeSeg.pStart[2] + clampedU * (activeSeg.pEnd[2] - activeSeg.pStart[2]);
+      for (let p = 0; p < count; p++) {
+        list.push({
+          pathIndex: r,
+          phase: p / count,
+          type: path.type,
+          isCableActive,
+        });
       }
+    });
+
+    return list;
+  }, [paths, cables, selectedNodeKey, hoveredNodeKey]);
+
+  // Color each instance bead according to current circuit type
+  useEffect(() => {
+    if (!instancedMeshRef.current || particles.length === 0) return;
+    const tempColor = new THREE.Color();
+
+    for (let i = 0; i < particles.length; i++) {
+      const pt = particles[i];
+      const hex =
+        pt.type === 'dc'
+          ? '#F59E0B' // Solar Amber / Gold
+          : pt.type === 'battery'
+          ? '#10B981' // Battery Emerald Green
+          : pt.type === 'ground'
+          ? '#059669' // Ground Forest Green
+          : '#0284C7'; // AC Grid / Load Electric Blue
+
+      tempColor.set(hex);
+      instancedMeshRef.current.setColorAt(i, tempColor);
     }
 
-    pos.needsUpdate = true;
-  });
+    if (instancedMeshRef.current.instanceColor) {
+      instancedMeshRef.current.instanceColor.needsUpdate = true;
+    }
+  }, [particles]);
 
-  const particleCount = useMemo(() => paths.length * PARTICLES_PER_ROUTE, [paths.length]);
-  const particlePositions = useMemo(() => new Float32Array(particleCount * 3), [particleCount]);
+  // Update bead positions and pulsing scale along conduit pathways
+  useFrame((state) => {
+    if (!instancedMeshRef.current || particles.length === 0) return;
+    if (isAnimationPaused && hasInitializedRef.current) return;
+
+    const t = isAnimationPaused ? 0 : state.clock.getElapsedTime();
+
+    for (let i = 0; i < particles.length; i++) {
+      const pt = particles[i];
+      const path = paths[pt.pathIndex];
+      if (!path || path.segments.length === 0 || path.totalDistance <= 0.001) continue;
+
+      const speed = 0.75;
+      const progress = (pt.phase + (t * speed) / path.totalDistance) % 1.0;
+      const targetDist = progress * path.totalDistance;
+
+      let activeSeg = path.segments[0];
+      for (let s = 0; s < path.segments.length; s++) {
+        const seg = path.segments[s];
+        if (targetDist >= seg.cumStart && targetDist <= seg.cumEnd) {
+          activeSeg = seg;
+          break;
+        }
+      }
+
+      const segLen = activeSeg.length;
+      const u = segLen > 0 ? (targetDist - activeSeg.cumStart) / segLen : 0;
+      const clampedU = Math.max(0, Math.min(1, u));
+
+      const x = activeSeg.pStart[0] + clampedU * (activeSeg.pEnd[0] - activeSeg.pStart[0]);
+      const y = activeSeg.pStart[1] + clampedU * (activeSeg.pEnd[1] - activeSeg.pStart[1]);
+      const z = activeSeg.pStart[2] + clampedU * (activeSeg.pEnd[2] - activeSeg.pStart[2]);
+
+      // Position sphere proudly on the front exterior surface of the conduit pipe
+      dummy.position.set(x, y, z + 0.055);
+
+      const baseScale = pt.isCableActive ? 1.3 : 1.0;
+      const pulse = 1.0 + 0.12 * Math.sin(t * 5 + i);
+      dummy.scale.setScalar(baseScale * pulse);
+
+      dummy.updateMatrix();
+      instancedMeshRef.current.setMatrixAt(i, dummy.matrix);
+    }
+
+    instancedMeshRef.current.instanceMatrix.needsUpdate = true;
+    hasInitializedRef.current = true;
+  });
 
   return (
     <group>
@@ -295,22 +358,17 @@ export function PowerFlowCables({
         );
       })}
 
-      {/* Animated Electric Current Energy Flow Particles */}
-      <points key={particleCount} ref={particlesRef}>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[particlePositions, 3]}
-          />
-        </bufferGeometry>
-        <pointsMaterial
-          size={0.16}
-          color="#F59E0B"
-          transparent
-          opacity={0.95}
-          blending={THREE.AdditiveBlending}
-        />
-      </points>
+      {/* Animated Electric Current Energy Flow Pulses (Instanced Luminous Spheres) */}
+      {particles.length > 0 && (
+        <instancedMesh
+          ref={instancedMeshRef}
+          args={[undefined, undefined, particles.length]}
+          frustumCulled={false}
+        >
+          <sphereGeometry args={[0.075, 16, 16]} />
+          <meshBasicMaterial toneMapped={false} />
+        </instancedMesh>
+      )}
     </group>
   );
 }
