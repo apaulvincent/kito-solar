@@ -90,26 +90,30 @@ export function InverterSelector() {
                 inv.battery_type.toLowerCase() !== 'none'
               );
               return (
-                <div className="flex items-center justify-between gap-2 py-0.5">
-                  <div className="min-w-0">
-                    <div className="font-mono text-xs font-bold text-slate-900 dark:text-white truncate">
-                      <HighlightMatch text={inv.model} query={inputValue} />
-                    </div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                <div className="w-full py-1 space-y-1">
+                  {/* Full-width model name without ellipsis */}
+                  <div className="font-mono text-xs font-bold text-slate-900 dark:text-white leading-snug break-words">
+                    <HighlightMatch text={inv.model} query={inputValue} />
+                  </div>
+
+                  {/* Secondary specs row placed underneath */}
+                  <div className="flex items-center justify-between gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span>{inv.mppt_tracker_string_config || 'Standard MPPT'}</span>
                       <span>•</span>
                       <span>{inv.mppt_voltage_range}V MPPT</span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-                      {kw} kW
-                    </span>
-                    {isHybrid && (
-                      <span className="text-[9px] font-mono px-1 py-0.5 rounded font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                        Hybrid
+
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="font-mono px-1.5 py-0.5 rounded font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                        {kw} kW
                       </span>
-                    )}
+                      {isHybrid && (
+                        <span className="text-[9px] font-mono px-1 py-0.5 rounded font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                          Hybrid
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

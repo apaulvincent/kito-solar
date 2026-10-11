@@ -76,23 +76,27 @@ export function BatterySelector() {
                 1000
               ).toFixed(1);
               return (
-                <div className="flex items-center justify-between gap-2 py-0.5">
-                  <div className="min-w-0">
-                    <div className="font-mono text-xs font-bold text-slate-900 dark:text-white truncate">
-                      <HighlightMatch text={bat.model} query={inputValue} />
-                    </div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                <div className="w-full py-1 space-y-1">
+                  {/* Full-width battery model name without ellipsis */}
+                  <div className="font-mono text-xs font-bold text-slate-900 dark:text-white leading-snug break-words">
+                    <HighlightMatch text={bat.model} query={inputValue} />
+                  </div>
+
+                  {/* Secondary specs row placed underneath */}
+                  <div className="flex items-center justify-between gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span>{bat.nominal_voltage_v}V</span>
                       <span>•</span>
                       <span>{bat.capacity_ah}Ah</span>
                       <span>•</span>
                       <span>Breaker: {bat.recommended_breaker_a}A</span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                      {kwh} kWh
-                    </span>
+
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="font-mono px-1.5 py-0.5 rounded font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                        {kwh} kWh
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
