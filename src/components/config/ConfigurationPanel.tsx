@@ -4,7 +4,7 @@ import { InverterSelector } from './InverterSelector';
 import { PvModuleSelector } from './PvModuleSelector';
 import { BatterySelector } from './BatterySelector';
 import { GridConfig } from './GridConfig';
-import { Settings2, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
+import { Settings2, List, SlidersHorizontal } from 'lucide-react';
 
 export function ConfigurationPanel() {
   const step1DetailMode = useCalculatorStore((s) => s.step1DetailMode);
@@ -26,33 +26,33 @@ export function ConfigurationPanel() {
           </div>
         </div>
 
-        {/* Detail Level Toggle: Compact vs Detailed (Icon-Only) */}
+        {/* Detail Level Toggle: Summary vs Detailed Specs (Icon-Only) */}
         <div className="flex items-center self-start sm:self-auto gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 flex-shrink-0">
           <button
             type="button"
             onClick={() => setStep1DetailMode('min')}
-            title="Compact view (minimal details)"
-            aria-label="Compact view (minimal details)"
+            title="Summary view"
+            aria-label="Summary view"
             className={`p-2 rounded-lg transition-all cursor-pointer ${
               step1DetailMode === 'min'
                 ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <ChevronsDownUp className="w-4 h-4" />
+            <List className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={() => setStep1DetailMode('detailed')}
-            title="Detailed view (full engineering specs)"
-            aria-label="Detailed view (full engineering specs)"
+            title="Detailed technical specifications"
+            aria-label="Detailed technical specifications"
             className={`p-2 rounded-lg transition-all cursor-pointer ${
               step1DetailMode === 'detailed'
                 ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <ChevronsUpDown className="w-4 h-4" />
+            <SlidersHorizontal className="w-4 h-4" />
           </button>
         </div>
       </div>
