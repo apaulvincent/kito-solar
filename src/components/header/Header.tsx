@@ -16,7 +16,6 @@ import { useAuthStore } from '@/store/useAuthStore';
 
 export function Header() {
   const resetToDefaults = useCalculatorStore((s) => s.resetToDefaults);
-  const calculationResult = useCalculatorStore((s) => s.calculationResult);
   const theme = useCalculatorStore((s) => s.theme);
   const toggleTheme = useCalculatorStore((s) => s.toggleTheme);
   const activeView = useCalculatorStore((s) => s.activeView);
@@ -103,29 +102,16 @@ export function Header() {
 
           {/* Right Action Area */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* When on Tool page: Show Active Telemetry & Reset */}
+            {/* When on Tool page: Reset Button */}
             {activeView === 'tool' && (
-              <>
-                <div className="hidden lg:flex items-center gap-2.5 pr-3 border-r border-slate-200 dark:border-slate-800 text-xs font-mono">
-                  <span className="text-slate-400">ACTIVE:</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
-                    {calculationResult.summary.inverterModel}
-                  </span>
-                  <span className="text-slate-300 dark:text-slate-700">•</span>
-                  <span className="font-bold text-amber-600 dark:text-amber-400">
-                    {calculationResult.summary.totalArrayPowerKw} kWp
-                  </span>
-                </div>
-
-                <button
-                  onClick={resetToDefaults}
-                  title="Reset to Default Configuration"
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-xs font-mono font-medium text-slate-700 dark:text-slate-200 shadow-xs transition-colors"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                  <span className="hidden xl:inline">Reset</span>
-                </button>
-              </>
+              <button
+                onClick={resetToDefaults}
+                title="Reset to Default Configuration"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-xs font-mono font-medium text-slate-700 dark:text-slate-200 shadow-xs transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                <span className="hidden xl:inline">Reset</span>
+              </button>
             )}
 
             {/* Coffee Support */}
