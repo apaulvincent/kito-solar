@@ -259,18 +259,18 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 3. "Your tools, all in one place" — Simplified for Tradespeople */}
+      {/* 3. Solar Design, Sizing & Layout Toolkit */}
       <section className="py-16 lg:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 font-mono text-[10px] font-bold uppercase tracking-wider">
-            <Cpu className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-            <span>KitoSolar Installation Suite</span>
+            <Zap className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span>Solar Sizing &amp; Installation Toolkit</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            Your tools, all in one place.
+            Everything you need to size, wire, and lay out your solar install.
           </h2>
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
-            Pick a specialized tool below to view 3D wall placement, calculate string voltages, or check wire and breaker schedules.
+            Calculate string voltages, size breakers and cable runs, generate hardware lists, and preview your equipment layout in 3D before starting work on site.
           </p>
         </div>
 

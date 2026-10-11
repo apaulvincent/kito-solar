@@ -99,7 +99,7 @@ describe('App Navigation & Supabase Authentication Suite', () => {
     const content = fs.readFileSync(homePagePath, 'utf-8');
 
     expect(content).toContain('Open Solar Tool');
-    expect(content).toContain('Your tools, all in one place.');
+    expect(content).toContain('Everything you need to size, wire, and lay out your solar install.');
     expect(content).toContain('3D Solar CAD Studio');
   });
 });
