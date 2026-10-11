@@ -52,6 +52,8 @@ export function CalculationWorkbench() {
   const activeTab = useCalculatorStore((s) => s.activeWorkbenchTab);
   const setActiveTab = useCalculatorStore((s) => s.setActiveWorkbenchTab);
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
+  const step2DetailMode = useCalculatorStore((s) => s.step2DetailMode);
+  const setStep2DetailMode = useCalculatorStore((s) => s.setStep2DetailMode);
   const [viewAll, setViewAll] = useState(false);
 
   const warnings = calculationResult.warnings;
@@ -76,31 +78,60 @@ export function CalculationWorkbench() {
           </div>
         </div>
 
-        {/* View Mode Toggle: Tabbed vs Full Schedule */}
-        <div className="flex items-center gap-1.5 self-start sm:self-auto bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 flex-shrink-0">
-          <button
-            type="button"
-            onClick={() => setViewAll(false)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
-              !viewAll
-                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            Tabbed Studio
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewAll(true)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
-              viewAll
-                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            All Schedules
-          </button>
+        {/* Right Header Controls: Detail Mode & View Mode */}
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto flex-shrink-0">
+          {/* Detail Level Toggle: Min Detail vs Detailed */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => setStep2DetailMode('min')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+                step2DetailMode === 'min'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Min Detail
+            </button>
+            <button
+              type="button"
+              onClick={() => setStep2DetailMode('detailed')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+                step2DetailMode === 'detailed'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Detailed
+            </button>
+          </div>
+
+          {/* View Mode Toggle: Tabbed vs Full Schedule */}
+          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => setViewAll(false)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+                !viewAll
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Tabbed Studio
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewAll(true)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+                viewAll
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              All Schedules
+            </button>
+          </div>
         </div>
       </div>
 

@@ -9,6 +9,7 @@ export function BatterySelector() {
   const selectedInverter = useCalculatorStore((s) => s.selectedInverter);
   const setBattery = useCalculatorStore((s) => s.setBattery);
   const setBatteryCount = useCalculatorStore((s) => s.setBatteryCount);
+  const step1DetailMode = useCalculatorStore((s) => s.step1DetailMode);
 
   const isBatteryCapable = Boolean(
     selectedInverter.battery_type &&
@@ -108,29 +109,37 @@ export function BatterySelector() {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
-            <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Nominal Voltage</span>
-              <span className="font-bold text-slate-900 dark:text-white">{selectedBattery.nominal_voltage_v} V</span>
-            </div>
+          {step1DetailMode === 'detailed' ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+              <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Nominal Voltage</span>
+                <span className="font-bold text-slate-900 dark:text-white">{selectedBattery.nominal_voltage_v} V</span>
+              </div>
 
-            <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Single Capacity</span>
-              <span className="font-bold text-slate-900 dark:text-white">{selectedBattery.capacity_ah} Ah</span>
-            </div>
+              <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Single Capacity</span>
+                <span className="font-bold text-slate-900 dark:text-white">{selectedBattery.capacity_ah} Ah</span>
+              </div>
 
-            <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Max Discharge</span>
-              <span className="font-bold text-slate-900 dark:text-white">{selectedBattery.discharge_current_a} A</span>
-            </div>
+              <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Max Discharge</span>
+                <span className="font-bold text-slate-900 dark:text-white">{selectedBattery.discharge_current_a} A</span>
+              </div>
 
-            <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Recommended MCCB</span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">{selectedBattery.recommended_breaker_a} A</span>
+              <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Recommended MCCB</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">{selectedBattery.recommended_breaker_a} A</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200/80 dark:border-slate-800">
+              <span>Nominal: <strong className="text-slate-900 dark:text-white">{selectedBattery.nominal_voltage_v} V</strong></span>
+              <span>Pack: <strong className="text-slate-900 dark:text-white">{selectedBattery.capacity_ah} Ah</strong></span>
+              <span>Breaker: <strong className="text-emerald-600 dark:text-emerald-400">{selectedBattery.recommended_breaker_a} A</strong></span>
+            </div>
+          )}
 
-          {selectedBattery.notes && (
+          {step1DetailMode === 'detailed' && selectedBattery.notes && (
             <div className="flex items-start gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 p-2 rounded border border-slate-200 dark:border-slate-800 shadow-subtle">
               <Info className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
               <span>{selectedBattery.notes}</span>

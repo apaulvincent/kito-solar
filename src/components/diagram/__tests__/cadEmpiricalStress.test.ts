@@ -52,7 +52,8 @@ const HYBRID_ROUTES = [
     to: 'battery_breaker',
     waypoints: [
       [-0.6, 3.35, 0.0],
-      [-0.6, 1.4, 0.0],
+      [-0.6, 2.2, 0.0],
+      [-2.0, 2.2, 0.0],
       [-2.0, 1.4, 0.0],
     ],
   },
@@ -136,7 +137,7 @@ describe('Empirical Adversarial Stress Suite: CAD Subsystem & Electrical Safety'
         }
       }
 
-      expect(totalSegments).toBe(30);
+      expect(totalSegments).toBe(31);
     });
 
     it('verifies all corner transitions form exact 90-degree angles', () => {
@@ -159,8 +160,8 @@ describe('Empirical Adversarial Stress Suite: CAD Subsystem & Electrical Safety'
         }
       }
 
-      // Verified 17 intermediate corners across all multi-segment routes
-      expect(totalCorners).toBe(17);
+      // Verified 18 intermediate corners across all multi-segment routes
+      expect(totalCorners).toBe(18);
     });
   });
 

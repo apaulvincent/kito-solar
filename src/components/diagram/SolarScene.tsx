@@ -195,7 +195,7 @@ export function SolarScene({ isAnimationPaused = false, resetViewCount = 0 }: So
 
     if (isHybrid) {
       list.push(
-        // 12. Inverter to Battery Breaker (Hybrid Vertical Drop & 90° Turn)
+        // 12. Inverter to Battery Breaker (Hybrid Vertical Drop & 90° Turn above Battery)
         {
           id: 'c-inv-batbrk',
           from: 'inverter',
@@ -205,7 +205,8 @@ export function SolarScene({ isAnimationPaused = false, resetViewCount = 0 }: So
           bidirectional: true,
           waypoints: [
             [-0.6, 3.35, 0.0],
-            [-0.6, 1.4, 0.0],
+            [-0.6, 2.2, 0.0],
+            [-2.0, 2.2, 0.0],
             [-2.0, 1.4, 0.0],
           ],
         },

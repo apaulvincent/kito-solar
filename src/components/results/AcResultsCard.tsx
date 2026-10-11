@@ -8,6 +8,7 @@ export function AcResultsCard() {
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
   const setHoveredNodeKey = useCalculatorStore((s) => s.setHoveredNodeKey);
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
+  const step2DetailMode = useCalculatorStore((s) => s.step2DetailMode);
 
   const { ac } = calculationResult;
 
@@ -60,9 +61,11 @@ export function AcResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Computed: {ac.computedCurrentA} A ({ac.rawCurrentA} A × 125%)
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-            {ac.explanation.breaker}
-          </p>
+          {step2DetailMode === 'detailed' && (
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
+              {ac.explanation.breaker}
+            </p>
+          )}
         </div>
 
         {/* AC Wire */}
@@ -77,9 +80,11 @@ export function AcResultsCard() {
           <div className="text-xs font-mono text-slate-600 dark:text-slate-400 mt-1">
             THHN/THWN Copper Multi-Conductor
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-            {ac.explanation.wire}
-          </p>
+          {step2DetailMode === 'detailed' && (
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
+              {ac.explanation.wire}
+            </p>
+          )}
         </div>
 
         {/* AC Isolator */}
@@ -103,9 +108,11 @@ export function AcResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Manual Rotary Lockable
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-            {ac.explanation.isolator}
-          </p>
+          {step2DetailMode === 'detailed' && (
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
+              {ac.explanation.isolator}
+            </p>
+          )}
         </div>
 
         {/* AC SPD */}
@@ -129,9 +136,11 @@ export function AcResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Type 2 Cartridge (Grid Matched)
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-            {ac.explanation.spd}
-          </p>
+          {step2DetailMode === 'detailed' && (
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
+              {ac.explanation.spd}
+            </p>
+          )}
         </div>
 
         {/* ATS (Transfer Switch) */}
@@ -155,9 +164,11 @@ export function AcResultsCard() {
           <div className="text-xs font-mono text-purple-700 dark:text-purple-400 font-semibold mt-1">
             {ac.atsNote}
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-            {ac.explanation.ats}
-          </p>
+          {step2DetailMode === 'detailed' && (
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
+              {ac.explanation.ats}
+            </p>
+          )}
         </div>
 
         {/* EPS / Backup Breaker */}
@@ -172,9 +183,11 @@ export function AcResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Dedicated Critical Loads Port
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-            {ac.explanation.eps}
-          </p>
+          {step2DetailMode === 'detailed' && (
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
+              {ac.explanation.eps}
+            </p>
+          )}
         </div>
       </div>
     </div>

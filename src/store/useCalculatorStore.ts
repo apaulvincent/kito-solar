@@ -17,6 +17,7 @@ import { isSupabaseConfigured } from '@/lib/supabase';
 
 export type WorkbenchTabKey = 'electrical' | 'pv_sizing' | 'mounting_bom' | 'warnings';
 export type ActiveView = 'home' | 'tool' | 'login' | 'register' | 'account';
+export type DetailMode = 'min' | 'detailed';
 
 interface CalculatorState {
   // Catalogs
@@ -42,6 +43,8 @@ interface CalculatorState {
   theme: 'dark' | 'light';
   activeWorkbenchTab: WorkbenchTabKey;
   activeView: ActiveView;
+  step1DetailMode: DetailMode;
+  step2DetailMode: DetailMode;
 
   // Derived Calculation
   calculationResult: SystemCalculationResult;
@@ -62,8 +65,30 @@ interface CalculatorState {
   setTheme: (theme: 'light' | 'dark') => void;
   toggleTheme: () => void;
   setActiveWorkbenchTab: (tab: WorkbenchTabKey) => void;
+  setStep1DetailMode: (mode: DetailMode) => void;
+  setStep2DetailMode: (mode: DetailMode) => void;
   resetToDefaults: () => void;
 }
+
+const getInitialStep1DetailMode = (): DetailMode => {
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('kito_step1_detail_mode');
+      if (saved === 'detailed') return 'detailed';
+    } catch (e) {}
+  }
+  return 'min';
+};
+
+const getInitialStep2DetailMode = (): DetailMode => {
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('kito_step2_detail_mode');
+      if (saved === 'detailed') return 'detailed';
+    } catch (e) {}
+  }
+  return 'min';
+};
 
 const getInitialTheme = (): 'light' | 'dark' => {
   if (typeof window !== 'undefined') {
@@ -175,6 +200,8 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
   theme: initialTheme,
   activeWorkbenchTab: 'electrical',
   activeView: getInitialView(),
+  step1DetailMode: getInitialStep1DetailMode(),
+  step2DetailMode: getInitialStep2DetailMode(),
 
   calculationResult: compute(
     defaultInverter,
@@ -436,6 +463,24 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
       } catch (e) {}
     }
     set({ activeView: view });
+  },
+
+  setStep1DetailMode: (mode) => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('kito_step1_detail_mode', mode);
+      } catch (e) {}
+    }
+    set({ step1DetailMode: mode });
+  },
+
+  setStep2DetailMode: (mode) => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('kito_step2_detail_mode', mode);
+      } catch (e) {}
+    }
+    set({ step2DetailMode: mode });
   },
 
   resetToDefaults: () => {

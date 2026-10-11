@@ -7,6 +7,7 @@ export function PvModuleSelector() {
   const modules = useCalculatorStore((s) => s.modules);
   const selectedModule = useCalculatorStore((s) => s.selectedModule);
   const setModule = useCalculatorStore((s) => s.setModule);
+  const step1DetailMode = useCalculatorStore((s) => s.step1DetailMode);
 
   const brands = useMemo(() => {
     const set = new Set(modules.map((m) => m.brand));
@@ -82,32 +83,48 @@ export function PvModuleSelector() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs font-mono">
-          <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Wattage (Pmax)</span>
-            <span className="font-bold text-slate-900 dark:text-white">{selectedModule.pv_wattage_w} W</span>
-          </div>
+        {step1DetailMode === 'detailed' ? (
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs font-mono">
+            <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Wattage (Pmax)</span>
+              <span className="font-bold text-slate-900 dark:text-white">{selectedModule.pv_wattage_w} W</span>
+            </div>
 
-          <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Voc (Open Ckt)</span>
-            <span className="font-bold text-slate-900 dark:text-white">{selectedModule.voc_v} V</span>
-          </div>
+            <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Voc (Open Ckt)</span>
+              <span className="font-bold text-slate-900 dark:text-white">{selectedModule.voc_v} V</span>
+            </div>
 
-          <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Vmp (Max Power)</span>
-            <span className="font-bold text-slate-900 dark:text-white">{selectedModule.vmp_v} V</span>
-          </div>
+            <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Vmp (Max Power)</span>
+              <span className="font-bold text-slate-900 dark:text-white">{selectedModule.vmp_v} V</span>
+            </div>
 
-          <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Isc (Short Ckt)</span>
-            <span className="font-bold text-slate-900 dark:text-white">{selectedModule.isc_a} A</span>
-          </div>
+            <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Isc (Short Ckt)</span>
+              <span className="font-bold text-slate-900 dark:text-white">{selectedModule.isc_a} A</span>
+            </div>
 
-          <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Imp (Max Current)</span>
-            <span className="font-bold text-slate-900 dark:text-white">{selectedModule.imp_a} A</span>
+            <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-subtle">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Imp (Max Current)</span>
+              <span className="font-bold text-slate-900 dark:text-white">{selectedModule.imp_a} A</span>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
+            <span className="text-slate-600 dark:text-slate-400">
+              Power: <strong className="text-slate-900 dark:text-white font-bold">{selectedModule.pv_wattage_w} Wp</strong>
+            </span>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span className="text-slate-600 dark:text-slate-400">
+              Vmp: <strong className="text-slate-900 dark:text-white font-bold">{selectedModule.vmp_v} V</strong>
+            </span>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span className="text-slate-600 dark:text-slate-400">
+              Imp: <strong className="text-slate-900 dark:text-white font-bold">{selectedModule.imp_a} A</strong>
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

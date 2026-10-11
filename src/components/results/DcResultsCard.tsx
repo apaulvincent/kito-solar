@@ -8,6 +8,7 @@ export function DcResultsCard() {
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
   const setHoveredNodeKey = useCalculatorStore((s) => s.setHoveredNodeKey);
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
+  const step2DetailMode = useCalculatorStore((s) => s.step2DetailMode);
 
   const { dc } = calculationResult;
 
@@ -60,9 +61,11 @@ export function DcResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Computed: {dc.computedCurrentA} A ({dc.rawCurrentA} A Isc × 125%)
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-            {dc.explanation.breaker}
-          </p>
+          {step2DetailMode === 'detailed' && (
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
+              {dc.explanation.breaker}
+            </p>
+          )}
         </div>
 
         {/* DC Homerun Wire */}
@@ -82,9 +85,11 @@ export function DcResultsCard() {
           <div className="text-xs font-mono text-amber-700 dark:text-amber-400 font-semibold mt-1">
             {dc.wireNote}
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-            {dc.explanation.wire}
-          </p>
+          {step2DetailMode === 'detailed' && (
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
+              {dc.explanation.wire}
+            </p>
+          )}
         </div>
 
         {/* DC Isolator */}
@@ -108,9 +113,11 @@ export function DcResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Load-Break 1000V DC 4-Pole
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-            {dc.explanation.isolator}
-          </p>
+          {step2DetailMode === 'detailed' && (
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
+              {dc.explanation.isolator}
+            </p>
+          )}
         </div>
 
         {/* DC SPD */}
@@ -134,9 +141,11 @@ export function DcResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Type 2 Cartridge (Inverter Vmax)
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-            {dc.explanation.spd}
-          </p>
+          {step2DetailMode === 'detailed' && (
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
+              {dc.explanation.spd}
+            </p>
+          )}
         </div>
 
         {/* DC Conduit */}
@@ -151,9 +160,11 @@ export function DcResultsCard() {
           <div className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-1">
             Standard: PVC (RMC / EMT / HDPE alt)
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-            {dc.explanation.conduit}
-          </p>
+          {step2DetailMode === 'detailed' && (
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
+              {dc.explanation.conduit}
+            </p>
+          )}
         </div>
 
         {/* Grounding System */}
@@ -168,9 +179,11 @@ export function DcResultsCard() {
           <div className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-bold mt-1 break-words">
             Rod: {dc.groundRodSpec}
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-            {dc.explanation.grounding}
-          </p>
+          {step2DetailMode === 'detailed' && (
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
+              {dc.explanation.grounding}
+            </p>
+          )}
         </div>
       </div>
     </div>

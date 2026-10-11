@@ -1,4 +1,5 @@
 // src/components/config/ConfigurationPanel.tsx
+import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { InverterSelector } from './InverterSelector';
 import { PvModuleSelector } from './PvModuleSelector';
 import { BatterySelector } from './BatterySelector';
@@ -6,10 +7,13 @@ import { GridConfig } from './GridConfig';
 import { Settings2 } from 'lucide-react';
 
 export function ConfigurationPanel() {
+  const step1DetailMode = useCalculatorStore((s) => s.step1DetailMode);
+  const setStep1DetailMode = useCalculatorStore((s) => s.setStep1DetailMode);
+
   return (
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-card dark:shadow-card-dark overflow-hidden transition-colors duration-200 flex flex-col lg:h-[calc(100vh-6rem)]">
       {/* Pinned Header (Stays Fixed at Top) */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 flex-shrink-0 z-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 flex-shrink-0 z-10">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 shadow-sm flex-shrink-0">
             <Settings2 className="w-5 h-5" />
@@ -20,6 +24,32 @@ export function ConfigurationPanel() {
             </span>
             <h2 className="text-base font-bold text-slate-900 dark:text-white">Equipment Configurator</h2>
           </div>
+        </div>
+
+        {/* Detail Level Toggle: Min Detail vs Detailed */}
+        <div className="flex items-center self-start sm:self-auto bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => setStep1DetailMode('min')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+              step1DetailMode === 'min'
+                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            Min Detail
+          </button>
+          <button
+            type="button"
+            onClick={() => setStep1DetailMode('detailed')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+              step1DetailMode === 'detailed'
+                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            Detailed
+          </button>
         </div>
       </div>
 

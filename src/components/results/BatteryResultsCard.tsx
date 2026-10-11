@@ -8,6 +8,7 @@ export function BatteryResultsCard() {
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
   const setHoveredNodeKey = useCalculatorStore((s) => s.setHoveredNodeKey);
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
+  const step2DetailMode = useCalculatorStore((s) => s.step2DetailMode);
 
   const { battery } = calculationResult;
 
@@ -74,9 +75,11 @@ export function BatteryResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             Discharge Rating: {battery.dischargeCurrentA} A
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-            {battery.explanation.breaker}
-          </p>
+          {step2DetailMode === 'detailed' && (
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
+              {battery.explanation.breaker}
+            </p>
+          )}
         </div>
 
         {/* Battery Wire */}
@@ -91,9 +94,11 @@ export function BatteryResultsCard() {
           <div className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-semibold mt-1">
             High-Amp Flexible Welding / THHN
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-            {battery.explanation.wire}
-          </p>
+          {step2DetailMode === 'detailed' && (
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
+              {battery.explanation.wire}
+            </p>
+          )}
         </div>
 
         {/* Bank Capacity & Sizing */}
@@ -117,9 +122,11 @@ export function BatteryResultsCard() {
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
             {battery.bankVoltageV} V Nominal / {battery.totalCapacityAh} Ah
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-            {battery.explanation.sizing}
-          </p>
+          {step2DetailMode === 'detailed' && (
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
+              {battery.explanation.sizing}
+            </p>
+          )}
         </div>
       </div>
     </div>
