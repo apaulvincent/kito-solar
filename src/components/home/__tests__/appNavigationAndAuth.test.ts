@@ -38,16 +38,24 @@ describe('App Navigation & Supabase Authentication Suite', () => {
   });
 
   it('correctly maps URL pathnames to views without requiring hashes', async () => {
-    const { pathToView } = await import('@/store/useCalculatorStore');
+    const { pathToView, extractProjectIdFromUrl } = await import('@/store/useCalculatorStore');
     expect(pathToView('/')).toBe('home');
     expect(pathToView('/home')).toBe('home');
     expect(pathToView('/tool')).toBe('tool');
     expect(pathToView('/tool/')).toBe('tool');
     expect(pathToView('/studio')).toBe('tool');
     expect(pathToView('/projects')).toBe('projects');
+    expect(pathToView('/projects/RLPwns0Uqe8cJ1xvEbZp')).toBe('tool');
+    expect(pathToView('/project/RLPwns0Uqe8cJ1xvEbZp')).toBe('tool');
     expect(pathToView('/login')).toBe('login');
     expect(pathToView('/register')).toBe('register');
     expect(pathToView('/account')).toBe('account');
+    // Project ID extraction
+    expect(extractProjectIdFromUrl('/projects/RLPwns0Uqe8cJ1xvEbZp')).toBe('RLPwns0Uqe8cJ1xvEbZp');
+    expect(extractProjectIdFromUrl('/project/RLPwns0Uqe8cJ1xvEbZp')).toBe('RLPwns0Uqe8cJ1xvEbZp');
+    expect(extractProjectIdFromUrl('/projects')).toBeNull();
+    expect(extractProjectIdFromUrl('/tool')).toBeNull();
+    expect(extractProjectIdFromUrl('/tool', '?project=RLPwns0Uqe8cJ1xvEbZp')).toBe('RLPwns0Uqe8cJ1xvEbZp');
     // Legacy hash support
     expect(pathToView('/', '#tool')).toBe('tool');
     expect(pathToView('/', '#projects')).toBe('projects');

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
-import { projectService } from '../projectService';
+import { projectService, generateShortId } from '../projectService';
 import { CreateProjectInput, MAX_PROJECTS_PER_USER } from '@/types/project';
 
 vi.mock('@/lib/supabase', () => ({
@@ -62,16 +62,26 @@ describe('projectService Suite', () => {
     system_type: 'HYBRID',
   };
 
-  it('saves and retrieves projects for an authenticated user', async () => {
+  it('saves and retrieves projects with 20-character short GUID for an authenticated user', async () => {
+    const shortId = generateShortId();
+    expect(shortId.length).toBe(20);
+    expect(shortId).toMatch(/^[a-zA-Z0-9]{20}$/);
+
     const res = await projectService.saveProject(mockUserId, sampleInput);
     expect(res.success).toBe(true);
     expect(res.project).toBeDefined();
     expect(res.project?.name).toBe('Sample Villa 6kW');
+    expect(res.project?.id.length).toBe(20);
+    expect(res.project?.id).toMatch(/^[a-zA-Z0-9]{20}$/);
 
     const list = await projectService.getProjects(mockUserId);
     expect(list.length).toBe(1);
     expect(list[0].id).toBe(res.project?.id);
     expect(list[0].inverter_model).toBe('SUN-6K-SG05LP1-EU');
+
+    const byId = await projectService.getProjectById(mockUserId, res.project!.id);
+    expect(byId).toBeDefined();
+    expect(byId?.id).toBe(res.project?.id);
   });
 
   it('enforces maximum limit of 20 projects per user', async () => {
