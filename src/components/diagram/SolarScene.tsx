@@ -185,7 +185,7 @@ export function SolarScene({ isAnimationPaused = false, resetViewCount = 0 }: So
       eps_breaker: [6.8, 1.4, 0.0],
       grid: [10.2, 1.6, 0.0],
       load: [10.2, 0.8, 2.2],
-      grounding: [0.7, 0.25, 0.0],
+      grounding: [4.6, 0.75, 0.0],
     };
   }, []);
 

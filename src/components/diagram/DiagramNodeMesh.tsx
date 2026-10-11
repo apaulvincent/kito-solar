@@ -36,7 +36,7 @@ const NODE_DIMENSIONS: Record<string, NodeDimensionConfig> = {
   pv: { width: 3.9, height: 1.1, depth: 2.0, isWall: false, yOffset: 1.0 },
   grid: { width: 1.4, height: 3.2, depth: 0.6, isWall: false, yOffset: 1.7 },
   load: { width: 1.8, height: 1.6, depth: 1.8, isWall: false, yOffset: 1.1 },
-  grounding: { width: 13.0, height: 0.08, depth: 0.05, isWall: true, yOffset: 0.45 },
+  grounding: { width: 0.68, height: 0.16, depth: 0.08, isWall: true, yOffset: 0.28 },
 };
 
 interface NodeTelemetry {

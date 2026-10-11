@@ -24,7 +24,7 @@ const NODE_POSITIONS: Record<DiagramNodeKey, [number, number, number]> = {
   eps_breaker: [6.8, 1.4, 0.0],
   grid: [10.2, 1.6, 0.0],
   load: [10.2, 0.8, 2.2],
-  grounding: [0.7, 0.25, 0.0],
+  grounding: [4.6, 0.75, 0.0],
 };
 
 // Node dimension heights for physical elevation boundary checks
@@ -41,7 +41,7 @@ const NODE_HEIGHTS: Partial<Record<DiagramNodeKey, number>> = {
   ats: 1.25,
   eps_breaker: 0.98,
   main_panel: 1.65,
-  grounding: 0.08,
+  grounding: 0.16,
 };
 
 // Hybrid battery cable routes from SolarScene.tsx

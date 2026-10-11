@@ -1058,54 +1058,140 @@ export function NodeGeometry({
       );
 
     case 'grounding': {
-      const busbarLength = isStandalone ? 1.6 : 13.0;
-      const standoffPositions = isStandalone ? [-0.55, 0.55] : [-5.5, -3.5, -1.5, 0.5, 2.5, 4.5];
-      const lugPositions = isStandalone
-        ? [-0.4, 0.0, 0.4]
-        : [-4.8, -3.6, -2.0, -0.6, 1.4, 2.9, 4.6, 6.0];
+      const busbarWidth = 0.62; // Standard 24" (600 mm) UL 467 Master Ground Busbar
+      const busbarHeight = 0.10; // 4" (100 mm) height
+      const busbarThickness = 0.012; // 1/2" thick solid electrolytic copper
+      const standoffXs = [-0.22, 0.22];
+      const lugPositions = [-0.22, -0.13, -0.04, 0.05, 0.14, 0.22];
 
       return (
         <group>
-          {/* Solid Polished Electrolytic Copper Busbar (1/4" x 2" UL 467 Listed) */}
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[busbarLength, 0.05, 0.02]} />
+          {/* 1. Solid Polished Electrolytic Copper Busbar Plate (UL 467 Listed) */}
+          <mesh position={[0, 0, 0.012]} castShadow receiveShadow>
+            <boxGeometry args={[busbarWidth, busbarHeight, busbarThickness]} />
             <meshStandardMaterial
               color={isSelected || isHovered ? '#EA580C' : '#B45309'}
-              metalness={0.95}
+              metalness={0.96}
               roughness={0.16}
             />
           </mesh>
 
-          {/* Red Polyester Standoff Insulators Spaced along Busbar */}
-          {standoffPositions.map((sx, sIdx) => (
-            <group key={`ins-${sIdx}`} position={[sx, 0, -0.025]}>
+          {/* Busbar Perimeter Bevel Lip Accent */}
+          <mesh position={[0, 0, 0.018]}>
+            <boxGeometry args={[busbarWidth - 0.01, busbarHeight - 0.01, 0.002]} />
+            <meshStandardMaterial
+              color="#D97706"
+              metalness={0.92}
+              roughness={0.2}
+              wireframe
+            />
+          </mesh>
+
+          {/* 2. Red Polyester/Fiberglass Standoff Insulators & Wall Brackets */}
+          {standoffXs.map((sx, sIdx) => (
+            <group key={`ins-${sIdx}`} position={[sx, 0, -0.015]}>
+              {/* Cylindrical Ribbed Red Standoff Insulator */}
               <mesh rotation={[Math.PI / 2, 0, 0]}>
-                <cylinderGeometry args={[0.035, 0.035, 0.035, 8]} />
-                <meshStandardMaterial color="#DC2626" roughness={0.4} />
+                <cylinderGeometry args={[0.024, 0.024, 0.042, 12]} />
+                <meshStandardMaterial color="#DC2626" roughness={0.35} metalness={0.1} />
               </mesh>
+              {/* Stainless Steel Wall Standoff Base Bracket */}
+              <mesh position={[0, 0, -0.02]}>
+                <boxGeometry args={[0.046, 0.08, 0.008]} />
+                <meshStandardMaterial color="#64748B" metalness={0.88} roughness={0.25} />
+              </mesh>
+              {/* Lag Bolts attaching to wall */}
+              {[-0.028, 0.028].map((ly, lIdx) => (
+                <mesh key={`lag-${lIdx}`} position={[0, ly, -0.018]} rotation={[Math.PI / 2, 0, 0]}>
+                  <cylinderGeometry args={[0.006, 0.006, 0.012, 6]} />
+                  <meshStandardMaterial color="#CBD5E1" metalness={0.9} />
+                </mesh>
+              ))}
             </group>
           ))}
 
-          {/* Dual-Screw Brass Grounding Terminal Lugs */}
+          {/* 3. Dual-Hole Tin-Plated Grounding Lugs with Stainless Steel Hardware */}
           {lugPositions.map((lx, lIdx) => (
-            <group key={`lug-${lIdx}`} position={[lx, 0, 0.018]}>
-              {/* Brass Lug Block */}
+            <group key={`lug-${lx}`} position={[lx, 0, 0.026]}>
+              {/* Mechanical Compression Lug Body */}
               <mesh>
-                <boxGeometry args={[0.06, 0.06, 0.035]} />
-                <meshStandardMaterial color="#D97706" metalness={0.9} roughness={0.22} />
+                <boxGeometry args={[0.038, 0.052, 0.024]} />
+                <meshStandardMaterial color="#D97706" metalness={0.92} roughness={0.22} />
               </mesh>
-              {/* Clamping Screw Head */}
-              <mesh position={[0, 0.025, 0]} rotation={[0, 0, 0]}>
-                <cylinderGeometry args={[0.015, 0.015, 0.02, 12]} />
-                <meshStandardMaterial color="#CBD5E1" metalness={0.88} />
-              </mesh>
-              {/* Green/Yellow Grounding Conductor Pigtail Tap Lead */}
-              <mesh position={[0, 0.12, -0.01]}>
-                <cylinderGeometry args={[0.012, 0.012, 0.18, 12]} />
-                <meshStandardMaterial color="#10B981" roughness={0.3} />
-              </mesh>
+              {/* Dual Clamping Hex Bolts */}
+              {[-0.014, 0.014].map((by, bIdx) => (
+                <mesh key={`bolt-${bIdx}`} position={[0, by, 0.013]}>
+                  <cylinderGeometry args={[0.009, 0.009, 0.012, 6]} />
+                  <meshStandardMaterial color="#CBD5E1" metalness={0.92} roughness={0.18} />
+                </mesh>
+              ))}
+              {/* Conductor Tap Leads (Green / Yellow Equipment Grounding Leads) */}
+              {lIdx % 2 === 0 && (
+                <group position={[0, 0.08, -0.005]}>
+                  <mesh>
+                    <cylinderGeometry args={[0.008, 0.008, 0.12, 12]} />
+                    <meshStandardMaterial color="#10B981" roughness={0.3} />
+                  </mesh>
+                </group>
+              )}
             </group>
           ))}
+
+          {/* 4. Downward Rigid Earth Grounding Electrode Conduit & Floor Sleeve (Scene View) */}
+          {!isStandalone && (
+            <group position={[0, 0, 0]}>
+              {/* Solid Bare Copper Grounding Electrode Conductor (GEC) from central lug */}
+              <mesh position={[0, -0.06, 0.02]}>
+                <cylinderGeometry args={[0.008, 0.008, 0.07, 12]} />
+                <meshStandardMaterial color="#B45309" metalness={0.95} roughness={0.16} />
+              </mesh>
+
+              {/* Conduit Entry Grounding Bushing Hub */}
+              <mesh position={[0, -0.10, 0.005]}>
+                <cylinderGeometry args={[0.026, 0.026, 0.025, 16]} />
+                <meshStandardMaterial color="#64748B" metalness={0.88} roughness={0.22} />
+              </mesh>
+
+              {/* Vertical EMT / Steel Conduit Pipe down to Concrete Floor */}
+              <mesh position={[0, -0.425, 0.005]}>
+                <cylinderGeometry args={[0.020, 0.020, 0.65, 20]} />
+                <meshStandardMaterial color="#94A3B8" metalness={0.88} roughness={0.20} />
+              </mesh>
+
+              {/* Conduit Wall Straps anchoring the pipe */}
+              <group position={[0, -0.42, 0.005]}>
+                <mesh>
+                  <cylinderGeometry args={[0.028, 0.028, 0.035, 16]} />
+                  <meshStandardMaterial color="#64748B" metalness={0.85} roughness={0.25} />
+                </mesh>
+                <mesh position={[0, 0, -0.015]}>
+                  <boxGeometry args={[0.08, 0.035, 0.01]} />
+                  <meshStandardMaterial color="#475569" metalness={0.85} />
+                </mesh>
+              </group>
+
+              {/* Concrete Floor Penetration Collar at Foundation Level (Y = -0.74m) */}
+              <group position={[0, -0.74, 0.005]}>
+                <mesh>
+                  <cylinderGeometry args={[0.045, 0.052, 0.025, 16]} />
+                  <meshStandardMaterial color="#475569" metalness={0.85} roughness={0.3} />
+                </mesh>
+                {/* Foundation Grounding Pit Identification Ring */}
+                <mesh position={[0, 0.015, 0]}>
+                  <cylinderGeometry args={[0.032, 0.032, 0.008, 16]} />
+                  <meshStandardMaterial color="#EAB308" roughness={0.25} />
+                </mesh>
+              </group>
+
+              {/* 5. Upward Equipment Grounding Bonding Conductor towards Main Panel */}
+              <group position={[0.14, 0.44, 0.005]}>
+                <mesh>
+                  <cylinderGeometry args={[0.009, 0.009, 0.78, 12]} />
+                  <meshStandardMaterial color="#10B981" roughness={0.3} />
+                </mesh>
+              </group>
+            </group>
+          )}
         </group>
       );
     }
