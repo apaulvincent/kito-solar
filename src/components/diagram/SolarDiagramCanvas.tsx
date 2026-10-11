@@ -180,7 +180,7 @@ export function SolarDiagramCanvas() {
             ? 'Hover accessories to inspect ratings • Flow: 🟡 Solar DC • 🟢 Battery • 🔵 AC • Click node for derivations'
             : viewMode === 'split'
             ? 'Synchronized 3D CAD & 2D Schematic • Flow: 🟡 Solar DC • 🟢 Battery • 🔵 AC'
-            : 'Click any schematic component to open equipment sizing and calculation derivations'}
+            : 'Click component to inspect derivations • Drag canvas to pan • Scroll to zoom'}
         </span>
         <span className="bg-white/95 dark:bg-slate-900/95 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm font-semibold text-slate-800 dark:text-slate-200 backdrop-blur-sm">
           BUSBAR: {calculationResult.summary.totalArrayPowerKw} kW DC → {calculationResult.summary.inverterPowerKw} kW AC

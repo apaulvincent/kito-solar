@@ -460,7 +460,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
     setSelectedNodeKey(key);
   };
 
-  const getNodeClasses = (key: DiagramNodeKey, baseColor = 'amber') => {
+  const getNodeClasses = (key: DiagramNodeKey, baseColor = 'amber', widthClass = 'w-[136px]') => {
     const isSelected = selectedNodeKey === key;
     const isHovered = hoveredNodeKey === key;
 
@@ -476,7 +476,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
       borderRing = 'border-amber-500 dark:border-amber-400 ring-2 ring-amber-400/30 shadow-md scale-[1.03]';
     }
 
-    return `flex flex-col items-center p-3 rounded-xl border bg-white dark:bg-slate-900 shadow-sm cursor-pointer transition-all select-none ${borderRing}`;
+    return `flex flex-col items-center justify-center p-3 rounded-xl border bg-white dark:bg-slate-900 shadow-sm cursor-pointer transition-all select-none ${widthClass} ${borderRing}`;
   };
 
   return (
@@ -503,8 +503,8 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
         }}
       />
 
-      {/* Floating Pan & Zoom HUD Controls */}
-      <div className="absolute bottom-4 right-4 z-30 flex items-center gap-1 p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-lg pointer-events-auto">
+      {/* Floating Pan & Zoom HUD Controls (Docked cleanly under top-right controls to avoid footer telemetry overlap) */}
+      <div className="absolute top-14 right-3 z-30 flex items-center gap-1 p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-lg pointer-events-auto">
         <button
           onClick={zoomOut}
           title="Zoom Out (-)"
@@ -536,11 +536,6 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
         </button>
       </div>
 
-      {/* Zoom / Pan Navigation Hint */}
-      <div className="absolute bottom-4 left-4 z-20 text-[10px] font-mono text-slate-400 dark:text-slate-500 bg-white/80 dark:bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 pointer-events-none backdrop-blur-sm">
-        Drag to pan • Scroll to zoom • Double-click to reset
-      </div>
-
       {/* Transformed Canvas Container */}
       <div
         className="w-full h-full flex flex-col items-center justify-center origin-center"
@@ -550,7 +545,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
         }}
       >
         {/* Schematic Container with Spacious Layout Spine */}
-        <div className="relative z-10 flex flex-col items-center min-w-[1580px] px-8 py-6">
+        <div className="relative z-10 flex flex-col items-center min-w-[1720px] px-8 py-6">
           {/* Title & Sequence Breadcrumb */}
           <div className="w-full flex items-center justify-between px-4 pb-2 border-b border-slate-200 dark:border-slate-800/80 text-[11px] font-mono text-slate-500 dark:text-slate-400">
             <div className="flex items-center gap-2">
@@ -578,15 +573,15 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
             </div>
           </div>
 
-          {/* Main Horizontal Single-Line Circuit Flow (All primary equipment on a unified centerline) */}
-          <div className="flex items-center gap-2 w-full justify-between pt-28 pb-48">
+          {/* Main Horizontal Single-Line Circuit Flow (All primary equipment on a unified centerline, pb-96 for ground clearance) */}
+          <div className="flex items-center gap-2 w-full justify-between pt-28 pb-96">
             {/* Node 1: PV Array */}
             <div className="flex flex-col items-center relative" data-schematic-node="true">
               <div
                 onClick={() => triggerSelect('pv_array')}
                 onMouseEnter={() => setHoveredNodeKey('pv_array')}
                 onMouseLeave={() => setHoveredNodeKey(null)}
-                className={getNodeClasses('pv_array', 'sky')}
+                className={getNodeClasses('pv_array', 'sky', 'w-[136px]')}
               >
                 <div className="w-11 h-11 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 flex items-center justify-center text-sky-600 dark:text-sky-400 mb-1.5">
                   <Sun className="w-5 h-5" />
@@ -600,9 +595,9 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                   {calculationResult.summary.totalPanels} Modules
                 </span>
               </div>
-              {/* Grounding drop tap */}
+              {/* Grounding drop tap down to PE busbar */}
               <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center">
-                <div className="w-0.5 h-16 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
+                <div className="w-0.5 h-72 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
               </div>
             </div>
@@ -620,7 +615,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 onClick={() => triggerSelect('dc_isolator')}
                 onMouseEnter={() => setHoveredNodeKey('dc_isolator')}
                 onMouseLeave={() => setHoveredNodeKey(null)}
-                className={getNodeClasses('dc_isolator', 'amber')}
+                className={getNodeClasses('dc_isolator', 'amber', 'w-[136px]')}
               >
                 <div className="w-11 h-11 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-1.5">
                   <Shield className="w-5 h-5" />
@@ -650,7 +645,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 onClick={() => triggerSelect('dc_breaker')}
                 onMouseEnter={() => setHoveredNodeKey('dc_breaker')}
                 onMouseLeave={() => setHoveredNodeKey(null)}
-                className={getNodeClasses('dc_breaker', 'red')}
+                className={getNodeClasses('dc_breaker', 'red', 'w-[136px]')}
               >
                 <div className="w-11 h-11 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 flex items-center justify-center text-red-600 dark:text-red-400 mb-1.5">
                   <Shield className="w-5 h-5" />
@@ -665,25 +660,27 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 </span>
               </div>
 
-              {/* Parallel Drop: DC SPD hanging below DC Breaker */}
+              {/* Parallel Drop: DC SPD hanging below DC Breaker (Wide format matching breaker) */}
               <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-2">
                 <div className="w-0.5 h-3 bg-amber-500" />
                 <div
                   onClick={() => triggerSelect('dc_spd')}
                   onMouseEnter={() => setHoveredNodeKey('dc_spd')}
                   onMouseLeave={() => setHoveredNodeKey(null)}
-                  className={getNodeClasses('dc_spd', 'emerald')}
+                  className={getNodeClasses('dc_spd', 'emerald', 'w-[136px]')}
                 >
-                  <div className="flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-[10px] font-mono font-bold text-slate-800 dark:text-slate-200">DC SPD</span>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <div className="w-5 h-5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                      <Zap className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="text-[11px] font-mono font-bold text-slate-800 dark:text-slate-200">DC SPD</span>
                   </div>
-                  <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                  <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap">
                     {calculationResult.dc.spdRating}
                   </span>
-                  <span className="text-[8px] font-mono text-slate-400">Type 2 Arrester</span>
+                  <span className="text-[9px] font-mono text-slate-400 mt-0.5 whitespace-nowrap">Type 2 Arrester</span>
                 </div>
-                <div className="w-0.5 h-4 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
+                <div className="w-0.5 h-52 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
               </div>
             </div>
@@ -702,7 +699,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 onClick={() => triggerSelect('inverter')}
                 onMouseEnter={() => setHoveredNodeKey('inverter')}
                 onMouseLeave={() => setHoveredNodeKey(null)}
-                className={`flex flex-col items-center p-3.5 rounded-2xl border-2 bg-white dark:bg-slate-900 shadow-md cursor-pointer transition-all ${
+                className={`flex flex-col items-center p-3.5 rounded-2xl border-2 bg-white dark:bg-slate-900 shadow-md cursor-pointer transition-all w-[156px] ${
                   selectedNodeKey === 'inverter'
                     ? 'border-amber-600 dark:border-amber-500 ring-4 ring-amber-500/25 scale-105 shadow-xl'
                     : hoveredNodeKey === 'inverter'
@@ -714,7 +711,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                   <Cpu className="w-6 h-6" />
                 </div>
                 <span className="text-[10px] font-mono font-bold tracking-wider text-slate-400">INV • 01</span>
-                <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">
+                <span className="text-xs font-mono font-bold text-slate-900 dark:text-white text-center line-clamp-1">
                   {calculationResult.summary.inverterModel}
                 </span>
                 <span className="text-xs font-mono text-amber-600 dark:text-amber-400 font-black mt-0.5">
@@ -725,7 +722,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 </span>
               </div>
 
-              {/* Hybrid Battery Dropdown Branch (Hangs purely downward, not shifting horizontal axis) */}
+              {/* Hybrid Battery Dropdown Branch (Wide format matching inverter) */}
               {isHybrid ? (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-1 z-20">
                   {/* Vertical Conduit to Battery MCCB */}
@@ -736,16 +733,18 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                     onClick={() => triggerSelect('battery_breaker')}
                     onMouseEnter={() => setHoveredNodeKey('battery_breaker')}
                     onMouseLeave={() => setHoveredNodeKey(null)}
-                    className={getNodeClasses('battery_breaker', 'emerald')}
+                    className={getNodeClasses('battery_breaker', 'emerald', 'w-[156px]')}
                   >
-                    <div className="flex items-center gap-1.5">
-                      <Shield className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span className="text-[10px] font-mono font-bold text-slate-800 dark:text-slate-200">BATTERY MCCB</span>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <div className="w-5 h-5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                        <Shield className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-[11px] font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">BATTERY MCCB</span>
                     </div>
-                    <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                    <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
                       {calculationResult.battery.recommendedBreakerA} A
                     </span>
-                    <span className="text-[8px] font-mono text-slate-400">DC Molded Case</span>
+                    <span className="text-[9px] font-mono text-slate-400 mt-0.5 whitespace-nowrap">DC Molded Case</span>
                   </div>
 
                   {/* Vertical Conduit to Battery Bank */}
@@ -756,29 +755,29 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                     onClick={() => triggerSelect('battery')}
                     onMouseEnter={() => setHoveredNodeKey('battery')}
                     onMouseLeave={() => setHoveredNodeKey(null)}
-                    className={getNodeClasses('battery', 'emerald')}
+                    className={getNodeClasses('battery', 'emerald', 'w-[156px]')}
                   >
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-1">
-                      <BatteryCharging className="w-4 h-4" />
+                    <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-1">
+                      <BatteryCharging className="w-5 h-5" />
                     </div>
-                    <span className="text-[10px] font-mono font-bold text-slate-800 dark:text-slate-200">
+                    <span className="text-[11px] font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                       BATTERY BANK
                     </span>
-                    <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                    <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">
                       {(calculationResult.battery.totalEnergyWh / 1000).toFixed(1)} kWh
                     </span>
-                    <span className="text-[8px] text-slate-400">
+                    <span className="text-[9px] text-slate-400 mt-0.5 whitespace-nowrap">
                       {calculationResult.battery.bankVoltageV}V Nominal
                     </span>
                   </div>
 
-                  {/* Grounding tap from battery chassis */}
-                  <div className="w-0.5 h-3 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
+                  {/* Grounding tap from battery chassis down to PE busbar */}
+                  <div className="w-0.5 h-24 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
                 </div>
               ) : (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center">
-                  <div className="w-0.5 h-20 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
+                  <div className="w-0.5 h-72 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
                 </div>
               )}
@@ -798,7 +797,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 onClick={() => triggerSelect('ac_breaker')}
                 onMouseEnter={() => setHoveredNodeKey('ac_breaker')}
                 onMouseLeave={() => setHoveredNodeKey(null)}
-                className={getNodeClasses('ac_breaker', 'sky')}
+                className={getNodeClasses('ac_breaker', 'sky', 'w-[136px]')}
               >
                 <div className="w-11 h-11 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 flex items-center justify-center text-sky-600 dark:text-sky-400 mb-1.5">
                   <Shield className="w-5 h-5" />
@@ -813,25 +812,27 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 </span>
               </div>
 
-              {/* Parallel Drop: AC SPD hanging below AC Breaker */}
+              {/* Parallel Drop: AC SPD hanging below AC Breaker (Wide format matching breaker) */}
               <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-2">
                 <div className="w-0.5 h-3 bg-sky-500" />
                 <div
                   onClick={() => triggerSelect('ac_spd')}
                   onMouseEnter={() => setHoveredNodeKey('ac_spd')}
                   onMouseLeave={() => setHoveredNodeKey(null)}
-                  className={getNodeClasses('ac_spd', 'emerald')}
+                  className={getNodeClasses('ac_spd', 'emerald', 'w-[136px]')}
                 >
-                  <div className="flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-[10px] font-mono font-bold text-slate-800 dark:text-slate-200">AC SPD</span>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <div className="w-5 h-5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                      <Zap className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="text-[11px] font-mono font-bold text-slate-800 dark:text-slate-200">AC SPD</span>
                   </div>
-                  <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                  <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap">
                     {calculationResult.ac.spdRating}
                   </span>
-                  <span className="text-[8px] font-mono text-slate-400">Type 2 Arrester</span>
+                  <span className="text-[9px] font-mono text-slate-400 mt-0.5 whitespace-nowrap">Type 2 Arrester</span>
                 </div>
-                <div className="w-0.5 h-4 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
+                <div className="w-0.5 h-52 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
               </div>
             </div>
@@ -849,7 +850,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 onClick={() => triggerSelect('ac_isolator')}
                 onMouseEnter={() => setHoveredNodeKey('ac_isolator')}
                 onMouseLeave={() => setHoveredNodeKey(null)}
-                className={getNodeClasses('ac_isolator', 'amber')}
+                className={getNodeClasses('ac_isolator', 'amber', 'w-[136px]')}
               >
                 <div className="w-11 h-11 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-1.5">
                   <Shield className="w-5 h-5" />
@@ -880,7 +881,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                   onClick={() => triggerSelect('grid')}
                   onMouseEnter={() => setHoveredNodeKey('grid')}
                   onMouseLeave={() => setHoveredNodeKey(null)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border bg-white dark:bg-slate-900 shadow-sm cursor-pointer transition-all whitespace-nowrap ${
+                  className={`flex items-center gap-2.5 w-[140px] px-3.5 py-2.5 rounded-xl border bg-white dark:bg-slate-900 shadow-sm cursor-pointer transition-all whitespace-nowrap ${
                     selectedNodeKey === 'grid'
                       ? 'border-slate-800 dark:border-slate-300 ring-2 ring-slate-400/30 scale-105'
                       : hoveredNodeKey === 'grid'
@@ -910,7 +911,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 onClick={() => triggerSelect('main_panel')}
                 onMouseEnter={() => setHoveredNodeKey('main_panel')}
                 onMouseLeave={() => setHoveredNodeKey(null)}
-                className={getNodeClasses('main_panel', 'slate')}
+                className={getNodeClasses('main_panel', 'slate', 'w-[136px]')}
               >
                 <div className="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 mb-1.5">
                   <Network className="w-5 h-5" />
@@ -925,9 +926,9 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 </span>
               </div>
 
-              {/* Ground bonding tap down */}
+              {/* Ground bonding tap down to PE busbar */}
               <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center">
-                <div className="w-0.5 h-16 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
+                <div className="w-0.5 h-72 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
               </div>
             </div>
@@ -948,7 +949,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 }}
                 onMouseEnter={() => setHoveredNodeKey('ats')}
                 onMouseLeave={() => setHoveredNodeKey(null)}
-                className={getNodeClasses('ats', atsSource === 'solar' ? 'amber' : 'emerald')}
+                className={getNodeClasses('ats', atsSource === 'solar' ? 'amber' : 'emerald', 'w-[136px]')}
                 title="Click to toggle ATS Transfer Switch source"
               >
                 <div className="w-11 h-11 rounded-lg bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-1.5">
@@ -984,7 +985,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 onClick={() => triggerSelect('load')}
                 onMouseEnter={() => setHoveredNodeKey('load')}
                 onMouseLeave={() => setHoveredNodeKey(null)}
-                className={getNodeClasses('load', 'sky')}
+                className={getNodeClasses('load', 'sky', 'w-[136px]')}
               >
                 <div className="w-11 h-11 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 flex items-center justify-center text-sky-600 dark:text-sky-400 mb-1.5">
                   <Home className="w-5 h-5" />
@@ -1001,13 +1002,13 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
             </div>
           </div>
 
-          {/* Continuous Equipment Grounding Busbar (PE / EGC) Along The Base */}
+          {/* Continuous Equipment Grounding Busbar (PE / EGC) Along The Base - Safely moved down below battery */}
           <div
             onClick={() => triggerSelect('grounding')}
             onMouseEnter={() => setHoveredNodeKey('grounding')}
             onMouseLeave={() => setHoveredNodeKey(null)}
             data-schematic-node="true"
-            className={`w-full rounded-xl border p-3 flex items-center justify-between cursor-pointer transition-all ${
+            className={`w-full mt-12 rounded-xl border p-4 flex items-center justify-between cursor-pointer transition-all ${
               selectedNodeKey === 'grounding'
                 ? 'border-emerald-600 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 ring-4 ring-emerald-500/20 shadow-md scale-[1.01]'
                 : hoveredNodeKey === 'grounding'

@@ -7,7 +7,7 @@ import { Schematic2DView } from '../Schematic2DView';
 describe('2D Schematic CAD Alignment & Realism', () => {
   it('renders 2D single-line diagram with widened layout spine and animated conduits', () => {
     const html = renderToStaticMarkup(createElement(Schematic2DView));
-    expect(html).toContain('min-w-[1580px]');
+    expect(html).toContain('min-w-[1720px]');
     expect(html).toContain('Single-Line Diagram (SLD)');
     expect(html).toContain('PV ARRAY');
     expect(html).toContain('DC ISOLATOR');
@@ -43,7 +43,8 @@ describe('2D Schematic CAD Alignment & Realism', () => {
 
     // Pan/Zoom HUD controls
     expect(html).toContain('100%');
-    expect(html).toContain('Drag to pan • Scroll to zoom • Double-click to reset');
+    expect(html).toContain('Zoom In (+)');
+    expect(html).toContain('Zoom Out (-)');
   });
 
   it('includes animated traveling current beads along conduit runs', () => {
