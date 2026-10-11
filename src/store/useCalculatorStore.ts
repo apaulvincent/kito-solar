@@ -14,6 +14,7 @@ import modulesSeed from '@/data/seed/solar_modules.json';
 import batteriesSeed from '@/data/seed/batteries.json';
 import { catalogService } from '@/services/catalogService';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { SavedProject } from '@/types/project';
 
 export type WorkbenchTabKey = 'electrical' | 'pv_sizing' | 'mounting_bom' | 'warnings';
 export type ActiveView = 'home' | 'tool' | 'login' | 'register' | 'account';
@@ -46,6 +47,8 @@ interface CalculatorState {
   step1DetailMode: DetailMode;
   step2DetailMode: DetailMode;
   atsSource: 'solar' | 'utility';
+  activeProjectId: string | null;
+  activeProjectName: string | null;
 
   // Derived Calculation
   calculationResult: SystemCalculationResult;
@@ -70,6 +73,8 @@ interface CalculatorState {
   setActiveWorkbenchTab: (tab: WorkbenchTabKey) => void;
   setStep1DetailMode: (mode: DetailMode) => void;
   setStep2DetailMode: (mode: DetailMode) => void;
+  loadProject: (project: SavedProject) => void;
+  clearActiveProject: () => void;
   resetToDefaults: () => void;
 }
 
@@ -218,6 +223,8 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   step1DetailMode: getInitialStep1DetailMode(),
   step2DetailMode: getInitialStep2DetailMode(),
   atsSource: 'solar',
+  activeProjectId: null,
+  activeProjectName: null,
 
   calculationResult: compute(
     defaultInverter,
@@ -507,8 +514,55 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
     set({ step2DetailMode: mode });
   },
 
+  loadProject: (project) => {
+    const state = get();
+    const inverter =
+      state.inverters.find((i) => i.model === project.inverter_model) ||
+      state.selectedInverter;
+    const module =
+      state.modules.find((m) => m.model === project.module_model) ||
+      state.selectedModule;
+    const battery = project.battery_model
+      ? state.batteries.find((b) => b.model === project.battery_model) || null
+      : null;
+
+    set({
+      selectedInverter: inverter,
+      selectedModule: module,
+      selectedBattery: battery,
+      batteryCount: Math.max(1, project.battery_count || 1),
+      gridVoltageV: project.grid_voltage_v || 230,
+      mainBreakerA: project.main_breaker_a,
+      panelCountOverride: project.panel_count_override,
+      activeProjectId: project.id,
+      activeProjectName: project.name,
+      selectedNodeKey: null,
+      hoveredNodeKey: null,
+      isInspectorOpen: false,
+      activeWorkbenchTab: 'electrical',
+      calculationResult: compute(
+        inverter,
+        module,
+        battery,
+        Math.max(1, project.battery_count || 1),
+        project.grid_voltage_v || 230,
+        project.main_breaker_a,
+        project.panel_count_override
+      ),
+    });
+
+    // Navigate to tool view
+    get().setActiveView('tool');
+  },
+
+  clearActiveProject: () => {
+    set({ activeProjectId: null, activeProjectName: null });
+  },
+
   resetToDefaults: () => {
     set({
+      activeProjectId: null,
+      activeProjectName: null,
       selectedInverter: defaultInverter,
       selectedModule: defaultModule,
       selectedBattery: defaultBattery,

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { SavedProjectsList } from './SavedProjectsList';
 
 export function AccountPage() {
   const user = useAuthStore((s) => s.user);
@@ -251,6 +252,11 @@ export function AccountPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Saved Projects Section */}
+        <div className="pt-4 border-t border-slate-200/80 dark:border-slate-800/80">
+          <SavedProjectsList />
         </div>
       </div>
     </div>

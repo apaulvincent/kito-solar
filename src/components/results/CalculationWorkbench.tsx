@@ -9,6 +9,7 @@ import { PvSizingCard } from './PvSizingCard';
 import { MountingBomCard } from './MountingBomCard';
 import { WarningsPanel } from './WarningsPanel';
 import { DownloadSizingButton } from '@/components/common/DownloadSizingButton';
+import { SaveProjectButton } from '@/components/common/SaveProjectButton';
 
 interface TabItem {
   id: WorkbenchTabKey;
@@ -81,6 +82,7 @@ export function CalculationWorkbench() {
 
         {/* Right Header Controls: Download Button, Detail Mode & View Mode */}
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto flex-shrink-0">
+          <SaveProjectButton variant="compact" />
           <DownloadSizingButton variant="compact" />
 
           {/* Detail Level Toggle: Min Detail vs Detailed */}
