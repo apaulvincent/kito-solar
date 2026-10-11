@@ -476,15 +476,6 @@ export function HomePage() {
               <button onClick={() => setActiveView('tool')} className="hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer">
                 Solar Tool
               </button>
-              <button onClick={() => setActiveView('login')} className="hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer">
-                Login
-              </button>
-              <button onClick={() => setActiveView('register')} className="hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer">
-                Register
-              </button>
-              <button onClick={() => setActiveView('account')} className="hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer">
-                Account
-              </button>
             </nav>
           </div>
 
