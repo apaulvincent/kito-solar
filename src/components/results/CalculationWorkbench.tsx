@@ -216,7 +216,7 @@ export function CalculationWorkbench() {
       )}
 
       {/* Main Calculation Content — Independently Scrollable */}
-      <div className="p-4 sm:p-5 flex-1 overflow-y-auto overscroll-contain space-y-6">
+      <div className="p-4 sm:p-5 flex-1 overflow-y-auto overscroll-auto space-y-6">
         {viewAll ? (
           /* Comprehensive Unified Schedule Mode */
           <div className="space-y-6">

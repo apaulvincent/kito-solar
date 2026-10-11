@@ -54,7 +54,7 @@ export function ConfigurationPanel() {
       </div>
 
       {/* Main Form Sections — Independently Scrollable Content */}
-      <div className="p-5 space-y-6 flex-1 overflow-y-auto overscroll-contain">
+      <div className="p-5 space-y-6 flex-1 overflow-y-auto overscroll-auto">
         <InverterSelector />
         <div className="border-t border-slate-100 dark:border-slate-800/80" />
         <PvModuleSelector />
