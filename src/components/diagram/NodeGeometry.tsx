@@ -738,11 +738,24 @@ export function NodeGeometry({
             </group>
           ))}
 
-          {/* Grounding Conductor Bonding Tap Lead exiting Bottom */}
-          <mesh position={[0, -0.48, 0.1]}>
-            <cylinderGeometry args={[0.02, 0.02, 0.12, 12]} />
-            <meshStandardMaterial color="#10B981" roughness={0.3} />
-          </mesh>
+          {/* Bottom Liquid-Tight Cable Gland / Conduit Entry Fitting */}
+          <group position={[0, -0.485, 0.1]}>
+            {/* Hexagonal Locking Nut */}
+            <mesh>
+              <cylinderGeometry args={[0.045, 0.045, 0.018, 6]} />
+              <meshStandardMaterial color="#64748B" metalness={0.88} roughness={0.25} />
+            </mesh>
+            {/* Threaded Compression Gland Body */}
+            <mesh position={[0, -0.015, 0]}>
+              <cylinderGeometry args={[0.034, 0.038, 0.024, 16]} />
+              <meshStandardMaterial color="#94A3B8" metalness={0.9} roughness={0.2} />
+            </mesh>
+            {/* Neoprene Cable Sealing Collar */}
+            <mesh position={[0, -0.028, 0]}>
+              <cylinderGeometry args={[0.026, 0.026, 0.012, 16]} />
+              <meshStandardMaterial color="#1E293B" roughness={0.6} />
+            </mesh>
+          </group>
 
           {/* Surge Arrester Technical Specification Badge */}
           <mesh position={[0, -0.32, 0.222]}>
