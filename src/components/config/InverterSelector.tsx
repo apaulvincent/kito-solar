@@ -3,6 +3,28 @@ import { useMemo } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { Cpu } from 'lucide-react';
 import { parseNumericValue } from '@/lib/utils';
+import { Autocomplete, HighlightMatch, SortOption } from '@/components/common/Autocomplete';
+import { SolarInverterRecord } from '@/types/supabase';
+
+const inverterSortOptions: SortOption<SolarInverterRecord>[] = [
+  {
+    id: 'power-desc',
+    label: 'Power: High to Low',
+    comparator: (a, b) =>
+      parseNumericValue(b.rated_ac_power_w) - parseNumericValue(a.rated_ac_power_w),
+  },
+  {
+    id: 'power-asc',
+    label: 'Power: Low to High',
+    comparator: (a, b) =>
+      parseNumericValue(a.rated_ac_power_w) - parseNumericValue(b.rated_ac_power_w),
+  },
+  {
+    id: 'model-asc',
+    label: 'Model: A to Z',
+    comparator: (a, b) => a.model.localeCompare(b.model),
+  },
+];
 
 export function InverterSelector() {
   const inverters = useCalculatorStore((s) => s.inverters);
@@ -44,44 +66,76 @@ export function InverterSelector() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Brand Dropdown */}
+        {/* Brand Autocomplete */}
         <div>
-          <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1 font-semibold">Inverter Brand</label>
-          <select
+          <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1 font-semibold">
+            Inverter Brand
+          </label>
+          <Autocomplete<string>
+            options={brands}
             value={selectedInverter.brand}
-            onChange={(e) => {
-              const brandModels = inverters.filter((i) => i.brand === e.target.value);
-              if (brandModels.length > 0) {
-                setInverter(brandModels[0]);
+            onChange={(newBrand) => {
+              if (newBrand) {
+                const brandModels = inverters.filter((i) => i.brand === newBrand);
+                if (brandModels.length > 0) {
+                  setInverter(brandModels[0]);
+                }
               }
             }}
-            className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors shadow-sm"
-          >
-            {brands.map((b) => (
-              <option key={b} value={b} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
-                {b}
-              </option>
-            ))}
-          </select>
+            getOptionLabel={(b) => b}
+            placeholder="Search brand (e.g. Deye, Growatt)..."
+          />
         </div>
 
-        {/* Model Dropdown */}
+        {/* Model Autocomplete with Custom Rendered Options and Live Sorting */}
         <div>
-          <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1 font-semibold">Inverter Model</label>
-          <select
-            value={selectedInverter.model}
-            onChange={(e) => {
-              const matched = inverters.find((i) => i.model === e.target.value);
+          <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1 font-semibold">
+            Inverter Model
+          </label>
+          <Autocomplete<SolarInverterRecord>
+            options={models}
+            value={selectedInverter}
+            onChange={(matched) => {
               if (matched) setInverter(matched);
             }}
-            className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors font-mono shadow-sm"
-          >
-            {models.map((m) => (
-              <option key={m.model} value={m.model} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
-                {m.model} ({(parseNumericValue(m.rated_ac_power_w) / 1000).toFixed(1)} kW)
-              </option>
-            ))}
-          </select>
+            getOptionLabel={(m) => m.model}
+            getOptionKey={(m) => m.model}
+            isOptionEqualToValue={(a, b) => a.model === b.model}
+            sortOptions={inverterSortOptions}
+            placeholder="Type model or kW to filter..."
+            renderOption={(inv, { inputValue }) => {
+              const kw = (parseNumericValue(inv.rated_ac_power_w) / 1000).toFixed(1);
+              const isHybrid = Boolean(
+                inv.battery_type &&
+                inv.battery_voltage_range &&
+                inv.battery_type.toLowerCase() !== 'none'
+              );
+              return (
+                <div className="flex items-center justify-between gap-2 py-0.5">
+                  <div className="min-w-0">
+                    <div className="font-mono text-xs font-bold text-slate-900 dark:text-white truncate">
+                      <HighlightMatch text={inv.model} query={inputValue} />
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                      <span>{inv.mppt_tracker_string_config || 'Standard MPPT'}</span>
+                      <span>•</span>
+                      <span>{inv.mppt_voltage_range}V MPPT</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                      {kw} kW
+                    </span>
+                    {isHybrid && (
+                      <span className="text-[9px] font-mono px-1 py-0.5 rounded font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                        Hybrid
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            }}
+          />
         </div>
       </div>
 

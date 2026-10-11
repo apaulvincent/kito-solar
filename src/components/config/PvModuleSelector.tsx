@@ -2,6 +2,29 @@
 import { useMemo } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { SunMedium, Award } from 'lucide-react';
+import { parseNumericValue } from '@/lib/utils';
+import { Autocomplete, HighlightMatch, SortOption } from '@/components/common/Autocomplete';
+import { SolarModuleRecord } from '@/types/supabase';
+
+const pvSortOptions: SortOption<SolarModuleRecord>[] = [
+  {
+    id: 'watt-desc',
+    label: 'Wattage: High to Low',
+    comparator: (a, b) =>
+      parseNumericValue(b.pv_wattage_w) - parseNumericValue(a.pv_wattage_w),
+  },
+  {
+    id: 'watt-asc',
+    label: 'Wattage: Low to High',
+    comparator: (a, b) =>
+      parseNumericValue(a.pv_wattage_w) - parseNumericValue(b.pv_wattage_w),
+  },
+  {
+    id: 'model-asc',
+    label: 'Model: A to Z',
+    comparator: (a, b) => a.model.localeCompare(b.model),
+  },
+];
 
 export function PvModuleSelector() {
   const modules = useCalculatorStore((s) => s.modules);
@@ -31,42 +54,71 @@ export function PvModuleSelector() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Brand */}
+        {/* Brand Autocomplete */}
         <div>
-          <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1 font-semibold">Module Brand</label>
-          <select
+          <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1 font-semibold">
+            Module Brand
+          </label>
+          <Autocomplete<string>
+            options={brands}
             value={selectedModule.brand}
-            onChange={(e) => {
-              const matched = modules.filter((m) => m.brand === e.target.value);
-              if (matched.length > 0) setModule(matched[0]);
+            onChange={(newBrand) => {
+              if (newBrand) {
+                const matched = modules.filter((m) => m.brand === newBrand);
+                if (matched.length > 0) setModule(matched[0]);
+              }
             }}
-            className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors shadow-sm"
-          >
-            {brands.map((b) => (
-              <option key={b} value={b} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
-                {b}
-              </option>
-            ))}
-          </select>
+            getOptionLabel={(b) => b}
+            placeholder="Search module brand..."
+          />
         </div>
 
-        {/* Model */}
+        {/* Model Autocomplete with Custom Rendered Options and Live Sorting */}
         <div>
-          <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1 font-semibold">Module Model</label>
-          <select
-            value={selectedModule.model}
-            onChange={(e) => {
-              const m = modules.find((mod) => mod.model === e.target.value);
-              if (m) setModule(m);
+          <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1 font-semibold">
+            Module Model
+          </label>
+          <Autocomplete<SolarModuleRecord>
+            options={brandModels}
+            value={selectedModule}
+            onChange={(matched) => {
+              if (matched) setModule(matched);
             }}
-            className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors font-mono shadow-sm"
-          >
-            {brandModels.map((m) => (
-              <option key={m.model} value={m.model} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
-                {m.model} ({m.pv_wattage_w} Wp)
-              </option>
-            ))}
-          </select>
+            getOptionLabel={(m) => m.model}
+            getOptionKey={(m) => m.model}
+            isOptionEqualToValue={(a, b) => a.model === b.model}
+            sortOptions={pvSortOptions}
+            placeholder="Type model or wattage to filter..."
+            renderOption={(mod, { inputValue }) => {
+              const w = parseNumericValue(mod.pv_wattage_w);
+              return (
+                <div className="flex items-center justify-between gap-2 py-0.5">
+                  <div className="min-w-0">
+                    <div className="font-mono text-xs font-bold text-slate-900 dark:text-white truncate">
+                      <HighlightMatch text={mod.model} query={inputValue} />
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                      <span>Voc: {mod.voc_v}V</span>
+                      <span>•</span>
+                      <span>Vmp: {mod.vmp_v}V</span>
+                      <span>•</span>
+                      <span>Isc: {mod.isc_a}A</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                      {w} Wp
+                    </span>
+                    {mod.efficiency_pct && (
+                      <span className="text-[9px] font-mono px-1 py-0.5 rounded font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20">
+                        {mod.efficiency_pct}%
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            }}
+          />
         </div>
       </div>
 
