@@ -89,15 +89,15 @@ export function SaveProjectButton({
             >
               {/* Modal Header */}
               <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-xs flex-shrink-0">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center shadow-xs flex-shrink-0">
                     <Lock className="w-6 h-6" />
                   </div>
                   <div>
                     <span className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 font-bold block">
                       LOGIN REQUIRED
                     </span>
-                    <h3 id="save-auth-modal-title" className="text-base font-bold text-slate-900 dark:text-white leading-tight">
+                    <h3 id="save-auth-modal-title" className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
                       Save Solar Projects
                     </h3>
                   </div>
@@ -106,27 +106,28 @@ export function SaveProjectButton({
                 <button
                   type="button"
                   onClick={() => setIsAuthModalOpen(false)}
-                  className="p-1 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                   title="Close modal"
+                  aria-label="Close dialog"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Description */}
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                 Create an account or sign in to save up to 20 solar configurations to your account. You can reopen and edit them on any device.
               </p>
 
-              {/* Actions */}
-              <div className="space-y-2.5 pt-1">
+              {/* Actions (Consistent button size and font) */}
+              <div className="space-y-3 pt-1">
                 <button
                   type="button"
                   onClick={() => {
                     setIsAuthModalOpen(false);
                     setActiveView('login');
                   }}
-                  className="w-full py-2.5 px-4 rounded-xl font-bold text-xs text-white bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-95"
+                  className="w-full py-3 px-4 rounded-xl font-bold text-sm text-white bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-95"
                 >
                   <LogIn className="w-4 h-4 text-amber-400" />
                   <span>Log In to Account</span>
@@ -138,7 +139,7 @@ export function SaveProjectButton({
                     setIsAuthModalOpen(false);
                     setActiveView('register');
                   }}
-                  className="w-full py-2.5 px-4 rounded-xl font-bold text-xs text-slate-950 bg-amber-500 hover:bg-amber-400 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer active:scale-95"
+                  className="w-full py-3 px-4 rounded-xl font-bold text-sm text-slate-950 bg-amber-500 hover:bg-amber-400 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer active:scale-95"
                 >
                   <UserPlus className="w-4 h-4" />
                   <span>Register New Account</span>

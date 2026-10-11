@@ -126,52 +126,54 @@ export function DownloadSizingButton({
               aria-modal="true"
               aria-labelledby="auth-modal-title"
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 text-left animate-in zoom-in-95 duration-150"
+              className="relative w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 sm:p-7 space-y-6 animate-in zoom-in-95 duration-200"
             >
-              {/* Close button */}
-              <button
-                type="button"
-                onClick={() => setIsAuthModalOpen(false)}
-                className="absolute top-4 right-4 p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                aria-label="Close dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              {/* Modal Header */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center shadow-xs flex-shrink-0">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 font-bold block">
+                      LOGIN REQUIRED
+                    </span>
+                    <h3
+                      id="auth-modal-title"
+                      className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight"
+                    >
+                      Account Required
+                    </h3>
+                  </div>
+                </div>
 
-              {/* Icon & Title */}
-              <div className="flex items-center gap-3.5 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3
-                    id="auth-modal-title"
-                    className="text-base font-bold text-slate-900 dark:text-white leading-tight"
-                  >
-                    Account Required
-                  </h3>
-                  <span className="text-[11px] font-mono font-medium text-amber-600 dark:text-amber-400">
-                    KitoSolar Engineering Suite
-                  </span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAuthModalOpen(false)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Close modal"
+                  aria-label="Close dialog"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
               {/* Explanatory Body */}
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                 You need to have an account to download the sizing details and engineering schedules. Please log in to your account or register to continue.
               </p>
 
-              {/* Action Links */}
-              <div className="space-y-2.5">
+              {/* Actions (Consistent button size and font) */}
+              <div className="space-y-3 pt-1">
                 <button
                   type="button"
                   onClick={() => {
                     setIsAuthModalOpen(false);
                     setActiveView('login');
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 transition-all cursor-pointer shadow-sm"
+                  className="w-full py-3 px-4 rounded-xl font-bold text-sm text-white bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-95"
                 >
-                  <LogIn className="w-4 h-4" />
+                  <LogIn className="w-4 h-4 text-amber-400" />
                   <span>Log In to Account</span>
                 </button>
 
@@ -181,21 +183,10 @@ export function DownloadSizingButton({
                     setIsAuthModalOpen(false);
                     setActiveView('register');
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all cursor-pointer shadow-sm"
+                  className="w-full py-3 px-4 rounded-xl font-bold text-sm text-slate-950 bg-amber-500 hover:bg-amber-400 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer active:scale-95"
                 >
                   <UserPlus className="w-4 h-4" />
                   <span>Register New Account</span>
-                </button>
-              </div>
-
-              {/* Dismiss link */}
-              <div className="text-center mt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsAuthModalOpen(false)}
-                  className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-medium cursor-pointer"
-                >
-                  Cancel and return to tool
                 </button>
               </div>
             </div>
