@@ -1,7 +1,20 @@
 // src/components/diagram/DiagramComponentList.tsx
+import { useState } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { DiagramNodeKey } from '@/types/diagram';
-import { ShieldAlert, Shield, Zap, Cpu, Battery, Cable, ArrowRight } from 'lucide-react';
+import {
+  ShieldAlert,
+  Shield,
+  Zap,
+  Cpu,
+  Battery,
+  Cable,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 
 interface ComponentListItem {
   key: DiagramNodeKey;
@@ -18,6 +31,30 @@ export function DiagramComponentList() {
   const hoveredNodeKey = useCalculatorStore((s) => s.hoveredNodeKey);
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
   const setHoveredNodeKey = useCalculatorStore((s) => s.setHoveredNodeKey);
+
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('kito_show_component_index');
+        if (saved !== null) {
+          return saved === 'true';
+        }
+      } catch (e) {}
+    }
+    return false; // Default to hidden to make it easy to the eyes
+  });
+
+  const toggleOpen = () => {
+    setIsOpen((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('kito_show_component_index', String(next));
+        } catch (e) {}
+      }
+      return next;
+    });
+  };
 
   // Correct DC Sequence: PV Array -> DC Isolator -> DC Breaker -> DC SPD -> Inverter
   const items: ComponentListItem[] = [
@@ -128,17 +165,57 @@ export function DiagramComponentList() {
   );
 
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-card dark:shadow-card-dark transition-colors duration-200">
-      <div className="flex items-center justify-between mb-3.5">
-        <h4 className="text-xs font-mono font-bold tracking-wider text-slate-800 dark:text-slate-200 uppercase">
-          Single-Line Component Index
-        </h4>
-        <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
-          Hover to highlight on diagram • Click to inspect
-        </span>
+    <div
+      className={`rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-card dark:shadow-card-dark transition-all duration-200 ${
+        isOpen ? 'p-4 sm:p-5' : 'p-3 sm:px-5 sm:py-3.5'
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <h4 className="text-xs font-mono font-bold tracking-wider text-slate-800 dark:text-slate-200 uppercase">
+            Single-Line Component Index
+          </h4>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold border border-slate-200/80 dark:border-slate-700">
+            {items.length} Nodes
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {isOpen && (
+            <span className="hidden md:inline text-xs font-mono text-slate-500 dark:text-slate-400">
+              Hover to highlight on diagram • Click to inspect
+            </span>
+          )}
+
+          <button
+            type="button"
+            onClick={toggleOpen}
+            className={`flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer border ${
+              isOpen
+                ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-slate-700 shadow-xs'
+                : 'bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60 shadow-xs'
+            }`}
+            aria-expanded={isOpen}
+          >
+            {isOpen ? (
+              <>
+                <EyeOff className="w-3.5 h-3.5" />
+                <span>Hide</span>
+                <ChevronUp className="w-3.5 h-3.5 opacity-60" />
+              </>
+            ) : (
+              <>
+                <Eye className="w-3.5 h-3.5" />
+                <span>Show</span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5">
+      {isOpen && (
+        <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5">
         {items.map((item) => {
           const isSelected = selectedNodeKey === item.key;
           const isHovered = hoveredNodeKey === item.key;
@@ -187,6 +264,7 @@ export function DiagramComponentList() {
           );
         })}
       </div>
+      )}
     </div>
   );
 }
