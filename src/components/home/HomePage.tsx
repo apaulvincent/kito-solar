@@ -1,21 +1,19 @@
 // src/components/home/HomePage.tsx
+import { useAuthStore } from '@/store/useAuthStore';
+import { useCalculatorStore } from '@/store/useCalculatorStore';
 import {
+  ArrowRight,
   Box,
+  Cable,
+  CheckCircle2,
+  Cpu,
+  Hammer,
   Layers,
   ShieldCheck,
-  Cpu,
-  ArrowRight,
   Sparkles,
-  CheckCircle2,
-  Hammer,
-  Cable,
   User,
-  Zap,
-  Wrench,
-  Shield,
+  Zap
 } from 'lucide-react';
-import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { useAuthStore } from '@/store/useAuthStore';
 
 export function HomePage() {
   const setActiveView = useCalculatorStore((s) => s.setActiveView);
@@ -85,7 +83,7 @@ export function HomePage() {
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-y-2 gap-x-6 pt-2 text-xs font-medium text-slate-600 dark:text-slate-400">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span>125% Code Sizing</span>
+                  <span>100% Free</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-amber-500" />
@@ -95,10 +93,7 @@ export function HomePage() {
                   <CheckCircle2 className="w-4 h-4 text-sky-500" />
                   <span>3D Wall-Mount Layout</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-slate-500" />
-                  <span>100% Free & Offline Ready</span>
-                </div>
+ 
               </div>
             </div>
 
@@ -211,15 +206,9 @@ export function HomePage() {
                   <div className="pt-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                     <span className="font-medium">Click to open live 3D wall viewport</span>
                     <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                      Launch Studio <ArrowRight className="w-3.5 h-3.5" />
+                      Launch Solar Tool <ArrowRight className="w-3.5 h-3.5" />
                     </span>
                   </div>
-                </div>
-
-                {/* Floating Badge (Top Right) */}
-                <div className="absolute -top-3.5 -right-3 px-3 py-1.5 rounded-xl bg-slate-900 text-white border border-slate-700 shadow-lg flex items-center gap-2">
-                  <Zap className="w-3.5 h-3.5 text-amber-400 fill-current" />
-                  <span className="text-[11px] font-mono font-bold">1-Click Auto Sizing</span>
                 </div>
               </div>
             </div>
