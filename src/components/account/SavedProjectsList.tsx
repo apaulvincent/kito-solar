@@ -22,6 +22,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { projectService } from '@/services/projectService';
 import { SavedProject, MAX_PROJECTS_PER_USER } from '@/types/project';
+import { sanitizeProjectTitle, sanitizeProjectNotes } from '@/lib/sanitization';
 
 export function SavedProjectsList() {
   const user = useAuthStore((s) => s.user);
@@ -89,12 +90,16 @@ export function SavedProjectsList() {
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !editingProject || !editName.trim()) return;
+    if (!user || !editingProject) return;
+
+    const cleanedName = sanitizeProjectTitle(editName);
+    const cleanedNotes = sanitizeProjectNotes(editNotes);
+    if (!cleanedName) return;
 
     try {
       const res = await projectService.updateProject(user.id, editingProject.id, {
-        name: editName.trim(),
-        notes: editNotes.trim() || undefined,
+        name: cleanedName,
+        notes: cleanedNotes,
       });
       if (res.success && res.project) {
         setProjects((prev) =>

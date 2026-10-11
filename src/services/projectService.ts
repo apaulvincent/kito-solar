@@ -1,6 +1,7 @@
 // src/services/projectService.ts
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { SavedProject, CreateProjectInput, MAX_PROJECTS_PER_USER } from '@/types/project';
+import { sanitizeProjectTitle, sanitizeProjectNotes } from '@/lib/sanitization';
 
 const getLocalStorageKey = (userId: string) => `kito_saved_projects_${userId}`;
 
@@ -155,11 +156,15 @@ export const projectService = {
     }
 
     const now = new Date().toISOString();
+    const sanitizedName = sanitizeProjectTitle(input.name);
+    const sanitizedNotes = sanitizeProjectNotes(input.notes);
+
     const newProject: SavedProject = {
       id: generateShortId(20),
       user_id: userId,
       ...input,
-      name: input.name.trim() || 'Untitled Solar Project',
+      name: sanitizedName,
+      notes: sanitizedNotes,
       created_at: now,
       updated_at: now,
     };
@@ -211,11 +216,18 @@ export const projectService = {
       return { success: false, error: 'Project not found.' };
     }
 
+    const sanitizedUpdates: Partial<CreateProjectInput> = { ...updates };
+    if (updates.name !== undefined) {
+      sanitizedUpdates.name = sanitizeProjectTitle(updates.name);
+    }
+    if (updates.notes !== undefined) {
+      sanitizedUpdates.notes = sanitizeProjectNotes(updates.notes);
+    }
+
     const now = new Date().toISOString();
     const updatedProject: SavedProject = {
       ...existing[targetIndex],
-      ...updates,
-      name: updates.name ? updates.name.trim() : existing[targetIndex].name,
+      ...sanitizedUpdates,
       updated_at: now,
     };
 
@@ -224,7 +236,7 @@ export const projectService = {
       try {
         await supabase
           .from('user_projects')
-          .update({ ...updates, updated_at: now })
+          .update({ ...sanitizedUpdates, updated_at: now })
           .eq('id', projectId)
           .eq('user_id', userId);
       } catch (err) {

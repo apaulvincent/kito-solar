@@ -149,4 +149,52 @@ describe('projectService Suite', () => {
     expect(list.length).toBe(1);
     expect(list[0].id).toBe(res2.project!.id);
   });
+
+  it('sanitizes injection payloads, HTML tags, and control characters in name and notes', async () => {
+    const maliciousInput: CreateProjectInput = {
+      ...sampleInput,
+      name: '<script>alert("XSS")</script>Commercial Solar 10kW\x00',
+      notes: '<img src=x onerror=steal()/>2-story metal roof\n\n\n\n\nNotes line 2',
+    };
+
+    const res = await projectService.saveProject(mockUserId, maliciousInput);
+    expect(res.success).toBe(true);
+    expect(res.project).toBeDefined();
+
+    // Verify script tags and null characters are stripped
+    expect(res.project?.name).toBe('alert("XSS")Commercial Solar 10kW');
+    expect(res.project?.name).not.toContain('<script>');
+    expect(res.project?.name).not.toContain('\x00');
+
+    // Verify img tag is stripped and excessive newlines normalized
+    expect(res.project?.notes).toBe('2-story metal roof\n\nNotes line 2');
+    expect(res.project?.notes).not.toContain('<img');
+
+    // Test updates with injection payloads
+    const updateRes = await projectService.updateProject(mockUserId, res.project!.id, {
+      name: '<iframe src="evil.com"></iframe>New Name',
+      notes: '<svg onload="alert(1)">Notes</svg>',
+    });
+
+    expect(updateRes.success).toBe(true);
+    expect(updateRes.project?.name).toBe('New Name');
+    expect(updateRes.project?.name).not.toContain('<iframe');
+    expect(updateRes.project?.notes).toBe('Notes');
+    expect(updateRes.project?.notes).not.toContain('<svg');
+  });
+
+  it('enforces character limits on title (80 chars) and notes (250 chars)', async () => {
+    const longName = 'A'.repeat(120);
+    const longNotes = 'B'.repeat(300);
+
+    const res = await projectService.saveProject(mockUserId, {
+      ...sampleInput,
+      name: longName,
+      notes: longNotes,
+    });
+
+    expect(res.success).toBe(true);
+    expect(res.project?.name.length).toBe(80);
+    expect(res.project?.notes?.length).toBe(250);
+  });
 });

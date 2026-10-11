@@ -14,6 +14,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { projectService } from '@/services/projectService';
 import { CreateProjectInput, MAX_PROJECTS_PER_USER, SavedProject } from '@/types/project';
+import { sanitizeProjectTitle, sanitizeProjectNotes } from '@/lib/sanitization';
 
 interface SaveProjectModalProps {
   isOpen: boolean;
@@ -88,7 +89,10 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
       return;
     }
 
-    if (!projectName.trim()) {
+    const cleanedTitle = sanitizeProjectTitle(projectName);
+    const cleanedNotes = sanitizeProjectNotes(projectNotes);
+
+    if (!cleanedTitle) {
       setError('Please provide a project name.');
       return;
     }
@@ -97,8 +101,8 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
     setError(null);
 
     const projectPayload: CreateProjectInput = {
-      name: projectName.trim(),
-      notes: projectNotes.trim() || undefined,
+      name: cleanedTitle,
+      notes: cleanedNotes,
       inverter_model: selectedInverter.model,
       module_model: selectedModule.model,
       battery_model: selectedBattery?.model || null,
