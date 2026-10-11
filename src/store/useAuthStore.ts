@@ -12,7 +12,12 @@ interface AuthState {
   // Actions
   clearError: () => void;
   signInWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUpWithEmail: (email: string, password: string, fullName?: string) => Promise<{ success: boolean; error?: string; message?: string }>;
+  signUpWithEmail: (
+    email: string,
+    password: string,
+    fullName?: string
+  ) => Promise<{ success: boolean; error?: string; message?: string; isAwaitingConfirmation?: boolean }>;
+  resendVerificationEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   initAuth: () => () => void;
@@ -84,15 +89,19 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       const isAwaitingConfirmation = !data.session && Boolean(data.user);
+      
+      // When email confirmation is required, the user is unconfirmed and has no active session.
+      // Do not store as active logged-in user until they verify their email!
       set({
-        user: data.user,
-        session: data.session,
+        user: isAwaitingConfirmation ? null : data.user,
+        session: isAwaitingConfirmation ? null : data.session,
         isLoading: false,
         error: null,
       });
 
       return {
         success: true,
+        isAwaitingConfirmation,
         message: isAwaitingConfirmation
           ? 'Registration successful! Please check your email to confirm your account.'
           : 'Registration successful! You are now signed in.',
@@ -100,6 +109,25 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'An unexpected error occurred';
       set({ error: message, isLoading: false });
+      return { success: false, error: message };
+    }
+  },
+
+  resendVerificationEmail: async (email) => {
+    if (!supabase || !isSupabaseConfigured) {
+      return { success: false, error: 'Supabase credentials are not configured in your environment.' };
+    }
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+      });
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to resend confirmation email';
       return { success: false, error: message };
     }
   },
