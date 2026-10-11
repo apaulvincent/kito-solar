@@ -3,6 +3,241 @@ import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { DiagramNodeKey } from '@/types/diagram';
 import { Sun, Shield, Cpu, BatteryCharging, Network, Cable, Home, Zap } from 'lucide-react';
 
+interface ConduitProps {
+  type?: 'dc' | 'ac' | 'battery' | 'grid';
+  active?: boolean;
+  reverse?: boolean;
+  className?: string;
+  speed?: string;
+}
+
+function HorizontalConduit({
+  type = 'dc',
+  active = true,
+  reverse = false,
+  className = '',
+  speed = '1.8s',
+}: ConduitProps) {
+  const colors = {
+    dc: {
+      core: '#D97706',
+      coreDark: '#F59E0B',
+      bead: '#FEF08A',
+      glow: 'rgba(245, 158, 11, 0.85)',
+      pipeBg: 'rgba(245, 158, 11, 0.12)',
+    },
+    ac: {
+      core: '#0284C7',
+      coreDark: '#38BDF8',
+      bead: '#E0F2FE',
+      glow: 'rgba(2, 132, 199, 0.85)',
+      pipeBg: 'rgba(2, 132, 199, 0.12)',
+    },
+    battery: {
+      core: '#059669',
+      coreDark: '#10B981',
+      bead: '#D1FAE5',
+      glow: 'rgba(16, 185, 129, 0.85)',
+      pipeBg: 'rgba(16, 185, 129, 0.12)',
+    },
+    grid: {
+      core: '#059669',
+      coreDark: '#10B981',
+      bead: '#D1FAE5',
+      glow: 'rgba(16, 185, 129, 0.85)',
+      pipeBg: 'rgba(16, 185, 129, 0.12)',
+    },
+  }[type];
+
+  if (!active) {
+    return (
+      <div className={`h-6 flex items-center justify-center relative select-none ${className}`}>
+        <svg
+          className="w-full h-5 overflow-visible"
+          preserveAspectRatio="none"
+          viewBox="0 0 100 20"
+        >
+          {/* EMT Pipe casing */}
+          <line
+            x1="0"
+            y1="10"
+            x2="100"
+            y2="10"
+            stroke="currentColor"
+            strokeWidth="7"
+            strokeLinecap="round"
+            className="text-slate-200 dark:text-slate-800/80"
+          />
+          {/* Inactive dashed line */}
+          <line
+            x1="0"
+            y1="10"
+            x2="100"
+            y2="10"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeDasharray="4 4"
+            className="text-slate-400 dark:text-slate-600 opacity-60"
+          />
+        </svg>
+      </div>
+    );
+  }
+
+  const animValues = reverse ? '100;0' : '0;100';
+
+  return (
+    <div className={`h-6 flex items-center justify-center relative select-none ${className}`}>
+      <svg
+        className="w-full h-5 overflow-visible"
+        preserveAspectRatio="none"
+        viewBox="0 0 100 20"
+      >
+        {/* Outer EMT Conduit Pipe Sleeve */}
+        <line
+          x1="0"
+          y1="10"
+          x2="100"
+          y2="10"
+          stroke="currentColor"
+          strokeWidth="7"
+          strokeLinecap="round"
+          className="text-slate-200 dark:text-slate-800/90"
+        />
+
+        {/* Conduit Cavity Tint */}
+        <line
+          x1="0"
+          y1="10"
+          x2="100"
+          y2="10"
+          stroke={colors.pipeBg}
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+
+        {/* Inner Conductor Core */}
+        <line
+          x1="0"
+          y1="10"
+          x2="100"
+          y2="10"
+          stroke={colors.coreDark}
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+
+        {/* Directional Chevrons */}
+        {reverse ? (
+          <>
+            <path d="M 52 7 L 47 10 L 52 13" stroke={colors.coreDark} strokeWidth="1.2" fill="none" opacity="0.6" />
+            <path d="M 30 7 L 25 10 L 30 13" stroke={colors.coreDark} strokeWidth="1.2" fill="none" opacity="0.4" />
+            <path d="M 75 7 L 70 10 L 75 13" stroke={colors.coreDark} strokeWidth="1.2" fill="none" opacity="0.4" />
+          </>
+        ) : (
+          <>
+            <path d="M 48 7 L 53 10 L 48 13" stroke={colors.coreDark} strokeWidth="1.2" fill="none" opacity="0.6" />
+            <path d="M 25 7 L 30 10 L 25 13" stroke={colors.coreDark} strokeWidth="1.2" fill="none" opacity="0.4" />
+            <path d="M 70 7 L 75 10 L 70 13" stroke={colors.coreDark} strokeWidth="1.2" fill="none" opacity="0.4" />
+          </>
+        )}
+
+        {/* Flow Pulse Halo */}
+        <circle cy="10" r="5" fill={colors.glow} opacity="0.35">
+          <animate
+            attributeName="cx"
+            values={animValues}
+            dur={speed}
+            repeatCount="indefinite"
+          />
+        </circle>
+
+        {/* Glowing Bead 1 */}
+        <circle
+          cy="10"
+          r="3"
+          fill={colors.bead}
+          style={{ filter: `drop-shadow(0 0 3px ${colors.glow})` }}
+        >
+          <animate
+            attributeName="cx"
+            values={animValues}
+            dur={speed}
+            repeatCount="indefinite"
+          />
+        </circle>
+
+        {/* Glowing Bead 2 (Offset) */}
+        <circle
+          cy="10"
+          r="2.5"
+          fill={colors.bead}
+          style={{ filter: `drop-shadow(0 0 3px ${colors.glow})` }}
+        >
+          <animate
+            attributeName="cx"
+            values={animValues}
+            dur={speed}
+            begin="-0.9s"
+            repeatCount="indefinite"
+          />
+        </circle>
+      </svg>
+    </div>
+  );
+}
+
+function VerticalConduit({
+  className = '',
+  speed = '1.4s',
+}: {
+  className?: string;
+  speed?: string;
+}) {
+  return (
+    <div className={`w-3 h-6 flex items-center justify-center relative select-none ${className}`}>
+      <svg
+        className="w-3 h-full overflow-visible"
+        preserveAspectRatio="none"
+        viewBox="0 0 12 100"
+      >
+        <line
+          x1="6"
+          y1="0"
+          x2="6"
+          y2="100"
+          stroke="currentColor"
+          strokeWidth="7"
+          strokeLinecap="round"
+          className="text-slate-200 dark:text-slate-800"
+        />
+        <line
+          x1="6"
+          y1="0"
+          x2="6"
+          y2="100"
+          stroke="#10B981"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <circle
+          cx="6"
+          r="3"
+          fill="#D1FAE5"
+          style={{ filter: 'drop-shadow(0 0 3px rgba(16, 185, 129, 0.85))' }}
+        >
+          <animate
+            attributeName="cy"
+            values="0;100"
+            dur={speed}
+            repeatCount="indefinite"
+          />
+        </circle>
+      </svg>
+    </div>
+  );
+}
+
 export function Schematic2DView() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
@@ -49,8 +284,8 @@ export function Schematic2DView() {
         }}
       />
 
-      {/* Schematic Container with Fixed Layout Spine */}
-      <div className="relative z-10 flex flex-col items-center gap-8 min-w-[1180px] py-4">
+      {/* Schematic Container with Spacious Layout Spine */}
+      <div className="relative z-10 flex flex-col items-center gap-8 min-w-[1560px] py-4">
         {/* Title & Sequence Breadcrumb */}
         <div className="w-full flex items-center justify-between px-4 pb-2 border-b border-slate-200 dark:border-slate-800/80 text-[11px] font-mono text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-2">
@@ -64,22 +299,22 @@ export function Schematic2DView() {
           </div>
           <div className="flex items-center gap-4 text-[10px]">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-1 bg-amber-500 rounded-sm" /> DC Bus (0-1000V)
+              <span className="w-3 h-1.5 bg-amber-500 rounded-full shadow-[0_0_6px_rgba(245,158,11,0.6)]" /> DC Bus (0-1000V)
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-1 bg-emerald-500 rounded-sm" /> Battery Bus
+              <span className="w-3 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_6px_rgba(16,185,129,0.6)]" /> Battery Bus
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-1 bg-sky-500 rounded-sm" /> AC Bus (230V)
+              <span className="w-3 h-1.5 bg-sky-500 rounded-full shadow-[0_0_6px_rgba(2,132,199,0.6)]" /> AC Bus (230V)
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-1 bg-emerald-600 border border-emerald-400 border-dashed rounded-sm" /> PE Ground
+              <span className="w-3 h-1.5 bg-emerald-600 border border-emerald-400 border-dashed rounded-full" /> PE Ground
             </span>
           </div>
         </div>
 
         {/* Main Horizontal Single-Line Circuit Flow */}
-        <div className="flex items-center gap-3 w-full justify-between pt-2">
+        <div className="flex items-center gap-2 w-full justify-between pt-2">
           {/* Node 1: PV Array */}
           <div className="flex flex-col items-center relative">
             <div
@@ -105,10 +340,12 @@ export function Schematic2DView() {
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
           </div>
 
-          {/* DC Busbar Line 1: PV Array -> DC Isolator */}
-          <div className="h-0.5 flex-1 max-w-[48px] bg-amber-500 relative flex items-center justify-center">
-            <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-          </div>
+          {/* DC Conduit 1: PV Array -> DC Isolator */}
+          <HorizontalConduit
+            type="dc"
+            active={true}
+            className="flex-1 min-w-[55px] max-w-[85px]"
+          />
 
           {/* Node 2: DC Rotary Isolator Switch (First in DC sequence per NEC 690) */}
           <div className="flex flex-col items-center">
@@ -133,8 +370,12 @@ export function Schematic2DView() {
             <div className="h-14" />
           </div>
 
-          {/* DC Busbar Line 2: DC Isolator -> DC Protection Cluster */}
-          <div className="h-0.5 flex-1 max-w-[40px] bg-amber-500" />
+          {/* DC Conduit 2: DC Isolator -> DC Protection Cluster */}
+          <HorizontalConduit
+            type="dc"
+            active={true}
+            className="flex-1 min-w-[55px] max-w-[85px]"
+          />
 
           {/* Node 3: DC Protection Cluster (DC Breaker in Series + DC SPD in Parallel) */}
           <div className="flex flex-col items-center gap-2">
@@ -183,10 +424,12 @@ export function Schematic2DView() {
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
           </div>
 
-          {/* DC Busbar Line 3: DC Protection -> Inverter MPPT Input */}
-          <div className="h-0.5 flex-1 max-w-[40px] bg-amber-500 relative flex items-center justify-center">
-            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-          </div>
+          {/* DC Conduit 3: DC Protection -> Inverter MPPT Input */}
+          <HorizontalConduit
+            type="dc"
+            active={true}
+            className="flex-1 min-w-[55px] max-w-[85px]"
+          />
 
           {/* Node 4: Central Solar Inverter with Hybrid Battery Branch */}
           <div className="flex flex-col items-center relative">
@@ -219,9 +462,9 @@ export function Schematic2DView() {
 
             {/* Hybrid Battery Dropdown Branch */}
             {isHybrid ? (
-              <div className="flex flex-col items-center pt-2">
-                {/* Conduit link from Inverter DC port to Battery Breaker */}
-                <div className="w-0.5 h-3 bg-emerald-500" />
+              <div className="flex flex-col items-center pt-1">
+                {/* Animated vertical conduit to Battery Breaker */}
+                <VerticalConduit className="my-1" />
 
                 {/* Node: Battery Breaker (MCCB) */}
                 <div
@@ -240,8 +483,8 @@ export function Schematic2DView() {
                   <span className="text-[8px] font-mono text-slate-400">DC Molded Case</span>
                 </div>
 
-                {/* Conduit link from Battery Breaker to Battery Storage Bank */}
-                <div className="w-0.5 h-3 bg-emerald-500" />
+                {/* Animated vertical conduit to Battery Bank */}
+                <VerticalConduit className="my-1" />
 
                 {/* Node: Battery Storage Bank */}
                 <div
@@ -276,10 +519,12 @@ export function Schematic2DView() {
             )}
           </div>
 
-          {/* AC Busbar Line 4: Inverter -> AC Protection Cluster */}
-          <div className="h-0.5 flex-1 max-w-[40px] bg-sky-500 relative flex items-center justify-center">
-            <div className="w-2 h-2 rounded-full bg-sky-500 animate-ping" />
-          </div>
+          {/* AC Conduit 4: Inverter -> AC Protection Cluster */}
+          <HorizontalConduit
+            type="ac"
+            active={atsSource === 'solar'}
+            className="flex-1 min-w-[55px] max-w-[85px]"
+          />
 
           {/* Node 5: AC Protection Cluster (AC Breaker + AC SPD in Parallel) */}
           <div className="flex flex-col items-center gap-2">
@@ -328,8 +573,12 @@ export function Schematic2DView() {
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
           </div>
 
-          {/* AC Busbar Line 5: AC Protection -> AC Isolator */}
-          <div className="h-0.5 flex-1 max-w-[40px] bg-sky-500" />
+          {/* AC Conduit 5: AC Protection -> AC Isolator */}
+          <HorizontalConduit
+            type="ac"
+            active={atsSource === 'solar'}
+            className="flex-1 min-w-[55px] max-w-[85px]"
+          />
 
           {/* Node 6: AC Isolator Switch */}
           <div className="flex flex-col items-center">
@@ -354,16 +603,46 @@ export function Schematic2DView() {
             <div className="h-14" />
           </div>
 
-          {/* AC Busbar Line 6: AC Isolator -> ATS */}
-          <div
-            className={`h-0.5 flex-1 max-w-[40px] transition-all duration-300 ${
-              atsSource === 'solar'
-                ? 'bg-sky-500 shadow-[0_0_4px_rgba(2,132,199,0.5)]'
-                : 'border-t border-dashed border-slate-400 dark:border-slate-600 bg-transparent opacity-40'
-            }`}
+          {/* AC Conduit 6: AC Isolator -> Main Panel (Inverter AC Feed into Main Panel) */}
+          <HorizontalConduit
+            type="ac"
+            active={atsSource === 'solar'}
+            className="flex-1 min-w-[55px] max-w-[85px]"
           />
 
-          {/* Node 7: ATS Switch */}
+          {/* Node 7: Main Distribution Panel (MDB • 01) - Inverter feeder connects here */}
+          <div className="flex flex-col items-center">
+            <div
+              onClick={() => triggerSelect('main_panel')}
+              onMouseEnter={() => setHoveredNodeKey('main_panel')}
+              onMouseLeave={() => setHoveredNodeKey(null)}
+              className={getNodeClasses('main_panel', 'slate')}
+            >
+              <div className="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 mb-1.5">
+                <Network className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-mono font-bold tracking-wider text-slate-400">MDB • 01</span>
+              <span className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">MAIN PANEL</span>
+              <span className="text-[11px] font-mono text-slate-600 dark:text-slate-400 font-bold">
+                230V AC
+              </span>
+              <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Distribution
+              </span>
+            </div>
+            {/* Ground bonding tap */}
+            <div className="w-0.5 h-12 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+          </div>
+
+          {/* AC Conduit 7: Main Panel -> ATS Switch (Solar power feed to transfer switch) */}
+          <HorizontalConduit
+            type="ac"
+            active={atsSource === 'solar'}
+            className="flex-1 min-w-[55px] max-w-[85px]"
+          />
+
+          {/* Node 8: ATS Switch (XFER • ATS) - Swaps between Solar (left) & Utility (right) */}
           <div className="flex flex-col items-center">
             <div
               onClick={() => {
@@ -396,44 +675,15 @@ export function Schematic2DView() {
             <div className="h-14" />
           </div>
 
-          {/* AC Busbar Line 7: ATS -> Main Panel */}
-          <div className="h-0.5 flex-1 max-w-[40px] bg-sky-500" />
-
-          {/* Node 8: Main Distribution Panel */}
-          <div className="flex flex-col items-center">
-            <div
-              onClick={() => triggerSelect('main_panel')}
-              onMouseEnter={() => setHoveredNodeKey('main_panel')}
-              onMouseLeave={() => setHoveredNodeKey(null)}
-              className={getNodeClasses('main_panel', 'slate')}
-            >
-              <div className="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 mb-1.5">
-                <Network className="w-5 h-5" />
-              </div>
-              <span className="text-[10px] font-mono font-bold tracking-wider text-slate-400">MDB • 01</span>
-              <span className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">MAIN PANEL</span>
-              <span className="text-[11px] font-mono text-slate-600 dark:text-slate-400 font-bold">
-                230V AC
-              </span>
-              <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Distribution
-              </span>
-            </div>
-            {/* Ground bonding tap */}
-            <div className="w-0.5 h-12 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-          </div>
-
-          {/* Split Feeds to Utility Grid & Building Load */}
+          {/* Split Feeds to Utility Grid (Alternate Input) & Building Load (Output) */}
           <div className="flex flex-col gap-4 pl-1">
-            {/* Utility Grid Feed */}
+            {/* Utility Grid Feed into ATS */}
             <div className="flex items-center gap-2">
-              <div
-                className={`h-0.5 w-5 transition-all duration-300 ${
-                  atsSource === 'utility'
-                    ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]'
-                    : 'bg-slate-300 dark:bg-slate-700 opacity-40'
-                }`}
+              <HorizontalConduit
+                type="grid"
+                active={atsSource === 'utility'}
+                reverse={true}
+                className="w-12 sm:w-14"
               />
               <div
                 onClick={() => triggerSelect('grid')}
@@ -455,9 +705,13 @@ export function Schematic2DView() {
               </div>
             </div>
 
-            {/* Building Load Feed */}
+            {/* Building Load Feed from ATS */}
             <div className="flex items-center gap-2">
-              <div className="h-0.5 w-5 bg-sky-500" />
+              <HorizontalConduit
+                type="ac"
+                active={true}
+                className="w-12 sm:w-14"
+              />
               <div
                 onClick={() => triggerSelect('load')}
                 onMouseEnter={() => setHoveredNodeKey('load')}
