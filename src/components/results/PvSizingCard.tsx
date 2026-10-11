@@ -6,6 +6,7 @@ export function PvSizingCard() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
   const setPanelCountOverride = useCalculatorStore((s) => s.setPanelCountOverride);
+  const step2DetailMode = useCalculatorStore((s) => s.step2DetailMode);
 
   const { pvSizing, stringSizing } = calculationResult;
 
@@ -48,9 +49,11 @@ export function PvSizingCard() {
             <div className="text-3xl font-black font-mono text-slate-900 dark:text-white mt-1">
               {pvSizing.minPanels} <span className="text-sm font-normal text-slate-500">modules</span>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-              {pvSizing.explanation.min}
-            </p>
+            {step2DetailMode === 'detailed' && (
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+                {pvSizing.explanation.min}
+              </p>
+            )}
           </div>
           <button
             onClick={() => setPanelCountOverride(pvSizing.minPanels)}
@@ -75,9 +78,11 @@ export function PvSizingCard() {
               {pvSizing.recommendedPanels}{' '}
               <span className="text-sm font-normal text-amber-700/80 dark:text-amber-400">modules</span>
             </div>
-            <p className="text-xs text-slate-700 dark:text-slate-300 mt-2 leading-relaxed font-medium">
-              {pvSizing.explanation.recommended}
-            </p>
+            {step2DetailMode === 'detailed' && (
+              <p className="text-xs text-slate-700 dark:text-slate-300 mt-2 leading-relaxed font-medium">
+                {pvSizing.explanation.recommended}
+              </p>
+            )}
           </div>
           <button
             onClick={() => setPanelCountOverride(pvSizing.recommendedPanels)}
@@ -101,9 +106,11 @@ export function PvSizingCard() {
             <div className="text-3xl font-black font-mono text-slate-900 dark:text-white mt-1">
               {pvSizing.maxPanels} <span className="text-sm font-normal text-slate-500">modules</span>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-              {pvSizing.explanation.max}
-            </p>
+            {step2DetailMode === 'detailed' && (
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+                {pvSizing.explanation.max}
+              </p>
+            )}
           </div>
           <button
             onClick={() => setPanelCountOverride(pvSizing.maxPanels)}
@@ -171,9 +178,11 @@ export function PvSizingCard() {
           </div>
         </div>
 
-        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans">
-          {stringSizing.explanation}
-        </p>
+        {step2DetailMode === 'detailed' && (
+          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans">
+            {stringSizing.explanation}
+          </p>
+        )}
       </div>
     </div>
   );

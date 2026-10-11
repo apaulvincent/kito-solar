@@ -424,6 +424,7 @@ function CadDimensionDrawing({ itemKey }: { itemKey: string }) {
 
 export function MountingBomCard() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
+  const step2DetailMode = useCalculatorStore((s) => s.step2DetailMode);
   const { mounting } = calculationResult;
   const [inspectedItem, setInspectedItem] = useState<MountingItem | null>(null);
 
@@ -545,18 +546,22 @@ export function MountingBomCard() {
                 </div>
 
                 {/* Engineering Explanation (Full unconstrained text) */}
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  {item.explanation}
-                </p>
+                {step2DetailMode === 'detailed' && (
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    {item.explanation}
+                  </p>
+                )}
               </div>
 
               {/* Card Footer: Sizing Basis & CAD Action */}
               <div className="space-y-2.5 pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
                 {/* Engineering Sizing Basis */}
-                <div className="flex items-start gap-2 text-[10px] font-mono text-slate-500 dark:text-slate-400 bg-white/90 dark:bg-slate-900/80 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800/80">
-                  <Info className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                  <span className="leading-tight">{item.calculationBasis}</span>
-                </div>
+                {step2DetailMode === 'detailed' && (
+                  <div className="flex items-start gap-2 text-[10px] font-mono text-slate-500 dark:text-slate-400 bg-white/90 dark:bg-slate-900/80 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800/80">
+                    <Info className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                    <span className="leading-tight">{item.calculationBasis}</span>
+                  </div>
+                )}
 
                 {/* Inspect CAD Dimensions Trigger Button */}
                 <div className="flex items-center justify-between gap-2 pt-1">
