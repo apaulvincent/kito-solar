@@ -58,4 +58,30 @@ describe('MountingBomCard Component & Accessibility Remediation', () => {
     const bareSlate400Matches = sourceCode.match(/class="[^"]*\btext-slate-400\b(?!\s*dark:)[^"]*"/g) || [];
     expect(bareSlate400Matches).toEqual([]);
   });
+
+  it('renders accessory name, quantity, and info basis in minimum detail mode, hiding dimensions, torque, spec box, and footer', async () => {
+    const { useCalculatorStore } = await import('@/store/useCalculatorStore');
+    
+    // Set to min mode
+    useCalculatorStore.getState().setStep2DetailMode('min');
+    const minMarkup = renderToStaticMarkup(createElement(MountingBomCard));
+
+    expect(minMarkup).toContain('pcs');
+    expect(minMarkup).toContain('RAIL SPLICE');
+    expect(minMarkup).toContain('Provides mechanical continuity');
+    expect(minMarkup).not.toContain('<span>CAD</span>');
+    expect(minMarkup).not.toContain('Torque:');
+
+    // Set to detailed mode
+    useCalculatorStore.getState().setStep2DetailMode('detailed');
+    const detailedMarkup = renderToStaticMarkup(createElement(MountingBomCard));
+
+    expect(detailedMarkup).toContain('pcs');
+    expect(detailedMarkup).toContain('Provides mechanical continuity');
+    expect(detailedMarkup).toContain('<span>CAD</span>');
+    expect(detailedMarkup).toContain('Torque:');
+
+    // Reset back to default min mode
+    useCalculatorStore.getState().setStep2DetailMode('min');
+  });
 });

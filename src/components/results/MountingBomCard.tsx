@@ -482,7 +482,7 @@ export function MountingBomCard() {
             <div
               key={item.key}
               onClick={() => setInspectedItem(item)}
-              className="group relative flex flex-col justify-between p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 hover:bg-white dark:hover:bg-slate-900 hover:border-amber-500/50 dark:hover:border-amber-500/50 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer space-y-4"
+              className="group relative flex flex-col justify-between p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 hover:bg-white dark:hover:bg-slate-900 hover:border-amber-500/50 dark:hover:border-amber-500/50 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer space-y-3.5"
             >
               <div className="space-y-3">
                 {/* Visual Preview Box & Primary Quantities */}
@@ -526,66 +526,70 @@ export function MountingBomCard() {
                   </div>
                 </div>
 
-                {/* Dimension & Material Quick Tag */}
-                {item.dimensions && (
-                  <div className="flex items-center gap-2 flex-wrap text-[10px] font-mono">
-                    <span className="px-2 py-0.5 rounded-md bg-slate-200/80 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold">
-                      {item.dimensions.lengthMm} × {item.dimensions.widthMm} × {item.dimensions.heightMm} mm
-                    </span>
-                    {item.dimensions.torqueNm && (
-                      <span className="px-2 py-0.5 rounded-md bg-amber-100/70 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-medium">
-                        Torque: {item.dimensions.torqueNm}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* Specification Box (No text truncation) */}
-                <div className="text-[11px] font-mono text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900/90 p-3 rounded-xl border border-slate-200 dark:border-slate-800 leading-relaxed shadow-subtle">
-                  {item.specification}
-                </div>
-
-                {/* Engineering Explanation (Full unconstrained text) */}
-                {step2DetailMode === 'detailed' && (
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                    {item.explanation}
-                  </p>
-                )}
-              </div>
-
-              {/* Card Footer: Sizing Basis & CAD Action */}
-              <div className="space-y-2.5 pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
-                {/* Engineering Sizing Basis */}
-                {step2DetailMode === 'detailed' && (
+                {/* Sizing Basis / Context Info Note (Included in both Min & Detailed) */}
+                {item.calculationBasis && (
                   <div className="flex items-start gap-2 text-[10px] font-mono text-slate-500 dark:text-slate-400 bg-white/90 dark:bg-slate-900/80 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800/80">
                     <Info className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                     <span className="leading-tight">{item.calculationBasis}</span>
                   </div>
                 )}
 
-                {/* Inspect CAD Dimensions Trigger Button */}
-                <div className="flex items-center justify-between gap-2 pt-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {item.standards?.slice(0, 2).map((std) => (
-                      <span key={std} className="text-[9px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 font-medium">
-                        {std}
-                      </span>
-                    ))}
-                  </div>
+                {step2DetailMode === 'detailed' && (
+                  <>
+                    {/* Dimension & Material Quick Tag */}
+                    {item.dimensions && (
+                      <div className="flex items-center gap-2 flex-wrap text-[10px] font-mono">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-200/80 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold">
+                          {item.dimensions.lengthMm} × {item.dimensions.widthMm} × {item.dimensions.heightMm} mm
+                        </span>
+                        {item.dimensions.torqueNm && (
+                          <span className="px-2 py-0.5 rounded-md bg-amber-100/70 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-medium">
+                            Torque: {item.dimensions.torqueNm}
+                          </span>
+                        )}
+                      </div>
+                    )}
 
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setInspectedItem(item);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-mono font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:border-amber-300 transition-colors shadow-sm"
-                  >
-                    <Ruler className="w-3.5 h-3.5" />
-                    <span>Inspect CAD Dimensions</span>
-                  </button>
-                </div>
+                    {/* Specification Box (No text truncation) */}
+                    <div className="text-[11px] font-mono text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900/90 p-3 rounded-xl border border-slate-200 dark:border-slate-800 leading-relaxed shadow-subtle">
+                      {item.specification}
+                    </div>
+
+                    {/* Engineering Explanation (Full unconstrained text) */}
+                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                      {item.explanation}
+                    </p>
+                  </>
+                )}
               </div>
+
+              {/* Card Footer: Standards & CAD Action (Detailed Only) */}
+              {step2DetailMode === 'detailed' && (
+                <div className="space-y-2.5 pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {item.standards?.slice(0, 2).map((std) => (
+                        <span key={std} className="text-[9px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 font-medium">
+                          {std}
+                        </span>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setInspectedItem(item);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-mono font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:border-amber-300 transition-colors shadow-sm"
+                      title="Inspect CAD Dimensions"
+                    >
+                      <Ruler className="w-3.5 h-3.5" />
+                      <span>CAD</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

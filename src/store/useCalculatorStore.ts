@@ -179,7 +179,9 @@ function compute(
   });
 }
 
-export const useCalculatorStore = create<CalculatorState>((set, get) => ({
+export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
+  api.getInitialState = () => get();
+  return {
   inverters: invertersSeed as SolarInverterRecord[],
   modules: modulesSeed as SolarModuleRecord[],
   batteries: batteriesSeed as BatteryRecord[],
@@ -507,4 +509,5 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
       ),
     });
   },
-}));
+};
+});
