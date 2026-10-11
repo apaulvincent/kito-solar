@@ -145,9 +145,9 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
     }
   };
 
-  const handleGoToAccount = () => {
+  const handleGoToProjects = () => {
     onClose();
-    setActiveView('account');
+    setActiveView('projects');
   };
 
   const modalContent = (
@@ -238,10 +238,10 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
                 </button>
                 <button
                   type="button"
-                  onClick={handleGoToAccount}
+                  onClick={handleGoToProjects}
                   className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-sm active:scale-95"
                 >
-                  <span>View in My Account</span>
+                  <span>View in Projects</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>

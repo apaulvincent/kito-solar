@@ -17,7 +17,7 @@ import { isSupabaseConfigured } from '@/lib/supabase';
 import { SavedProject } from '@/types/project';
 
 export type WorkbenchTabKey = 'electrical' | 'pv_sizing' | 'mounting_bom' | 'warnings';
-export type ActiveView = 'home' | 'tool' | 'login' | 'register' | 'account';
+export type ActiveView = 'home' | 'tool' | 'projects' | 'login' | 'register' | 'account';
 export type DetailMode = 'min' | 'detailed';
 
 interface CalculatorState {
@@ -109,6 +109,7 @@ const getInitialTheme = (): 'light' | 'dark' => {
 export const pathToView = (pathname: string, hash?: string): ActiveView => {
   const cleanPath = pathname.toLowerCase().replace(/^\/+|\/+$/g, '');
   if (cleanPath === 'tool' || cleanPath === 'studio') return 'tool';
+  if (cleanPath === 'projects') return 'projects';
   if (cleanPath === 'login') return 'login';
   if (cleanPath === 'register') return 'register';
   if (cleanPath === 'account') return 'account';
@@ -118,6 +119,7 @@ export const pathToView = (pathname: string, hash?: string): ActiveView => {
     if (hash) {
       const cleanHash = hash.replace(/^#+/, '').toLowerCase();
       if (cleanHash === 'tool' || cleanHash === 'studio') return 'tool';
+      if (cleanHash === 'projects') return 'projects';
       if (cleanHash === 'login') return 'login';
       if (cleanHash === 'register') return 'register';
       if (cleanHash === 'account') return 'account';

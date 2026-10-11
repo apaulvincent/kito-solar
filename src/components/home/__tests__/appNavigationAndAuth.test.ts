@@ -15,7 +15,7 @@ describe('App Navigation & Supabase Authentication Suite', () => {
     expect(typeof authState.signOut).toBe('function');
   });
 
-  it('manages views between home, tool, login, register, and account', () => {
+  it('manages views between home, tool, projects, login, register, and account', () => {
     const store = useCalculatorStore.getState();
 
     store.setActiveView('home');
@@ -23,6 +23,9 @@ describe('App Navigation & Supabase Authentication Suite', () => {
 
     store.setActiveView('tool');
     expect(useCalculatorStore.getState().activeView).toBe('tool');
+
+    store.setActiveView('projects');
+    expect(useCalculatorStore.getState().activeView).toBe('projects');
 
     store.setActiveView('login');
     expect(useCalculatorStore.getState().activeView).toBe('login');
@@ -41,11 +44,13 @@ describe('App Navigation & Supabase Authentication Suite', () => {
     expect(pathToView('/tool')).toBe('tool');
     expect(pathToView('/tool/')).toBe('tool');
     expect(pathToView('/studio')).toBe('tool');
+    expect(pathToView('/projects')).toBe('projects');
     expect(pathToView('/login')).toBe('login');
     expect(pathToView('/register')).toBe('register');
     expect(pathToView('/account')).toBe('account');
     // Legacy hash support
     expect(pathToView('/', '#tool')).toBe('tool');
+    expect(pathToView('/', '#projects')).toBe('projects');
     expect(pathToView('', '#login')).toBe('login');
   });
 
@@ -61,14 +66,23 @@ describe('App Navigation & Supabase Authentication Suite', () => {
     expect(content).toContain('Welcome back');
   });
 
-  it('verifies AccountPage renders profile, security, and project status', () => {
+  it('verifies AccountPage renders profile, identity, and account details', () => {
     const accountPagePath = path.resolve(process.cwd(), 'src/components/account/AccountPage.tsx');
     const content = fs.readFileSync(accountPagePath, 'utf-8');
 
     expect(content).toContain('Sign in to view your account');
-    expect(content).toContain('Current Workspace Configuration');
-    expect(content).toContain('Array Capacity');
-    expect(content).toContain('Launch Tool');
+    expect(content).toContain('Account Details');
+    expect(content).toContain('Auth Provider');
+    expect(content).toContain('Account ID');
+  });
+
+  it('verifies ProjectsPage renders saved projects list and guest gate', () => {
+    const projectsPagePath = path.resolve(process.cwd(), 'src/components/projects/ProjectsPage.tsx');
+    const content = fs.readFileSync(projectsPagePath, 'utf-8');
+
+    expect(content).toContain('Sign in to view your projects');
+    expect(content).toContain('SavedProjectsList');
+    expect(content).toContain('My Solar Projects');
   });
 
   it('verifies HomePage provides direct links to the tool and account', () => {

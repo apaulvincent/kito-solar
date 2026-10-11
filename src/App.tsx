@@ -5,6 +5,7 @@ import { Header } from '@/components/header/Header';
 import { HomePage } from '@/components/home/HomePage';
 import { AuthPage } from '@/components/auth/AuthPage';
 import { AccountPage } from '@/components/account/AccountPage';
+import { ProjectsPage } from '@/components/projects/ProjectsPage';
 import { SystemSummary } from '@/components/summary/SystemSummary';
 import { SolarDiagramCanvas } from '@/components/diagram/SolarDiagramCanvas';
 import { DiagramComponentList } from '@/components/diagram/DiagramComponentList';
@@ -63,6 +64,8 @@ export function App() {
       {activeView === 'login' && <AuthPage defaultMode="signin" />}
 
       {activeView === 'register' && <AuthPage defaultMode="signup" />}
+
+      {activeView === 'projects' && <ProjectsPage />}
 
       {activeView === 'account' && <AccountPage />}
 

@@ -73,11 +73,11 @@ export function HomePage() {
 
                 <button
                   type="button"
-                  onClick={() => setActiveView(user ? 'account' : 'register')}
+                  onClick={() => setActiveView(user ? 'projects' : 'register')}
                   className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-800 dark:text-white font-bold text-sm border border-slate-200 dark:border-slate-700 shadow-xs active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {user ? <User className="w-4 h-4 text-amber-500" /> : <Sparkles className="w-4 h-4 text-amber-500" />}
-                  <span>{user ? 'My Saved Jobs' : 'Create Free Account'}</span>
+                  <span>{user ? 'My Saved Projects' : 'Create Free Account'}</span>
                 </button>
               </div>
 
@@ -429,7 +429,7 @@ export function HomePage() {
 
           {/* Tool Card 6: Account & Cloud Sync */}
           <div
-            onClick={() => setActiveView(user ? 'account' : 'register')}
+            onClick={() => setActiveView(user ? 'projects' : 'register')}
             className="group relative rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-7 shadow-xs hover:shadow-xl hover:border-amber-400/80 dark:hover:border-amber-500/80 transition-all cursor-pointer flex flex-col justify-between"
           >
             <div>
