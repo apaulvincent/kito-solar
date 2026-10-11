@@ -18,7 +18,7 @@ describe('DownloadSizingButton', () => {
   it('renders disabled button with cursor-not-allowed when user is not logged in', () => {
     const html = renderToStaticMarkup(createElement(DownloadSizingButton, { authUser: null }));
     expect(html).toBeTruthy();
-    expect(html).toContain('Download the Sizing Details');
+    expect(html).toContain('Download Sizing');
     expect(html).toContain('disabled=""');
     expect(html).toContain('opacity-50');
     expect(html).toContain('cursor-not-allowed');
@@ -37,7 +37,7 @@ describe('DownloadSizingButton', () => {
 
     const html = renderToStaticMarkup(createElement(DownloadSizingButton, { authUser: mockUser }));
     expect(html).toBeTruthy();
-    expect(html).toContain('Download the Sizing Details');
+    expect(html).toContain('Download Sizing');
     expect(html).not.toContain('disabled=""');
     expect(html).toContain('cursor-pointer');
     expect(html).toContain('bg-emerald-600');

@@ -71,7 +71,7 @@ export function DownloadSizingButton({ className = '', variant = 'primary', auth
           } ${className}`}
         >
           <Lock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
-          <span>Download the Sizing Details</span>
+          <span>Download Sizing</span>
         </button>
 
         {/* Informative Tooltip on Hover */}
@@ -117,7 +117,7 @@ export function DownloadSizingButton({ className = '', variant = 'primary', auth
       ) : (
         <>
           <FileDown className="w-4 h-4 flex-shrink-0" />
-          <span>Download the Sizing Details</span>
+          <span>Download Sizing</span>
         </>
       )}
     </button>
