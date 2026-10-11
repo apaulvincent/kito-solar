@@ -1,7 +1,7 @@
 // src/components/results/CalculationWorkbench.tsx
 import { useState } from 'react';
 import { useCalculatorStore, WorkbenchTabKey } from '@/store/useCalculatorStore';
-import { Zap, Sun, Hammer, AlertTriangle, Layers, CheckCircle2, LayoutPanelTop, Rows3, List, SlidersHorizontal } from 'lucide-react';
+import { Zap, Sun, Hammer, AlertTriangle, Layers, CheckCircle2, LayoutPanelTop, Rows3, ListChevronsDownUp, ListChevronsUpDown } from 'lucide-react';
 import { DcResultsCard } from './DcResultsCard';
 import { AcResultsCard } from './AcResultsCard';
 import { BatteryResultsCard } from './BatteryResultsCard';
@@ -85,33 +85,33 @@ export function CalculationWorkbench() {
           <SaveProjectButton variant="compact" />
           <DownloadSizingButton variant="compact" />
 
-          {/* Detail Level Toggle: Summary vs Detailed Specs (Icon-Only) */}
+          {/* Detail Level Toggle: Compact vs Detailed (Icon-Only) */}
           <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
             <button
               type="button"
               onClick={() => setStep2DetailMode('min')}
-              title="Summary view"
-              aria-label="Summary view"
+              title="Compact view (minimal details)"
+              aria-label="Compact view (minimal details)"
               className={`p-2 rounded-lg transition-all cursor-pointer ${
                 step2DetailMode === 'min'
                   ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <List className="w-4 h-4" />
+              <ListChevronsDownUp className="w-4 h-4" />
             </button>
             <button
               type="button"
               onClick={() => setStep2DetailMode('detailed')}
-              title="Detailed technical specifications"
-              aria-label="Detailed technical specifications"
+              title="Detailed view (full engineering specs)"
+              aria-label="Detailed view (full engineering specs)"
               className={`p-2 rounded-lg transition-all cursor-pointer ${
                 step2DetailMode === 'detailed'
                   ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <SlidersHorizontal className="w-4 h-4" />
+              <ListChevronsUpDown className="w-4 h-4" />
             </button>
           </div>
 
