@@ -10,11 +10,17 @@ export function SolarDiagramCanvas() {
   const [viewMode, setViewMode] = useState<'3d' | 'split' | '2d'>('3d');
   const [isPaused, setIsPaused] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [resetViewCount, setResetViewCount] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
+
+  const handleResetView = () => {
+    setSelectedNodeKey(null);
+    setResetViewCount((c) => c + 1);
+  };
 
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
@@ -103,6 +109,13 @@ export function SolarDiagramCanvas() {
               </button>
             </span>
           )}
+
+          {isPaused && (viewMode === '3d' || viewMode === 'split') && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-amber-100/90 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-300 shadow-sm backdrop-blur-md animate-in fade-in">
+              <Pause className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+              FLOW PAUSED
+            </span>
+          )}
         </div>
 
         {/* Right: Viewport Controls */}
@@ -111,15 +124,19 @@ export function SolarDiagramCanvas() {
             <button
               onClick={() => setIsPaused(!isPaused)}
               title={isPaused ? 'Resume Power Flow Animation' : 'Pause Power Flow Animation'}
-              className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+              className={`p-1.5 rounded-md transition-colors ${
+                isPaused
+                  ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300'
+                  : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
             >
               {isPaused ? <Play className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : <Pause className="w-4 h-4" />}
             </button>
           )}
 
           <button
-            onClick={() => setSelectedNodeKey(null)}
-            title="Reset Active Focus"
+            onClick={handleResetView}
+            title="Reset Camera Angle & Focus"
             className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <RotateCcw className="w-4 h-4" />
@@ -157,7 +174,7 @@ export function SolarDiagramCanvas() {
           gl={{ antialias: true }}
         >
           <Suspense fallback={null}>
-            <SolarScene isAnimationPaused={isPaused} />
+            <SolarScene isAnimationPaused={isPaused} resetViewCount={resetViewCount} />
           </Suspense>
         </Canvas>
       )}
@@ -179,7 +196,7 @@ export function SolarDiagramCanvas() {
               gl={{ antialias: true }}
             >
               <Suspense fallback={null}>
-                <SolarScene isAnimationPaused={isPaused} />
+                <SolarScene isAnimationPaused={isPaused} resetViewCount={resetViewCount} />
               </Suspense>
             </Canvas>
           </div>

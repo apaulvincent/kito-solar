@@ -99,7 +99,7 @@ export function App() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Column 1 (lg: 4 cols): Configuration Workbench (Step 1) */}
             <section
-              className="lg:col-span-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1 space-y-6 overscroll-contain"
+              className="lg:col-span-4 lg:sticky lg:top-20"
               aria-label="Configuration Panel"
             >
               <ConfigurationPanel />
@@ -107,7 +107,7 @@ export function App() {
 
             {/* Column 2 (lg: 8 cols): Segmented Engineering Calculation Workbench (Step 2) */}
             <section
-              className="lg:col-span-8 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1 space-y-6 overscroll-contain"
+              className="lg:col-span-8 lg:sticky lg:top-20"
               aria-label="Engineering Calculation Workbench"
             >
               <CalculationWorkbench />

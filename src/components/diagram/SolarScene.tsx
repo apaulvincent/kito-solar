@@ -1,6 +1,7 @@
 // src/components/diagram/SolarScene.tsx
-import { useMemo } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import { OrbitControls, Grid, ContactShadows } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { DiagramNodeKey, CableConnection } from '@/types/diagram';
 import { DiagramNodeMesh } from './DiagramNodeMesh';
@@ -9,6 +10,7 @@ import { CONDUIT_ROUTES } from './conduitRoutes';
 
 interface SolarSceneProps {
   isAnimationPaused?: boolean;
+  resetViewCount?: number;
 }
 
 interface ArchitecturalWallBackboardProps {
@@ -146,7 +148,19 @@ function ArchitecturalWallBackboard({ isDark }: ArchitecturalWallBackboardProps)
   );
 }
 
-export function SolarScene({ isAnimationPaused = false }: SolarSceneProps) {
+export function SolarScene({ isAnimationPaused = false, resetViewCount = 0 }: SolarSceneProps) {
+  const { camera } = useThree();
+  const controlsRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (!resetViewCount) return;
+    camera.position.set(0.6, 4.0, 16.0);
+    if (controlsRef.current) {
+      controlsRef.current.target.set(0.6, 2.4, 0);
+      controlsRef.current.update();
+    }
+  }, [resetViewCount, camera]);
+
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
   const gridVoltageV = useCalculatorStore((s) => s.gridVoltageV);
   const isHybrid = calculationResult.systemType === 'hybrid' && calculationResult.battery.hasBattery;
@@ -424,6 +438,7 @@ export function SolarScene({ isAnimationPaused = false }: SolarSceneProps) {
 
       {/* Calibrated Centered Isometric OrbitControls */}
       <OrbitControls
+        ref={controlsRef}
         makeDefault
         target={[0.6, 2.4, 0]}
         enableDamping

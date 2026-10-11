@@ -59,53 +59,58 @@ export function CalculationWorkbench() {
   const warningCount = warnings.length;
 
   return (
-    <div className="space-y-6">
-      {/* Workbench Header & Segmented Tab Navigation */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sm:p-4 shadow-card dark:shadow-card-dark transition-colors duration-200">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-card dark:shadow-card-dark overflow-hidden transition-colors duration-200 flex flex-col lg:h-[calc(100vh-6rem)]">
+      {/* Pinned Header (Stays Fixed at Top — Matching Step 1 Style) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 flex-shrink-0 z-10">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 shadow-sm flex-shrink-0">
+            <Zap className="w-5 h-5" />
+          </div>
           <div>
-            <span className="text-[10px] font-mono tracking-wider uppercase text-amber-700 dark:text-amber-400 font-bold block">
+            <span className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 font-bold block">
               STEP 2: CALCULATION RESULTS &amp; SCHEDULES
             </span>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
               Engineering Calculation Workbench
             </h2>
           </div>
-
-          {/* View Mode Toggle: Tabbed vs Full Schedule */}
-          <div className="flex items-center gap-1.5 self-start md:self-auto bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={() => setViewAll(false)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all ${
-                !viewAll
-                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Tabbed Studio
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewAll(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all ${
-                viewAll
-                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              All Schedules
-            </button>
-          </div>
         </div>
 
-        {/* 4 Segmented Discipline Tabs */}
-        {!viewAll && (
+        {/* View Mode Toggle: Tabbed vs Full Schedule */}
+        <div className="flex items-center gap-1.5 self-start sm:self-auto bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => setViewAll(false)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+              !viewAll
+                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            Tabbed Studio
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewAll(true)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+              viewAll
+                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            All Schedules
+          </button>
+        </div>
+      </div>
+
+      {/* Pinned Tab Navigation Row (Never Scrolls Away) */}
+      {!viewAll && (
+        <div className="p-3 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800/80 flex-shrink-0 z-10">
           <nav
             role="tablist"
             aria-label="Engineering Workbench Disciplines"
-            className="grid grid-cols-2 lg:grid-cols-4 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80"
+            className="grid grid-cols-2 lg:grid-cols-4 gap-2"
           >
             {TABS.map((tab) => {
               const isActive = activeTab === tab.id;
@@ -121,16 +126,16 @@ export function CalculationWorkbench() {
                   aria-controls={`tabpanel-${tab.id}`}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-start gap-2.5 p-3 rounded-xl border text-left transition-all ${
+                  className={`flex items-start gap-2.5 p-2.5 sm:p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     isActive
                       ? 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-300 dark:border-amber-600/50 shadow-sm ring-1 ring-amber-400/20'
-                      : 'bg-slate-50/60 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 hover:bg-slate-100/80 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
+                      : 'bg-slate-50/60 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 hover:bg-slate-100/80 dark:hover:bg-slate-900 hover:border-slate-300 dark:border-slate-700'
                   }`}
                 >
                   <div
-                    className={`p-2 rounded-lg flex-shrink-0 transition-colors ${
+                    className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 transition-colors ${
                       isActive
-                        ? 'bg-amber-600 text-white shadow-sm'
+                        ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
                         : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                     }`}
                   >
@@ -140,7 +145,7 @@ export function CalculationWorkbench() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
                       <span
-                        className={`text-xs sm:text-sm font-bold ${
+                        className={`text-xs sm:text-sm font-bold truncate ${
                           isActive
                             ? 'text-amber-900 dark:text-amber-200'
                             : 'text-slate-800 dark:text-slate-200'
@@ -168,7 +173,7 @@ export function CalculationWorkbench() {
                         </span>
                       )}
                     </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5 leading-snug">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5 leading-snug truncate">
                       {tab.description}
                     </span>
                   </div>
@@ -176,72 +181,76 @@ export function CalculationWorkbench() {
               );
             })}
           </nav>
-        )}
-      </div>
-
-      {/* Tab Panels */}
-      {viewAll ? (
-        /* Comprehensive Unified Schedule Mode */
-        <div className="space-y-6">
-          <WarningsPanel />
-          <div className="space-y-6">
-            <DcResultsCard />
-            <AcResultsCard />
-            <BatteryResultsCard />
-          </div>
-          <PvSizingCard />
-          <MountingBomCard />
         </div>
-      ) : (
-        /* Focused Discipline Tab Panels */
-        <div>
-          {activeTab === 'electrical' && (
-            <div
-              id="tabpanel-electrical"
-              role="tabpanel"
-              aria-labelledby="tab-electrical"
-              className="space-y-6 transition-opacity duration-150"
-            >
+      )}
+
+      {/* Main Calculation Content — Independently Scrollable */}
+      <div className="p-4 sm:p-5 flex-1 overflow-y-auto overscroll-contain space-y-6">
+        {viewAll ? (
+          /* Comprehensive Unified Schedule Mode */
+          <div className="space-y-6">
+            <WarningsPanel />
+            <div className="space-y-6">
               <DcResultsCard />
               <AcResultsCard />
               <BatteryResultsCard />
             </div>
-          )}
+            <PvSizingCard />
+            <MountingBomCard />
+          </div>
+        ) : (
+          /* Focused Discipline Tab Panels */
+          <div>
+            {activeTab === 'electrical' && (
+              <div
+                id="tabpanel-electrical"
+                role="tabpanel"
+                aria-labelledby="tab-electrical"
+                className="space-y-6 transition-opacity duration-150"
+              >
+                <DcResultsCard />
+                <AcResultsCard />
+                <BatteryResultsCard />
+              </div>
+            )}
 
-          {activeTab === 'pv_sizing' && (
-            <div
-              id="tabpanel-pv_sizing"
-              role="tabpanel"
-              aria-labelledby="tab-pv_sizing"
-              className="transition-opacity duration-150"
-            >
-              <PvSizingCard />
-            </div>
-          )}
+            {activeTab === 'pv_sizing' && (
+              <div
+                id="tabpanel-pv_sizing"
+                role="tabpanel"
+                aria-labelledby="tab-pv_sizing"
+                className="transition-opacity duration-150"
+              >
+                <PvSizingCard />
+              </div>
+            )}
 
-          {activeTab === 'mounting_bom' && (
-            <div
-              id="tabpanel-mounting_bom"
-              role="tabpanel"
-              aria-labelledby="tab-mounting_bom"
-              className="transition-opacity duration-150"
-            >
-              <MountingBomCard />
-            </div>
-          )}
+            {activeTab === 'mounting_bom' && (
+              <div
+                id="tabpanel-mounting_bom"
+                role="tabpanel"
+                aria-labelledby="tab-mounting_bom"
+                className="transition-opacity duration-150"
+              >
+                <MountingBomCard />
+              </div>
+            )}
 
-          {activeTab === 'warnings' && (
-            <div
-              id="tabpanel-warnings"
-              role="tabpanel"
-              aria-labelledby="tab-warnings"
-              className="transition-opacity duration-150"
-            >
-              <WarningsPanel />
-            </div>
-          )}
-        </div>
-      )}
+            {activeTab === 'warnings' && (
+              <div
+                id="tabpanel-warnings"
+                role="tabpanel"
+                aria-labelledby="tab-warnings"
+                className="transition-opacity duration-150"
+              >
+                <WarningsPanel />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
+export default CalculationWorkbench;
