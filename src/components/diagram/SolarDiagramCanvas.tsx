@@ -16,6 +16,8 @@ export function SolarDiagramCanvas() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
+  const atsSource = useCalculatorStore((s) => s.atsSource);
+  const toggleAtsSource = useCalculatorStore((s) => s.toggleAtsSource);
 
   const handleResetView = () => {
     setSelectedNodeKey(null);
@@ -96,6 +98,25 @@ export function SolarDiagramCanvas() {
               ? 'HYBRID SYSTEM'
               : 'ON-GRID SYSTEM'}
           </span>
+
+          {/* ATS Transfer Switch Active Source Pill */}
+          <button
+            onClick={toggleAtsSource}
+            title={`ATS Switch: currently ${atsSource === 'solar' ? 'SOLAR (LEFT)' : 'UTILITY (RIGHT)'} - click to toggle`}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 shadow-sm hover:border-amber-500 transition-colors pointer-events-auto cursor-pointer"
+          >
+            <span className="text-[10px] text-slate-400 font-mono">ATS:</span>
+            <span
+              className={`w-2 h-2 rounded-full ${
+                atsSource === 'solar'
+                  ? 'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.8)]'
+                  : 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]'
+              }`}
+            />
+            <span className="font-bold">
+              {atsSource === 'solar' ? 'SOLAR (LEFT)' : 'UTILITY (RIGHT)'}
+            </span>
+          </button>
 
           {selectedNodeKey && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-amber-50 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-200 shadow-sm animate-in fade-in backdrop-blur-md">

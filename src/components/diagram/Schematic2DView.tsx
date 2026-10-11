@@ -9,6 +9,8 @@ export function Schematic2DView() {
   const hoveredNodeKey = useCalculatorStore((s) => s.hoveredNodeKey);
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
   const setHoveredNodeKey = useCalculatorStore((s) => s.setHoveredNodeKey);
+  const atsSource = useCalculatorStore((s) => s.atsSource);
+  const toggleAtsSource = useCalculatorStore((s) => s.toggleAtsSource);
 
   const isHybrid = calculationResult.systemType === 'hybrid' && calculationResult.battery.hasBattery;
 
@@ -353,26 +355,42 @@ export function Schematic2DView() {
           </div>
 
           {/* AC Busbar Line 6: AC Isolator -> ATS */}
-          <div className="h-0.5 flex-1 max-w-[40px] bg-sky-500" />
+          <div
+            className={`h-0.5 flex-1 max-w-[40px] transition-all duration-300 ${
+              atsSource === 'solar'
+                ? 'bg-sky-500 shadow-[0_0_4px_rgba(2,132,199,0.5)]'
+                : 'border-t border-dashed border-slate-400 dark:border-slate-600 bg-transparent opacity-40'
+            }`}
+          />
 
           {/* Node 7: ATS Switch */}
           <div className="flex flex-col items-center">
             <div
-              onClick={() => triggerSelect('ats')}
+              onClick={() => {
+                triggerSelect('ats');
+                toggleAtsSource();
+              }}
               onMouseEnter={() => setHoveredNodeKey('ats')}
               onMouseLeave={() => setHoveredNodeKey(null)}
-              className={getNodeClasses('ats', 'purple')}
+              className={getNodeClasses('ats', atsSource === 'solar' ? 'amber' : 'emerald')}
+              title="Click to toggle ATS Transfer Switch source"
             >
               <div className="w-11 h-11 rounded-lg bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-1.5">
                 <Cable className="w-5 h-5" />
               </div>
               <span className="text-[10px] font-mono font-bold tracking-wider text-slate-400">XFER • ATS</span>
               <span className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">ATS SWITCH</span>
-              <span className="text-[11px] font-mono text-purple-600 dark:text-purple-400 font-bold">
-                {calculationResult.ac.atsConfigured ? `${calculationResult.ac.atsRatingA} A` : 'BYPASS'}
+              <span
+                className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded mt-0.5 shadow-sm transition-colors ${
+                  atsSource === 'solar'
+                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300'
+                    : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300'
+                }`}
+              >
+                {atsSource === 'solar' ? 'SOLAR (LEFT)' : 'UTILITY (RIGHT)'}
               </span>
-              <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Dual Power
+              <span className="text-[8px] text-slate-400 dark:text-slate-500 mt-0.5">
+                Click to switch
               </span>
             </div>
             <div className="h-14" />
@@ -410,7 +428,13 @@ export function Schematic2DView() {
           <div className="flex flex-col gap-4 pl-1">
             {/* Utility Grid Feed */}
             <div className="flex items-center gap-2">
-              <div className="h-0.5 w-5 bg-slate-400" />
+              <div
+                className={`h-0.5 w-5 transition-all duration-300 ${
+                  atsSource === 'utility'
+                    ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]'
+                    : 'bg-slate-300 dark:bg-slate-700 opacity-40'
+                }`}
+              />
               <div
                 onClick={() => triggerSelect('grid')}
                 onMouseEnter={() => setHoveredNodeKey('grid')}

@@ -9,6 +9,8 @@ export function ComponentInspector() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
   const mainBreakerA = useCalculatorStore((s) => s.mainBreakerA);
   const gridVoltageV = useCalculatorStore((s) => s.gridVoltageV);
+  const atsSource = useCalculatorStore((s) => s.atsSource);
+  const setAtsSource = useCalculatorStore((s) => s.setAtsSource);
 
   if (!selectedNodeKey) return null;
 
@@ -286,6 +288,44 @@ export function ComponentInspector() {
               </div>
             </div>
           </div>
+
+          {/* Active ATS Source Switcher */}
+          {selectedNodeKey === 'ats' && (
+            <div className="p-3.5 rounded-xl border border-amber-300 dark:border-amber-800/80 bg-amber-50/60 dark:bg-amber-950/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+              <div>
+                <div className="text-xs font-bold font-mono text-slate-900 dark:text-slate-100 uppercase tracking-wide">
+                  Active ATS Source Position
+                </div>
+                <div className="text-[11px] text-slate-600 dark:text-slate-400">
+                  Switch power source feeding the main distribution & building loads:
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 p-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setAtsSource('solar')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-mono font-bold transition-all ${
+                    atsSource === 'solar'
+                      ? 'bg-amber-500 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  SOLAR (LEFT)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAtsSource('utility')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-mono font-bold transition-all ${
+                    atsSource === 'utility'
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  UTILITY (RIGHT)
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Applicable Code Standards & Compliance */}
           {codeReference && (

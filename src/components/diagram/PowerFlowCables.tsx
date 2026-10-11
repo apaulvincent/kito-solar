@@ -35,6 +35,22 @@ interface ParticleInstance {
   isCableActive: boolean;
 }
 
+function isConduitFlowing(cableId: string, atsSource: 'solar' | 'utility'): boolean {
+  if (atsSource === 'solar') {
+    // Left Switch = Solar selected to power the building loads.
+    // The utility grid feed does not supply the main panel.
+    if (cableId === 'c-grid-panel') return false;
+    return true;
+  } else {
+    // Right Switch = Utility selected to power the building loads.
+    // Inverter AC output flow to the main panel stops:
+    const inverterAcRoutes = ['c-inv-acbrk', 'c-acbrk-spd', 'c-acbrk-iso', 'c-iso-panel'];
+    if (inverterAcRoutes.includes(cableId)) return false;
+    // Solar PV generation charging the battery continues:
+    return true;
+  }
+}
+
 export function PowerFlowCables({
   cables,
   nodePositions,
@@ -42,6 +58,7 @@ export function PowerFlowCables({
 }: PowerFlowCablesProps) {
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
   const hoveredNodeKey = useCalculatorStore((s) => s.hoveredNodeKey);
+  const atsSource = useCalculatorStore((s) => s.atsSource);
 
   const instancedMeshRef = useRef<THREE.InstancedMesh>(null);
   const hasInitializedRef = useRef(false);
@@ -101,6 +118,8 @@ export function PowerFlowCables({
 
     paths.forEach((path, r) => {
       if (path.segments.length === 0 || path.totalDistance <= 0.001) return;
+      if (!isConduitFlowing(path.cableId, atsSource)) return;
+
       const cable = cables.find((c) => c.id === path.cableId);
       const isCableActive = Boolean(
         cable &&
@@ -124,7 +143,7 @@ export function PowerFlowCables({
     });
 
     return list;
-  }, [paths, cables, selectedNodeKey, hoveredNodeKey]);
+  }, [paths, cables, selectedNodeKey, hoveredNodeKey, atsSource]);
 
   // Color each instance bead according to current circuit type
   useEffect(() => {
@@ -149,7 +168,7 @@ export function PowerFlowCables({
     if (instancedMeshRef.current.instanceColor) {
       instancedMeshRef.current.instanceColor.needsUpdate = true;
     }
-  }, [particles]);
+  }, [particles, atsSource]);
 
   // Update bead positions and pulsing scale along conduit pathways
   useFrame((state) => {
@@ -361,6 +380,7 @@ export function PowerFlowCables({
       {/* Animated Electric Current Energy Flow Pulses (Instanced Luminous Spheres) */}
       {particles.length > 0 && (
         <instancedMesh
+          key={`particles-${particles.length}-${atsSource}`}
           ref={instancedMeshRef}
           args={[undefined, undefined, particles.length]}
           frustumCulled={false}

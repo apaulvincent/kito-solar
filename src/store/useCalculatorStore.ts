@@ -45,6 +45,7 @@ interface CalculatorState {
   activeView: ActiveView;
   step1DetailMode: DetailMode;
   step2DetailMode: DetailMode;
+  atsSource: 'solar' | 'utility';
 
   // Derived Calculation
   calculationResult: SystemCalculationResult;
@@ -62,6 +63,8 @@ interface CalculatorState {
   setSelectedNodeKey: (key: DiagramNodeKey | null) => void;
   setHoveredNodeKey: (key: DiagramNodeKey | null) => void;
   setIsInspectorOpen: (open: boolean) => void;
+  setAtsSource: (source: 'solar' | 'utility') => void;
+  toggleAtsSource: () => void;
   setTheme: (theme: 'light' | 'dark') => void;
   toggleTheme: () => void;
   setActiveWorkbenchTab: (tab: WorkbenchTabKey) => void;
@@ -214,6 +217,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   activeView: getInitialView(),
   step1DetailMode: getInitialStep1DetailMode(),
   step2DetailMode: getInitialStep2DetailMode(),
+  atsSource: 'solar',
 
   calculationResult: compute(
     defaultInverter,
@@ -429,6 +433,14 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
     set({ isInspectorOpen: open });
   },
 
+  setAtsSource: (source) => {
+    set({ atsSource: source });
+  },
+
+  toggleAtsSource: () => {
+    set((state) => ({ atsSource: state.atsSource === 'solar' ? 'utility' : 'solar' }));
+  },
+
   setActiveWorkbenchTab: (tab) => {
     set({ activeWorkbenchTab: tab });
   },
@@ -507,6 +519,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       selectedNodeKey: null,
       hoveredNodeKey: null,
       isInspectorOpen: false,
+      atsSource: 'solar',
       activeWorkbenchTab: 'electrical',
       calculationResult: compute(
         defaultInverter,

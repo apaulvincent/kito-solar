@@ -1,8 +1,9 @@
 // src/components/diagram/NodeGeometry.tsx
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
+import { useCalculatorStore } from '@/store/useCalculatorStore';
 
 export type NodeType =
   | 'pv'
@@ -69,10 +70,13 @@ interface AtsNodeGeometryProps {
 }
 
 function AtsNodeGeometry({ isSelected: _isSelected, isHovered: _isHovered }: AtsNodeGeometryProps) {
-  const [selectedSource, setSelectedSource] = useState<'utility' | 'solar'>('solar');
+  const atsSource = useCalculatorStore((s) => s.atsSource);
+  const toggleAtsSource = useCalculatorStore((s) => s.toggleAtsSource);
   const dialRef = useRef<THREE.Group>(null);
 
-  const targetRotation = selectedSource === 'utility' ? -Math.PI / 4 : Math.PI / 4;
+  // Left position (-45 deg): Solar selected (Default).
+  // Right position (+45 deg): Utility grid selected.
+  const targetRotation = atsSource === 'solar' ? -Math.PI / 4 : Math.PI / 4;
 
   useFrame((_, delta) => {
     if (dialRef.current) {
@@ -85,8 +89,8 @@ function AtsNodeGeometry({ isSelected: _isSelected, isHovered: _isHovered }: Ats
     }
   });
 
-  const isUtility = selectedSource === 'utility';
-  const isSolar = selectedSource === 'solar';
+  const isSolar = atsSource === 'solar';
+  const isUtility = atsSource === 'utility';
 
   return (
     <group>
@@ -129,22 +133,22 @@ function AtsNodeGeometry({ isSelected: _isSelected, isHovered: _isHovered }: Ats
 
       {/* ATS Dual Power Source Status Indicator Lights (Top of Door) */}
       <group position={[0, 0.34, 0.235]}>
-        {/* Normal Source (Utility/Grid) Green Pilot Light */}
+        {/* Solar Source Amber Pilot Light (Left) */}
         <mesh position={[-0.15, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.035, 0.035, 0.02, 16]} />
-          <meshStandardMaterial
-            color="#10B981"
-            emissive="#10B981"
-            emissiveIntensity={isUtility ? 1.0 : 0.2}
-          />
-        </mesh>
-        {/* Emergency Source (Solar/Inverter) Amber Pilot Light */}
-        <mesh position={[0.15, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.035, 0.035, 0.02, 16]} />
           <meshStandardMaterial
             color="#F59E0B"
             emissive="#F59E0B"
             emissiveIntensity={isSolar ? 1.0 : 0.2}
+          />
+        </mesh>
+        {/* Utility / Grid Source Green Pilot Light (Right) */}
+        <mesh position={[0.15, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.035, 0.035, 0.02, 16]} />
+          <meshStandardMaterial
+            color="#10B981"
+            emissive="#10B981"
+            emissiveIntensity={isUtility ? 1.0 : 0.2}
           />
         </mesh>
       </group>
@@ -169,16 +173,73 @@ function AtsNodeGeometry({ isSelected: _isSelected, isHovered: _isHovered }: Ats
           <meshStandardMaterial color="#64748B" roughness={0.3} />
         </mesh>
 
-        {/* --- UTILITY SOURCE INDICATOR (TOP-LEFT / -45 DEG) --- */}
+        {/* --- SOLAR SOURCE INDICATOR (TOP-LEFT / -45 DEG) --- */}
         <group position={[-0.13, 0.13, 0.017]}>
           {/* Angular Index Detent Tick (pointing toward center) */}
           <mesh position={[0.02, -0.02, 0]} rotation={[0, 0, -Math.PI / 4]}>
+            <boxGeometry args={[0.008, 0.028, 0.005]} />
+            <meshStandardMaterial color={isSolar ? '#F59E0B' : '#64748B'} />
+          </mesh>
+
+          {/* Solar Pilot LED Indicator Dot */}
+          <group position={[-0.01, 0.03, 0]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.02, 0.02, 0.008, 16]} />
+              <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.3} />
+            </mesh>
+            <mesh position={[0, 0, 0.004]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.015, 0.015, 0.008, 16]} />
+              <meshStandardMaterial
+                color="#F59E0B"
+                emissive="#F59E0B"
+                emissiveIntensity={isSolar ? 1.4 : 0.25}
+              />
+            </mesh>
+          </group>
+
+          {/* 3D Graphical Solar Sun Icon (NO WORDS) */}
+          <group position={[-0.01, -0.045, 0]}>
+            {/* Central Sun Disc */}
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.015, 0.015, 0.005, 16]} />
+              <meshStandardMaterial
+                color="#F59E0B"
+                emissive="#F59E0B"
+                emissiveIntensity={isSolar ? 0.6 : 0.15}
+              />
+            </mesh>
+            {/* 8 Radial Sun Rays */}
+            {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
+              const rad = (deg * Math.PI) / 180;
+              const r = 0.024;
+              return (
+                <mesh
+                  key={`ray-left-${deg}`}
+                  position={[Math.cos(rad) * r, Math.sin(rad) * r, 0]}
+                  rotation={[0, 0, rad + Math.PI / 2]}
+                >
+                  <boxGeometry args={[0.003, 0.009, 0.004]} />
+                  <meshStandardMaterial
+                    color={isSolar ? '#FBBF24' : '#D97706'}
+                    emissive={isSolar ? '#FBBF24' : '#000000'}
+                    emissiveIntensity={isSolar ? 0.4 : 0}
+                  />
+                </mesh>
+              );
+            })}
+          </group>
+        </group>
+
+        {/* --- UTILITY SOURCE INDICATOR (TOP-RIGHT / +45 DEG) --- */}
+        <group position={[0.13, 0.13, 0.017]}>
+          {/* Angular Index Detent Tick (pointing toward center) */}
+          <mesh position={[-0.02, -0.02, 0]} rotation={[0, 0, Math.PI / 4]}>
             <boxGeometry args={[0.008, 0.028, 0.005]} />
             <meshStandardMaterial color={isUtility ? '#10B981' : '#64748B'} />
           </mesh>
 
           {/* Utility Pilot LED Indicator Dot */}
-          <group position={[-0.01, 0.03, 0]}>
+          <group position={[0.01, 0.03, 0]}>
             <mesh rotation={[Math.PI / 2, 0, 0]}>
               <cylinderGeometry args={[0.02, 0.02, 0.008, 16]} />
               <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.3} />
@@ -194,7 +255,7 @@ function AtsNodeGeometry({ isSelected: _isSelected, isHovered: _isHovered }: Ats
           </group>
 
           {/* 3D Graphical Power Pylon / Utility Grid Icon (NO WORDS) */}
-          <group position={[-0.01, -0.045, 0]}>
+          <group position={[0.01, -0.045, 0]}>
             {/* Central Vertical Pylon Mast */}
             <mesh position={[0, 0, 0]}>
               <boxGeometry args={[0.006, 0.05, 0.004]} />
@@ -222,63 +283,6 @@ function AtsNodeGeometry({ isSelected: _isSelected, isHovered: _isHovered }: Ats
           </group>
         </group>
 
-        {/* --- SOLAR SOURCE INDICATOR (TOP-RIGHT / +45 DEG) --- */}
-        <group position={[0.13, 0.13, 0.017]}>
-          {/* Angular Index Detent Tick (pointing toward center) */}
-          <mesh position={[-0.02, -0.02, 0]} rotation={[0, 0, Math.PI / 4]}>
-            <boxGeometry args={[0.008, 0.028, 0.005]} />
-            <meshStandardMaterial color={isSolar ? '#F59E0B' : '#64748B'} />
-          </mesh>
-
-          {/* Solar Pilot LED Indicator Dot */}
-          <group position={[0.01, 0.03, 0]}>
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.02, 0.02, 0.008, 16]} />
-              <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.3} />
-            </mesh>
-            <mesh position={[0, 0, 0.004]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.015, 0.015, 0.008, 16]} />
-              <meshStandardMaterial
-                color="#F59E0B"
-                emissive="#F59E0B"
-                emissiveIntensity={isSolar ? 1.4 : 0.25}
-              />
-            </mesh>
-          </group>
-
-          {/* 3D Graphical Solar Sun Icon (NO WORDS) */}
-          <group position={[0.01, -0.045, 0]}>
-            {/* Central Sun Disc */}
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.015, 0.015, 0.005, 16]} />
-              <meshStandardMaterial
-                color="#F59E0B"
-                emissive="#F59E0B"
-                emissiveIntensity={isSolar ? 0.6 : 0.15}
-              />
-            </mesh>
-            {/* 8 Radial Sun Rays */}
-            {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
-              const rad = (deg * Math.PI) / 180;
-              const r = 0.024;
-              return (
-                <mesh
-                  key={`ray-${deg}`}
-                  position={[Math.cos(rad) * r, Math.sin(rad) * r, 0]}
-                  rotation={[0, 0, rad + Math.PI / 2]}
-                >
-                  <boxGeometry args={[0.003, 0.009, 0.004]} />
-                  <meshStandardMaterial
-                    color={isSolar ? '#FBBF24' : '#D97706'}
-                    emissive={isSolar ? '#FBBF24' : '#000000'}
-                    emissiveIntensity={isSolar ? 0.4 : 0}
-                  />
-                </mesh>
-              );
-            })}
-          </group>
-        </group>
-
         {/* Central Rotary Hub Base Collar (Stainless / Anodized Gunmetal) */}
         <mesh position={[0, 0, 0.022]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.11, 0.12, 0.02, 24]} />
@@ -292,7 +296,7 @@ function AtsNodeGeometry({ isSelected: _isSelected, isHovered: _isHovered }: Ats
           rotation={[0, 0, targetRotation]}
           onClick={(e) => {
             e.stopPropagation();
-            setSelectedSource((prev) => (prev === 'utility' ? 'solar' : 'utility'));
+            toggleAtsSource();
           }}
           onPointerOver={(e) => {
             e.stopPropagation();

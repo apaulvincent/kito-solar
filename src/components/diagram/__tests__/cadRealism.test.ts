@@ -54,4 +54,46 @@ describe('3D Solar CAD Studio Electrical & Mechanical Realism', () => {
 
     expect(expectedKeys.length).toBe(15);
   });
+
+  it('validates ATS switch power flow conduit routing logic for solar vs utility modes', () => {
+    // Utility flow filter logic verification
+    const isFlowing = (cableId: string, atsSource: 'solar' | 'utility') => {
+      if (atsSource === 'solar') {
+        if (cableId === 'c-grid-panel') return false;
+        return true;
+      } else {
+        const inverterAcRoutes = ['c-inv-acbrk', 'c-acbrk-spd', 'c-acbrk-iso', 'c-iso-panel'];
+        if (inverterAcRoutes.includes(cableId)) return false;
+        return true;
+      }
+    };
+
+    // In Solar mode (Left switch position):
+    // Inverter AC output flows to building load
+    expect(isFlowing('c-pv-iso', 'solar')).toBe(true);
+    expect(isFlowing('c-brk-inv', 'solar')).toBe(true);
+    expect(isFlowing('c-inv-batbrk', 'solar')).toBe(true);
+    expect(isFlowing('c-inv-acbrk', 'solar')).toBe(true);
+    expect(isFlowing('c-iso-panel', 'solar')).toBe(true);
+    expect(isFlowing('c-panel-ats', 'solar')).toBe(true);
+    expect(isFlowing('c-ats-load', 'solar')).toBe(true);
+    // Utility grid feeder is stopped
+    expect(isFlowing('c-grid-panel', 'solar')).toBe(false);
+
+    // In Utility mode (Right switch position):
+    // Utility powers the load
+    expect(isFlowing('c-grid-panel', 'utility')).toBe(true);
+    expect(isFlowing('c-panel-ats', 'utility')).toBe(true);
+    expect(isFlowing('c-ats-load', 'utility')).toBe(true);
+    // Inverter AC output stops
+    expect(isFlowing('c-inv-acbrk', 'utility')).toBe(false);
+    expect(isFlowing('c-acbrk-spd', 'utility')).toBe(false);
+    expect(isFlowing('c-acbrk-iso', 'utility')).toBe(false);
+    expect(isFlowing('c-iso-panel', 'utility')).toBe(false);
+    // Solar PV generation and battery charging remain active
+    expect(isFlowing('c-pv-iso', 'utility')).toBe(true);
+    expect(isFlowing('c-brk-inv', 'utility')).toBe(true);
+    expect(isFlowing('c-inv-batbrk', 'utility')).toBe(true);
+    expect(isFlowing('c-batbrk-bat', 'utility')).toBe(true);
+  });
 });
