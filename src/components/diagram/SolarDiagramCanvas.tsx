@@ -201,7 +201,7 @@ export function SolarDiagramCanvas() {
       )}
 
       {viewMode === '2d' && (
-        <Schematic2DView />
+        <Schematic2DView resetViewCount={resetViewCount} />
       )}
 
       {viewMode === 'split' && (
@@ -227,7 +227,7 @@ export function SolarDiagramCanvas() {
             <div className="absolute top-2 left-3 z-10 text-[10px] font-mono uppercase tracking-wider font-bold text-slate-600 dark:text-slate-300 bg-white/90 dark:bg-slate-900/90 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800 backdrop-blur-sm pointer-events-none shadow-sm">
               2D Single-Line Schematic
             </div>
-            <Schematic2DView />
+            <Schematic2DView resetViewCount={resetViewCount} />
           </div>
         </div>
       )}
