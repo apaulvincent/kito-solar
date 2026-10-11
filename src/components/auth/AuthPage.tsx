@@ -14,6 +14,8 @@ import {
   Check,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { generateRandomSolarName } from '@/lib/solarNames';
+import { sanitizeProjectTitle } from '@/lib/sanitization';
 
 interface AuthPageProps {
   defaultMode?: 'signin' | 'signup';
@@ -78,7 +80,10 @@ export function AuthPage({ defaultMode = 'signin' }: AuthPageProps) {
     setIsSubmitting(true);
     try {
       if (isSignUp) {
-        const res = await signUpWithEmail(email, password, fullName);
+        const assignedName = fullName.trim()
+          ? sanitizeProjectTitle(fullName, 60)
+          : generateRandomSolarName();
+        const res = await signUpWithEmail(email, password, assignedName);
         if (res.success) {
           if (res.isAwaitingConfirmation) {
             setAwaitingConfirmationEmail(email);
@@ -408,17 +413,21 @@ export function AuthPage({ defaultMode = 'signin' }: AuthPageProps) {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {isSignUp && (
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                        Full Name
-                      </label>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          Full Name <span className="text-slate-400 font-normal">(optional)</span>
+                        </label>
+                      </div>
                       <input
                         type="text"
-                        required={isSignUp}
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        placeholder="Engr. Juan Dela Cruz"
+                        placeholder="e.g. Engr. Juan Dela Cruz"
                         className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
                       />
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                        Optional. If left blank, a random solar-themed alias (e.g. Solar Spark, Sun Voltage, Electrical Pioneer) will be assigned automatically.
+                      </p>
                     </div>
                   )}
 

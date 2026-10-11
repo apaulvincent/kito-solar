@@ -62,7 +62,7 @@ describe('App Navigation & Supabase Authentication Suite', () => {
     expect(pathToView('', '#login')).toBe('login');
   });
 
-  it('verifies AuthPage contains Google OAuth and Email options', () => {
+  it('verifies AuthPage contains Google OAuth, Email options, and optional Full Name with helper text', () => {
     const authPagePath = path.resolve(process.cwd(), 'src/components/auth/AuthPage.tsx');
     const content = fs.readFileSync(authPagePath, 'utf-8');
 
@@ -72,6 +72,8 @@ describe('App Navigation & Supabase Authentication Suite', () => {
     expect(content).toContain('signUpWithEmail');
     expect(content).toContain('Create your account');
     expect(content).toContain('Welcome back');
+    expect(content).toContain('Full Name <span className="text-slate-400 font-normal">(optional)</span>');
+    expect(content).toContain('Optional. If left blank, a random solar-themed alias');
   });
 
   it('verifies AccountPage renders profile, identity, and account details', () => {

@@ -2,6 +2,8 @@
 import { create } from 'zustand';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { generateRandomSolarName } from '@/lib/solarNames';
+import { sanitizeProjectTitle } from '@/lib/sanitization';
 
 interface AuthState {
   user: User | null;
@@ -72,13 +74,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
 
     set({ isLoading: true, error: null });
+    const resolvedFullName = fullName?.trim()
+      ? sanitizeProjectTitle(fullName, 60)
+      : generateRandomSolarName();
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: fullName || '',
+            full_name: resolvedFullName,
           },
         },
       });
