@@ -1,4 +1,6 @@
 // src/components/diagram/NodeGeometry.tsx
+import { useRef, useState } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -59,6 +61,282 @@ export interface NodeGeometryProps {
   isHovered?: boolean;
   color?: string;
   isStandalone?: boolean;
+}
+
+interface AtsNodeGeometryProps {
+  isSelected?: boolean;
+  isHovered?: boolean;
+}
+
+function AtsNodeGeometry({ isSelected: _isSelected, isHovered: _isHovered }: AtsNodeGeometryProps) {
+  const [selectedSource, setSelectedSource] = useState<'utility' | 'solar'>('solar');
+  const dialRef = useRef<THREE.Group>(null);
+
+  const targetRotation = selectedSource === 'utility' ? -Math.PI / 4 : Math.PI / 4;
+
+  useFrame((_, delta) => {
+    if (dialRef.current) {
+      dialRef.current.rotation.z = THREE.MathUtils.damp(
+        dialRef.current.rotation.z,
+        targetRotation,
+        14,
+        delta
+      );
+    }
+  });
+
+  const isUtility = selectedSource === 'utility';
+  const isSolar = selectedSource === 'solar';
+
+  return (
+    <group>
+      {/* Heavy-duty Industrial NEMA 3R Panel Cabinet */}
+      <RoundedBox args={[0.95, 1.22, 0.46]} radius={0.03} smoothness={4} castShadow receiveShadow>
+        <meshStandardMaterial color="#CBD5E1" metalness={0.6} roughness={0.35} />
+      </RoundedBox>
+
+      {/* Industrial Door Seam Inset */}
+      <mesh position={[0, 0, 0.225]}>
+        <boxGeometry args={[0.9, 1.16, 0.015]} />
+        <meshStandardMaterial color="#94A3B8" metalness={0.65} roughness={0.3} />
+      </mesh>
+
+      {/* Left-Side Stainless Steel Barrel Hinges */}
+      {[-0.45, 0.45].map((hy, hIdx) => (
+        <group key={`hinge-${hIdx}`} position={[-0.47, hy, 0.22]}>
+          <mesh>
+            <cylinderGeometry args={[0.025, 0.025, 0.14, 16]} />
+            <meshStandardMaterial color="#94A3B8" metalness={0.9} roughness={0.2} />
+          </mesh>
+          <mesh position={[0.02, 0, 0]}>
+            <boxGeometry args={[0.04, 0.08, 0.02]} />
+            <meshStandardMaterial color="#64748B" metalness={0.85} roughness={0.25} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Chrome Quarter-Turn T-Handle Door Latch */}
+      <group position={[0.38, 0, 0.24]}>
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.035, 0.035, 0.02, 16]} />
+          <meshStandardMaterial color="#CBD5E1" metalness={0.92} roughness={0.15} />
+        </mesh>
+        <mesh position={[0, 0, 0.03]}>
+          <boxGeometry args={[0.03, 0.16, 0.025]} />
+          <meshStandardMaterial color="#E2E8F0" metalness={0.95} roughness={0.12} />
+        </mesh>
+      </group>
+
+      {/* ATS Dual Power Source Status Indicator Lights (Top of Door) */}
+      <group position={[0, 0.34, 0.235]}>
+        {/* Normal Source (Utility/Grid) Green Pilot Light */}
+        <mesh position={[-0.15, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.035, 0.035, 0.02, 16]} />
+          <meshStandardMaterial
+            color="#10B981"
+            emissive="#10B981"
+            emissiveIntensity={isUtility ? 1.0 : 0.2}
+          />
+        </mesh>
+        {/* Emergency Source (Solar/Inverter) Amber Pilot Light */}
+        <mesh position={[0.15, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.035, 0.035, 0.02, 16]} />
+          <meshStandardMaterial
+            color="#F59E0B"
+            emissive="#F59E0B"
+            emissiveIntensity={isSolar ? 1.0 : 0.2}
+          />
+        </mesh>
+      </group>
+
+      {/* Industrial Rotary Transfer Switch Assembly */}
+      <group position={[0, -0.06, 0.235]}>
+        {/* Outer Chrome / Aluminum Bezel Trim Ring */}
+        <mesh position={[0, 0, 0.002]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.265, 0.265, 0.012, 36]} />
+          <meshStandardMaterial color="#94A3B8" metalness={0.85} roughness={0.2} />
+        </mesh>
+
+        {/* Circular Switch Escutcheon Faceplate (Dark Industrial Anodized Finish) */}
+        <mesh position={[0, 0, 0.008]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.25, 0.25, 0.016, 36]} />
+          <meshStandardMaterial color="#0F172A" metalness={0.35} roughness={0.4} />
+        </mesh>
+
+        {/* Neutral Index Mark (12 o'clock / Top Center) */}
+        <mesh position={[0, 0.17, 0.017]}>
+          <boxGeometry args={[0.008, 0.028, 0.005]} />
+          <meshStandardMaterial color="#64748B" roughness={0.3} />
+        </mesh>
+
+        {/* --- UTILITY SOURCE INDICATOR (TOP-LEFT / -45 DEG) --- */}
+        <group position={[-0.13, 0.13, 0.017]}>
+          {/* Angular Index Detent Tick (pointing toward center) */}
+          <mesh position={[0.02, -0.02, 0]} rotation={[0, 0, -Math.PI / 4]}>
+            <boxGeometry args={[0.008, 0.028, 0.005]} />
+            <meshStandardMaterial color={isUtility ? '#10B981' : '#64748B'} />
+          </mesh>
+
+          {/* Utility Pilot LED Indicator Dot */}
+          <group position={[-0.01, 0.03, 0]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.02, 0.02, 0.008, 16]} />
+              <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.3} />
+            </mesh>
+            <mesh position={[0, 0, 0.004]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.015, 0.015, 0.008, 16]} />
+              <meshStandardMaterial
+                color="#10B981"
+                emissive="#10B981"
+                emissiveIntensity={isUtility ? 1.4 : 0.25}
+              />
+            </mesh>
+          </group>
+
+          {/* 3D Graphical Power Pylon / Utility Grid Icon (NO WORDS) */}
+          <group position={[-0.01, -0.045, 0]}>
+            {/* Central Vertical Pylon Mast */}
+            <mesh position={[0, 0, 0]}>
+              <boxGeometry args={[0.006, 0.05, 0.004]} />
+              <meshStandardMaterial color={isUtility ? '#F8FAFC' : '#94A3B8'} />
+            </mesh>
+            {/* Upper Crossarm */}
+            <mesh position={[0, 0.012, 0]}>
+              <boxGeometry args={[0.038, 0.005, 0.004]} />
+              <meshStandardMaterial color={isUtility ? '#F8FAFC' : '#94A3B8'} />
+            </mesh>
+            {/* Lower Crossarm */}
+            <mesh position={[0, -0.004, 0]}>
+              <boxGeometry args={[0.048, 0.005, 0.004]} />
+              <meshStandardMaterial color={isUtility ? '#F8FAFC' : '#94A3B8'} />
+            </mesh>
+            {/* Left/Right Diagonal Braces */}
+            <mesh position={[-0.014, -0.016, 0]} rotation={[0, 0, 0.35]}>
+              <boxGeometry args={[0.004, 0.024, 0.004]} />
+              <meshStandardMaterial color={isUtility ? '#F8FAFC' : '#94A3B8'} />
+            </mesh>
+            <mesh position={[0.014, -0.016, 0]} rotation={[0, 0, -0.35]}>
+              <boxGeometry args={[0.004, 0.024, 0.004]} />
+              <meshStandardMaterial color={isUtility ? '#F8FAFC' : '#94A3B8'} />
+            </mesh>
+          </group>
+        </group>
+
+        {/* --- SOLAR SOURCE INDICATOR (TOP-RIGHT / +45 DEG) --- */}
+        <group position={[0.13, 0.13, 0.017]}>
+          {/* Angular Index Detent Tick (pointing toward center) */}
+          <mesh position={[-0.02, -0.02, 0]} rotation={[0, 0, Math.PI / 4]}>
+            <boxGeometry args={[0.008, 0.028, 0.005]} />
+            <meshStandardMaterial color={isSolar ? '#F59E0B' : '#64748B'} />
+          </mesh>
+
+          {/* Solar Pilot LED Indicator Dot */}
+          <group position={[0.01, 0.03, 0]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.02, 0.02, 0.008, 16]} />
+              <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.3} />
+            </mesh>
+            <mesh position={[0, 0, 0.004]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.015, 0.015, 0.008, 16]} />
+              <meshStandardMaterial
+                color="#F59E0B"
+                emissive="#F59E0B"
+                emissiveIntensity={isSolar ? 1.4 : 0.25}
+              />
+            </mesh>
+          </group>
+
+          {/* 3D Graphical Solar Sun Icon (NO WORDS) */}
+          <group position={[0.01, -0.045, 0]}>
+            {/* Central Sun Disc */}
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.015, 0.015, 0.005, 16]} />
+              <meshStandardMaterial
+                color="#F59E0B"
+                emissive="#F59E0B"
+                emissiveIntensity={isSolar ? 0.6 : 0.15}
+              />
+            </mesh>
+            {/* 8 Radial Sun Rays */}
+            {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
+              const rad = (deg * Math.PI) / 180;
+              const r = 0.024;
+              return (
+                <mesh
+                  key={`ray-${deg}`}
+                  position={[Math.cos(rad) * r, Math.sin(rad) * r, 0]}
+                  rotation={[0, 0, rad + Math.PI / 2]}
+                >
+                  <boxGeometry args={[0.003, 0.009, 0.004]} />
+                  <meshStandardMaterial
+                    color={isSolar ? '#FBBF24' : '#D97706'}
+                    emissive={isSolar ? '#FBBF24' : '#000000'}
+                    emissiveIntensity={isSolar ? 0.4 : 0}
+                  />
+                </mesh>
+              );
+            })}
+          </group>
+        </group>
+
+        {/* Central Rotary Hub Base Collar (Stainless / Anodized Gunmetal) */}
+        <mesh position={[0, 0, 0.022]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.11, 0.12, 0.02, 24]} />
+          <meshStandardMaterial color="#475569" metalness={0.7} roughness={0.3} />
+        </mesh>
+
+        {/* Rotary Switch Handle Assembly (Rotates to selected position, Clickable) */}
+        <group
+          ref={dialRef}
+          position={[0, 0, 0.034]}
+          rotation={[0, 0, targetRotation]}
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelectedSource((prev) => (prev === 'utility' ? 'solar' : 'utility'));
+          }}
+          onPointerOver={(e) => {
+            e.stopPropagation();
+            document.body.style.cursor = 'pointer';
+          }}
+          onPointerOut={() => {
+            document.body.style.cursor = 'auto';
+          }}
+        >
+          {/* Rotary Knob Cylindrical Core (Dark Charcoal / Graphite `#1E293B`, distinct from red isolator) */}
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.09, 0.095, 0.06, 24]} />
+            <meshStandardMaterial color="#1E293B" metalness={0.4} roughness={0.3} />
+          </mesh>
+
+          {/* Molded Industrial Selector Grip Handle (Anthracite `#334155`) */}
+          <mesh position={[0, 0.06, 0.045]}>
+            <boxGeometry args={[0.075, 0.22, 0.09]} />
+            <meshStandardMaterial color="#334155" metalness={0.3} roughness={0.35} />
+          </mesh>
+
+          {/* Grip Ridges / Fluting Details on Handle Sides */}
+          {[-0.04, 0.04].map((rx, rIdx) => (
+            <mesh key={`ridge-${rIdx}`} position={[rx, 0.05, 0.045]}>
+              <boxGeometry args={[0.005, 0.16, 0.07]} />
+              <meshStandardMaterial color="#1E293B" roughness={0.4} />
+            </mesh>
+          ))}
+
+          {/* High-Contrast White Pointer Spine Stripe */}
+          <mesh position={[0, 0.07, 0.092]}>
+            <boxGeometry args={[0.012, 0.17, 0.004]} />
+            <meshStandardMaterial color="#FFFFFF" metalness={0.1} roughness={0.2} />
+          </mesh>
+
+          {/* High-Contrast White Triangle Arrow Pointer Tip */}
+          <mesh position={[0, 0.19, 0.045]} rotation={[0, 0, Math.PI]}>
+            <coneGeometry args={[0.038, 0.06, 3]} />
+            <meshStandardMaterial color="#FFFFFF" metalness={0.1} roughness={0.2} />
+          </mesh>
+        </group>
+      </group>
+    </group>
+  );
 }
 
 export function NodeGeometry({
@@ -723,80 +1001,7 @@ export function NodeGeometry({
       );
 
     case 'ats':
-      return (
-        <group>
-          {/* Heavy-duty Industrial NEMA 3R Panel Cabinet */}
-          <RoundedBox args={[0.95, 1.22, 0.46]} radius={0.03} smoothness={4} castShadow receiveShadow>
-            <meshStandardMaterial color="#CBD5E1" metalness={0.6} roughness={0.35} />
-          </RoundedBox>
-
-          {/* Industrial Door Seam Inset */}
-          <mesh position={[0, 0, 0.225]}>
-            <boxGeometry args={[0.9, 1.16, 0.015]} />
-            <meshStandardMaterial color="#94A3B8" metalness={0.65} roughness={0.3} />
-          </mesh>
-
-          {/* Left-Side Stainless Steel Barrel Hinges */}
-          {[-0.45, 0.45].map((hy, hIdx) => (
-            <group key={`hinge-${hIdx}`} position={[-0.47, hy, 0.22]}>
-              <mesh>
-                <cylinderGeometry args={[0.025, 0.025, 0.14, 16]} />
-                <meshStandardMaterial color="#94A3B8" metalness={0.9} roughness={0.2} />
-              </mesh>
-              <mesh position={[0.02, 0, 0]}>
-                <boxGeometry args={[0.04, 0.08, 0.02]} />
-                <meshStandardMaterial color="#64748B" metalness={0.85} roughness={0.25} />
-              </mesh>
-            </group>
-          ))}
-
-          {/* Chrome Quarter-Turn T-Handle Door Latch */}
-          <group position={[0.38, 0, 0.24]}>
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.035, 0.035, 0.02, 16]} />
-              <meshStandardMaterial color="#CBD5E1" metalness={0.92} roughness={0.15} />
-            </mesh>
-            <mesh position={[0, 0, 0.03]}>
-              <boxGeometry args={[0.03, 0.16, 0.025]} />
-              <meshStandardMaterial color="#E2E8F0" metalness={0.95} roughness={0.12} />
-            </mesh>
-          </group>
-
-          {/* ATS Dual Power Source Status Indicator Lights */}
-          <group position={[0, 0.32, 0.235]}>
-            {/* Normal Source (Grid) Green Pilot Light */}
-            <mesh position={[-0.15, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.035, 0.035, 0.02, 16]} />
-              <meshStandardMaterial
-                color="#10B981"
-                emissive="#10B981"
-                emissiveIntensity={0.9}
-              />
-            </mesh>
-            {/* Emergency Source (Solar/ESS) Amber Pilot Light */}
-            <mesh position={[0.15, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.035, 0.035, 0.02, 16]} />
-              <meshStandardMaterial
-                color="#F59E0B"
-                emissive="#F59E0B"
-                emissiveIntensity={0.8}
-              />
-            </mesh>
-          </group>
-
-          {/* Yellow Triangle Electrical Hazard Warning Plate */}
-          <group position={[0, -0.15, 0.235]} rotation={[0, 0, Math.PI]}>
-            <mesh>
-              <coneGeometry args={[0.14, 0.22, 3]} />
-              <meshStandardMaterial color="#FBBF24" roughness={0.3} />
-            </mesh>
-            <mesh position={[0, 0, 0.005]}>
-              <boxGeometry args={[0.02, 0.08, 0.005]} />
-              <meshStandardMaterial color="#000000" />
-            </mesh>
-          </group>
-        </group>
-      );
+      return <AtsNodeGeometry isSelected={isSelected} isHovered={isHovered} />;
 
     case 'panel':
       return (
