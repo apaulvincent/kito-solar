@@ -3,28 +3,8 @@ import { useMemo } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { SunMedium, Award } from 'lucide-react';
 import { parseNumericValue } from '@/lib/utils';
-import { Autocomplete, HighlightMatch, SortOption } from '@/components/common/Autocomplete';
+import { Autocomplete, HighlightMatch } from '@/components/common/Autocomplete';
 import { SolarModuleRecord } from '@/types/supabase';
-
-const pvSortOptions: SortOption<SolarModuleRecord>[] = [
-  {
-    id: 'watt-desc',
-    label: 'Wattage: High to Low',
-    comparator: (a, b) =>
-      parseNumericValue(b.pv_wattage_w) - parseNumericValue(a.pv_wattage_w),
-  },
-  {
-    id: 'watt-asc',
-    label: 'Wattage: Low to High',
-    comparator: (a, b) =>
-      parseNumericValue(a.pv_wattage_w) - parseNumericValue(b.pv_wattage_w),
-  },
-  {
-    id: 'model-asc',
-    label: 'Model: A to Z',
-    comparator: (a, b) => a.model.localeCompare(b.model),
-  },
-];
 
 export function PvModuleSelector() {
   const modules = useCalculatorStore((s) => s.modules);
@@ -87,7 +67,6 @@ export function PvModuleSelector() {
             getOptionLabel={(m) => m.model}
             getOptionKey={(m) => m.model}
             isOptionEqualToValue={(a, b) => a.model === b.model}
-            sortOptions={pvSortOptions}
             placeholder="Type model or wattage to filter..."
             renderOption={(mod, { inputValue }) => {
               const w = parseNumericValue(mod.pv_wattage_w);

@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { Autocomplete, HighlightMatch, SortOption } from '../Autocomplete';
+import { Autocomplete, HighlightMatch } from '../Autocomplete';
 
 describe('Autocomplete Component Suite', () => {
   interface MockItem {
@@ -46,7 +46,7 @@ describe('Autocomplete Component Suite', () => {
     expect(html).toContain('-SG03LP1-EU');
   });
 
-  it('supports custom renderOption formatting', () => {
+  it('supports custom renderOption formatting without checkmark', () => {
     const html = renderToStaticMarkup(
       createElement(HighlightMatch, {
         text: 'Powerwall 2',
@@ -57,18 +57,17 @@ describe('Autocomplete Component Suite', () => {
     expect(html).toBe('<span>Powerwall 2</span>');
   });
 
-  it('handles custom sort options sorting comparator correctly', () => {
-    const sortOpts: SortOption<MockItem>[] = [
-      {
-        id: 'rating-desc',
-        label: 'Rating High to Low',
-        comparator: (a, b) => b.ratingKw - a.ratingKw,
-      },
-    ];
+  it('renders clean options list without header count or sort dropdown', () => {
+    const html = renderToStaticMarkup(
+      createElement(Autocomplete<MockItem>, {
+        options: mockItems,
+        value: mockItems[0],
+        onChange: vi.fn(),
+        getOptionLabel: (item) => item.name,
+      })
+    );
 
-    const sorted = [...mockItems].sort(sortOpts[0].comparator);
-    expect(sorted[0].ratingKw).toBe(15);
-    expect(sorted[1].ratingKw).toBe(10);
-    expect(sorted[2].ratingKw).toBe(5);
+    expect(html).not.toContain('SORT:');
+    expect(html).not.toContain('options for');
   });
 });

@@ -1,30 +1,8 @@
 // src/components/config/BatterySelector.tsx
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { Battery, BatteryCharging, Plus, Minus, Info } from 'lucide-react';
-import { Autocomplete, HighlightMatch, SortOption } from '@/components/common/Autocomplete';
+import { Autocomplete, HighlightMatch } from '@/components/common/Autocomplete';
 import { BatteryRecord } from '@/types/supabase';
-
-const batterySortOptions: SortOption<BatteryRecord>[] = [
-  {
-    id: 'kwh-desc',
-    label: 'Capacity: High to Low',
-    comparator: (a, b) =>
-      (b.energy_wh || b.nominal_voltage_v * b.capacity_ah) -
-      (a.energy_wh || a.nominal_voltage_v * a.capacity_ah),
-  },
-  {
-    id: 'kwh-asc',
-    label: 'Capacity: Low to High',
-    comparator: (a, b) =>
-      (a.energy_wh || a.nominal_voltage_v * a.capacity_ah) -
-      (b.energy_wh || b.nominal_voltage_v * b.capacity_ah),
-  },
-  {
-    id: 'model-asc',
-    label: 'Model: A to Z',
-    comparator: (a, b) => a.model.localeCompare(b.model),
-  },
-];
 
 export function BatterySelector() {
   const batteries = useCalculatorStore((s) => s.batteries);
@@ -91,7 +69,6 @@ export function BatterySelector() {
             getOptionLabel={(b) => b.model}
             getOptionKey={(b) => b.model}
             isOptionEqualToValue={(a, b) => a.model === b.model}
-            sortOptions={batterySortOptions}
             placeholder="Search battery model or capacity (or clear for no battery)..."
             renderOption={(bat, { inputValue }) => {
               const kwh = (

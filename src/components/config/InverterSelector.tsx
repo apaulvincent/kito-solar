@@ -3,28 +3,8 @@ import { useMemo } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { Cpu } from 'lucide-react';
 import { parseNumericValue } from '@/lib/utils';
-import { Autocomplete, HighlightMatch, SortOption } from '@/components/common/Autocomplete';
+import { Autocomplete, HighlightMatch } from '@/components/common/Autocomplete';
 import { SolarInverterRecord } from '@/types/supabase';
-
-const inverterSortOptions: SortOption<SolarInverterRecord>[] = [
-  {
-    id: 'power-desc',
-    label: 'Power: High to Low',
-    comparator: (a, b) =>
-      parseNumericValue(b.rated_ac_power_w) - parseNumericValue(a.rated_ac_power_w),
-  },
-  {
-    id: 'power-asc',
-    label: 'Power: Low to High',
-    comparator: (a, b) =>
-      parseNumericValue(a.rated_ac_power_w) - parseNumericValue(b.rated_ac_power_w),
-  },
-  {
-    id: 'model-asc',
-    label: 'Model: A to Z',
-    comparator: (a, b) => a.model.localeCompare(b.model),
-  },
-];
 
 export function InverterSelector() {
   const inverters = useCalculatorStore((s) => s.inverters);
@@ -101,7 +81,6 @@ export function InverterSelector() {
             getOptionLabel={(m) => m.model}
             getOptionKey={(m) => m.model}
             isOptionEqualToValue={(a, b) => a.model === b.model}
-            sortOptions={inverterSortOptions}
             placeholder="Type model or kW to filter..."
             renderOption={(inv, { inputValue }) => {
               const kw = (parseNumericValue(inv.rated_ac_power_w) / 1000).toFixed(1);

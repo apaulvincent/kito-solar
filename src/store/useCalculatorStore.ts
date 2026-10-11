@@ -146,13 +146,23 @@ if (typeof document !== 'undefined') {
   }
 }
 
-// Initial regression default selection
+// Initial default equipment selection (Deye Inverter & Aiko Solar Module)
 const defaultInverter =
-  (invertersSeed as SolarInverterRecord[]).find((i) => i.model === 'HESP4860S100-H') ||
+  (invertersSeed as SolarInverterRecord[]).find(
+    (i) => i.brand.toUpperCase() === 'DEYE' && i.model === 'SUN-5K-SG05LP1-EU'
+  ) ||
+  (invertersSeed as SolarInverterRecord[]).find(
+    (i) => i.brand.toUpperCase() === 'DEYE'
+  ) ||
   (invertersSeed[0] as SolarInverterRecord);
 
 const defaultModule =
-  (modulesSeed as SolarModuleRecord[]).find((m) => m.model === 'CS6R-585MS') ||
+  (modulesSeed as SolarModuleRecord[]).find(
+    (m) => m.brand.toUpperCase() === 'AIKO' && m.model === 'AIKO-M-500'
+  ) ||
+  (modulesSeed as SolarModuleRecord[]).find(
+    (m) => m.brand.toUpperCase() === 'AIKO'
+  ) ||
   (modulesSeed[0] as SolarModuleRecord);
 
 const defaultBattery =

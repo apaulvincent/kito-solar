@@ -7,13 +7,7 @@ import React, {
   useCallback,
   ReactNode,
 } from 'react';
-import { Search, ChevronDown, X, Check, ArrowUpDown } from 'lucide-react';
-
-export interface SortOption<T> {
-  id: string;
-  label: string;
-  comparator: (a: T, b: T) => number;
-}
+import { Search, ChevronDown, X } from 'lucide-react';
 
 export interface AutocompleteProps<T> {
   options: T[];
@@ -30,7 +24,6 @@ export interface AutocompleteProps<T> {
     options: T[],
     state: { inputValue: string; getOptionLabel: (opt: T) => string }
   ) => T[];
-  sortOptions?: SortOption<T>[];
   placeholder?: string;
   disabled?: boolean;
   clearable?: boolean;
@@ -83,7 +76,6 @@ export function Autocomplete<T>({
   isOptionEqualToValue,
   renderOption,
   filterOptions,
-  sortOptions,
   placeholder = 'Select option...',
   disabled = false,
   clearable = true,
@@ -97,9 +89,6 @@ export function Autocomplete<T>({
     value ? getOptionLabel(value) : ''
   );
   const [activeIndex, setActiveIndex] = useState<number>(-1);
-  const [activeSortId, setActiveSortId] = useState<string | null>(
-    sortOptions && sortOptions.length > 0 ? sortOptions[0].id : null
-  );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -127,30 +116,17 @@ export function Autocomplete<T>({
 
   // Filter options based on input value
   const filteredOptions = useMemo(() => {
-    let list: T[];
     if (filterOptions) {
-      list = filterOptions(options, { inputValue, getOptionLabel });
-    } else {
-      const q = inputValue.trim().toLowerCase();
-      if (!q) {
-        list = [...options];
-      } else {
-        list = options.filter((opt) =>
-          getOptionLabel(opt).toLowerCase().includes(q)
-        );
-      }
+      return filterOptions(options, { inputValue, getOptionLabel });
     }
-
-    // Apply active sort
-    if (activeSortId && sortOptions) {
-      const sorter = sortOptions.find((s) => s.id === activeSortId);
-      if (sorter) {
-        list = [...list].sort(sorter.comparator);
-      }
+    const q = inputValue.trim().toLowerCase();
+    if (!q) {
+      return options;
     }
-
-    return list;
-  }, [options, inputValue, filterOptions, getOptionLabel, activeSortId, sortOptions]);
+    return options.filter((opt) =>
+      getOptionLabel(opt).toLowerCase().includes(q)
+    );
+  }, [options, inputValue, filterOptions, getOptionLabel]);
 
   // Handle clicking outside to close
   useEffect(() => {
@@ -318,37 +294,9 @@ export function Autocomplete<T>({
         </button>
       </div>
 
-      {/* Floating Dropdown Menu */}
+      {/* Floating Dropdown Menu (Direct options list without count or sort header) */}
       {isOpen && !disabled && (
         <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-          {/* Header Bar with Count & Sort Controls */}
-          <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-mono text-slate-500 dark:text-slate-400">
-            <span>
-              {filteredOptions.length} {filteredOptions.length === 1 ? 'option' : 'options'}
-              {inputValue.trim() ? ` for "${inputValue}"` : ''}
-            </span>
-
-            {/* Sort Dropdown / Toggle if sortOptions is provided */}
-            {sortOptions && sortOptions.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                <span className="text-[10px] uppercase font-bold text-slate-400">Sort:</span>
-                <select
-                  value={activeSortId || ''}
-                  onChange={(e) => setActiveSortId(e.target.value)}
-                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 text-[10px] text-slate-700 dark:text-slate-200 font-semibold focus:outline-none cursor-pointer"
-                >
-                  {sortOptions.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-
-          {/* Options List */}
           <ul
             ref={listRef}
             role="listbox"
@@ -374,7 +322,7 @@ export function Autocomplete<T>({
                     onMouseEnter={() => setActiveIndex(idx)}
                     className={`px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors flex items-center justify-between gap-2 ${
                       isSelected
-                        ? 'bg-amber-500/10 dark:bg-amber-500/20 text-amber-900 dark:text-amber-200 font-semibold'
+                        ? 'bg-amber-500/15 dark:bg-amber-500/20 text-amber-900 dark:text-amber-200 font-semibold'
                         : isActive
                         ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'
                         : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
@@ -394,10 +342,6 @@ export function Autocomplete<T>({
                         />
                       )}
                     </div>
-
-                    {isSelected && (
-                      <Check className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                    )}
                   </li>
                 );
               })
