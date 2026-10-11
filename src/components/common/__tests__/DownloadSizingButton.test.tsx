@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { DownloadSizingButton } from '../DownloadSizingButton';
-import { useAuthStore } from '@/store/useAuthStore';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -15,17 +14,20 @@ describe('DownloadSizingButton', () => {
     vi.clearAllMocks();
   });
 
-  it('renders disabled button with cursor-not-allowed when user is not logged in', () => {
+  it('renders enabled button with no tooltip even when user is not logged in', () => {
     const html = renderToStaticMarkup(createElement(DownloadSizingButton, { authUser: null }));
     expect(html).toBeTruthy();
     expect(html).toContain('Download Sizing');
-    expect(html).toContain('disabled=""');
-    expect(html).toContain('opacity-50');
-    expect(html).toContain('cursor-not-allowed');
-    expect(html).toContain('Please sign in to download the sizing details PDF');
+    // Button is enabled and clickable
+    expect(html).not.toContain('disabled=""');
+    expect(html).not.toContain('cursor-not-allowed');
+    expect(html).not.toContain('opacity-50');
+    expect(html).toContain('cursor-pointer');
+    // Tooltip removed
+    expect(html).not.toContain('role="tooltip"');
   });
 
-  it('renders enabled interactive button when user is logged in', () => {
+  it('renders enabled button when user is logged in', () => {
     const mockUser = {
       id: 'usr_test_123',
       email: 'engineer@kitosolar.com',
@@ -43,11 +45,13 @@ describe('DownloadSizingButton', () => {
     expect(html).toContain('bg-emerald-600');
   });
 
-  it('contains download handler and hooks up pdfExportService', () => {
-    expect(sourceCode).toContain('downloadSizingPdf');
-    expect(sourceCode).toContain('useAuthStore');
-    expect(sourceCode).toContain('useCalculatorStore');
-    expect(sourceCode).toContain('isLoggedIn');
-    expect(sourceCode).toContain('opacity-50 cursor-not-allowed');
+  it('contains auth modal with login and register links when logged out', () => {
+    expect(sourceCode).toContain('isAuthModalOpen');
+    expect(sourceCode).toContain('Account Required');
+    expect(sourceCode).toContain('You need to have an account to download');
+    expect(sourceCode).toContain("setActiveView('login')");
+    expect(sourceCode).toContain("setActiveView('register')");
+    expect(sourceCode).toContain('Log In to Account');
+    expect(sourceCode).toContain('Register New Account');
   });
 });
