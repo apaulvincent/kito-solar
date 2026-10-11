@@ -26,6 +26,25 @@ function writeToLocalStorage(userId: string, projects: SavedProject[]): void {
   }
 }
 
+const SHORT_ID_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+export function generateShortId(length = 20): string {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const bytes = new Uint8Array(length);
+    crypto.getRandomValues(bytes);
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += SHORT_ID_ALPHABET[bytes[i] % SHORT_ID_ALPHABET.length];
+    }
+    return result;
+  }
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += SHORT_ID_ALPHABET[Math.floor(Math.random() * SHORT_ID_ALPHABET.length)];
+  }
+  return result;
+}
+
 export const projectService = {
   /**
    * Fetch all saved projects for the authenticated user (max 20).
@@ -58,6 +77,64 @@ export const projectService = {
   },
 
   /**
+   * Fetch a single project by ID for the user.
+   */
+  async getProjectById(userId: string | null | undefined, projectId: string): Promise<SavedProject | null> {
+    if (!projectId) return null;
+
+    if (userId) {
+      const all = await this.getProjects(userId);
+      const found = all.find((p) => p.id === projectId);
+      if (found) return found;
+    }
+
+    if (supabase && isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from('user_projects')
+          .select('*')
+          .eq('id', projectId)
+          .maybeSingle();
+
+        if (!error && data) {
+          if (userId) {
+            const existing = readFromLocalStorage(userId);
+            const merged = [data as SavedProject, ...existing.filter((p) => p.id !== projectId)].slice(
+              0,
+              MAX_PROJECTS_PER_USER
+            );
+            writeToLocalStorage(userId, merged);
+          }
+          return data as SavedProject;
+        }
+      } catch (err) {
+        console.warn('Supabase getProjectById fallback:', err);
+      }
+    }
+
+    // Fallback: search localStorage across all keys
+    if (typeof window !== 'undefined') {
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('kito_saved_projects_')) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const list = JSON.parse(raw);
+              if (Array.isArray(list)) {
+                const hit = list.find((p: SavedProject) => p.id === projectId);
+                if (hit) return hit;
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    return null;
+  },
+
+  /**
    * Save a new project for the user, enforcing the 20-project limit.
    */
   async saveProject(
@@ -79,7 +156,7 @@ export const projectService = {
 
     const now = new Date().toISOString();
     const newProject: SavedProject = {
-      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `proj_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      id: generateShortId(20),
       user_id: userId,
       ...input,
       name: input.name.trim() || 'Untitled Solar Project',

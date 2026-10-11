@@ -123,6 +123,7 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
         const res = await projectService.updateProject(user.id, activeProjectId, projectPayload);
         if (res.success && res.project) {
           setSavedProject(res.project);
+          useCalculatorStore.getState().setActiveProjectId(res.project.id, res.project.name);
           if (onSaved) onSaved(res.project);
         } else {
           setError(res.error || 'Failed to update project.');
@@ -132,6 +133,7 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
         if (res.success && res.project) {
           setSavedProject(res.project);
           setExistingProjectsCount((prev) => prev + 1);
+          useCalculatorStore.getState().setActiveProjectId(res.project.id, res.project.name);
           if (onSaved) onSaved(res.project);
         } else {
           setError(res.error || 'Failed to save project.');

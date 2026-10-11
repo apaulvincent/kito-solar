@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { useCalculatorStore, pathToView, isOAuthHash } from '@/store/useCalculatorStore';
+import { useCalculatorStore, pathToView, isOAuthHash, extractProjectIdFromUrl } from '@/store/useCalculatorStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { projectService } from '@/services/projectService';
 import { Header } from '@/components/header/Header';
 import { HomePage } from '@/components/home/HomePage';
 import { AuthPage } from '@/components/auth/AuthPage';
@@ -21,6 +22,8 @@ export function App() {
   const initializeCatalog = useCalculatorStore((state) => state.initializeCatalog);
   const activeView = useCalculatorStore((state) => state.activeView);
   const setActiveView = useCalculatorStore((state) => state.setActiveView);
+  const loadProject = useCalculatorStore((state) => state.loadProject);
+  const user = useAuthStore((state) => state.user);
   const initAuth = useAuthStore((state) => state.initAuth);
 
   useEffect(() => {
@@ -36,24 +39,60 @@ export function App() {
     const handlePopState = () => {
       const hash = window.location.hash;
       const view = pathToView(window.location.pathname, hash);
+      const projectId = extractProjectIdFromUrl(window.location.pathname, window.location.search);
       if (hash && !isOAuthHash(hash) && window.history?.replaceState) {
-        const targetPath = view === 'home' ? '/' : `/${view}`;
-        window.history.replaceState({ view }, '', targetPath);
+        const targetPath = projectId ? `/projects/${projectId}` : view === 'home' ? '/' : `/${view}`;
+        window.history.replaceState({ view, projectId }, '', targetPath);
       }
-      setActiveView(view);
+      setActiveView(view, projectId);
+
+      if (projectId) {
+        const currentActiveId = useCalculatorStore.getState().activeProjectId;
+        if (currentActiveId !== projectId) {
+          projectService.getProjectById(useAuthStore.getState().user?.id, projectId).then((proj) => {
+            if (proj) {
+              loadProject(proj);
+            }
+          });
+        }
+      } else if (view === 'tool') {
+        useCalculatorStore.getState().clearActiveProject();
+      }
     };
 
     // If an initial load arrived with a legacy hash (not an OAuth callback), cleanly remove it
     if (typeof window !== 'undefined' && window.location.hash && !isOAuthHash(window.location.hash) && window.history?.replaceState) {
       const view = pathToView(window.location.pathname, window.location.hash);
-      const targetPath = view === 'home' ? '/' : `/${view}`;
-      window.history.replaceState({ view }, '', targetPath);
-      setActiveView(view);
+      const projectId = extractProjectIdFromUrl(window.location.pathname, window.location.search);
+      const targetPath = projectId ? `/projects/${projectId}` : view === 'home' ? '/' : `/${view}`;
+      window.history.replaceState({ view, projectId }, '', targetPath);
+      setActiveView(view, projectId);
     }
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [setActiveView]);
+  }, [setActiveView, loadProject]);
+
+  // Auto-load project if URL contains a project ID (e.g. /projects/:id)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const urlProjectId = extractProjectIdFromUrl(window.location.pathname, window.location.search);
+    if (!urlProjectId) return;
+
+    const currentActiveId = useCalculatorStore.getState().activeProjectId;
+    if (currentActiveId === urlProjectId) return;
+
+    let isCancelled = false;
+    projectService.getProjectById(user?.id, urlProjectId).then((proj) => {
+      if (!isCancelled && proj) {
+        loadProject(proj);
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user, loadProject]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090D16] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">

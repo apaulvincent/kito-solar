@@ -53,9 +53,9 @@ interface CalculatorState {
   // Derived Calculation
   calculationResult: SystemCalculationResult;
 
-  // Actions
   initializeCatalog: () => Promise<void>;
-  setActiveView: (view: ActiveView) => void;
+  setActiveProjectId: (id: string | null, name?: string | null) => void;
+  setActiveView: (view: ActiveView, projectId?: string | null) => void;
   setInverter: (inverter: SolarInverterRecord) => void;
   setModule: (module: SolarModuleRecord) => void;
   setBattery: (battery: BatteryRecord | null) => void;
@@ -106,8 +106,36 @@ const getInitialTheme = (): 'light' | 'dark' => {
   return 'light';
 };
 
+export const extractProjectIdFromUrl = (pathname: string, search?: string): string | null => {
+  const cleanPath = pathname.replace(/^\/+|\/+$/g, '');
+  const parts = cleanPath.split('/');
+  if (parts.length >= 2) {
+    const prefix = parts[0].toLowerCase();
+    if (prefix === 'projects' || prefix === 'project' || prefix === 'tool') {
+      const candidate = parts[1];
+      if (candidate && candidate.toLowerCase() !== 'new') {
+        return candidate;
+      }
+    }
+  }
+  if (search) {
+    try {
+      const params = new URLSearchParams(search);
+      const p = params.get('project') || params.get('id');
+      if (p) return p;
+    } catch (e) {}
+  }
+  return null;
+};
+
 export const pathToView = (pathname: string, hash?: string): ActiveView => {
   const cleanPath = pathname.toLowerCase().replace(/^\/+|\/+$/g, '');
+  const parts = cleanPath.split('/');
+
+  // If path is /projects/<id> or /project/<id>, it's a project link -> open tool!
+  if ((parts[0] === 'projects' || parts[0] === 'project') && parts.length >= 2 && parts[1]) {
+    return 'tool';
+  }
   if (cleanPath === 'tool' || cleanPath === 'studio') return 'tool';
   if (cleanPath === 'projects') return 'projects';
   if (cleanPath === 'login') return 'login';
@@ -137,10 +165,11 @@ const getInitialView = (): ActiveView => {
   if (typeof window !== 'undefined') {
     const hash = window.location.hash;
     const view = pathToView(window.location.pathname, hash);
+    const projectId = extractProjectIdFromUrl(window.location.pathname, window.location.search);
     // Don't strip OAuth tokens so Supabase client can authenticate the user
     if (hash && !isOAuthHash(hash) && window.history?.replaceState) {
-      const targetPath = view === 'home' ? '/' : `/${view}`;
-      window.history.replaceState({ view }, '', targetPath);
+      const targetPath = projectId ? `/projects/${projectId}` : view === 'home' ? '/' : `/${view}`;
+      window.history.replaceState({ view, projectId }, '', targetPath);
     }
     return view;
   }
@@ -485,13 +514,38 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
     });
   },
 
-  setActiveView: (view) => {
+  setActiveProjectId: (id, name) => {
+    set((state) => ({
+      activeProjectId: id,
+      activeProjectName: name !== undefined ? name : state.activeProjectName,
+    }));
+    if (typeof window !== 'undefined' && get().activeView === 'tool') {
+      try {
+        const targetPath = id ? `/projects/${id}` : '/tool';
+        if (window.location.pathname !== targetPath) {
+          window.history.pushState({ view: 'tool', projectId: id }, '', targetPath);
+        }
+      } catch (e) {}
+    }
+  },
+
+  setActiveView: (view, projectId) => {
+    const targetProjectId =
+      projectId !== undefined ? projectId : (view === 'tool' ? get().activeProjectId : null);
+
     if (typeof window !== 'undefined') {
       try {
-        const targetPath = view === 'home' ? '/' : `/${view}`;
+        let targetPath: string;
+        if (view === 'home') {
+          targetPath = '/';
+        } else if (view === 'tool') {
+          targetPath = targetProjectId ? `/projects/${targetProjectId}` : '/tool';
+        } else {
+          targetPath = `/${view}`;
+        }
         const currentPath = window.location.pathname;
         if (currentPath !== targetPath || window.location.hash) {
-          window.history.pushState({ view }, '', targetPath);
+          window.history.pushState({ view, projectId: targetProjectId }, '', targetPath);
         }
       } catch (e) {}
     }
@@ -538,6 +592,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       panelCountOverride: project.panel_count_override,
       activeProjectId: project.id,
       activeProjectName: project.name,
+      activeView: 'tool',
       selectedNodeKey: null,
       hoveredNodeKey: null,
       isInspectorOpen: false,
@@ -553,12 +608,26 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       ),
     });
 
-    // Navigate to tool view
-    get().setActiveView('tool');
+    // Update browser URL to /projects/:id
+    if (typeof window !== 'undefined') {
+      try {
+        const targetPath = `/projects/${project.id}`;
+        if (window.location.pathname !== targetPath) {
+          window.history.pushState({ view: 'tool', projectId: project.id }, '', targetPath);
+        }
+      } catch (e) {}
+    }
   },
 
   clearActiveProject: () => {
     set({ activeProjectId: null, activeProjectName: null });
+    if (typeof window !== 'undefined' && get().activeView === 'tool') {
+      try {
+        if (window.location.pathname !== '/tool') {
+          window.history.pushState({ view: 'tool', projectId: null }, '', '/tool');
+        }
+      } catch (e) {}
+    }
   },
 
   resetToDefaults: () => {
@@ -587,6 +656,13 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
         null
       ),
     });
+    if (typeof window !== 'undefined' && get().activeView === 'tool') {
+      try {
+        if (window.location.pathname !== '/tool') {
+          window.history.pushState({ view: 'tool', projectId: null }, '', '/tool');
+        }
+      } catch (e) {}
+    }
   },
 };
 });

@@ -1,7 +1,7 @@
 // src/components/results/CalculationWorkbench.tsx
 import { useState } from 'react';
 import { useCalculatorStore, WorkbenchTabKey } from '@/store/useCalculatorStore';
-import { Zap, Sun, Hammer, AlertTriangle, Layers, CheckCircle2 } from 'lucide-react';
+import { Zap, Sun, Hammer, AlertTriangle, Layers, CheckCircle2, LayoutPanelTop, Rows3, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
 import { DcResultsCard } from './DcResultsCard';
 import { AcResultsCard } from './AcResultsCard';
 import { BatteryResultsCard } from './BatteryResultsCard';
@@ -85,56 +85,63 @@ export function CalculationWorkbench() {
           <SaveProjectButton variant="compact" />
           <DownloadSizingButton variant="compact" />
 
-          {/* Detail Level Toggle: Min Detail vs Detailed */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+          {/* Detail Level Toggle: Compact vs Detailed (Icon-Only) */}
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
             <button
               type="button"
               onClick={() => setStep2DetailMode('min')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+              title="Compact view (minimal details)"
+              aria-label="Compact view (minimal details)"
+              className={`p-2 rounded-lg transition-all cursor-pointer ${
                 step2DetailMode === 'min'
                   ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              Min Detail
+              <ChevronsDownUp className="w-4 h-4" />
             </button>
             <button
               type="button"
               onClick={() => setStep2DetailMode('detailed')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+              title="Detailed view (full engineering specs)"
+              aria-label="Detailed view (full engineering specs)"
+              className={`p-2 rounded-lg transition-all cursor-pointer ${
                 step2DetailMode === 'detailed'
                   ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              Detailed
+              <ChevronsUpDown className="w-4 h-4" />
             </button>
           </div>
 
-          {/* View Mode Toggle: Tabbed vs Full Schedule */}
-          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+          {/* View Mode Toggle: Tabbed vs Full Schedule (Icon-Only) */}
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
             <button
               type="button"
               onClick={() => setViewAll(false)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+              title="Tabbed view"
+              aria-label="Tabbed view"
+              className={`p-2 rounded-lg transition-all cursor-pointer ${
                 !viewAll
                   ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              Tabbed Studio
+              <LayoutPanelTop className="w-4 h-4" />
             </button>
             <button
               type="button"
               onClick={() => setViewAll(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+              title="All schedules view"
+              aria-label="All schedules view"
+              className={`p-2 rounded-lg transition-all cursor-pointer ${
                 viewAll
                   ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Layers className="w-3.5 h-3.5" />
-              All Schedules
+              <Rows3 className="w-4 h-4" />
             </button>
           </div>
         </div>
