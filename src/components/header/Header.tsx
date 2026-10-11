@@ -1,8 +1,6 @@
 // src/components/header/Header.tsx
-import { useState } from 'react';
 import {
   RotateCcw,
-  HelpCircle,
   Zap,
   Sun,
   Moon,
@@ -14,10 +12,8 @@ import {
 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { CalculationHelpModal } from './CalculationHelpModal';
 
 export function Header() {
-  const [helpOpen, setHelpOpen] = useState(false);
   const resetToDefaults = useCalculatorStore((s) => s.resetToDefaults);
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
   const theme = useCalculatorStore((s) => s.theme);
@@ -30,8 +26,7 @@ export function Header() {
   const signOut = useAuthStore((s) => s.signOut);
 
   return (
-    <>
-      <header className="sticky top-0 z-40 w-full border-b border-slate-200/90 dark:border-slate-800/90 bg-white/95 dark:bg-[#090D16]/95 backdrop-blur-md shadow-xs transition-colors duration-200">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200/90 dark:border-slate-800/90 bg-white/95 dark:bg-[#090D16]/95 backdrop-blur-md shadow-xs transition-colors duration-200">
         <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 h-16 flex items-center justify-between gap-4">
           {/* Logo & Navigation */}
           <div className="flex items-center gap-6">
@@ -129,19 +124,11 @@ export function Header() {
 
                 <button
                   onClick={resetToDefaults}
-                  title="Reset to Excel Reference Scenario"
+                  title="Reset to Default Configuration"
                   className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-xs font-mono font-medium text-slate-700 dark:text-slate-200 shadow-xs transition-colors"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                   <span className="hidden xl:inline">Reset</span>
-                </button>
-
-                <button
-                  onClick={() => setHelpOpen(true)}
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-xs font-mono font-medium text-slate-700 dark:text-slate-200 shadow-xs transition-colors"
-                >
-                  <HelpCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  <span className="hidden xl:inline">Help</span>
                 </button>
               </>
             )}
@@ -217,8 +204,5 @@ export function Header() {
           </div>
         </div>
       </header>
-
-      <CalculationHelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
-    </>
   );
 }

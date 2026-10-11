@@ -21,7 +21,7 @@ describe('PRD Section 21 — Hybrid & On-Grid Regression Test', () => {
     throw new Error('Required regression seed models not found in catalog');
   }
 
-  it('matches all workbook outputs for standard reference configuration', () => {
+  it('matches all verified engineering calculations for standard reference configuration', () => {
     const result = calculateSystem({
       inverter,
       module,

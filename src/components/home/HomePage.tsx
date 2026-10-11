@@ -7,7 +7,7 @@ import {
   ArrowRight,
   Sparkles,
   CheckCircle2,
-  FileSpreadsheet,
+  Hammer,
   Cable,
   User,
   Zap,
@@ -379,7 +379,7 @@ export function HomePage() {
             <div>
               <div className="flex items-center justify-between mb-5">
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 group-hover:scale-105 transition-transform">
-                  <FileSpreadsheet className="w-6 h-6" />
+                  <Hammer className="w-6 h-6" />
                 </div>
                 <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />

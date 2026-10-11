@@ -22,8 +22,7 @@ export function calculateAc(
   // AC Isolator
   const isolatorRatingA = ruleService.findIsolator('ac', breakerRatingA);
 
-  // AC SPD based on grid voltage:
-  // Workbook regression scenario: 230V grid -> 440V AC SPD
+  // Standard reference scenario: 230V grid -> 440V AC SPD
   let spdRating = '440V AC SPD';
   let spdRatingV = 440;
   if (gridVoltageV <= 120) {

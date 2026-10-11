@@ -76,7 +76,7 @@
     "name": "Inverter Input/Output Grid Breaker",
     "category": "protection",
     "side": "ac",
-    "description": "AC breaker with workbook safety factor.",
+    "description": "AC breaker with continuous duty safety factor.",
     "image_path": "/assets/accessories/ac-breaker.webp",
     "diagram_node_key": "ac.grid_breaker"
   },
