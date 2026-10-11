@@ -19,7 +19,6 @@ export function Header() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
   const theme = useCalculatorStore((s) => s.theme);
   const toggleTheme = useCalculatorStore((s) => s.toggleTheme);
-  const catalogSource = useCalculatorStore((s) => s.catalogSource);
   const activeView = useCalculatorStore((s) => s.activeView);
   const setActiveView = useCalculatorStore((s) => s.setActiveView);
 
@@ -39,27 +38,9 @@ export function Header() {
               <div className="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center shadow-sm font-bold flex-shrink-0 group-hover:scale-105 transition-transform">
                 <Zap className="w-5 h-5 fill-current" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white font-sans">
-                    KITO SOLAR
-                  </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase tracking-wider bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 hidden sm:inline-block">
-                    STUDIO
-                  </span>
-                  {catalogSource === 'supabase' ? (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded font-semibold flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 hidden sm:inline-flex" title="Connected to live Supabase database">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                      SUPABASE LIVE
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded font-medium flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hidden sm:inline-flex" title="Using bundled local fallback">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                      LOCAL SEED
-                    </span>
-                  )}
-                </div>
-              </div>
+              <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white font-sans">
+                KITO SOLAR
+              </span>
             </button>
 
             {/* Navigation Links: Home, Tool, Account */}
