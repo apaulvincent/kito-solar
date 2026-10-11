@@ -73,7 +73,7 @@ export function Header() {
                 onClick={() => setActiveView('home')}
                 className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
                   activeView === 'home'
-                    ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/70 dark:bg-indigo-950/50'
+                    ? 'text-amber-700 dark:text-amber-400 font-bold bg-amber-500/10 border border-amber-500/25'
                     : 'hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
                 }`}
               >
@@ -86,7 +86,7 @@ export function Header() {
                 onClick={() => setActiveView('tool')}
                 className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
                   activeView === 'tool'
-                    ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/70 dark:bg-indigo-950/50'
+                    ? 'text-amber-700 dark:text-amber-400 font-bold bg-amber-500/10 border border-amber-500/25'
                     : 'hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
                 }`}
               >
@@ -100,7 +100,7 @@ export function Header() {
                   onClick={() => setActiveView('account')}
                   className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
                     activeView === 'account'
-                      ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/70 dark:bg-indigo-950/50'
+                      ? 'text-amber-700 dark:text-amber-400 font-bold bg-amber-500/10 border border-amber-500/25'
                       : 'hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
                   }`}
                 >
@@ -177,10 +177,10 @@ export function Header() {
                 <button
                   type="button"
                   onClick={() => setActiveView('account')}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-xs hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/80 text-xs hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
                   title="View your account"
                 >
-                  <div className="w-5 h-5 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-[10px]">
+                  <div className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-bold flex items-center justify-center text-[10px]">
                     {user.email?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <span className="font-semibold text-slate-800 dark:text-slate-200 max-w-[120px] truncate hidden sm:inline">
@@ -197,20 +197,18 @@ export function Header() {
               </div>
             ) : (
               <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
-                {/* PakiPrint Styled "Log in" pill button */}
                 <button
                   type="button"
                   onClick={() => setActiveView('login')}
-                  className="px-4 py-1.5 rounded-full text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50/90 dark:bg-rose-950/60 border border-rose-200/90 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/40 active:scale-95 transition-all"
+                  className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 >
                   Log in
                 </button>
 
-                {/* PakiPrint Styled "Register" blue pill button */}
                 <button
                   type="button"
                   onClick={() => setActiveView('register')}
-                  className="px-4 py-1.5 rounded-full text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm active:scale-95 transition-all"
+                  className="px-4 py-1.5 rounded-full text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 shadow-sm active:scale-95 transition-all"
                 >
                   Register
                 </button>
