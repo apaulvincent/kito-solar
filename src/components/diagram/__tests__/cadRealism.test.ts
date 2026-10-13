@@ -18,7 +18,7 @@ describe('3D Solar CAD Studio Electrical & Mechanical Realism', () => {
     expect(routeOrder).toContain('ac_isolator->main_panel');
     expect(routeOrder).toContain('grid->main_panel');
     expect(routeOrder).toContain('main_panel->ats');
-    expect(routeOrder).toContain('ats->load');
+    expect(routeOrder).toContain('main_panel->load');
   });
 
   it('ensures all conduit routes have orthogonal 3D waypoints for realistic EMT pipe bending', () => {
@@ -76,7 +76,7 @@ describe('3D Solar CAD Studio Electrical & Mechanical Realism', () => {
     expect(isFlowing('c-inv-acbrk', 'solar')).toBe(true);
     expect(isFlowing('c-iso-panel', 'solar')).toBe(true);
     expect(isFlowing('c-panel-ats', 'solar')).toBe(true);
-    expect(isFlowing('c-ats-load', 'solar')).toBe(true);
+    expect(isFlowing('c-panel-load', 'solar')).toBe(true);
     // Utility grid feeder is stopped
     expect(isFlowing('c-grid-panel', 'solar')).toBe(false);
 
@@ -84,7 +84,7 @@ describe('3D Solar CAD Studio Electrical & Mechanical Realism', () => {
     // Utility powers the load
     expect(isFlowing('c-grid-panel', 'utility')).toBe(true);
     expect(isFlowing('c-panel-ats', 'utility')).toBe(true);
-    expect(isFlowing('c-ats-load', 'utility')).toBe(true);
+    expect(isFlowing('c-panel-load', 'utility')).toBe(true);
     // Inverter AC output stops
     expect(isFlowing('c-inv-acbrk', 'utility')).toBe(false);
     expect(isFlowing('c-acbrk-spd', 'utility')).toBe(false);

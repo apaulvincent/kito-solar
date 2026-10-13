@@ -133,16 +133,16 @@ export const CONDUIT_ROUTES: ConduitRoute[] = [
       [6.8, 2.5, 0.0],
     ],
   },
-  // 11. ATS to Building Household Load (Exit Wall to Front Service Entrance at Z=2.2)
+  // 11. Main Service Panel to Building Household Load (Branch Feeder to Facility)
   {
-    id: 'c-ats-load',
-    from: 'ats',
+    id: 'c-panel-load',
+    from: 'main_panel',
     to: 'load',
     type: 'ac',
     color: '#0284C7',
     waypoints: [
-      [6.8, 2.5, 0.0],
-      [7.6, 2.5, 0.0],
+      [5.1, 2.0, 0.0],
+      [5.1, 0.8, 0.0],
       [7.6, 0.8, 0.0],
       [7.6, 0.8, 2.2],
       [10.2, 0.8, 2.2],
