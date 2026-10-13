@@ -121,7 +121,7 @@ export const CONDUIT_ROUTES: ConduitRoute[] = [
       [4.6, 2.5, 0.0],
     ],
   },
-  // 10. Main Panel to ATS (Straight Horizontal Conduit between Level Enclosures at Y=2.5m)
+  // 10. Main Panel to ATS (Close-Coupled Nipple Conduit between Level Enclosures at Y=2.5m)
   {
     id: 'c-panel-ats',
     from: 'main_panel',
@@ -130,7 +130,7 @@ export const CONDUIT_ROUTES: ConduitRoute[] = [
     color: '#0284C7',
     waypoints: [
       [4.6, 2.5, 0.0],
-      [6.8, 2.5, 0.0],
+      [5.95, 2.5, 0.0],
     ],
   },
   // 11. Main Service Panel to Building Household Load (Branch Feeder to Facility)
