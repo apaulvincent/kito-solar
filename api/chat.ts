@@ -1,9 +1,9 @@
 // api/chat.ts
-import { streamText, tool } from 'ai';
+import { generateText, tool, isStepCount } from 'ai';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
-import { calculatePvSystem } from '../src/lib/solarSizingEngine';
-import { matchHardwareCatalog } from '../src/lib/hardwareCatalog';
+import { calculatePvSystem } from '../src/lib/solarSizingEngine.js';
+import { matchHardwareCatalog } from '../src/lib/hardwareCatalog.js';
 
 export const maxDuration = 30;
 
@@ -28,11 +28,11 @@ export async function POST(req: Request) {
     const rawMessages = Array.isArray(messages) ? messages : [];
     // Safeguard 1: Limit conversation context depth to 15 turns and truncate long messages
     const sanitizedMessages = rawMessages.slice(-15).map((m: any) => ({
-      role: m.role,
+      role: m.role as 'user' | 'assistant' | 'system',
       content: typeof m.content === 'string' ? m.content.slice(0, 2000) : '',
     }));
 
-    const result = streamText({
+    const result = await generateText({
       model: google('gemini-2.5-flash'),
       system: `You are Kito Solar's AI Solar Engineering Copilot embedded in the Kito Solar CAD Studio.
 Your job is to help users size a solar PV system and configure their Kito Solar project workspace in the Philippines.
@@ -47,12 +47,12 @@ CRITICAL ENGINEERING & SAFETY GUARDRAILS:
 7. If the user has NOT provided a monthly bill, kWh consumption, or target kW size yet (and none exists in Current Project Context), politely ask them for their average monthly electric bill (in PHP) and location.
 8. Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
       messages: sanitizedMessages,
-      maxSteps: 5,
+      stopWhen: isStepCount(5),
       tools: {
         generateSolarSetup: tool({
           description:
             'Calculates a complete solar PV setup from a monthly electric bill or kWh usage and selects matching panels, inverters, and batteries from the catalog.',
-          parameters: z.object({
+          inputSchema: z.object({
             monthlyBillPhp: z
               .number()
               .min(500, 'Minimum bill is ₱500')
@@ -211,7 +211,7 @@ CRITICAL ENGINEERING & SAFETY GUARDRAILS:
         searchHardwareKnowledgeBase: tool({
           description:
             'Searches the solar hardware catalog and technical knowledge base when the user asks specific questions about inverters, panels, batteries, net metering, or PEC wiring codes.',
-          parameters: z.object({
+          inputSchema: z.object({
             query: z.string().describe('Technical search query, e.g., "Deye 5kW hybrid inverter MPPT range"'),
             category: z.enum(['panel', 'inverter', 'battery', 'general']).optional(),
           }),
@@ -226,7 +226,10 @@ CRITICAL ENGINEERING & SAFETY GUARDRAILS:
       },
     });
 
-    return result.toDataStreamResponse();
+    return new Response(result.text, {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown server error';
     return new Response(JSON.stringify({ error: message }), {
