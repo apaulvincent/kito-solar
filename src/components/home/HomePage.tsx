@@ -1,6 +1,7 @@
 // src/components/home/HomePage.tsx
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { BillQuickStartBanner } from '@/components/ai/BillQuickStartBanner';
 import {
   ArrowRight,
   Box,
@@ -215,6 +216,11 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* AI Solar Sizing Studio Banner */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <BillQuickStartBanner />
+      </div>
 
       {/* 2. Three Simple Steps for Installers */}
       <section className="py-10 bg-white/60 dark:bg-slate-900/40 border-b border-slate-200/70 dark:border-slate-800/70">

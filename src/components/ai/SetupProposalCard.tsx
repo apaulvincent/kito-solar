@@ -22,6 +22,7 @@ interface SetupProposalCardProps {
 export const SetupProposalCard: React.FC<SetupProposalCardProps> = ({ proposal }) => {
   const applySizingProposal = useCalculatorStore((state) => state.applySizingProposal);
   const lastAppliedProposal = useCalculatorStore((state) => state.lastAppliedProposal);
+  const setActiveView = useCalculatorStore((state) => state.setActiveView);
   const [justApplied, setJustApplied] = useState(false);
 
   // Exact matching: card is considered active only if this exact proposal was loaded
@@ -31,6 +32,7 @@ export const SetupProposalCard: React.FC<SetupProposalCardProps> = ({ proposal }
 
   const handleApply = () => {
     applySizingProposal(proposal);
+    setActiveView('tool');
     setJustApplied(true);
   };
 

@@ -15,7 +15,6 @@ import { CalculationWorkbench } from '@/components/results/CalculationWorkbench'
 import { ComponentInspector } from '@/components/inspector/ComponentInspector';
 import { EngineeringDisclaimer } from '@/components/common/EngineeringDisclaimer';
 import { DownloadSizingButton } from '@/components/common/DownloadSizingButton';
-import { BillQuickStartBanner } from '@/components/ai/BillQuickStartBanner';
 import { SolarCopilotDrawer } from '@/components/ai/SolarCopilotDrawer';
 import { SolarCopilotButton } from '@/components/ai/SolarCopilotButton';
 import { ArrowLeft, Box } from 'lucide-react';
@@ -133,11 +132,6 @@ export function App() {
               <DownloadSizingButton />
             </div>
           </div>
-
-          {/* AI Copilot Quick-Start Sizing Studio Banner */}
-          <section aria-label="AI Copilot Quick Sizing">
-            <BillQuickStartBanner />
-          </section>
 
           {/* Step 1: Live System Summary Telemetry HUD */}
           <section aria-label="System Summary">
