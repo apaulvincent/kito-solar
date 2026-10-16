@@ -88,6 +88,19 @@ create table if not exists public.solar_knowledge_chunks (
   created_at timestamptz default now()
 );
 
+-- 5.1 Enable Row Level Security (RLS) & Public Read Policies
+alter table public.utility_tariffs enable row level security;
+alter table public.catalog_panels enable row level security;
+alter table public.catalog_inverters enable row level security;
+alter table public.catalog_batteries enable row level security;
+alter table public.solar_knowledge_chunks enable row level security;
+
+create policy "Allow public read access on utility_tariffs" on public.utility_tariffs for select to public using (true);
+create policy "Allow public read access on catalog_panels" on public.catalog_panels for select to public using (true);
+create policy "Allow public read access on catalog_inverters" on public.catalog_inverters for select to public using (true);
+create policy "Allow public read access on catalog_batteries" on public.catalog_batteries for select to public using (true);
+create policy "Allow public read access on solar_knowledge_chunks" on public.solar_knowledge_chunks for select to public using (true);
+
 -- 6. Vector similarity search RPC function
 create or replace function match_solar_knowledge (
   query_embedding vector(768),
