@@ -12,6 +12,7 @@ export interface CalculationInput {
   mainBreakerA: number | null; // optional main panel breaker
   panelCountOverride?: number | null;
   accessories?: AccessoryRecord[];
+  customPrices?: Record<string, number | null>;
 }
 
 export interface DcCalculationResult {
@@ -153,6 +154,7 @@ export interface ProjectCostItem {
   totalPricePhp?: number | null;
   isTbd: boolean;
   isEstimated?: boolean;
+  isCustomPrice?: boolean;
 }
 
 export interface FinancialRoiSummary {

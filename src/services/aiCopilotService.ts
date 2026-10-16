@@ -11,7 +11,7 @@ export interface CopilotMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   createdAt: Date;
-  engine?: 'gemini-2.5-flash';
+  engine?: 'gemini-3.5-flash' | 'gemini-3.5-flash-lite' | 'gemini-2.5-flash' | 'gemini-flash';
   toolInvocations?: Array<{
     toolName: 'generateSolarSetup' | 'generateSolarSetupFromBill' | 'modifyExistingProjectSetup' | 'searchHardwareKnowledgeBase' | 'searchSolarKnowledgeBase';
     state: 'result';
@@ -24,7 +24,7 @@ export class AiCopilotService {
    * Returns active engine mode based on environment availability
    */
   getActiveEngineName(): string {
-    return 'Gemini 2.5 Flash (Live AI Agent)';
+    return 'Gemini Flash (Live AI Agent)';
   }
 
   /**
@@ -61,7 +61,7 @@ export class AiCopilotService {
     projectId?: string | null,
     currentProjectState?: unknown
   ): Promise<CopilotMessage> {
-    // 1. Attempt backend Serverless API (/api/chat or /api/ai/solar-copilot) if available
+    // 1. Attempt backend Serverless API (/api/chat) if available
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -74,16 +74,30 @@ export class AiCopilotService {
       });
 
       if (response.ok) {
-        const text = await response.text();
-        if (text && text.trim().length > 0 && !text.includes('GOOGLE_GENERATIVE_AI_API_KEY is not configured')) {
-          // If the serverless endpoint responded with data, return assistant turn
-          return {
-            id: 'msg-' + Date.now(),
-            role: 'assistant',
-            content: text,
-            engine: 'gemini-2.5-flash',
-            createdAt: new Date(),
-          };
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const data = await response.json();
+          if (data && data.text && data.text.trim().length > 0) {
+            return {
+              id: 'msg-' + Date.now(),
+              role: 'assistant',
+              content: data.text,
+              engine: 'gemini-3.5-flash',
+              createdAt: new Date(),
+              toolInvocations: data.toolInvocations,
+            };
+          }
+        } else {
+          const text = await response.text();
+          if (text && text.trim().length > 0 && !text.includes('GOOGLE_GENERATIVE_AI_API_KEY is not configured')) {
+            return {
+              id: 'msg-' + Date.now(),
+              role: 'assistant',
+              content: text,
+              engine: 'gemini-3.5-flash',
+              createdAt: new Date(),
+            };
+          }
         }
       }
     } catch {
@@ -109,7 +123,7 @@ export class AiCopilotService {
       }));
 
       const { text, toolResults } = await generateText({
-        model: google('gemini-2.5-flash'),
+        model: google('gemini-3.5-flash'),
         system: `You are Jenny, Kito Solar's friendly solar engineering assistant embedded in the Kito Solar CAD Studio.
 Your job is to help users size a solar PV system and configure their Kito Solar project workspace in the Philippines. Introduce yourself warmly as Jenny if greeted or asked who you are.
 
@@ -338,7 +352,7 @@ Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
         id: 'msg-' + Date.now(),
         role: 'assistant',
         content: text,
-        engine: 'gemini-2.5-flash',
+        engine: 'gemini-3.5-flash',
         createdAt: new Date(),
         toolInvocations: toolInvocations.length > 0 ? toolInvocations : undefined,
       };

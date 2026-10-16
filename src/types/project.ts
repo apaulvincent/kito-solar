@@ -25,6 +25,7 @@ export interface SavedProject {
   dc_breaker_a: number;
   ac_breaker_a: number;
   system_type: 'HYBRID' | 'ON-GRID';
+  custom_prices?: Record<string, number> | null;
 }
 
 export interface CreateProjectInput {
@@ -45,6 +46,7 @@ export interface CreateProjectInput {
   dc_breaker_a: number;
   ac_breaker_a: number;
   system_type: 'HYBRID' | 'ON-GRID';
+  custom_prices?: Record<string, number> | null;
 }
 
 export const MAX_PROJECTS_PER_USER = 20;

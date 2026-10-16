@@ -37,10 +37,27 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
   const systemType: SystemType = isBatteryCapable ? 'hybrid' : 'ongrid';
 
   // Accessory pricing map (live Supabase accessories or fallback seed)
+  const customPrices = input.customPrices || {};
   const rawAccessories = input.accessories && input.accessories.length > 0 ? input.accessories : accessoriesSeed;
   const accessoryPriceMap = new Map<string, number | null>();
   for (const acc of rawAccessories) {
-    accessoryPriceMap.set(acc.accessory_key, acc.price_php ?? null);
+    const custom = customPrices[acc.accessory_key] ?? customPrices[`mounting_${acc.accessory_key}`];
+    if (custom !== undefined) {
+      accessoryPriceMap.set(acc.accessory_key, custom);
+    } else {
+      accessoryPriceMap.set(acc.accessory_key, acc.price_php ?? null);
+    }
+  }
+
+  // Populate any additional custom accessory prices
+  for (const [key, val] of Object.entries(customPrices)) {
+    if (val !== undefined) {
+      if (key.startsWith('mounting_')) {
+        accessoryPriceMap.set(key.replace(/^mounting_/, ''), val);
+      } else {
+        accessoryPriceMap.set(key, val);
+      }
+    }
   }
 
   // Sizing calculations
@@ -165,7 +182,10 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
   const costItems: ProjectCostItem[] = [];
 
   // 1. Major Equipment
-  const invPrice = inverter.price_php ? Number(inverter.price_php) : null;
+  const invCustom = customPrices['inverter'];
+  const invPrice = invCustom !== undefined
+    ? invCustom
+    : (inverter.price_php ? Number(inverter.price_php) : null);
   costItems.push({
     key: 'inverter',
     name: `${inverter.brand} ${inverter.model}`,
@@ -175,9 +195,13 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
     unitPricePhp: invPrice,
     totalPricePhp: invPrice,
     isTbd: !invPrice || invPrice <= 0,
+    isCustomPrice: invCustom !== undefined,
   });
 
-  const modPrice = module.price_php ? Number(module.price_php) : null;
+  const modCustom = customPrices['solar_module'];
+  const modPrice = modCustom !== undefined
+    ? modCustom
+    : (module.price_php ? Number(module.price_php) : null);
   const modTotal = modPrice ? modPrice * pvSizing.activePanelCount : null;
   costItems.push({
     key: 'solar_module',
@@ -188,10 +212,14 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
     unitPricePhp: modPrice,
     totalPricePhp: modTotal,
     isTbd: !modPrice || modPrice <= 0,
+    isCustomPrice: modCustom !== undefined,
   });
 
   if (batteryResult.hasBattery && battery) {
-    const batPrice = battery.price_php ? Number(battery.price_php) : null;
+    const batCustom = customPrices['battery_bank'];
+    const batPrice = batCustom !== undefined
+      ? batCustom
+      : (battery.price_php ? Number(battery.price_php) : null);
     const batTotal = batPrice ? batPrice * batteryCount : null;
     costItems.push({
       key: 'battery_bank',
@@ -202,20 +230,26 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
       unitPricePhp: batPrice,
       totalPricePhp: batTotal,
       isTbd: !batPrice || batPrice <= 0,
+      isCustomPrice: batCustom !== undefined,
     });
   }
 
   // 2. Mounting Hardware
   for (const mItem of mounting.items) {
+    const mountingKey = `mounting_${mItem.key}`;
+    const mCustom = customPrices[mountingKey] ?? customPrices[mItem.key];
+    const unitPrice = mCustom !== undefined ? mCustom : (mItem.unitPricePhp ?? null);
+    const totalPrice = unitPrice ? unitPrice * mItem.quantity : null;
     costItems.push({
-      key: `mounting_${mItem.key}`,
+      key: mountingKey,
       name: mItem.name,
       category: 'mounting',
       quantity: mItem.quantity,
       unit: mItem.unit,
-      unitPricePhp: mItem.unitPricePhp ?? null,
-      totalPricePhp: mItem.totalPricePhp ?? null,
-      isTbd: !mItem.unitPricePhp || mItem.unitPricePhp <= 0,
+      unitPricePhp: unitPrice,
+      totalPricePhp: totalPrice,
+      isTbd: !unitPrice || unitPrice <= 0,
+      isCustomPrice: mCustom !== undefined,
     });
   }
 
@@ -227,7 +261,8 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
     quantity: number = 1,
     unit: string = 'pc'
   ) => {
-    const unitPrice = getAccPrice(key);
+    const swCustom = customPrices[key];
+    const unitPrice = swCustom !== undefined ? swCustom : getAccPrice(key);
     const totalPrice = unitPrice ? unitPrice * quantity : null;
     costItems.push({
       key,
@@ -238,6 +273,7 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
       unitPricePhp: unitPrice,
       totalPricePhp: totalPrice,
       isTbd: !unitPrice || unitPrice <= 0,
+      isCustomPrice: swCustom !== undefined,
     });
   };
 
