@@ -166,7 +166,10 @@ export const SolarCopilotDrawer: React.FC = () => {
             {messages.map((message) => {
               const isUser = message.role === 'user';
               const proposalResult = message.toolInvocations?.find(
-                (t) => t.toolName === 'generateSolarSetupFromBill' || t.toolName === 'modifyExistingProjectSetup'
+                (t) =>
+                  t.toolName === 'generateSolarSetup' ||
+                  t.toolName === 'generateSolarSetupFromBill' ||
+                  t.toolName === 'modifyExistingProjectSetup'
               )?.result as any;
 
               return (

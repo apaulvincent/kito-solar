@@ -1,143 +1,182 @@
 // src/components/ai/__tests__/copilotIntegration.test.ts
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { computeAndMatchSolarSystem, recalculateWithOverrides } from '@/lib/solar/sizing-engine';
+import { calculatePvSystem } from '@/lib/solarSizingEngine';
+import { matchHardwareCatalog } from '@/lib/hardwareCatalog';
 import { aiCopilotService } from '@/services/aiCopilotService';
 
-describe('AI Copilot Studio Integration', () => {
+describe('AI Copilot Tool-Calling & Deterministic PV Sizing Engine', () => {
   beforeEach(() => {
     useCalculatorStore.getState().resetToDefaults();
   });
 
-  it('generates a solar proposal and applies it to the calculator store', () => {
-    const proposal = computeAndMatchSolarSystem({
-      monthlyBillPhp: 15000,
-      location: 'Metro Manila',
-      systemType: 'hybrid',
+  describe('Deterministic Engine: calculatePvSystem', () => {
+    it('accurately sizes PV system from monthly peso bill', () => {
+      const output = calculatePvSystem({
+        monthlyBillPhp: 7000,
+        location: 'Metro Manila',
+        systemType: 'hybrid',
+      });
+
+      expect(output.estimatedMonthlyKwh).toBeCloseTo(7000 / 12.0, 0);
+      expect(output.recommendedArrayKwp).toBeGreaterThan(4.0);
+      expect(output.recommendedInverterKw).toBeGreaterThanOrEqual(3);
+      expect(output.recommendedBatteryKwh).toBeGreaterThanOrEqual(5.12);
+      expect(output.estimatedMonthlySavingsPhp).toBeGreaterThan(4000);
     });
 
-    expect(proposal.engineeringSpecs.actualArrayKwp).toBeGreaterThan(9.0);
-    expect(proposal.billOfMaterials.panel.quantity).toBeGreaterThanOrEqual(16);
+    it('sets recommendedBatteryKwh to 0 for pure grid-tie systems', () => {
+      const output = calculatePvSystem({
+        monthlyBillPhp: 10000,
+        systemType: 'grid-tie',
+      });
 
-    // Apply proposal to calculator
-    useCalculatorStore.getState().applySizingProposal(proposal);
-
-    const state = useCalculatorStore.getState();
-    expect(state.panelCountOverride).toBe(proposal.billOfMaterials.panel.quantity);
-    expect(state.selectedModule.pv_wattage_w).toBeDefined();
-    expect(state.calculationResult).toBeDefined();
-    expect(state.lastAppliedProposal).toEqual(proposal);
-  });
-
-  it('supports AI copilot deterministic fallback messaging with tool payload', async () => {
-    const messages = [
-      {
-        id: '1',
-        role: 'user' as const,
-        content: 'My electric bill is around ₱12,000 in San Pablo Laguna, need brownout backup',
-        createdAt: new Date(),
-      },
-    ];
-
-    const reply = await aiCopilotService.sendMessage(messages);
-    expect(reply.role).toBe('assistant');
-    expect(reply.content).toContain('kWp HYBRID Solar System');
-    expect(reply.toolInvocations).toBeDefined();
-    expect(reply.toolInvocations?.[0].toolName).toBe('generateSolarSetupFromBill');
-
-    const result = reply.toolInvocations?.[0].result as any;
-    expect(result.engineeringSpecs.actualArrayKwp).toBeGreaterThan(7.0);
-    expect(result.financialRoi.estimatedMonthlySavingsPhp).toBeGreaterThan(8000);
-  });
-
-  it('handles what-if modification queries in AI copilot fallback', async () => {
-    const proposal = computeAndMatchSolarSystem({
-      monthlyBillPhp: 12000,
-      location: 'San Pablo City, Laguna',
-      systemType: 'hybrid',
+      expect(output.recommendedBatteryKwh).toBe(0);
+      expect(output.recommendedArrayKwp).toBeGreaterThan(4.0);
     });
 
-    const messages = [
-      {
-        id: '1',
-        role: 'user' as const,
-        content: 'My electric bill is around ₱12,000 in San Pablo Laguna, need brownout backup',
-        createdAt: new Date(),
-      },
-      {
-        id: '2',
-        role: 'assistant' as const,
-        content: 'Here is your setup',
-        createdAt: new Date(),
-        toolInvocations: [
-          {
-            toolName: 'generateSolarSetupFromBill' as const,
-            state: 'result' as const,
-            result: proposal,
+    it('handles direct monthlyKwh consumption inputs without needing bill', () => {
+      const output = calculatePvSystem({
+        monthlyKwh: 600,
+        systemType: 'hybrid',
+      });
+
+      expect(output.estimatedMonthlyKwh).toBe(600);
+      expect(output.recommendedArrayKwp).toBeGreaterThan(4.0);
+    });
+  });
+
+  describe('Deterministic Hardware Catalog: matchHardwareCatalog', () => {
+    it('filters inverter catalog by preferred brand "Deye" and selects matching capacity', async () => {
+      const match = await matchHardwareCatalog({
+        targetKwp: 4.8,
+        targetInverterKw: 5,
+        targetBatteryKwh: 5.12,
+        systemType: 'hybrid',
+        preferredInverterBrand: 'Deye',
+      });
+
+      expect(match.inverter.brand).toBe('Deye');
+      expect(match.inverter.model).toBe('SUN-5K-SG05LP1-EU');
+      expect(match.inverter.kw).toBe(5);
+      expect(match.panelCount).toBeGreaterThanOrEqual(8);
+      expect(match.battery).not.toBeNull();
+      expect(match.battery?.brand).toBe('Deye');
+      expect(match.totalBatteryKwh).toBe(5.12);
+    });
+
+    it('supports preferred panel brand selection (e.g. Canadian Solar)', async () => {
+      const match = await matchHardwareCatalog({
+        targetKwp: 5.5,
+        targetInverterKw: 5,
+        preferredPanelBrand: 'Canadian Solar',
+      });
+
+      expect(match.panel.brand).toBe('Canadian Solar');
+      expect(match.panel.watts).toBe(580);
+      expect(match.actualArrayKwp).toBeGreaterThanOrEqual(5.0);
+    });
+  });
+
+  describe('Workbench State Synchronization', () => {
+    it('synchronizes tool-call sizing payload directly into 3D CAD & electrical workbench', async () => {
+      const sizing = calculatePvSystem({
+        monthlyBillPhp: 7000,
+        systemType: 'hybrid',
+      });
+
+      const hardware = await matchHardwareCatalog({
+        targetKwp: sizing.recommendedArrayKwp,
+        targetInverterKw: sizing.recommendedInverterKw,
+        targetBatteryKwh: sizing.recommendedBatteryKwh,
+        systemType: 'hybrid',
+        preferredInverterBrand: 'Deye',
+      });
+
+      const toolPayload = {
+        action: 'APPLY_SOLAR_SETUP' as const,
+        projectId: 'test-proj-deye-7k',
+        inputSummary: {
+          monthlyBillPhp: 7000,
+          location: 'Metro Manila',
+          systemType: 'hybrid' as const,
+          daytimeLoadRatio: 0.6,
+          utilityProvider: 'Meralco',
+          tariffRatePhpPerKwh: 12.0,
+          peakSunHours: 4.5,
+          estimatedMonthlyKwh: sizing.estimatedMonthlyKwh,
+          estimatedDailyKwh: sizing.dailyKwh,
+        },
+        engineeringSpecs: {
+          targetArrayKwp: sizing.recommendedArrayKwp,
+          actualArrayKwp: hardware.actualArrayKwp,
+          dcAcRatio: 1.15,
+          estimatedDailyHarvestKwh: 18.0,
+          estimatedMonthlyHarvestKwh: 540,
+          billOffsetPercentage: 88,
+          requiredRoofAreaSqm: 25,
+          stringConfigurations: [],
+        },
+        billOfMaterials: {
+          panel: {
+            id: hardware.panel.id,
+            brand: hardware.panel.brand,
+            model: hardware.panel.model,
+            wattageWp: hardware.panel.watts,
+            quantity: hardware.panelCount,
+            unitPricePhp: hardware.panel.pricePhp,
+            subtotalPhp: hardware.panelCount * hardware.panel.pricePhp,
           },
-        ],
-      },
-      {
-        id: '3',
-        role: 'user' as const,
-        content: 'What if we keep the 8kW inverter, drop the battery to 5kWh, and use 10 panels?',
-        createdAt: new Date(),
-      },
-    ];
+          inverter: {
+            id: hardware.inverter.id,
+            brand: hardware.inverter.brand,
+            model: hardware.inverter.model,
+            ratedAcKw: hardware.inverter.kw,
+            systemType: 'hybrid' as const,
+            quantity: 1,
+            unitPricePhp: hardware.inverter.pricePhp,
+            subtotalPhp: hardware.inverter.pricePhp,
+          },
+          battery: hardware.battery
+            ? {
+                id: hardware.battery.id,
+                brand: hardware.battery.brand,
+                model: hardware.battery.model,
+                moduleCapacityKwh: hardware.battery.kwh,
+                quantity: hardware.batteryCount,
+                totalStorageKwh: hardware.totalBatteryKwh,
+                usableStorageKwh: hardware.totalBatteryKwh * 0.9,
+                unitPricePhp: hardware.battery.pricePhp,
+                subtotalPhp: hardware.batteryCount * hardware.battery.pricePhp,
+              }
+            : null,
+          bosAndInstallationPhp: 25000,
+          totalSystemCostPhp: hardware.estimatedTotalSystemCostPhp,
+        },
+        financialRoi: {
+          estimatedMonthlySavingsPhp: sizing.estimatedMonthlySavingsPhp,
+          estimatedNewMonthlyBillPhp: 1500,
+          annualSavingsPhp: sizing.estimatedMonthlySavingsPhp * 12,
+          paybackPeriodYears: 4.5,
+          twentyFiveYearNetSavingsPhp: 1200000,
+        },
+      };
 
-    const reply = await aiCopilotService.sendMessage(messages);
-    expect(reply.role).toBe('assistant');
-    expect(reply.toolInvocations?.[0].toolName).toBe('modifyExistingProjectSetup');
+      // Apply tool payload to Zustand store
+      useCalculatorStore.getState().applySizingProposal(toolPayload);
 
-    const modified = reply.toolInvocations?.[0].result as any;
-    expect(modified.billOfMaterials.panel.quantity).toBe(10);
-    expect(modified.billOfMaterials.inverter.ratedAcKw).toBe(8);
+      const state = useCalculatorStore.getState();
+      expect(state.selectedInverter.brand.toUpperCase()).toBe('DEYE');
+      expect(state.selectedInverter.model).toBe('SUN-5K-SG05LP1-EU');
+      expect(state.panelCountOverride).toBe(hardware.panelCount);
+      expect(state.calculationResult).toBeDefined();
+      expect(state.lastAppliedProposal?.projectId).toBe('test-proj-deye-7k');
+    });
   });
 
-  it('accurately parses brand preference and applies Deye hybrid inverter to workbench', async () => {
-    const messages = [
-      {
-        id: '1',
-        role: 'user' as const,
-        content: 'how about 7000 but I want Deye Hybrid Inverter',
-        createdAt: new Date(),
-      },
-    ];
-
-    const reply = await aiCopilotService.sendMessage(messages);
-    expect(reply.role).toBe('assistant');
-    const result = reply.toolInvocations?.[0].result as any;
-    expect(result).toBeDefined();
-    expect(result.billOfMaterials.inverter.brand).toBe('Deye');
-    expect(result.billOfMaterials.inverter.model).toBe('SUN-5K-SG05LP1-EU');
-
-    // Now apply to calculator
-    useCalculatorStore.getState().applySizingProposal(result);
-
-    const state = useCalculatorStore.getState();
-    expect(state.selectedInverter.brand.toUpperCase()).toBe('DEYE');
-    expect(state.selectedInverter.model).toBe('SUN-5K-SG05LP1-EU');
-    expect(state.panelCountOverride).toBe(result.billOfMaterials.panel.quantity);
-  });
-
-  it('correctly handles "7000 bill, I want deye inverter" without asking for bill again', async () => {
-    const messages = [
-      {
-        id: '1',
-        role: 'user' as const,
-        content: '7000 bill, I want deye inverter',
-        createdAt: new Date(),
-      },
-    ];
-
-    const reply = await aiCopilotService.sendMessage(messages);
-    expect(reply.role).toBe('assistant');
-    expect(reply.toolInvocations).toBeDefined();
-    expect(reply.toolInvocations?.[0].toolName).toBe('generateSolarSetupFromBill');
-
-    const result = reply.toolInvocations?.[0].result as any;
-    expect(result.inputSummary.monthlyBillPhp).toBe(7000);
-    expect(result.billOfMaterials.inverter.brand).toBe('Deye');
-    expect(result.billOfMaterials.inverter.model).toBe('SUN-5K-SG05LP1-EU');
+  describe('Zero Regex Verification', () => {
+    it('verifies that regex bill extraction has been eliminated from the service', () => {
+      expect((aiCopilotService as any).extractBillAmount).toBeUndefined();
+    });
   });
 });

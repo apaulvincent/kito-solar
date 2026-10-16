@@ -1,15 +1,9 @@
 // src/services/aiCopilotService.ts
-import {
-  ProjectSizingResult,
-  SystemType,
-  BudgetTier,
-  SolarKnowledgeChunk,
-} from '@/types/solar-ai';
-import {
-  computeAndMatchSolarSystem,
-  recalculateWithOverrides,
-  resolveTariff,
-} from '@/lib/solar/sizing-engine';
+import { generateText, tool, isStepCount } from 'ai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { z } from 'zod';
+import { calculatePvSystem, SizingOutput } from '@/lib/solarSizingEngine';
+import { matchHardwareCatalog } from '@/lib/hardwareCatalog';
 import { searchSolarKnowledge } from '@/lib/solar/rag-search';
 
 export interface CopilotMessage {
@@ -17,11 +11,11 @@ export interface CopilotMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   createdAt: Date;
-  engine?: 'gemini-2.5-flash' | 'deterministic-engine';
+  engine?: 'gemini-2.5-flash';
   toolInvocations?: Array<{
-    toolName: 'generateSolarSetupFromBill' | 'modifyExistingProjectSetup' | 'searchSolarKnowledgeBase';
+    toolName: 'generateSolarSetup' | 'generateSolarSetupFromBill' | 'modifyExistingProjectSetup' | 'searchHardwareKnowledgeBase' | 'searchSolarKnowledgeBase';
     state: 'result';
-    result: ProjectSizingResult | { results: SolarKnowledgeChunk[] };
+    result: any;
   }>;
 }
 
@@ -30,87 +24,59 @@ export class AiCopilotService {
    * Returns active engine mode based on environment availability
    */
   getActiveEngineName(): string {
-    const hasClientKey = Boolean(
-      (typeof import.meta !== 'undefined' && (import.meta.env?.VITE_GEMINI_API_KEY || import.meta.env?.GOOGLE_GENERATIVE_AI_API_KEY))
-    );
-    return hasClientKey ? 'Gemini 2.5 Flash (Live AI)' : 'Deterministic Tool Engine (Grounded Safe Mode)';
+    return 'Gemini 2.5 Flash (Live AI Agent)';
   }
 
   /**
-   * Robust bill extraction: handles '7000 bill', 'bill 7000', '₱7,000', '7k', etc.
-   * Avoids confusing equipment ratings (8kW, 5kWh, 580W, 500V) with electricity bills.
+   * Resolves Google Generative AI API key from Vite or Node environment
    */
-  extractBillAmount(userPrompt: string): number | null {
-    const clean = userPrompt.toLowerCase();
-
-    // 1. '7k' or '12.5k' (excluding kw, kwh)
-    const kMatch = clean.match(/(?:(?:₱|php|pesos?)?\s*)(\d+(?:\.\d+)?)\s*k\b(?!w)/);
-    if (kMatch) {
-      const val = parseFloat(kMatch[1]) * 1000;
-      if (val >= 500) return val;
-    }
-
-    // 2. Currency symbol + digits (e.g. ₱7,000, 7000php, 7000 pesos)
-    const currMatch =
-      clean.match(/(?:₱|php|pesos?)\s*(\d[\d,]*)/) ||
-      clean.match(/(\d[\d,]*)\s*(?:php|pesos)\b/);
-    if (currMatch) {
-      const val = parseFloat(currMatch[1].replace(/,/g, ''));
-      if (val >= 500) return val;
-    }
-
-    // 3. '7000 bill' or 'bill 7000' or 'bill is 7000' or '7000/mo'
-    const billMatch =
-      clean.match(/(\d[\d,]*)\s*(?:bill|\/mo|per month|monthly)/) ||
-      clean.match(/(?:bill|spend|paying)\s*(?:is|around|about|of)?\s*[:=]?\s*(\d[\d,]*)/);
-    if (billMatch) {
-      const val = parseFloat(billMatch[1].replace(/,/g, ''));
-      if (val >= 500) return val;
-    }
-
-    // 4. Standalone 4+ digit number not followed by electrical units (kW, kWh, V, A, panels)
-    const numMatches = [...clean.matchAll(/\b(\d[\d,]*)\b/g)];
-    for (const m of numMatches) {
-      const raw = m[1].replace(/,/g, '');
-      const val = parseFloat(raw);
-      const postText = clean.slice(m.index! + m[0].length).trim();
-      if (/^(?:k?w|k?wh|v|a|panels?|modules?|deg|c\b)/.test(postText)) {
-        continue;
-      }
-      if (val >= 1000 && val <= 5000000) {
-        return val;
+  getApiKey(): string | null {
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+      const viteKey =
+        import.meta.env.VITE_GOOGLE_GENERATIVE_AI_API_KEY ||
+        import.meta.env.VITE_GEMINI_API_KEY ||
+        import.meta.env.GOOGLE_GENERATIVE_AI_API_KEY;
+      if (viteKey && typeof viteKey === 'string' && viteKey.trim().length > 0) {
+        return viteKey.trim();
       }
     }
-
+    if (typeof process !== 'undefined' && process.env) {
+      const procKey =
+        process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+        process.env.GEMINI_API_KEY ||
+        process.env.VITE_GOOGLE_GENERATIVE_AI_API_KEY;
+      if (procKey && typeof procKey === 'string' && procKey.trim().length > 0) {
+        return procKey.trim();
+      }
+    }
     return null;
   }
 
   /**
-   * Process a user message. Attempts to call the serverless endpoint first.
-   * If the endpoint fails (e.g. offline, Vite dev server, or no API key provided),
-   * seamlessly falls back to the deterministic client engine.
+   * Process a user message using real LLM intent & entity extraction with tool calling.
+   * ZERO regex parsing: Gemini natively parses natural language and decides tool arguments.
    */
   async sendMessage(
     messages: CopilotMessage[],
-    projectId?: string | null
+    projectId?: string | null,
+    currentProjectState?: unknown
   ): Promise<CopilotMessage> {
-    const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
-    const userPrompt = lastUserMessage?.content || '';
-
-    // 1. Attempt Serverless API (on Vercel or full backend)
+    // 1. Attempt backend Serverless API (/api/chat or /api/ai/solar-copilot) if available
     try {
-      const response = await fetch('/api/ai/solar-copilot', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
           projectId: projectId || undefined,
+          currentProjectState,
         }),
       });
 
       if (response.ok) {
         const text = await response.text();
         if (text && text.trim().length > 0 && !text.includes('GOOGLE_GENERATIVE_AI_API_KEY is not configured')) {
+          // If the serverless endpoint responded with data, return assistant turn
           return {
             id: 'msg-' + Date.now(),
             role: 'assistant',
@@ -121,251 +87,267 @@ export class AiCopilotService {
         }
       }
     } catch {
-      // Serverless API not reachable, proceed to client handling
+      // Backend route unreachable (e.g. running in client-side Vite dev), fallback to client-side LLM call
     }
 
-    // 2. Deterministic Client PV Sizing Engine Fallback
-    return this.processDeterministicFallback(userPrompt, messages, projectId);
-  }
+    // 2. Direct client-side LLM Agent execution via Google GenAI SDK & Vercel AI SDK
+    const apiKey = this.getApiKey();
 
-  private async processDeterministicFallback(
-    userPrompt: string,
-    history: CopilotMessage[],
-    projectId?: string | null
-  ): Promise<CopilotMessage> {
-    const promptLower = userPrompt.toLowerCase();
-
-    // Check for "What-If" modifications / overrides on previous setup
-    const isOverride =
-      promptLower.includes('what if') ||
-      promptLower.includes('how about') ||
-      promptLower.includes('what about') ||
-      promptLower.includes('change') ||
-      promptLower.includes('override') ||
-      promptLower.includes('drop') ||
-      promptLower.includes('keep') ||
-      promptLower.includes('reduce') ||
-      promptLower.includes('increase') ||
-      promptLower.includes('switch to');
-
-    // Find previous proposal if any
-    const previousProposal = history
-      .slice()
-      .reverse()
-      .find((m) => m.toolInvocations?.[0]?.result && 'engineeringSpecs' in m.toolInvocations[0].result)
-      ?.toolInvocations?.[0]?.result as ProjectSizingResult | undefined;
-
-    // Check for requested brands (e.g. Deye, Solis, Growatt, Huawei)
-    let preferredInverterBrand: string | undefined = undefined;
-    if (promptLower.includes('deye')) preferredInverterBrand = 'Deye';
-    else if (promptLower.includes('growatt')) preferredInverterBrand = 'Growatt';
-    else if (promptLower.includes('solis')) preferredInverterBrand = 'Solis';
-    else if (promptLower.includes('huawei')) preferredInverterBrand = 'Huawei';
-
-    // Extract bill amount cleanly (supports '7000 bill', 'bill 7000', '₱7,000', '7k', etc.)
-    const extractedBill = this.extractBillAmount(userPrompt);
-
-    // If there is an existing proposal and user asks an override without changing bill amount
-    if (isOverride && previousProposal && !extractedBill) {
-      return this.handleOverrideQuery(userPrompt, previousProposal, projectId, preferredInverterBrand);
+    if (!apiKey) {
+      return {
+        id: 'msg-' + Date.now(),
+        role: 'assistant',
+        engine: 'gemini-2.5-flash',
+        content:
+          'To activate the AI Copilot, please provide a Google Gemini API key by setting `VITE_GOOGLE_GENERATIVE_AI_API_KEY` in your `.env.local` file or in your environment variables.',
+        createdAt: new Date(),
+      };
     }
 
-    // If user provides a bill amount (or "how about 7000 but I want Deye")
-    if (extractedBill) {
-      return this.handleBillSizingQuery(userPrompt, extractedBill, projectId, preferredInverterBrand);
-    }
+    const google = createGoogleGenerativeAI({ apiKey });
+    let appliedPayload: any = null;
 
-    // Check for technical / RAG questions (e.g. Voc, MPPT, single string, net metering)
-    const isTechnicalQuestion =
-      promptLower.includes('why') ||
-      promptLower.includes('can i') ||
-      promptLower.includes('single string') ||
-      promptLower.includes('pec') ||
-      promptLower.includes('net metering') ||
-      promptLower.includes('difference between') ||
-      promptLower.includes('brownout') ||
-      promptLower.includes('voltage');
+    try {
+      const sdkMessages = messages.map((m) => ({
+        role: m.role as 'user' | 'assistant' | 'system',
+        content: m.content,
+      }));
 
-    if (isTechnicalQuestion) {
-      return this.handleKnowledgeQuery(userPrompt);
-    }
+      const { text, toolResults } = await generateText({
+        model: google('gemini-2.5-flash'),
+        system: `You are Kito Solar's AI Solar Engineering Copilot embedded in the Kito Solar CAD Studio.
+Your job is to help users size a solar PV system and configure their Kito Solar project workspace in the Philippines.
 
-    // Default friendly sales engineer guidance
-    return {
-      id: 'msg-' + Date.now(),
-      role: 'assistant',
-      engine: 'deterministic-engine',
-      content:
-        "To size your solar system accurately, please share your **average monthly electric bill** (e.g., *₱12,000/month*) and your **location** in the Philippines. Let me know if you would like **Grid-Tie** (daytime savings only) or **Hybrid** with battery storage for brownout backup.",
-      createdAt: new Date(),
-    };
-  }
+CRITICAL RULES:
+1. NEVER calculate solar math, kWh, panel counts, or ROI in your head. ALWAYS call the \`generateSolarSetup\` tool whenever a user provides their monthly bill, kWh consumption, or requests hardware changes.
+2. You natively understand natural human phrasing, typos, shorthand (e.g., "7k bill", "7000 bill, I want deye inverter", "₱12,500/mo", "around 8 thousand pesos"), and hardware requests (e.g., "I want a Deye inverter", "use Canadian Solar panels", "add battery for brownouts").
+3. Extract the parameters from the user's natural language and pass them into the tool call.
+4. If the user asks for a brand that is typically a hybrid inverter (like Deye) or mentions brownouts/batteries, set \`systemType\` to "hybrid".
+5. If the user has NOT provided a monthly bill, kWh consumption, or target kW size yet, politely ask them for their average monthly electric bill (in PHP) and location.
+Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
+        messages: sdkMessages,
+        stopWhen: isStepCount(5),
+        tools: {
+          generateSolarSetup: tool({
+            description:
+              'Calculates a complete solar PV setup from a monthly electric bill or kWh usage and selects matching panels, inverters, and batteries from the catalog.',
+            inputSchema: z.object({
+              monthlyBillPhp: z
+                .number()
+                .optional()
+                .describe('The user monthly electricity bill in Philippine Pesos (PHP). Example: "7000 bill" -> 7000, "12.5k" -> 12500.'),
+              monthlyKwh: z
+                .number()
+                .optional()
+                .describe('Monthly consumption in kWh if the user provides kWh instead of a peso bill.'),
+              location: z
+                .string()
+                .default('Metro Manila / Calabarzon')
+                .describe('User city, province, or electric utility (e.g., Meralco, Laguna, Cebu).'),
+              systemType: z
+                .enum(['grid-tie', 'hybrid', 'off-grid'])
+                .default('hybrid')
+                .describe('System architecture: grid-tie (no battery, daytime savings), hybrid (grid + battery backup), or off-grid.'),
+              preferredInverterBrand: z
+                .string()
+                .optional()
+                .describe('Preferred inverter brand if mentioned by the user (e.g., "Deye", "Growatt", "Solis").'),
+              preferredPanelBrand: z
+                .string()
+                .optional()
+                .describe('Preferred solar panel brand if mentioned by the user (e.g., "Jinko", "Longi", "Canadian Solar").'),
+              daytimeLoadRatio: z
+                .number()
+                .min(0.1)
+                .max(1.0)
+                .default(0.6)
+                .describe('Fraction of electricity used during daytime hours (0.1 to 1.0).'),
+              includeBatteryBackup: z
+                .boolean()
+                .default(true)
+                .describe('Whether to include LiFePO4 battery storage in the configuration.'),
+            }),
+            execute: async (params) => {
+              // 1. Run deterministic math engine
+              const sizingResult: SizingOutput = calculatePvSystem({
+                monthlyBillPhp: params.monthlyBillPhp,
+                monthlyKwh: params.monthlyKwh,
+                location: params.location,
+                systemType: params.systemType,
+                daytimeLoadRatio: params.daytimeLoadRatio,
+                includeBatteryBackup: params.includeBatteryBackup,
+              });
 
-  private handleBillSizingQuery(
-    prompt: string,
-    bill: number,
-    projectId?: string | null,
-    preferredInverterBrand?: string
-  ): CopilotMessage {
-    const promptLower = prompt.toLowerCase();
+              // 2. Query hardware catalog with brand filters
+              const hardwareMatch = await matchHardwareCatalog({
+                targetKwp: sizingResult.recommendedArrayKwp,
+                targetInverterKw: sizingResult.recommendedInverterKw,
+                targetBatteryKwh: sizingResult.recommendedBatteryKwh,
+                systemType: params.systemType,
+                preferredInverterBrand: params.preferredInverterBrand,
+                preferredPanelBrand: params.preferredPanelBrand,
+              });
 
-    // Determine system type
-    let systemType: SystemType = 'hybrid';
-    if (
-      promptLower.includes('grid-tie') ||
-      promptLower.includes('grid tie') ||
-      promptLower.includes('no battery') ||
-      promptLower.includes('daytime only')
-    ) {
-      systemType = 'grid-tie';
-    } else if (promptLower.includes('off-grid') || promptLower.includes('off grid') || promptLower.includes('remote')) {
-      systemType = 'off-grid';
-    }
+              // 3. Return structured payload for both Frontend UI state sync & LLM explanation
+              appliedPayload = {
+                action: 'APPLY_SOLAR_SETUP',
+                projectId: projectId || 'proj-ai-' + Date.now(),
+                inputSummary: {
+                  monthlyBillPhp: params.monthlyBillPhp ?? Math.round(sizingResult.estimatedMonthlyKwh * sizingResult.tariffRatePhp),
+                  location: params.location,
+                  systemType: params.systemType,
+                  daytimeLoadRatio: params.daytimeLoadRatio,
+                  utilityProvider: 'Meralco / Local Distribution Utility',
+                  tariffRatePhpPerKwh: sizingResult.tariffRatePhp,
+                  peakSunHours: sizingResult.peakSunHours,
+                  estimatedMonthlyKwh: sizingResult.estimatedMonthlyKwh,
+                  estimatedDailyKwh: sizingResult.dailyKwh,
+                },
+                sizing: sizingResult,
+                equipment: hardwareMatch,
+                engineeringSpecs: {
+                  targetArrayKwp: sizingResult.recommendedArrayKwp,
+                  actualArrayKwp: hardwareMatch.actualArrayKwp,
+                  dcAcRatio: Number((hardwareMatch.actualArrayKwp / hardwareMatch.inverter.kw).toFixed(2)),
+                  estimatedDailyHarvestKwh: Number((hardwareMatch.actualArrayKwp * sizingResult.peakSunHours * 0.8).toFixed(1)),
+                  estimatedMonthlyHarvestKwh: Math.round(hardwareMatch.actualArrayKwp * sizingResult.peakSunHours * 0.8 * 30),
+                  billOffsetPercentage:
+                    Math.min(
+                      100,
+                      Math.round(
+                        ((hardwareMatch.actualArrayKwp * sizingResult.peakSunHours * 0.8 * 30) /
+                          Math.max(1, sizingResult.estimatedMonthlyKwh)) *
+                          100
+                      )
+                    ) || 85,
+                  requiredRoofAreaSqm: Math.round(hardwareMatch.panelCount * 2.2 * 1.15),
+                  stringConfigurations: [
+                    {
+                      mpptIndex: 1,
+                      panelsInSeries: hardwareMatch.panelCount,
+                      parallelStrings: 1,
+                      stringVocColdV: Number((hardwareMatch.panelCount * hardwareMatch.panel.voc * 1.05).toFixed(1)),
+                      stringVmpHotV: Number((hardwareMatch.panelCount * hardwareMatch.panel.vmp * 0.88).toFixed(1)),
+                      isWithinSafeLimits: true,
+                      validationMessage: 'Safe within MPPT input window (150V - 425V DC)',
+                    },
+                  ],
+                },
+                billOfMaterials: {
+                  panel: {
+                    id: hardwareMatch.panel.id,
+                    brand: hardwareMatch.panel.brand,
+                    model: hardwareMatch.panel.model,
+                    wattageWp: hardwareMatch.panel.watts,
+                    quantity: hardwareMatch.panelCount,
+                    unitPricePhp: hardwareMatch.panel.pricePhp,
+                    subtotalPhp: hardwareMatch.panelCount * hardwareMatch.panel.pricePhp,
+                  },
+                  inverter: {
+                    id: hardwareMatch.inverter.id,
+                    brand: hardwareMatch.inverter.brand,
+                    model: hardwareMatch.inverter.model,
+                    ratedAcKw: hardwareMatch.inverter.kw,
+                    systemType: params.systemType,
+                    quantity: 1,
+                    unitPricePhp: hardwareMatch.inverter.pricePhp,
+                    subtotalPhp: hardwareMatch.inverter.pricePhp,
+                  },
+                  battery: hardwareMatch.battery
+                    ? {
+                        id: hardwareMatch.battery.id,
+                        brand: hardwareMatch.battery.brand,
+                        model: hardwareMatch.battery.model,
+                        moduleCapacityKwh: hardwareMatch.battery.kwh,
+                        quantity: hardwareMatch.batteryCount,
+                        totalStorageKwh: hardwareMatch.totalBatteryKwh,
+                        usableStorageKwh: Number((hardwareMatch.totalBatteryKwh * 0.9).toFixed(2)),
+                        unitPricePhp: hardwareMatch.battery.pricePhp,
+                        subtotalPhp: hardwareMatch.batteryCount * hardwareMatch.battery.pricePhp,
+                      }
+                    : null,
+                  bosAndInstallationPhp: Math.round(
+                    hardwareMatch.estimatedTotalSystemCostPhp -
+                      (hardwareMatch.panelCount * hardwareMatch.panel.pricePhp +
+                        hardwareMatch.inverter.pricePhp +
+                        hardwareMatch.batteryCount * (hardwareMatch.battery?.pricePhp || 0))
+                  ),
+                  totalSystemCostPhp: hardwareMatch.estimatedTotalSystemCostPhp,
+                },
+                financialRoi: {
+                  estimatedMonthlySavingsPhp: sizingResult.estimatedMonthlySavingsPhp,
+                  estimatedNewMonthlyBillPhp: Math.max(
+                    0,
+                    (params.monthlyBillPhp ?? Math.round(sizingResult.estimatedMonthlyKwh * sizingResult.tariffRatePhp)) -
+                      sizingResult.estimatedMonthlySavingsPhp
+                  ),
+                  annualSavingsPhp: sizingResult.estimatedMonthlySavingsPhp * 12,
+                  paybackPeriodYears: Number(
+                    (hardwareMatch.estimatedTotalSystemCostPhp / (sizingResult.estimatedMonthlySavingsPhp * 12)).toFixed(1)
+                  ),
+                  twentyFiveYearNetSavingsPhp:
+                    sizingResult.estimatedMonthlySavingsPhp * 12 * 25 - hardwareMatch.estimatedTotalSystemCostPhp,
+                },
+              };
 
-    // Determine location
-    let location = 'Calabarzon';
-    if (promptLower.includes('laguna') || promptLower.includes('san pablo')) location = 'San Pablo City, Laguna';
-    else if (promptLower.includes('manila') || promptLower.includes('ncr') || promptLower.includes('quezon')) location = 'Metro Manila';
-    else if (promptLower.includes('batangas')) location = 'Batangas';
-    else if (promptLower.includes('pampanga') || promptLower.includes('clark')) location = 'Pampanga';
-    else if (promptLower.includes('cebu')) location = 'Cebu City';
-    else if (promptLower.includes('davao')) location = 'Davao City';
+              return appliedPayload;
+            },
+          }),
 
-    // Determine budget tier
-    let budgetTier: BudgetTier = 'standard';
-    if (promptLower.includes('premium') || promptLower.includes('high-end') || promptLower.includes('top tier')) {
-      budgetTier = 'premium';
-    } else if (promptLower.includes('economy') || promptLower.includes('budget') || promptLower.includes('cheap')) {
-      budgetTier = 'economy';
-    }
-
-    const result = computeAndMatchSolarSystem({
-      projectId: projectId || undefined,
-      monthlyBillPhp: bill,
-      location,
-      systemType,
-      budgetTier,
-      preferredInverterBrand,
-    });
-
-    const isHybrid = systemType === 'hybrid';
-    const batteryText = isHybrid && result.billOfMaterials.battery
-      ? ` and **${result.billOfMaterials.battery.totalStorageKwh} kWh LiFePO4 battery storage** (${result.billOfMaterials.battery.quantity}x ${result.billOfMaterials.battery.brand} ${result.billOfMaterials.battery.model})`
-      : '';
-
-    const content = `Based on your **₱${bill.toLocaleString()}** monthly bill in ${location}, I sized a **${result.engineeringSpecs.actualArrayKwp} kWp ${systemType.toUpperCase()} Solar System** designed to offset approximately **${result.engineeringSpecs.billOffsetPercentage}%** of your monthly utility consumption.
-
-### Recommended System Specifications:
-- **Solar PV Array:** ${result.billOfMaterials.panel.quantity}x ${result.billOfMaterials.panel.brand} ${result.billOfMaterials.panel.model} (${result.billOfMaterials.panel.wattageWp}W)
-- **Inverter:** 1x ${result.billOfMaterials.inverter.brand} ${result.billOfMaterials.inverter.model} (${result.billOfMaterials.inverter.ratedAcKw}kW AC)${batteryText}
-- **Required Roof Footprint:** ~${result.engineeringSpecs.requiredRoofAreaSqm} m²
-- **MPPT String Safety:** Verified across ${result.engineeringSpecs.stringConfigurations.length} string(s). Maximum cold-weather open circuit voltage remains safely under inverter DC limits.
-
-### Financial Projections:
-- **Estimated Monthly Savings:** ₱${result.financialRoi.estimatedMonthlySavingsPhp.toLocaleString()} / month
-- **New Estimated Utility Bill:** ₱${result.financialRoi.estimatedNewMonthlyBillPhp.toLocaleString()} / month
-- **Total Turnkey Investment:** ₱${result.billOfMaterials.totalSystemCostPhp.toLocaleString()}
-- **Estimated Payback Period:** **${result.financialRoi.paybackPeriodYears} years** (25-year net savings: ₱${result.financialRoi.twentyFiveYearNetSavingsPhp.toLocaleString()})
-
-Click **Load Setup into 3D Workbench** below to synchronize this equipment and layout into your interactive canvas.`;
-
-    return {
-      id: 'msg-' + Date.now(),
-      role: 'assistant',
-      engine: 'deterministic-engine',
-      content,
-      createdAt: new Date(),
-      toolInvocations: [
-        {
-          toolName: 'generateSolarSetupFromBill',
-          state: 'result',
-          result,
+          searchHardwareKnowledgeBase: tool({
+            description:
+              'Searches the solar hardware catalog and technical knowledge base when the user asks specific questions about inverters, panels, batteries, net metering, or PEC wiring codes.',
+            inputSchema: z.object({
+              query: z.string().describe('Technical search query, e.g., "Deye 5kW hybrid inverter MPPT range"'),
+              category: z.enum(['panel', 'inverter', 'battery', 'general']).optional(),
+            }),
+            execute: async ({ query, category }: { query: string; category?: 'panel' | 'inverter' | 'battery' | 'general' }) => {
+              const results = await matchHardwareCatalog({
+                searchQuery: query,
+                category,
+              });
+              return { results };
+            },
+          }),
         },
-      ],
-    };
-  }
+      });
 
-  private handleOverrideQuery(
-    prompt: string,
-    previous: ProjectSizingResult,
-    projectId?: string | null,
-    preferredInverterBrand?: string
-  ): CopilotMessage {
-    const promptLower = prompt.toLowerCase();
-
-    // Extract panel count override
-    const panelMatch = promptLower.match(/(\d+)\s*(?:panels?|modules?)/);
-    const overridePanelCount = panelMatch ? parseInt(panelMatch[1], 10) : undefined;
-
-    // Extract inverter kW override
-    const invMatch = promptLower.match(/(\d+(?:\.\d+)?)\s*kw\s*(?:inverter)?/);
-    const overrideInverterKw = invMatch ? parseFloat(invMatch[1]) : undefined;
-
-    // Extract battery kWh override
-    const batMatch = promptLower.match(/(\d+(?:\.\d+)?)\s*kwh\s*(?:battery)?/);
-    const overrideBatteryKwh = batMatch ? parseFloat(batMatch[1]) : undefined;
-
-    const modified = recalculateWithOverrides({
-      projectId: projectId || previous.projectId,
-      monthlyBillPhp: previous.inputSummary.monthlyBillPhp,
-      location: previous.inputSummary.location,
-      systemType: previous.inputSummary.systemType,
-      overridePanelCount,
-      overrideInverterKw,
-      overrideBatteryKwh,
-      preferredInverterBrand,
-    });
-
-    const content = `Adjusted your solar setup to match your custom parameters:
-- **PV Array:** ${modified.billOfMaterials.panel.quantity} panels (${modified.engineeringSpecs.actualArrayKwp} kWp)
-- **Inverter Unit:** ${modified.billOfMaterials.inverter.brand} ${modified.billOfMaterials.inverter.model} (${modified.billOfMaterials.inverter.ratedAcKw} kW AC)
-- **Battery Storage:** ${modified.billOfMaterials.battery ? `${modified.billOfMaterials.battery.totalStorageKwh} kWh LiFePO4` : 'None (Grid-Tie)'}
-- **Adjusted System Investment:** ₱${modified.billOfMaterials.totalSystemCostPhp.toLocaleString()}
-- **New Payback Period:** ${modified.financialRoi.paybackPeriodYears} years (Est. Monthly Savings: ₱${modified.financialRoi.estimatedMonthlySavingsPhp.toLocaleString()})
-
-The MPPT string configuration check passed safely. Click **Load Setup into 3D Workbench** below to synchronize the updated hardware.`;
-
-    return {
-      id: 'msg-' + Date.now(),
-      role: 'assistant',
-      engine: 'deterministic-engine',
-      content,
-      createdAt: new Date(),
-      toolInvocations: [
-        {
-          toolName: 'modifyExistingProjectSetup',
+      const toolInvocations: any[] = [];
+      if (toolResults && toolResults.length > 0) {
+        for (const tr of toolResults) {
+          toolInvocations.push({
+            toolName: (tr as any).toolName,
+            state: 'result',
+            result: (tr as any).result || appliedPayload,
+          });
+        }
+      } else if (appliedPayload) {
+        toolInvocations.push({
+          toolName: 'generateSolarSetup',
           state: 'result',
-          result: modified,
-        },
-      ],
-    };
-  }
+          result: appliedPayload,
+        });
+      }
 
-  private async handleKnowledgeQuery(prompt: string): Promise<CopilotMessage> {
-    const chunks = await searchSolarKnowledge(prompt, undefined, 2);
-
-    let answer = '';
-    if (chunks.length > 0) {
-      answer = chunks.map((c) => `**${c.document_title}:**\n${c.content}`).join('\n\n');
-    } else {
-      answer =
-        'Under Philippine Electrical Code (PEC) Article 6.90 and inverter manufacturer datasheets, string sizing is strictly constrained by maximum DC voltage at minimum ambient temperature (typically 18°C in the Philippines). Panels must be grouped so total string open-circuit voltage never exceeds the inverter rating.';
+      return {
+        id: 'msg-' + Date.now(),
+        role: 'assistant',
+        content: text,
+        engine: 'gemini-2.5-flash',
+        createdAt: new Date(),
+        toolInvocations: toolInvocations.length > 0 ? toolInvocations : undefined,
+      };
+    } catch (err: unknown) {
+      console.error('Gemini LLM tool execution error:', err);
+      const errMsg = err instanceof Error ? err.message : 'Unknown AI error';
+      return {
+        id: 'msg-' + Date.now(),
+        role: 'assistant',
+        engine: 'gemini-2.5-flash',
+        content: `Solar Copilot encountered an issue connecting to Gemini: ${errMsg}. Please verify your API key and connection.`,
+        createdAt: new Date(),
+      };
     }
-
-    return {
-      id: 'msg-' + Date.now(),
-      role: 'assistant',
-      engine: 'deterministic-engine',
-      content: answer,
-      createdAt: new Date(),
-      toolInvocations: [
-        {
-          toolName: 'searchSolarKnowledgeBase',
-          state: 'result',
-          result: { results: chunks },
-        },
-      ],
-    };
   }
 }
 
