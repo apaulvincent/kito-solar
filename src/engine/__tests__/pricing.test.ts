@@ -112,5 +112,45 @@ describe('Pricing & Currency Engine Test Suite', () => {
       expect(result.costSummary.financialRoi?.paybackPeriodYears).toBeNull();
       expect(result.costSummary.financialRoi?.roiUnavailableReason).toContain('marked TBD');
     });
+
+    it('allows customPrices to override unit prices and resolves TBD items to enable full ROI computation', () => {
+      const unpricedInverter: SolarInverterRecord = {
+        ...inverter,
+        model: 'CUSTOM-EXPERIMENTAL-INV',
+        price_php: null,
+      };
+
+      // When custom price is provided for the unpriced inverter
+      const resultWithCustom = calculateSystem({
+        inverter: unpricedInverter,
+        module: moduleRecord,
+        battery: null,
+        batteryCount: 0,
+        gridVoltageV: 230,
+        mainBreakerA: 100,
+        customPrices: {
+          inverter: 95000,
+          mounting_roof_rail: 500,
+        },
+      });
+
+      const invItem = resultWithCustom.costSummary.items.find((i) => i.key === 'inverter');
+      expect(invItem).toBeDefined();
+      expect(invItem?.unitPricePhp).toBe(95000);
+      expect(invItem?.totalPricePhp).toBe(95000);
+      expect(invItem?.isTbd).toBe(false);
+      expect(invItem?.isCustomPrice).toBe(true);
+
+      const railItem = resultWithCustom.costSummary.items.find((i) => i.key === 'mounting_roof_rail');
+      expect(railItem).toBeDefined();
+      expect(railItem?.unitPricePhp).toBe(500);
+      expect(railItem?.isCustomPrice).toBe(true);
+
+      // Verify that resolving the unpriced component eliminates TBD and enables ROI
+      expect(resultWithCustom.costSummary.tbdItemCount).toBe(0);
+      expect(resultWithCustom.costSummary.isFullyEstimated).toBe(true);
+      expect(resultWithCustom.costSummary.financialRoi?.canComputeRoi).toBe(true);
+      expect(resultWithCustom.costSummary.financialRoi?.paybackPeriodYears).toBeGreaterThan(0);
+    });
   });
 });

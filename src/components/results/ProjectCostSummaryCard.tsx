@@ -289,12 +289,20 @@ export function ProjectCostSummaryCard() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {Object.keys(customPrices).length > 0 && (
+                    <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full border border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold">
+                      {Object.keys(customPrices).length} Custom {Object.keys(customPrices).length === 1 ? 'Price' : 'Prices'} (Project Only)
+                    </span>
+                  )}
                   <span className="hidden sm:inline-flex text-[11px] font-mono px-3 py-1 rounded-full border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 text-slate-700 dark:text-slate-300 font-semibold">
                     {costSummary.items.length} Line Items
                   </span>
                   <button
                     type="button"
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setEditingKey(null);
+                    }}
                     className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                     title="Close modal"
                     aria-label="Close dialog"
@@ -323,7 +331,17 @@ export function ProjectCostSummaryCard() {
                         className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                       >
                         <td className="py-3 px-4 font-sans font-semibold text-slate-900 dark:text-white">
-                          {item.name}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span>{item.name}</span>
+                            {item.isCustomPrice && (
+                              <span
+                                className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 font-bold uppercase tracking-wider"
+                                title="Custom price for this project only"
+                              >
+                                Project Custom
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-3 px-3">
                           <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
@@ -334,7 +352,79 @@ export function ProjectCostSummaryCard() {
                           {item.quantity} {item.unit}
                         </td>
                         <td className="py-3 px-4 text-right text-slate-600 dark:text-slate-400">
-                          {formatPeso(item.unitPricePhp)}
+                          {editingKey === item.key ? (
+                            <div className="flex items-center justify-end gap-1">
+                              <div className="relative flex items-center">
+                                <span className="absolute left-2 text-[11px] text-slate-400 font-mono select-none">₱</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  value={editPriceInput}
+                                  onChange={(e) => setEditPriceInput(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveEdit(item.key);
+                                    if (e.key === 'Escape') handleCancelEdit();
+                                  }}
+                                  placeholder="0.00"
+                                  className="w-28 pl-5 pr-2 py-1 text-xs font-mono text-right rounded-lg border border-amber-500 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                                  autoFocus
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleSaveEdit(item.key)}
+                                className="p-1 rounded-md text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition-colors cursor-pointer"
+                                title="Apply price"
+                                aria-label="Save price"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleCancelEdit}
+                                className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                title="Cancel"
+                                aria-label="Cancel editing"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                              {item.isCustomPrice && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleResetPrice(item.key)}
+                                  className="p-1 rounded-md text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                  title="Reset to default benchmark price"
+                                  aria-label="Reset price"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-end gap-1.5 group/price">
+                              <span
+                                className={
+                                  item.isTbd
+                                    ? 'text-amber-600 dark:text-amber-400 font-bold'
+                                    : item.isCustomPrice
+                                    ? 'text-sky-600 dark:text-sky-400 font-bold'
+                                    : 'text-slate-600 dark:text-slate-400'
+                                }
+                              >
+                                {formatPeso(item.unitPricePhp)}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleStartEdit(item.key, item.unitPricePhp)}
+                                className="p-1 rounded-md text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer"
+                                title={item.isTbd ? 'Set custom unit price' : 'Edit unit price'}
+                                aria-label={`Edit unit price for ${item.name}`}
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
                         </td>
                         <td className="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">
                           {item.isTbd ? (
@@ -351,18 +441,28 @@ export function ProjectCostSummaryCard() {
 
               {/* Modal Footer */}
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono uppercase text-slate-500 dark:text-slate-400">
-                    Total Estimated BOM:
-                  </span>
-                  <span className="text-base font-black font-mono text-amber-600 dark:text-amber-400">
-                    {formatPeso(costSummary.grandTotalPhp)}
-                  </span>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono uppercase text-slate-500 dark:text-slate-400">
+                      Total Estimated BOM:
+                    </span>
+                    <span className="text-base font-black font-mono text-amber-600 dark:text-amber-400">
+                      {formatPeso(costSummary.grandTotalPhp)}
+                    </span>
+                  </div>
+                  {Object.keys(customPrices).length > 0 && (
+                    <span className="text-[11px] font-mono text-sky-600 dark:text-sky-400 font-medium">
+                      (Includes {Object.keys(customPrices).length} project-specific custom {Object.keys(customPrices).length === 1 ? 'price' : 'prices'})
+                    </span>
+                  )}
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setEditingKey(null);
+                  }}
                   className="px-5 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-xs font-mono transition-all cursor-pointer text-center"
                 >
                   Close Schedule
