@@ -1,5 +1,5 @@
 // src/types/calculator.ts
-import { SolarInverterRecord, SolarModuleRecord, BatteryRecord } from './supabase';
+import { SolarInverterRecord, SolarModuleRecord, BatteryRecord, AccessoryRecord } from './supabase';
 
 export type SystemType = 'hybrid' | 'ongrid';
 
@@ -11,6 +11,7 @@ export interface CalculationInput {
   gridVoltageV: number; // default 230
   mainBreakerA: number | null; // optional main panel breaker
   panelCountOverride?: number | null;
+  accessories?: AccessoryRecord[];
 }
 
 export interface DcCalculationResult {
@@ -126,6 +127,8 @@ export interface MountingItem {
   material?: string;
   finish?: string;
   standards?: string[];
+  unitPricePhp?: number | null;
+  totalPricePhp?: number | null;
 }
 
 export interface MountingCalculationResult {
@@ -137,6 +140,28 @@ export interface MountingCalculationResult {
   totalSplices: number;
   totalMc4Pairs: number;
   totalEndClamps: number;
+  totalMountingCostPhp?: number;
+}
+
+export interface ProjectCostItem {
+  key: string;
+  name: string;
+  category: 'equipment' | 'mounting' | 'protection' | 'wiring' | 'conduit' | 'grounding' | 'transfer';
+  quantity: number;
+  unit: string;
+  unitPricePhp?: number | null;
+  totalPricePhp?: number | null;
+  isTbd: boolean;
+}
+
+export interface ProjectCostSummary {
+  items: ProjectCostItem[];
+  equipmentSubtotalPhp: number;
+  mountingSubtotalPhp: number;
+  switchgearSubtotalPhp: number;
+  grandTotalPhp: number;
+  tbdItemCount: number;
+  isFullyEstimated: boolean;
 }
 
 export type WarningSeverity = 'info' | 'warning' | 'error';
@@ -158,6 +183,7 @@ export interface SystemCalculationResult {
   pvSizing: PvSizingResult;
   stringSizing: StringSizingResult;
   mounting: MountingCalculationResult;
+  costSummary: ProjectCostSummary;
   warnings: SystemWarning[];
   summary: {
     inverterModel: string;

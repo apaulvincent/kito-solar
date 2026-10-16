@@ -8,6 +8,7 @@ import { BatteryResultsCard } from './BatteryResultsCard';
 import { PvSizingCard } from './PvSizingCard';
 import { MountingBomCard } from './MountingBomCard';
 import { WarningsPanel } from './WarningsPanel';
+import { ProjectCostSummaryCard } from './ProjectCostSummaryCard';
 import { DownloadSizingButton } from '@/components/common/DownloadSizingButton';
 import { SaveProjectButton } from '@/components/common/SaveProjectButton';
 
@@ -229,6 +230,8 @@ export function CalculationWorkbench() {
 
       {/* Main Calculation Content — Independently Scrollable */}
       <div className="p-4 sm:p-5 flex-1 overflow-y-auto overscroll-auto space-y-6">
+        <ProjectCostSummaryCard />
+
         {viewAll ? (
           /* Comprehensive Unified Schedule Mode */
           <div className="space-y-6">

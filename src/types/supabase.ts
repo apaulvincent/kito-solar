@@ -22,6 +22,7 @@ export interface SolarInverterRecord {
   max_ac_current_a: number | string;
   rated_voltage_range: string | null;
   grid_connection_form: string | null;
+  price_php?: number | null;
   is_active?: boolean;
 }
 
@@ -35,6 +36,7 @@ export interface SolarModuleRecord {
   isc_a: number;
   imp_a: number;
   efficiency_pct: number;
+  price_php?: number | null;
   is_active?: boolean;
 }
 
@@ -47,6 +49,7 @@ export interface BatteryRecord {
   discharge_current_a: number | null;
   recommended_breaker_a: number;
   notes: string | null;
+  price_php?: number | null;
   is_active?: boolean;
 }
 
@@ -96,5 +99,6 @@ export interface AccessoryRecord {
   description: string;
   image_path: string;
   diagram_node_key: string;
+  price_php?: number | null;
   is_active?: boolean;
 }

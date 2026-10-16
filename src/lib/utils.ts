@@ -22,6 +22,20 @@ export function formatVolts(volts: number): string {
 }
 
 /**
+ * Formats a numeric value into Philippine Peso (₱) with exactly 2 decimal places.
+ * If null, undefined, NaN, or non-positive (<= 0), returns 'TBD'.
+ */
+export function formatPeso(amount: number | null | undefined): string {
+  if (amount === null || amount === undefined || isNaN(amount) || amount <= 0) {
+    return 'TBD';
+  }
+  return `₱${amount.toLocaleString('en-PH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+/**
  * Parses numeric values safely from either pure numbers or string ratings/ranges
  * (e.g., '7.6/7.2', '8.4/8', '390-420', '300-6000', '13+13').
  */

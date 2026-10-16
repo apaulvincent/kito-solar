@@ -4,6 +4,7 @@ import {
   SolarInverterRecord,
   SolarModuleRecord,
   BatteryRecord,
+  AccessoryRecord,
 } from '@/types/supabase';
 import { SystemCalculationResult } from '@/types/calculator';
 import { DiagramNodeKey } from '@/types/diagram';
@@ -12,6 +13,7 @@ import { calculateSystem } from '@/engine/calculateSystem';
 import invertersSeed from '@/data/seed/solar_inverters.json';
 import modulesSeed from '@/data/seed/solar_modules.json';
 import batteriesSeed from '@/data/seed/batteries.json';
+import accessoriesSeed from '@/data/seed/calculator_accessories.json';
 import { catalogService } from '@/services/catalogService';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { SavedProject } from '@/types/project';
@@ -25,6 +27,7 @@ interface CalculatorState {
   inverters: SolarInverterRecord[];
   modules: SolarModuleRecord[];
   batteries: BatteryRecord[];
+  accessories: AccessoryRecord[];
   isLoadingCatalog: boolean;
   catalogSource: 'supabase' | 'local_seed';
 
@@ -208,6 +211,8 @@ const defaultBattery =
   (batteriesSeed as BatteryRecord[]).find((b) => b.model === '51.2V-200 Ah') ||
   (batteriesSeed[0] as BatteryRecord);
 
+let currentAccessories: AccessoryRecord[] = accessoriesSeed as AccessoryRecord[];
+
 function compute(
   inv: SolarInverterRecord,
   mod: SolarModuleRecord,
@@ -215,7 +220,8 @@ function compute(
   batCount: number,
   gridV: number,
   mainA: number | null,
-  panelOverride: number | null
+  panelOverride: number | null,
+  accs?: AccessoryRecord[]
 ): SystemCalculationResult {
   return calculateSystem({
     inverter: inv,
@@ -225,6 +231,7 @@ function compute(
     gridVoltageV: gridV,
     mainBreakerA: mainA,
     panelCountOverride: panelOverride,
+    accessories: accs || currentAccessories,
   });
 }
 
@@ -234,6 +241,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   inverters: invertersSeed as SolarInverterRecord[],
   modules: modulesSeed as SolarModuleRecord[],
   batteries: batteriesSeed as BatteryRecord[],
+  accessories: accessoriesSeed as AccessoryRecord[],
   isLoadingCatalog: false,
   catalogSource: 'local_seed',
 
@@ -271,13 +279,15 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
     if (!isSupabaseConfigured) return;
     set({ isLoadingCatalog: true });
     try {
-      const [invs, mods, bats] = await Promise.all([
+      const [invs, mods, bats, accs] = await Promise.all([
         catalogService.getInverters(),
         catalogService.getModules(),
         catalogService.getBatteries(),
+        catalogService.getAccessories(),
       ]);
 
       const isLive = catalogService.isLive;
+      currentAccessories = accs;
 
       set((state) => {
         const selectedInverter =
@@ -292,6 +302,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
           inverters: invs,
           modules: mods,
           batteries: bats,
+          accessories: accs,
           selectedInverter,
           selectedModule,
           selectedBattery,
@@ -304,7 +315,8 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
             state.batteryCount,
             state.gridVoltageV,
             state.mainBreakerA,
-            state.panelCountOverride
+            state.panelCountOverride,
+            accs
           ),
         };
       });

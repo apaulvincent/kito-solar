@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { Hammer, Info, Maximize2, X, ShieldCheck, Wrench, Ruler, Award } from 'lucide-react';
 import { MountingItem } from '@/types/calculator';
+import { formatPeso } from '@/lib/utils';
 
 interface TechnicalSpecDetail {
   dimensions: string;
@@ -473,6 +474,9 @@ export function MountingBomCard() {
             <span className="text-xs font-mono px-3 py-1 rounded-full border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-semibold">
               WIND LOAD: 60 M/S
             </span>
+            <span className="text-xs font-mono px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-bold">
+              EST. RACKING: {formatPeso(mounting.totalMountingCostPhp)}
+            </span>
           </div>
         </div>
 
@@ -521,6 +525,15 @@ export function MountingBomCard() {
                       <span>{item.quantity}</span>
                       <span className="text-xs font-normal text-slate-500 dark:text-slate-400 uppercase font-sans">
                         {item.unit}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 pt-1.5 font-mono text-[11px] flex-wrap">
+                      <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-medium">
+                        Unit: {formatPeso(item.unitPricePhp)}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 font-bold">
+                        Line: {formatPeso(item.totalPricePhp)}
                       </span>
                     </div>
                   </div>
@@ -702,7 +715,7 @@ export function MountingBomCard() {
               )}
 
               {/* Quantities & Formula Summary */}
-              <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60">
                 <div>
                   <span className="text-[10px] font-mono text-amber-700 dark:text-amber-400 uppercase font-bold block">
                     REQUIRED QUANTITY
@@ -710,6 +723,17 @@ export function MountingBomCard() {
                   <span className="text-2xl font-black font-mono text-slate-900 dark:text-white">
                     {inspectedItem.quantity}{' '}
                     <span className="text-xs font-normal text-slate-500 uppercase">{inspectedItem.unit}</span>
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-amber-700 dark:text-amber-400 uppercase font-bold block">
+                    ESTIMATED COST (PHP)
+                  </span>
+                  <span className="text-sm font-mono font-bold text-slate-900 dark:text-white block mt-1">
+                    {formatPeso(inspectedItem.unitPricePhp)} <span className="text-xs font-normal text-slate-500">/ {inspectedItem.unit}</span>
+                  </span>
+                  <span className="text-xs font-mono font-bold text-amber-700 dark:text-amber-400 block mt-0.5">
+                    Line: {formatPeso(inspectedItem.totalPricePhp)}
                   </span>
                 </div>
                 <div>

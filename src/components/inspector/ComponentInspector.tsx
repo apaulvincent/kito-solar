@@ -2,6 +2,7 @@
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { X, ShieldCheck, Info, Cable, BookOpen } from 'lucide-react';
 import { Component3DPreview } from './Component3DPreview';
+import { formatPeso } from '@/lib/utils';
 
 export function ComponentInspector() {
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
@@ -286,6 +287,31 @@ export function ComponentInspector() {
               <div className="text-xs text-slate-700 dark:text-slate-300 font-medium mt-1">
                 {calculatedInput}
               </div>
+              {(() => {
+                const matchingCostItem = calculationResult.costSummary.items.find((item) => {
+                  if (selectedNodeKey === 'pv_array') return item.key === 'solar_module';
+                  if (selectedNodeKey === 'battery') return item.key === 'battery_bank';
+                  if (selectedNodeKey === 'battery_wire') return item.key === 'battery_wire';
+                  if (selectedNodeKey === 'ac_breaker') return item.key === 'ac_grid_breaker';
+                  return item.key === selectedNodeKey || item.key === `pv_${selectedNodeKey}`;
+                });
+                if (!matchingCostItem) return null;
+                return (
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-200 dark:border-slate-800 flex-wrap">
+                    <span className="text-[10px] font-mono uppercase font-bold text-slate-500 dark:text-slate-400">
+                      EST. PRICE:
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/60">
+                      Unit: {formatPeso(matchingCostItem.unitPricePhp)}
+                    </span>
+                    {matchingCostItem.quantity > 1 && (
+                      <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                        Total ({matchingCostItem.quantity}×): {formatPeso(matchingCostItem.totalPricePhp)}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
 

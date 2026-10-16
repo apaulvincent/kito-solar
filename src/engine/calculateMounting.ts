@@ -3,10 +3,21 @@ import { MountingCalculationResult, MountingItem } from '@/types/calculator';
 
 export function calculateMounting(
   panelCount: number,
-  stringCount: number = 2
+  stringCount: number = 2,
+  accessoryPrices?: Map<string, number | null> | Record<string, number | null>
 ): MountingCalculationResult {
   const N = Math.max(1, panelCount);
   const rows = Math.min(N, Math.max(1, stringCount));
+
+  const getPrice = (key: string, fallback: number): number | null => {
+    if (!accessoryPrices) return fallback;
+    if (accessoryPrices instanceof Map) {
+      if (accessoryPrices.has(key)) return accessoryPrices.get(key) ?? null;
+      return fallback;
+    }
+    if (key in accessoryPrices) return accessoryPrices[key] ?? null;
+    return fallback;
+  };
 
   // 1. End-clamps: 4 per independent panel row (2 rails × 2 outer edges)
   const totalEndClamps = rows * 4;
@@ -32,6 +43,13 @@ export function calculateMounting(
   // 7. MC4 Connectors tally preserved for electrical stringing integration
   const totalMc4Pairs = Math.max(2, stringCount * 2);
 
+  const roofRailUnitPrice = getPrice('roof_rail', 450.00);
+  const railSpliceUnitPrice = getPrice('splice', getPrice('rail_splice', 120.00) ?? 120.00);
+  const lFootUnitPrice = getPrice('l_foot', 95.00);
+  const midClampUnitPrice = getPrice('mid_clamp', 45.00);
+  const endClampUnitPrice = getPrice('end_clamp', 45.00);
+  const groundingLugUnitPrice = getPrice('grounding_lug', 180.00);
+
   const items: MountingItem[] = [
     {
       key: 'roof_rail',
@@ -45,6 +63,8 @@ export function calculateMounting(
       material: 'Alloy 6005-T5 Anodized Aluminum',
       finish: 'Clear Anodized (10–15 µm)',
       standards: ['UL 2703', 'AS/NZS 1170.2', 'Eurocode 9'],
+      unitPricePhp: roofRailUnitPrice,
+      totalPricePhp: roofRailUnitPrice ? totalRails * roofRailUnitPrice : null,
       dimensions: {
         lengthMm: 2200,
         widthMm: 28,
@@ -66,6 +86,8 @@ export function calculateMounting(
       material: 'Alloy 6005-T5 Aluminum & SS304 Pins',
       finish: 'Mill Finish / Anti-Corrosion Treated',
       standards: ['UL 2703', 'IEC 61215'],
+      unitPricePhp: railSpliceUnitPrice,
+      totalPricePhp: railSpliceUnitPrice ? totalSplices * railSpliceUnitPrice : null,
       dimensions: {
         lengthMm: 150,
         widthMm: 22,
@@ -87,6 +109,8 @@ export function calculateMounting(
       material: 'Alloy 6005-T5 Aluminum & SS304 Fasteners',
       finish: 'Shot-blasted Anodized + EPDM UV Pad',
       standards: ['UL 2703', 'AS/NZS 1170.2'],
+      unitPricePhp: lFootUnitPrice,
+      totalPricePhp: lFootUnitPrice ? totalLFeet * lFootUnitPrice : null,
       dimensions: {
         lengthMm: 40,
         widthMm: 40,
@@ -109,6 +133,8 @@ export function calculateMounting(
       material: 'Alloy 6005-T5 & SS304 Hardware',
       finish: 'Clear Anodized + Grounding Star Washer',
       standards: ['UL 2703 Class A', 'IEC 61730'],
+      unitPricePhp: midClampUnitPrice,
+      totalPricePhp: midClampUnitPrice ? totalMidClamps * midClampUnitPrice : null,
       dimensions: {
         lengthMm: 40,
         widthMm: 35,
@@ -130,6 +156,8 @@ export function calculateMounting(
       material: 'Alloy 6005-T5 & SS304 Hardware',
       finish: 'Clear Anodized',
       standards: ['UL 2703 Class A', 'IEC 61730'],
+      unitPricePhp: endClampUnitPrice,
+      totalPricePhp: endClampUnitPrice ? totalEndClamps * endClampUnitPrice : null,
       dimensions: {
         lengthMm: 40,
         widthMm: 35,
@@ -151,6 +179,8 @@ export function calculateMounting(
       material: 'Tin-plated Copper / SS304 Braided Strap',
       finish: 'Electro-tin Plated Anti-Galvanic',
       standards: ['UL 467', 'UL 2703', 'NEC 690.43'],
+      unitPricePhp: groundingLugUnitPrice,
+      totalPricePhp: groundingLugUnitPrice ? (totalGroundingLugs + totalBondingJumpers) * groundingLugUnitPrice : null,
       dimensions: {
         lengthMm: 32,
         widthMm: 16,
@@ -163,6 +193,11 @@ export function calculateMounting(
     },
   ];
 
+  const totalMountingCostPhp = items.reduce(
+    (sum, item) => sum + (item.totalPricePhp || 0),
+    0
+  );
+
   return {
     items,
     panelCount: N,
@@ -172,5 +207,6 @@ export function calculateMounting(
     totalSplices,
     totalMc4Pairs,
     totalEndClamps,
+    totalMountingCostPhp,
   };
 }

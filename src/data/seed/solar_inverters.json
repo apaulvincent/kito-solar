@@ -19,7 +19,8 @@
     "rated_ac_current_a": "7.6/7.2",
     "max_ac_current_a": "8.4/8",
     "rated_voltage_range": "220/380, 230/400 0.85Un-1.1Un",
-    "grid_connection_form": "3L+N+PE"
+    "grid_connection_form": "3L+N+PE",
+    "price_php": 82000.00
   },
   {
     "brand": "DEYE",
@@ -41,7 +42,8 @@
     "rated_ac_current_a": "9.1/8.7",
     "max_ac_current_a": "10/9.6",
     "rated_voltage_range": "220/380, 230/400 0.85Un-1.1Un",
-    "grid_connection_form": "3L+N+PE"
+    "grid_connection_form": "3L+N+PE",
+    "price_php": 89500.00
   },
   {
     "brand": "DEYE",
@@ -965,7 +967,8 @@
     "rated_ac_current_a": "27.3/26.1",
     "max_ac_current_a": "30/28.7",
     "rated_voltage_range": "220V/230 0.85Un-1.1Un",
-    "grid_connection_form": "L+N+PE"
+    "grid_connection_form": "L+N+PE",
+    "price_php": 88000.00
   },
   {
     "brand": "DEYE",

@@ -13,6 +13,7 @@ PROJECT.md
 *.xlsx
 *.xls
 *.sql
+!supabase/migrations/*.sql
 
 # Dev scripts & scratch files
 scripts/

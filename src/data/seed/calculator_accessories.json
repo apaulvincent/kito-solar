@@ -6,7 +6,8 @@
     "side": "dc",
     "description": "Protects the PV DC circuit.",
     "image_path": "/assets/accessories/pv-dc-breaker.webp",
-    "diagram_node_key": "dc.pv_breaker"
+    "diagram_node_key": "dc.pv_breaker",
+    "price_php": 650.00
   },
   {
     "accessory_key": "pv_dc_wire",
@@ -15,7 +16,8 @@
     "side": "dc",
     "description": "Two conductors: 1 red and 1 black.",
     "image_path": "/assets/accessories/dc-cable.webp",
-    "diagram_node_key": "dc.pv_wire"
+    "diagram_node_key": "dc.pv_wire",
+    "price_php": 850.00
   },
   {
     "accessory_key": "pv_dc_isolator",
@@ -24,7 +26,8 @@
     "side": "dc",
     "description": "Manual DC isolation device.",
     "image_path": "/assets/accessories/dc-isolator.webp",
-    "diagram_node_key": "dc.pv_isolator"
+    "diagram_node_key": "dc.pv_isolator",
+    "price_php": 1850.00
   },
   {
     "accessory_key": "pv_dc_spd",
@@ -33,7 +36,8 @@
     "side": "dc",
     "description": "DC surge protection selected from inverter Vmax.",
     "image_path": "/assets/accessories/dc-spd.webp",
-    "diagram_node_key": "dc.spd"
+    "diagram_node_key": "dc.spd",
+    "price_php": 950.00
   },
   {
     "accessory_key": "dc_conduit",
@@ -42,7 +46,8 @@
     "side": "dc",
     "description": "Default PVC conduit recommendation.",
     "image_path": "/assets/accessories/conduit.webp",
-    "diagram_node_key": "dc.conduit"
+    "diagram_node_key": "dc.conduit",
+    "price_php": 480.00
   },
   {
     "accessory_key": "grounding",
@@ -51,7 +56,8 @@
     "side": "both",
     "description": "Grounding conductor and rod recommendation.",
     "image_path": "/assets/accessories/ground-rod.webp",
-    "diagram_node_key": "grounding"
+    "diagram_node_key": "grounding",
+    "price_php": 1250.00
   },
   {
     "accessory_key": "battery_breaker",
@@ -60,7 +66,8 @@
     "side": "dc",
     "description": "Battery-side breaker.",
     "image_path": "/assets/accessories/battery-breaker.webp",
-    "diagram_node_key": "battery.breaker"
+    "diagram_node_key": "battery.breaker",
+    "price_php": 2850.00
   },
   {
     "accessory_key": "battery_wire",
@@ -69,7 +76,8 @@
     "side": "dc",
     "description": "Battery conductor recommendation.",
     "image_path": "/assets/accessories/battery-cable.webp",
-    "diagram_node_key": "battery.wire"
+    "diagram_node_key": "battery.wire",
+    "price_php": 1950.00
   },
   {
     "accessory_key": "ac_grid_breaker",
@@ -78,7 +86,8 @@
     "side": "ac",
     "description": "AC breaker with continuous duty safety factor.",
     "image_path": "/assets/accessories/ac-breaker.webp",
-    "diagram_node_key": "ac.grid_breaker"
+    "diagram_node_key": "ac.grid_breaker",
+    "price_php": 750.00
   },
   {
     "accessory_key": "ac_wire",
@@ -87,7 +96,8 @@
     "side": "ac",
     "description": "AC conductor recommendation.",
     "image_path": "/assets/accessories/ac-cable.webp",
-    "diagram_node_key": "ac.wire"
+    "diagram_node_key": "ac.wire",
+    "price_php": 980.00
   },
   {
     "accessory_key": "ac_isolator",
@@ -96,7 +106,8 @@
     "side": "ac",
     "description": "AC isolator recommendation.",
     "image_path": "/assets/accessories/ac-isolator.webp",
-    "diagram_node_key": "ac.isolator"
+    "diagram_node_key": "ac.isolator",
+    "price_php": 1450.00
   },
   {
     "accessory_key": "ac_spd",
@@ -105,7 +116,8 @@
     "side": "ac",
     "description": "AC surge protection.",
     "image_path": "/assets/accessories/ac-spd.webp",
-    "diagram_node_key": "ac.spd"
+    "diagram_node_key": "ac.spd",
+    "price_php": 1150.00
   },
   {
     "accessory_key": "ats",
@@ -114,7 +126,8 @@
     "side": "ac",
     "description": "Optional ATS based on main panel breaker.",
     "image_path": "/assets/accessories/ats.webp",
-    "diagram_node_key": "ac.ats"
+    "diagram_node_key": "ac.ats",
+    "price_php": 4200.00
   },
   {
     "accessory_key": "eps_breaker",
@@ -123,7 +136,8 @@
     "side": "ac",
     "description": "Backup output breaker.",
     "image_path": "/assets/accessories/ac-breaker.webp",
-    "diagram_node_key": "ac.eps_breaker"
+    "diagram_node_key": "ac.eps_breaker",
+    "price_php": 650.00
   },
   {
     "accessory_key": "roof_rail",
@@ -132,7 +146,8 @@
     "side": "dc",
     "description": "2.2 m rail.",
     "image_path": "/assets/accessories/roof-rail.webp",
-    "diagram_node_key": "mount.rail"
+    "diagram_node_key": "mount.rail",
+    "price_php": 450.00
   },
   {
     "accessory_key": "l_foot",
@@ -141,7 +156,8 @@
     "side": "dc",
     "description": "84 x 40 x 40 mm reference.",
     "image_path": "/assets/accessories/l-foot.webp",
-    "diagram_node_key": "mount.l_foot"
+    "diagram_node_key": "mount.l_foot",
+    "price_php": 95.00
   },
   {
     "accessory_key": "mid_clamp",
@@ -150,7 +166,8 @@
     "side": "dc",
     "description": "30–40 mm module thickness.",
     "image_path": "/assets/accessories/mid-clamp.webp",
-    "diagram_node_key": "mount.mid_clamp"
+    "diagram_node_key": "mount.mid_clamp",
+    "price_php": 45.00
   },
   {
     "accessory_key": "splice",
@@ -159,7 +176,8 @@
     "side": "dc",
     "description": "150 mm aluminum splice.",
     "image_path": "/assets/accessories/rail-splice.webp",
-    "diagram_node_key": "mount.splice"
+    "diagram_node_key": "mount.splice",
+    "price_php": 120.00
   },
   {
     "accessory_key": "mc4",
@@ -168,7 +186,8 @@
     "side": "dc",
     "description": "1–1.5 kV, 30–80 A reference.",
     "image_path": "/assets/accessories/mc4.webp",
-    "diagram_node_key": "mount.mc4"
+    "diagram_node_key": "mount.mc4",
+    "price_php": 65.00
   },
   {
     "accessory_key": "end_clamp",
@@ -177,7 +196,8 @@
     "side": "dc",
     "description": "30–40 mm module thickness.",
     "image_path": "/assets/accessories/end-clamp.webp",
-    "diagram_node_key": "mount.end_clamp"
+    "diagram_node_key": "mount.end_clamp",
+    "price_php": 45.00
   },
   {
     "accessory_key": "grounding_lug",
@@ -186,6 +206,7 @@
     "side": "dc",
     "description": "Tin-plated copper/aluminum lugs (14–4 AWG wire) with 150 mm braided stainless bonding jumpers for equipment grounding and rail equipotential bonding.",
     "image_path": "/assets/accessories/grounding-lug.webp",
-    "diagram_node_key": "mount.grounding_lug"
+    "diagram_node_key": "mount.grounding_lug",
+    "price_php": 180.00
   }
 ]

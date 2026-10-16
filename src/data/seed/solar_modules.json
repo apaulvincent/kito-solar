@@ -7,7 +7,8 @@
     "vmp_v": 40.4,
     "isc_a": 19.5,
     "imp_a": 17.8,
-    "efficiency_pct": 21.5
+    "efficiency_pct": 21.5,
+    "price_php": 6840.00
   },
   {
     "brand": "Trina",
@@ -17,7 +18,8 @@
     "vmp_v": 40.2,
     "isc_a": 19,
     "imp_a": 16.9,
-    "efficiency_pct": 21.2
+    "efficiency_pct": 21.2,
+    "price_php": 6175.00
   },
   {
     "brand": "Trina",
@@ -27,7 +29,8 @@
     "vmp_v": 40,
     "isc_a": 18.5,
     "imp_a": 16.4,
-    "efficiency_pct": 21
+    "efficiency_pct": 21,
+    "price_php": 5935.00
   },
   {
     "brand": "Trina",
@@ -1827,7 +1830,8 @@
     "vmp_v": 40.8,
     "isc_a": 12,
     "imp_a": 12.25,
-    "efficiency_pct": 20.8
+    "efficiency_pct": 20.8,
+    "price_php": 5100.00
   },
   {
     "brand": "AIKO",
@@ -1837,7 +1841,8 @@
     "vmp_v": 41.2,
     "isc_a": 13,
     "imp_a": 13.35,
-    "efficiency_pct": 21
+    "efficiency_pct": 21,
+    "price_php": 5600.00
   },
   {
     "brand": "AIKO",
