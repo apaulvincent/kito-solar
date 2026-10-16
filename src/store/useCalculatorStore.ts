@@ -9,6 +9,7 @@ import {
 import { SystemCalculationResult } from '@/types/calculator';
 import { DiagramNodeKey } from '@/types/diagram';
 import { calculateSystem } from '@/engine/calculateSystem';
+import { ProjectSizingResult } from '@/types/solar-ai';
 
 import invertersSeed from '@/data/seed/solar_inverters.json';
 import modulesSeed from '@/data/seed/solar_modules.json';
@@ -52,6 +53,8 @@ interface CalculatorState {
   atsSource: 'solar' | 'utility';
   activeProjectId: string | null;
   activeProjectName: string | null;
+  isCopilotOpen: boolean;
+  lastAppliedProposal: ProjectSizingResult | null;
 
   // Derived Calculation
   calculationResult: SystemCalculationResult;
@@ -59,6 +62,9 @@ interface CalculatorState {
   initializeCatalog: () => Promise<void>;
   setActiveProjectId: (id: string | null, name?: string | null) => void;
   setActiveView: (view: ActiveView, projectId?: string | null) => void;
+  setIsCopilotOpen: (open: boolean) => void;
+  toggleCopilot: () => void;
+  applySizingProposal: (proposal: ProjectSizingResult) => void;
   setInverter: (inverter: SolarInverterRecord) => void;
   setModule: (module: SolarModuleRecord) => void;
   setBattery: (battery: BatteryRecord | null) => void;
@@ -264,6 +270,8 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   atsSource: 'solar',
   activeProjectId: null,
   activeProjectName: null,
+  isCopilotOpen: false,
+  lastAppliedProposal: null,
 
   calculationResult: compute(
     defaultInverter,
@@ -274,6 +282,79 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
     100,
     null
   ),
+
+  setIsCopilotOpen: (open) => {
+    set({ isCopilotOpen: open });
+  },
+
+  toggleCopilot: () => {
+    set((state) => ({ isCopilotOpen: !state.isCopilotOpen }));
+  },
+
+  applySizingProposal: (proposal) => {
+    const state = get();
+
+    // 1. Match inverter from catalog by model, brand, or rated capacity
+    const propInv = proposal.billOfMaterials.inverter;
+    const isHybridProp = propInv.systemType !== 'grid-tie';
+    const matchedInverter =
+      state.inverters.find((i) => i.model.toLowerCase() === propInv.model.toLowerCase()) ||
+      state.inverters.find((i) => {
+        const matchesBrand = i.brand.toLowerCase() === propInv.brand.toLowerCase();
+        const isHybridInv = Boolean(i.battery_type && i.battery_type.toLowerCase() !== 'none');
+        return matchesBrand && (isHybridProp ? isHybridInv : !isHybridInv);
+      }) ||
+      state.inverters.find((i) => {
+        const acW = typeof i.rated_ac_power_w === 'number' ? i.rated_ac_power_w : parseFloat(String(i.rated_ac_power_w)) || 0;
+        return Math.abs(acW / 1000 - propInv.ratedAcKw) <= 1.5;
+      }) ||
+      state.selectedInverter;
+
+    // 2. Match module from catalog
+    const propPanel = proposal.billOfMaterials.panel;
+    const matchedModule =
+      state.modules.find((m) => m.model.toLowerCase() === propPanel.model.toLowerCase()) ||
+      state.modules.find((m) => m.brand.toLowerCase() === propPanel.brand.toLowerCase()) ||
+      state.modules.find((m) => {
+        const mW = typeof m.pv_wattage_w === 'number' ? m.pv_wattage_w : parseFloat(String(m.pv_wattage_w)) || 0;
+        return Math.abs(mW - propPanel.wattageWp) <= 60;
+      }) ||
+      state.selectedModule;
+
+    // 3. Match battery
+    let matchedBattery: BatteryRecord | null = null;
+    let batteryCount = 1;
+    if (proposal.billOfMaterials.battery && propInv.systemType !== 'grid-tie') {
+      const propBat = proposal.billOfMaterials.battery;
+      batteryCount = Math.max(1, propBat.quantity || 1);
+      matchedBattery =
+        state.batteries.find((b) => b.model.toLowerCase().includes(propBat.model.toLowerCase())) ||
+        state.batteries.find((b) => b.model.toLowerCase().includes(propBat.brand.toLowerCase())) ||
+        state.batteries[0] ||
+        state.selectedBattery;
+    }
+
+    const panelCountOverride = proposal.billOfMaterials.panel.quantity;
+
+    set({
+      selectedInverter: matchedInverter,
+      selectedModule: matchedModule,
+      selectedBattery: matchedBattery,
+      batteryCount,
+      panelCountOverride,
+      lastAppliedProposal: proposal,
+      activeWorkbenchTab: 'pv_sizing',
+      calculationResult: compute(
+        matchedInverter,
+        matchedModule,
+        matchedBattery,
+        batteryCount,
+        state.gridVoltageV,
+        state.mainBreakerA,
+        panelCountOverride
+      ),
+    });
+  },
 
   initializeCatalog: async () => {
     if (!isSupabaseConfigured) return;

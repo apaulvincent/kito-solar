@@ -10,6 +10,7 @@ import {
   Home,
   Folder,
   User as UserIcon,
+  Sparkles,
 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -81,6 +82,15 @@ export function Header() {
               >
                 <Folder className="w-3.5 h-3.5 text-amber-500" />
                 <span>Projects</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => useCalculatorStore.getState().setIsCopilotOpen(true)}
+                className="px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-bold bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 active:scale-95 group"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                <span>AI Copilot</span>
               </button>
 
               {user && (
