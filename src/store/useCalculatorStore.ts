@@ -16,8 +16,9 @@ import modulesSeed from '@/data/seed/solar_modules.json';
 import batteriesSeed from '@/data/seed/batteries.json';
 import accessoriesSeed from '@/data/seed/calculator_accessories.json';
 import { catalogService } from '@/services/catalogService';
-import { isSupabaseConfigured } from '@/lib/supabase';
 import { SavedProject } from '@/types/project';
+import { projectService } from '@/services/projectService';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export type WorkbenchTabKey = 'electrical' | 'pv_sizing' | 'mounting_bom' | 'warnings';
 export type ActiveView = 'home' | 'tool' | 'projects' | 'login' | 'register' | 'account';
@@ -85,6 +86,9 @@ interface CalculatorState {
   loadProject: (project: SavedProject) => void;
   clearActiveProject: () => void;
   resetToDefaults: () => void;
+  customPrices: Record<string, number>;
+  setCustomPrice: (key: string, pricePhp: number | null) => void;
+  resetCustomPrices: () => void;
 }
 
 const getInitialStep1DetailMode = (): DetailMode => {
@@ -227,8 +231,20 @@ function compute(
   gridV: number,
   mainA: number | null,
   panelOverride: number | null,
-  accs?: AccessoryRecord[]
+  accs?: AccessoryRecord[],
+  customPrices?: Record<string, number | null>
 ): SystemCalculationResult {
+  let effectiveCustomPrices = customPrices;
+  if (effectiveCustomPrices === undefined) {
+    try {
+      if (typeof useCalculatorStore !== 'undefined' && useCalculatorStore.getState) {
+        effectiveCustomPrices = useCalculatorStore.getState().customPrices;
+      }
+    } catch {
+      effectiveCustomPrices = {};
+    }
+  }
+
   return calculateSystem({
     inverter: inv,
     module: mod,
@@ -238,6 +254,7 @@ function compute(
     mainBreakerA: mainA,
     panelCountOverride: panelOverride,
     accessories: accs || currentAccessories,
+    customPrices: effectiveCustomPrices || {},
   });
 }
 
@@ -250,6 +267,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   accessories: accessoriesSeed as AccessoryRecord[],
   isLoadingCatalog: false,
   catalogSource: 'local_seed',
+  customPrices: {},
 
   selectedInverter: defaultInverter,
   selectedModule: defaultModule,
@@ -723,6 +741,8 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       ? state.batteries.find((b) => b.model === project.battery_model) || null
       : null;
 
+    const customPrices = (project.custom_prices as Record<string, number>) || {};
+
     set({
       selectedInverter: inverter,
       selectedModule: module,
@@ -738,6 +758,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       hoveredNodeKey: null,
       isInspectorOpen: false,
       activeWorkbenchTab: 'electrical',
+      customPrices,
       calculationResult: compute(
         inverter,
         module,
@@ -745,7 +766,9 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
         Math.max(1, project.battery_count || 1),
         project.grid_voltage_v || 230,
         project.main_breaker_a,
-        project.panel_count_override
+        project.panel_count_override,
+        state.accessories,
+        customPrices
       ),
     });
 
@@ -761,7 +784,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   },
 
   clearActiveProject: () => {
-    set({ activeProjectId: null, activeProjectName: null });
+    set({ activeProjectId: null, activeProjectName: null, customPrices: {} });
     if (typeof window !== 'undefined' && get().activeView === 'tool') {
       try {
         if (window.location.pathname !== '/tool') {
@@ -775,6 +798,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
     set({
       activeProjectId: null,
       activeProjectName: null,
+      customPrices: {},
       selectedInverter: defaultInverter,
       selectedModule: defaultModule,
       selectedBattery: defaultBattery,
@@ -794,7 +818,9 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
         1,
         230,
         100,
-        null
+        null,
+        currentAccessories,
+        {}
       ),
     });
     if (typeof window !== 'undefined' && get().activeView === 'tool') {
@@ -803,6 +829,80 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
           window.history.pushState({ view: 'tool', projectId: null }, '', '/tool');
         }
       } catch (e) {}
+    }
+  },
+
+  setCustomPrice: (key: string, pricePhp: number | null) => {
+    const state = get();
+    const nextCustomPrices = { ...state.customPrices };
+    if (pricePhp === null || isNaN(pricePhp) || pricePhp < 0) {
+      delete nextCustomPrices[key];
+    } else {
+      nextCustomPrices[key] = pricePhp;
+    }
+
+    const newCalc = compute(
+      state.selectedInverter,
+      state.selectedModule,
+      state.selectedBattery,
+      state.batteryCount,
+      state.gridVoltageV,
+      state.mainBreakerA,
+      state.panelCountOverride,
+      state.accessories,
+      nextCustomPrices
+    );
+
+    set({
+      customPrices: nextCustomPrices,
+      calculationResult: newCalc,
+    });
+
+    // Auto-sync custom prices to active saved project if one is loaded
+    if (state.activeProjectId) {
+      const authUser = useAuthStore.getState().user;
+      if (authUser) {
+        projectService
+          .updateProject(authUser.id, state.activeProjectId, {
+            custom_prices: nextCustomPrices,
+          })
+          .catch((err) => {
+            console.warn('Auto-save custom prices to active project failed:', err);
+          });
+      }
+    }
+  },
+
+  resetCustomPrices: () => {
+    const state = get();
+    const newCalc = compute(
+      state.selectedInverter,
+      state.selectedModule,
+      state.selectedBattery,
+      state.batteryCount,
+      state.gridVoltageV,
+      state.mainBreakerA,
+      state.panelCountOverride,
+      state.accessories,
+      {}
+    );
+
+    set({
+      customPrices: {},
+      calculationResult: newCalc,
+    });
+
+    if (state.activeProjectId) {
+      const authUser = useAuthStore.getState().user;
+      if (authUser) {
+        projectService
+          .updateProject(authUser.id, state.activeProjectId, {
+            custom_prices: {},
+          })
+          .catch((err) => {
+            console.warn('Auto-save reset custom prices failed:', err);
+          });
+      }
     }
   },
 };

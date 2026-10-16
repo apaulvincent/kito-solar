@@ -120,6 +120,7 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
       dc_breaker_a: calculationResult.dc.breakerRatingA,
       ac_breaker_a: calculationResult.ac.breakerRatingA,
       system_type: calculationResult.systemType === 'hybrid' ? 'HYBRID' : 'ON-GRID',
+      custom_prices: useCalculatorStore.getState().customPrices,
     };
 
     try {

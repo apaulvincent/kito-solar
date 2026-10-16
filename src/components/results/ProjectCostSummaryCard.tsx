@@ -11,13 +11,48 @@ import {
   ShieldAlert,
   X,
   TrendingUp,
+  Pencil,
+  Check,
+  RotateCcw,
 } from 'lucide-react';
 import { formatPeso } from '@/lib/utils';
 
 export function ProjectCostSummaryCard() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
+  const setCustomPrice = useCalculatorStore((s) => s.setCustomPrice);
+  const customPrices = useCalculatorStore((s) => s.customPrices);
   const { costSummary, summary } = calculationResult;
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editPriceInput, setEditPriceInput] = useState<string>('');
+
+  const handleStartEdit = (key: string, currentPrice: number | null | undefined) => {
+    setEditingKey(key);
+    setEditPriceInput(currentPrice && currentPrice > 0 ? String(currentPrice) : '');
+  };
+
+  const handleSaveEdit = (key: string) => {
+    const trimmed = editPriceInput.trim();
+    if (trimmed === '') {
+      setCustomPrice(key, null);
+    } else {
+      const parsed = parseFloat(trimmed);
+      if (!isNaN(parsed) && parsed >= 0) {
+        setCustomPrice(key, parsed);
+      }
+    }
+    setEditingKey(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingKey(null);
+    setEditPriceInput('');
+  };
+
+  const handleResetPrice = (key: string) => {
+    setCustomPrice(key, null);
+    setEditingKey(null);
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

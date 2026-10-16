@@ -179,7 +179,14 @@ export const projectService = {
           .select()
           .single();
 
-        if (!error && data) {
+        if (error && error.message?.includes('custom_prices')) {
+          const { custom_prices: _, ...cloudPayload } = newProject;
+          const retry = await supabase.from('user_projects').insert([cloudPayload]).select().single();
+          if (!retry.error && retry.data) {
+            savedToCloud = true;
+            newProject.id = retry.data.id;
+          }
+        } else if (!error && data) {
           savedToCloud = true;
           newProject.id = data.id;
         }
@@ -234,11 +241,20 @@ export const projectService = {
     // Cloud update
     if (supabase && isSupabaseConfigured) {
       try {
-        await supabase
+        const { error } = await supabase
           .from('user_projects')
           .update({ ...sanitizedUpdates, updated_at: now })
           .eq('id', projectId)
           .eq('user_id', userId);
+
+        if (error && error.message?.includes('custom_prices')) {
+          const { custom_prices: _, ...cloudUpdates } = sanitizedUpdates;
+          await supabase
+            .from('user_projects')
+            .update({ ...cloudUpdates, updated_at: now })
+            .eq('id', projectId)
+            .eq('user_id', userId);
+        }
       } catch (err) {
         console.warn('Supabase update project error:', err);
       }
