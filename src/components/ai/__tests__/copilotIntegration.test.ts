@@ -158,6 +158,7 @@ describe('AI Copilot Tool-Calling & Deterministic PV Sizing Engine', () => {
           estimatedNewMonthlyBillPhp: 1500,
           annualSavingsPhp: sizing.estimatedMonthlySavingsPhp * 12,
           paybackPeriodYears: 4.5,
+          fiveYearNetSavingsPhp: 120000,
           twentyFiveYearNetSavingsPhp: 1200000,
         },
       };

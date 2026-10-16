@@ -148,7 +148,8 @@ export interface ProjectSizingResult {
     estimatedNewMonthlyBillPhp: number;
     annualSavingsPhp: number;
     paybackPeriodYears: number;
-    twentyFiveYearNetSavingsPhp: number;
+    fiveYearNetSavingsPhp: number;
+    twentyFiveYearNetSavingsPhp?: number;
   };
 }
 

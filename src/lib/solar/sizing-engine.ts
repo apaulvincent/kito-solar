@@ -342,6 +342,7 @@ export function computeAndMatchSolarSystem(
   const annualSavingsPhp = estimatedMonthlySavingsPhp * 12;
   const paybackPeriodYears =
     annualSavingsPhp > 0 ? Number((totalSystemCostPhp / annualSavingsPhp).toFixed(1)) : 99.9;
+  const fiveYearNetSavingsPhp = annualSavingsPhp * 5 - totalSystemCostPhp;
   const twentyFiveYearNetSavingsPhp = annualSavingsPhp * 25 - totalSystemCostPhp;
 
   return {
@@ -396,6 +397,7 @@ export function computeAndMatchSolarSystem(
       estimatedNewMonthlyBillPhp,
       annualSavingsPhp,
       paybackPeriodYears,
+      fiveYearNetSavingsPhp,
       twentyFiveYearNetSavingsPhp,
     },
   };
@@ -489,6 +491,7 @@ export function recalculateWithOverrides(
   const annualSavingsPhp = estimatedMonthlySavingsPhp * 12;
   const paybackPeriodYears =
     annualSavingsPhp > 0 ? Number((totalSystemCostPhp / annualSavingsPhp).toFixed(1)) : 99.9;
+  const fiveYearNetSavingsPhp = annualSavingsPhp * 5 - totalSystemCostPhp;
   const twentyFiveYearNetSavingsPhp = annualSavingsPhp * 25 - totalSystemCostPhp;
 
   return {
@@ -543,6 +546,7 @@ export function recalculateWithOverrides(
       estimatedNewMonthlyBillPhp,
       annualSavingsPhp,
       paybackPeriodYears,
+      fiveYearNetSavingsPhp,
       twentyFiveYearNetSavingsPhp,
     },
   };

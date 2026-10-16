@@ -366,18 +366,36 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
 
     const panelCountOverride = proposal.billOfMaterials.panel.quantity;
 
+    // Attach priced proposal units so components in the calculation workbench are not marked TBD
+    const pricedInverter: SolarInverterRecord = {
+      ...matchedInverter,
+      price_php: propInv.unitPricePhp ?? matchedInverter.price_php ?? null,
+    };
+
+    const pricedModule: SolarModuleRecord = {
+      ...matchedModule,
+      price_php: propPanel.unitPricePhp ?? matchedModule.price_php ?? null,
+    };
+
+    const pricedBattery: BatteryRecord | null = matchedBattery
+      ? {
+          ...matchedBattery,
+          price_php: proposal.billOfMaterials.battery?.unitPricePhp ?? matchedBattery.price_php ?? null,
+        }
+      : null;
+
     set({
-      selectedInverter: matchedInverter,
-      selectedModule: matchedModule,
-      selectedBattery: matchedBattery,
+      selectedInverter: pricedInverter,
+      selectedModule: pricedModule,
+      selectedBattery: pricedBattery,
       batteryCount,
       panelCountOverride,
       lastAppliedProposal: proposal,
       activeWorkbenchTab: 'pv_sizing',
       calculationResult: compute(
-        matchedInverter,
-        matchedModule,
-        matchedBattery,
+        pricedInverter,
+        pricedModule,
+        pricedBattery,
         batteryCount,
         state.gridVoltageV,
         state.mainBreakerA,

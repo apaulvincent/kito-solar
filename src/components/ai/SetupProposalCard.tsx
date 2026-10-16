@@ -162,7 +162,7 @@ export const SetupProposalCard: React.FC<SetupProposalCardProps> = ({ proposal }
                 </span>
               </div>
               <span className="text-[11px] text-amber-700/80 dark:text-amber-400/80 block">
-                25-Yr Net Gain: {formatPeso(financialRoi.twentyFiveYearNetSavingsPhp)}
+                5-Yr Net Gain: {formatPeso(financialRoi.fiveYearNetSavingsPhp ?? (financialRoi.annualSavingsPhp * 5 - billOfMaterials.totalSystemCostPhp))}
               </span>
             </div>
 

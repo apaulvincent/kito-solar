@@ -152,6 +152,16 @@ export interface ProjectCostItem {
   unitPricePhp?: number | null;
   totalPricePhp?: number | null;
   isTbd: boolean;
+  isEstimated?: boolean;
+}
+
+export interface FinancialRoiSummary {
+  estimatedMonthlySavingsPhp: number;
+  annualSavingsPhp: number;
+  paybackPeriodYears: number | null;
+  canComputeRoi: boolean;
+  roiUnavailableReason?: string;
+  isBenchmarkEstimate?: boolean;
 }
 
 export interface ProjectCostSummary {
@@ -162,6 +172,7 @@ export interface ProjectCostSummary {
   grandTotalPhp: number;
   tbdItemCount: number;
   isFullyEstimated: boolean;
+  financialRoi?: FinancialRoiSummary;
 }
 
 export type WarningSeverity = 'info' | 'warning' | 'error';

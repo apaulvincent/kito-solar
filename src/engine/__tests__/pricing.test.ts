@@ -80,6 +80,8 @@ describe('Pricing & Currency Engine Test Suite', () => {
         result.costSummary.mountingSubtotalPhp +
         result.costSummary.switchgearSubtotalPhp;
       expect(result.costSummary.grandTotalPhp).toBe(sum);
+      expect(result.costSummary.financialRoi?.canComputeRoi).toBe(true);
+      expect(result.costSummary.financialRoi?.paybackPeriodYears).toBeGreaterThan(0);
     });
 
     it('correctly tracks TBD items when an unpriced inverter or module is selected', () => {
@@ -104,6 +106,11 @@ describe('Pricing & Currency Engine Test Suite', () => {
       expect(invCostItem?.totalPricePhp).toBeNull();
       expect(result.costSummary.tbdItemCount).toBeGreaterThan(0);
       expect(result.costSummary.isFullyEstimated).toBe(false);
+
+      // ROI and Payback MUST be null/unavailable when components are TBD
+      expect(result.costSummary.financialRoi?.canComputeRoi).toBe(false);
+      expect(result.costSummary.financialRoi?.paybackPeriodYears).toBeNull();
+      expect(result.costSummary.financialRoi?.roiUnavailableReason).toContain('marked TBD');
     });
   });
 });

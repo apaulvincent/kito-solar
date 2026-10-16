@@ -281,6 +281,25 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
 
   const grandTotalPhp = equipmentSubtotalPhp + mountingSubtotalPhp + switchgearSubtotalPhp;
 
+  // 4. Financial ROI & Payback Computation
+  // Default tariff: ₱12.00/kWh (Meralco / Philippine DU national average)
+  const tariffRatePhp = 12.0;
+  const peakSunHours = 4.5;
+  const systemLosses = 0.20;
+  const monthlySolarGenKwh = Math.round(
+    (pvSizing.totalPvPowerW / 1000) * peakSunHours * (1 - systemLosses) * 30
+  );
+  const estimatedMonthlySavingsPhp = Math.round(monthlySolarGenKwh * tariffRatePhp);
+  const annualSavingsPhp = estimatedMonthlySavingsPhp * 12;
+
+  const hasAnyTbdItems = tbdItemCount > 0;
+  const canComputeRoi = !hasAnyTbdItems && grandTotalPhp > 0 && annualSavingsPhp > 0;
+  const paybackPeriodYears = canComputeRoi
+    ? Number((grandTotalPhp / annualSavingsPhp).toFixed(1))
+    : null;
+
+  const hasBenchmarkEstimates = costItems.some((ci) => ci.isEstimated);
+
   const costSummary: ProjectCostSummary = {
     items: costItems,
     equipmentSubtotalPhp,
@@ -289,6 +308,16 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
     grandTotalPhp,
     tbdItemCount,
     isFullyEstimated: tbdItemCount === 0,
+    financialRoi: {
+      estimatedMonthlySavingsPhp,
+      annualSavingsPhp,
+      paybackPeriodYears,
+      canComputeRoi,
+      roiUnavailableReason: hasAnyTbdItems
+        ? `ROI and simple payback period cannot be determined while ${tbdItemCount} component(s) are marked TBD. Complete pricing is required.`
+        : undefined,
+      isBenchmarkEstimate: hasBenchmarkEstimates,
+    },
   };
 
   return {

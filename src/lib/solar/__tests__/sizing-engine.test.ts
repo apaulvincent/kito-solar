@@ -72,6 +72,7 @@ describe('Deterministic Solar Sizing Engine', () => {
     expect(result.financialRoi.estimatedMonthlySavingsPhp).toBeGreaterThan(8000);
     expect(result.financialRoi.paybackPeriodYears).toBeGreaterThan(2.0);
     expect(result.financialRoi.paybackPeriodYears).toBeLessThan(7.0);
+    expect(result.financialRoi.fiveYearNetSavingsPhp).toBeDefined();
   });
 
   it('correctly handles what-if scenario overrides (PRD Flow 2)', () => {
