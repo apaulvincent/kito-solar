@@ -16,7 +16,7 @@ export const SolarCopilotButton: React.FC = () => {
         <button
           type="button"
           onClick={toggleCopilot}
-          aria-label="Open Kito Solar AI Copilot"
+          aria-label="Ask Jenny - Kito Solar Assistant"
           className="rounded-full px-4 py-2.5 bg-white/95 dark:bg-[#090E1D]/95 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)] flex items-center gap-2.5 text-xs font-bold tracking-wide text-slate-800 dark:text-slate-100 hover:text-amber-600 dark:hover:text-amber-400 active:scale-95 transition-all duration-300"
         >
           <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center shadow-sm shadow-amber-500/30 animate-pulse">
@@ -24,11 +24,11 @@ export const SolarCopilotButton: React.FC = () => {
           </div>
 
           <div className="flex flex-col text-left">
-            <span className="leading-none flex items-center gap-1">
-              AI Sales Engineer
+            <span className="leading-none flex items-center gap-1.5 font-bold text-xs text-slate-900 dark:text-slate-100">
+              Ask Jenny
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping inline-block" />
             </span>
-            <span className="text-[9px] font-mono text-slate-400 font-normal leading-tight mt-0.5">
+            <span className="text-[9px] font-mono text-slate-400 dark:text-slate-400 font-normal leading-tight mt-0.5">
               Size from monthly bill
             </span>
           </div>

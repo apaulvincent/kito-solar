@@ -33,7 +33,7 @@ export const SolarCopilotDrawer: React.FC = () => {
       id: 'welcome',
       role: 'assistant',
       content:
-        "Welcome to Kito Solar AI Copilot. Enter your **monthly electric bill** (in ₱) and **location** to automatically generate a code-compliant PV design, or ask technical questions regarding string voltages and PEC standards.",
+        "Hi! I'm Jenny, your solar assistant. Enter your **monthly electric bill** (in ₱) and **location**, and I'll size a complete setup for you—including panels, inverter, and battery backup.",
       createdAt: new Date(),
     },
   ]);
@@ -110,7 +110,7 @@ export const SolarCopilotDrawer: React.FC = () => {
 
   return (
     <aside
-      aria-label="Solar Engineering AI Copilot"
+      aria-label="Ask Jenny Solar Assistant"
       className="fixed inset-y-0 right-0 z-50 w-full sm:w-[500px] md:w-[540px] bg-slate-100/80 dark:bg-black/60 backdrop-blur-2xl p-2 sm:p-4 flex flex-col justify-end transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] shadow-2xl"
     >
       {/* Double-Bezel Shell */}
@@ -126,7 +126,7 @@ export const SolarCopilotDrawer: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-xs font-bold tracking-tight text-slate-800 dark:text-slate-100">
-                    Kito AI Sales Engineer
+                    Ask Jenny · Solar Assistant
                   </h2>
                   <span className="px-2 py-0.5 rounded-full text-[8px] font-bold tracking-[0.2em] uppercase bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-amber-500/30">
                     Online

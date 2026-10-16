@@ -54,7 +54,7 @@ export const BillQuickStartBanner: React.FC = () => {
 
               {/* Plain-Language Explanatory Copy */}
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-xl leading-relaxed">
-                Specify your electricity spend and brownout requirements. The AI copilot matches in-stock Tier-1 hardware, verifies MPPT string limits, and calculates your 25-year ROI.
+                Specify your electricity spend and brownout requirements. Jenny matches in-stock Tier-1 hardware, verifies MPPT string limits, and calculates your 25-year ROI.
               </p>
 
               {/* Trust Markers / Engineering Badges */}
@@ -113,7 +113,7 @@ export const BillQuickStartBanner: React.FC = () => {
                 >
                   <span className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-slate-950" />
-                    <span>Launch AI Copilot Studio</span>
+                    <span>Ask Jenny · Size Your System</span>
                   </span>
 
                   {/* Nested Trailing Icon Capsule */}

@@ -171,7 +171,7 @@ export function App() {
       {/* Slide-out Component Inspector Modal */}
       <ComponentInspector />
 
-      {/* Floating Solar AI Sales Engineer Trigger */}
+      {/* Floating Ask Jenny Trigger */}
       <SolarCopilotButton />
 
       {/* Interactive AI Sizing Drawer & Generative Proposal Studio */}
