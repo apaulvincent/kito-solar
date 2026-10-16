@@ -1,8 +1,9 @@
 -- supabase/migrations/20261016_kito_ai_rag_schema.sql
 -- Kito Solar AI Copilot: RAG Knowledge Base, Utility Tariffs, and Hardware Catalog Schema
 
--- 0. Enable pgvector extension for RAG datasheet & knowledge retrieval
-create extension if not exists vector;
+-- 0. Enable pgvector extension in dedicated extensions schema
+create schema if not exists extensions;
+create extension if not exists vector with schema extensions;
 
 -- 1. Utility Tariffs & Regional Solar Irradiance Table
 create table if not exists public.utility_tariffs (
@@ -103,7 +104,7 @@ create policy "Allow public read access on solar_knowledge_chunks" on public.sol
 
 -- 6. Vector similarity search RPC function
 create or replace function match_solar_knowledge (
-  query_embedding vector(768),
+  query_embedding extensions.vector(768),
   match_threshold float,
   match_count int,
   filter_category text default null
@@ -117,6 +118,7 @@ returns table (
   similarity float
 )
 language sql stable
+set search_path = public, extensions
 as $$
   select
     id,
@@ -125,7 +127,7 @@ as $$
     related_hardware_model,
     content,
     1 - (solar_knowledge_chunks.embedding <=> query_embedding) as similarity
-  from solar_knowledge_chunks
+  from public.solar_knowledge_chunks
   where 1 - (solar_knowledge_chunks.embedding <=> query_embedding) > match_threshold
     and (filter_category is null or category = filter_category)
   order by solar_knowledge_chunks.embedding <=> query_embedding
