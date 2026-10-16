@@ -25,8 +25,18 @@ export function calculatePvSystem(input: SizingInput): SizingOutput {
   const peakSunHours = 4.5;   // Default PH PSH (or lookup by input.location)
   const systemLosses = 0.20;  // 80% performance ratio
 
+  const safeBill =
+    typeof input.monthlyBillPhp === 'number' && !isNaN(input.monthlyBillPhp)
+      ? Math.max(0, Math.min(input.monthlyBillPhp, 10_000_000))
+      : undefined;
+
+  const safeKwh =
+    typeof input.monthlyKwh === 'number' && !isNaN(input.monthlyKwh)
+      ? Math.max(0, Math.min(input.monthlyKwh, 1_000_000))
+      : undefined;
+
   const estimatedMonthlyKwh =
-    input.monthlyKwh ?? (input.monthlyBillPhp ? input.monthlyBillPhp / tariffRatePhp : 0);
+    safeKwh ?? (safeBill ? safeBill / tariffRatePhp : 0);
 
   const dailyKwh = estimatedMonthlyKwh / 30;
 
