@@ -16,6 +16,7 @@ import modulesSeed from '@/data/seed/solar_modules.json';
 import batteriesSeed from '@/data/seed/batteries.json';
 import accessoriesSeed from '@/data/seed/calculator_accessories.json';
 import { catalogService } from '@/services/catalogService';
+import { isSupabaseConfigured } from '@/lib/supabase';
 import { SavedProject } from '@/types/project';
 import { projectService } from '@/services/projectService';
 import { useAuthStore } from '@/store/useAuthStore';
