@@ -37,6 +37,55 @@ export class AiCopilotService {
   }
 
   /**
+   * Robust bill extraction: handles '7000 bill', 'bill 7000', '₱7,000', '7k', etc.
+   * Avoids confusing equipment ratings (8kW, 5kWh, 580W, 500V) with electricity bills.
+   */
+  extractBillAmount(userPrompt: string): number | null {
+    const clean = userPrompt.toLowerCase();
+
+    // 1. '7k' or '12.5k' (excluding kw, kwh)
+    const kMatch = clean.match(/(?:(?:₱|php|pesos?)?\s*)(\d+(?:\.\d+)?)\s*k\b(?!w)/);
+    if (kMatch) {
+      const val = parseFloat(kMatch[1]) * 1000;
+      if (val >= 500) return val;
+    }
+
+    // 2. Currency symbol + digits (e.g. ₱7,000, 7000php, 7000 pesos)
+    const currMatch =
+      clean.match(/(?:₱|php|pesos?)\s*(\d[\d,]*)/) ||
+      clean.match(/(\d[\d,]*)\s*(?:php|pesos)\b/);
+    if (currMatch) {
+      const val = parseFloat(currMatch[1].replace(/,/g, ''));
+      if (val >= 500) return val;
+    }
+
+    // 3. '7000 bill' or 'bill 7000' or 'bill is 7000' or '7000/mo'
+    const billMatch =
+      clean.match(/(\d[\d,]*)\s*(?:bill|\/mo|per month|monthly)/) ||
+      clean.match(/(?:bill|spend|paying)\s*(?:is|around|about|of)?\s*[:=]?\s*(\d[\d,]*)/);
+    if (billMatch) {
+      const val = parseFloat(billMatch[1].replace(/,/g, ''));
+      if (val >= 500) return val;
+    }
+
+    // 4. Standalone 4+ digit number not followed by electrical units (kW, kWh, V, A, panels)
+    const numMatches = [...clean.matchAll(/\b(\d[\d,]*)\b/g)];
+    for (const m of numMatches) {
+      const raw = m[1].replace(/,/g, '');
+      const val = parseFloat(raw);
+      const postText = clean.slice(m.index! + m[0].length).trim();
+      if (/^(?:k?w|k?wh|v|a|panels?|modules?|deg|c\b)/.test(postText)) {
+        continue;
+      }
+      if (val >= 1000 && val <= 5000000) {
+        return val;
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Process a user message. Attempts to call the serverless endpoint first.
    * If the endpoint fails (e.g. offline, Vite dev server, or no API key provided),
    * seamlessly falls back to the deterministic client engine.
@@ -113,40 +162,8 @@ export class AiCopilotService {
     else if (promptLower.includes('solis')) preferredInverterBrand = 'Solis';
     else if (promptLower.includes('huawei')) preferredInverterBrand = 'Huawei';
 
-    // Extract bill amount (e.g., ₱12,000, 12000, 15k, 8,000)
-    // Ignore equipment ratings like 8kW, 5kWh, 580W, 500V
-    let extractedBill: number | null = null;
-
-    // 1. Explicit currency symbol or bill keyword match
-    const currencyMatch =
-      userPrompt.match(/(?:₱|php|pesos?)\s*([\d,]+(?:\.\d+)?)(?:\s*(k)\b(?!w|wh))?/i) ||
-      userPrompt.match(/(?:bill|spend|paying)\s*(?:is|around|of|about)?\s*([\d,]+(?:\.\d+)?)(?:\s*(k)\b(?!w|wh))?/i) ||
-      userPrompt.match(/([\d,]+(?:\.\d+)?)\s*(k)\b(?!w|wh)/i);
-
-    if (currencyMatch) {
-      let rawNumber = currencyMatch[1].replace(/,/g, '');
-      let parsed = parseFloat(rawNumber);
-      if (currencyMatch[2] || userPrompt.toLowerCase().includes(rawNumber + 'k')) {
-        // Ensure not 'kw' or 'kwh'
-        const idx = userPrompt.toLowerCase().indexOf(rawNumber + 'k');
-        if (idx >= 0 && !userPrompt.toLowerCase().slice(idx).match(new RegExp(`^${rawNumber}k(w|wh)`))) {
-          parsed *= 1000;
-        }
-      }
-      if (parsed >= 500) {
-        extractedBill = parsed;
-      }
-    } else {
-      // 2. Standalone number >= 1000 that is NOT followed by electrical units or 'panels'
-      const standaloneMatches = [...userPrompt.matchAll(/\b([\d,]{4,})\b(?!\s*(?:k?w|k?wh|v|a|panels?|modules?|deg|c\b))/gi)];
-      for (const m of standaloneMatches) {
-        const val = parseFloat(m[1].replace(/,/g, ''));
-        if (val >= 1000) {
-          extractedBill = val;
-          break;
-        }
-      }
-    }
+    // Extract bill amount cleanly (supports '7000 bill', 'bill 7000', '₱7,000', '7k', etc.)
+    const extractedBill = this.extractBillAmount(userPrompt);
 
     // If there is an existing proposal and user asks an override without changing bill amount
     if (isOverride && previousProposal && !extractedBill) {

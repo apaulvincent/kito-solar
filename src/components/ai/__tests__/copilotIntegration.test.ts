@@ -119,4 +119,25 @@ describe('AI Copilot Studio Integration', () => {
     expect(state.selectedInverter.model).toBe('SUN-5K-SG05LP1-EU');
     expect(state.panelCountOverride).toBe(result.billOfMaterials.panel.quantity);
   });
+
+  it('correctly handles "7000 bill, I want deye inverter" without asking for bill again', async () => {
+    const messages = [
+      {
+        id: '1',
+        role: 'user' as const,
+        content: '7000 bill, I want deye inverter',
+        createdAt: new Date(),
+      },
+    ];
+
+    const reply = await aiCopilotService.sendMessage(messages);
+    expect(reply.role).toBe('assistant');
+    expect(reply.toolInvocations).toBeDefined();
+    expect(reply.toolInvocations?.[0].toolName).toBe('generateSolarSetupFromBill');
+
+    const result = reply.toolInvocations?.[0].result as any;
+    expect(result.inputSummary.monthlyBillPhp).toBe(7000);
+    expect(result.billOfMaterials.inverter.brand).toBe('Deye');
+    expect(result.billOfMaterials.inverter.model).toBe('SUN-5K-SG05LP1-EU');
+  });
 });
