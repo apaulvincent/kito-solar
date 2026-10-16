@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { aiCopilotService, CopilotMessage } from '@/services/aiCopilotService';
 import { SetupProposalCard } from './SetupProposalCard';
+import { ChatMessageContent } from './ChatMessageContent';
 import {
   Sparkles,
   X,
@@ -185,20 +186,20 @@ export const SolarCopilotDrawer: React.FC = () => {
 
                   <div className={`max-w-[85%] space-y-2 ${isUser ? 'items-end' : 'items-start'}`}>
                     <div
-                      className={`px-4 py-3 rounded-2xl leading-relaxed whitespace-pre-wrap ${
+                      className={`px-4 py-3 rounded-2xl leading-relaxed ${
                         isUser
-                          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-tr-none shadow-md shadow-amber-500/10 font-medium'
+                          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-tr-none shadow-md shadow-amber-500/10 font-medium whitespace-pre-wrap'
                           : 'bg-slate-100/90 dark:bg-white/[0.04] text-slate-800 dark:text-slate-200 rounded-tl-none ring-1 ring-slate-200/60 dark:ring-white/5'
                       }`}
                     >
-                      {message.content}
+                      <ChatMessageContent content={message.content} isUser={isUser} />
                     </div>
 
                     {!isUser && message.engine && (
                       <div className="flex items-center gap-1.5 px-1">
                         <span className="text-[9px] font-mono font-medium text-slate-400 dark:text-slate-500">
-                          {message.engine === 'gemini-2.5-flash'
-                            ? '⚡ Powered by Gemini 2.5 Flash'
+                          {message.engine.startsWith('gemini')
+                            ? '⚡ Powered by Gemini Flash'
                             : '⚙️ Powered by Deterministic PV Engine'}
                         </span>
                       </div>
