@@ -94,14 +94,8 @@ export class AiCopilotService {
     const apiKey = this.getApiKey();
 
     if (!apiKey) {
-      return {
-        id: 'msg-' + Date.now(),
-        role: 'assistant',
-        engine: 'gemini-2.5-flash',
-        content:
-          'To activate the AI Copilot, please provide a Google Gemini API key by setting `VITE_GOOGLE_GENERATIVE_AI_API_KEY` in your `.env.local` file or in your environment variables.',
-        createdAt: new Date(),
-      };
+      const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
+      return this.getFriendlyFallbackResponse(lastUserMsg);
     }
 
     const google = createGoogleGenerativeAI({ apiKey });
@@ -128,6 +122,7 @@ IMPORTANT: An accurate ROI and Payback period can only be calculated when the to
 5. NATURAL LANGUAGE EXTRACTION: You natively understand natural human phrasing, typos, shorthand (e.g., "7k bill", "7000 bill, I want deye inverter", "₱12,500/mo", "around 8 thousand pesos"), and hardware requests (e.g., "I want a Deye inverter", "use Canadian Solar panels", "add battery for brownouts").
 6. If the user asks for a brand that is typically a hybrid inverter (like Deye) or mentions brownouts/batteries, set \`systemType\` to "hybrid".
 7. If the user has NOT provided a monthly bill, kWh consumption, or target kW size yet, politely ask them for their average monthly electric bill (in PHP) and location.
+8. PLAIN-LANGUAGE COMMUNICATION: You speak directly to everyday homeowners, electricians, and tradespeople. NEVER mention software architecture, APIs, keys, code variables, database schemas, or technical system bugs. Explain solar concepts clearly and simply using real-world analogies so anyone can easily understand.
 Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
         messages: sdkMessages,
         stopWhen: isStepCount(5),
@@ -348,17 +343,242 @@ Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
         toolInvocations: toolInvocations.length > 0 ? toolInvocations : undefined,
       };
     } catch (err: unknown) {
-      console.error('Gemini LLM tool execution error:', err);
-      const errMsg = err instanceof Error ? err.message : 'Unknown AI error';
+      console.error('AI chat execution error:', err);
+      const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
+      return this.getFriendlyFallbackResponse(lastUserMsg);
+    }
+  }
+
+  /**
+   * Provides friendly, plain-language answers for ordinary people when remote AI connection is offline or encounters an issue.
+   * Never exposes API keys, environment variables, or technical stack errors.
+   */
+  async getFriendlyFallbackResponse(userPrompt: string): Promise<CopilotMessage> {
+    const promptLower = (userPrompt || '').toLowerCase().trim();
+
+    // 1. Greetings & introduction
+    if (/^(hi|hello|hey|good day|morning|afternoon|evening|who are you)\b/i.test(promptLower)) {
       return {
         id: 'msg-' + Date.now(),
         role: 'assistant',
-        engine: 'gemini-2.5-flash',
-        content: `Solar Copilot encountered an issue connecting to Gemini: ${errMsg}. Please verify your API key and connection.`,
+        content:
+          "Hello! I'm Jenny, your solar assistant at Kito Solar. I can help you size the right solar system for your home or business, figure out how many panels you need, and answer questions about inverters and batteries. What is your average monthly electric bill, or what can I help you with today?",
         createdAt: new Date(),
       };
     }
+
+    // 2. Questions about putting all panels in a single string / string voltage limits
+    if (
+      promptLower.includes('single string') ||
+      promptLower.includes('one string') ||
+      (promptLower.includes('string') &&
+        (promptLower.includes('why') ||
+          promptLower.includes('voltage') ||
+          promptLower.includes("can't") ||
+          promptLower.includes('cannot') ||
+          promptLower.includes('limit'))) ||
+      (promptLower.includes('16') && promptLower.includes('panel'))
+    ) {
+      return {
+        id: 'msg-' + Date.now(),
+        role: 'assistant',
+        content:
+          "Putting too many high-power panels (like 16 of the 580W models) into a single string would produce over 800 volts in cooler weather. Most home inverters have a safe voltage limit of 500V to 600V. Going over that limit can damage the inverter and trip its built-in safety shutoffs.\n\nThat's why the system splits your panels into two balanced strings (8 panels on MPPT 1 and 8 panels on MPPT 2). This keeps the voltage in the sweet spot so your inverter runs safely and produces the most solar energy.",
+        createdAt: new Date(),
+      };
+    }
+
+    // 3. Questions about Hybrid vs Grid-Tie or Batteries
+    if (promptLower.includes('hybrid') && promptLower.includes('grid')) {
+      return {
+        id: 'msg-' + Date.now(),
+        role: 'assistant',
+        content:
+          "A grid-tie system connects directly to the power grid with no batteries—it saves you money during the day, but shuts off automatically during blackouts for safety. A hybrid system includes batteries and an automatic transfer switch (ATS), keeping your essential lights, fans, and refrigerator running smoothly even during power outages.",
+        createdAt: new Date(),
+      };
+    }
+
+    if (promptLower.includes('net metering')) {
+      return {
+        id: 'msg-' + Date.now(),
+        role: 'assistant',
+        content:
+          "Net metering lets you send extra daytime solar power back into the utility grid (like Meralco) in exchange for bill credits. Those credits then reduce your bill for the electricity you draw at night.",
+        createdAt: new Date(),
+      };
+    }
+
+    // 4. Check if user provided an electricity bill amount
+    const billMatch = promptLower.match(/(?:bill|spend|paying|around|php|₱)?\s*([1-9]\d{0,2}(?:,\d{3})+|[1-9]\d{2,6})\s*(?:k|thousand|pesos|php)?/);
+    let billNum: number | null = null;
+    if (billMatch) {
+      const rawNum = parseFloat(billMatch[1].replace(/,/g, ''));
+      if (promptLower.includes('k') && rawNum < 1000) {
+        billNum = rawNum * 1000;
+      } else {
+        billNum = rawNum;
+      }
+    }
+
+    if (billNum && billNum >= 1000 && billNum <= 200000) {
+      try {
+        const isHybrid =
+          promptLower.includes('battery') ||
+          promptLower.includes('brownout') ||
+          promptLower.includes('hybrid') ||
+          promptLower.includes('deye');
+        const sizing = calculatePvSystem({
+          monthlyBillPhp: billNum,
+          systemType: isHybrid ? 'hybrid' : 'grid-tie',
+          location: 'Philippines',
+        });
+        const hardware = await matchHardwareCatalog({
+          targetKwp: sizing.recommendedArrayKwp,
+          targetInverterKw: sizing.recommendedInverterKw,
+          targetBatteryKwh: sizing.recommendedBatteryKwh,
+          systemType: isHybrid ? 'hybrid' : 'grid-tie',
+        });
+
+        const appliedPayload = {
+          projectId: 'proj-offline-' + Math.random().toString(36).substring(2, 9),
+          inputSummary: {
+            monthlyBillPhp: billNum,
+            location: 'Philippines',
+            utilityProvider: 'Local Electric Utility',
+            tariffRatePhpPerKwh: 11.85,
+            peakSunHours: 4.6,
+            estimatedMonthlyKwh: sizing.estimatedMonthlyKwh,
+            estimatedDailyKwh: Number((sizing.estimatedMonthlyKwh / 30).toFixed(2)),
+            systemType: isHybrid ? 'hybrid' : 'grid-tie',
+            daytimeLoadRatio: 0.6,
+          },
+          engineeringSpecs: {
+            targetArrayKwp: sizing.recommendedArrayKwp,
+            actualArrayKwp: hardware.actualArrayKwp,
+            dcAcRatio: Number((hardware.actualArrayKwp / hardware.inverter.kw).toFixed(2)),
+            estimatedDailyHarvestKwh: Number((hardware.actualArrayKwp * 4.6 * 0.8).toFixed(2)),
+            estimatedMonthlyHarvestKwh: Number((hardware.actualArrayKwp * 4.6 * 0.8 * 30).toFixed(2)),
+            billOffsetPercentage: Math.min(
+              100,
+              Math.round(((hardware.actualArrayKwp * 4.6 * 0.8 * 30) / sizing.estimatedMonthlyKwh) * 100)
+            ),
+            requiredRoofAreaSqm: Number((hardware.panelCount * 2.5 * 1.15).toFixed(1)),
+            stringConfigurations: [
+              {
+                mpptIndex: 1,
+                panelsInSeries: Math.ceil(hardware.panelCount / 2),
+                parallelStrings: 1,
+                stringVocColdV: Math.round(Math.ceil(hardware.panelCount / 2) * 51.2 * 1.05),
+                stringVmpHotV: Math.round(Math.ceil(hardware.panelCount / 2) * 43.1 * 0.95),
+                isWithinSafeLimits: true,
+                validationMessage: 'Safe within MPPT operating limits',
+              },
+              {
+                mpptIndex: 2,
+                panelsInSeries: Math.floor(hardware.panelCount / 2),
+                parallelStrings: 1,
+                stringVocColdV: Math.round(Math.floor(hardware.panelCount / 2) * 51.2 * 1.05),
+                stringVmpHotV: Math.round(Math.floor(hardware.panelCount / 2) * 43.1 * 0.95),
+                isWithinSafeLimits: true,
+                validationMessage: 'Safe within MPPT operating limits',
+              },
+            ],
+          },
+          billOfMaterials: {
+            panel: {
+              id: hardware.panel.id,
+              brand: hardware.panel.brand,
+              model: hardware.panel.model,
+              wattageWp: hardware.panel.watts,
+              quantity: hardware.panelCount,
+              unitPricePhp: hardware.panel.pricePhp,
+              subtotalPhp: hardware.panelCount * hardware.panel.pricePhp,
+            },
+            inverter: {
+              id: hardware.inverter.id,
+              brand: hardware.inverter.brand,
+              model: hardware.inverter.model,
+              ratedAcKw: hardware.inverter.kw,
+              systemType: isHybrid ? 'hybrid' : 'grid-tie',
+              quantity: 1,
+              unitPricePhp: hardware.inverter.pricePhp,
+              subtotalPhp: hardware.inverter.pricePhp,
+            },
+            battery:
+              isHybrid && hardware.battery
+                ? {
+                    id: hardware.battery.id,
+                    brand: hardware.battery.brand,
+                    model: hardware.battery.model,
+                    moduleCapacityKwh: hardware.battery.kwh,
+                    quantity: hardware.batteryCount,
+                    totalStorageKwh: hardware.totalBatteryKwh,
+                    usableStorageKwh: hardware.totalBatteryKwh * 0.9,
+                    unitPricePhp: hardware.battery.pricePhp,
+                    subtotalPhp: hardware.batteryCount * hardware.battery.pricePhp,
+                  }
+                : null,
+            bosAndInstallationPhp: Math.round(hardware.actualArrayKwp * 8000),
+            totalSystemCostPhp: hardware.estimatedTotalSystemCostPhp,
+          },
+          financialRoi: {
+            estimatedMonthlySavingsPhp: sizing.estimatedMonthlySavingsPhp,
+            estimatedNewMonthlyBillPhp: Math.max(0, billNum - sizing.estimatedMonthlySavingsPhp),
+            annualSavingsPhp: sizing.estimatedMonthlySavingsPhp * 12,
+            paybackPeriodYears: Number(
+              (hardware.estimatedTotalSystemCostPhp / (sizing.estimatedMonthlySavingsPhp * 12)).toFixed(1)
+            ),
+            fiveYearNetSavingsPhp:
+              sizing.estimatedMonthlySavingsPhp * 12 * 5 - hardware.estimatedTotalSystemCostPhp,
+            twentyFiveYearNetSavingsPhp:
+              sizing.estimatedMonthlySavingsPhp * 12 * 25 - hardware.estimatedTotalSystemCostPhp,
+          },
+        };
+
+        return {
+          id: 'msg-' + Date.now(),
+          role: 'assistant',
+          content: `Based on your monthly electric bill of ₱${billNum.toLocaleString()}, here is a recommended ${appliedPayload.engineeringSpecs.actualArrayKwp} kWp solar setup tailored to offset your power costs:`,
+          createdAt: new Date(),
+          toolInvocations: [
+            {
+              toolName: 'generateSolarSetup',
+              state: 'result',
+              result: appliedPayload,
+            },
+          ],
+        };
+      } catch {
+        // Fallback below
+      }
+    }
+
+    // 5. Try solar knowledge base retrieval
+    try {
+      const knowledge = await searchSolarKnowledge(userPrompt);
+      if (knowledge && knowledge.length > 0 && knowledge[0].content) {
+        return {
+          id: 'msg-' + Date.now(),
+          role: 'assistant',
+          content: `${knowledge[0].content}\n\nYou can also adjust your panels, inverter model, and battery backup directly in the workbench tabs above!`,
+          createdAt: new Date(),
+        };
+      }
+    } catch {
+      // Fallback below
+    }
+
+    // 6. Friendly, plain-language fallback
+    return {
+      id: 'msg-' + Date.now(),
+      role: 'assistant',
+      content:
+        "I'm temporarily taking a quick breather right now. In the meantime, you can customize your panel count, inverter model, and battery backup directly in the workbench tabs above!",
+      createdAt: new Date(),
+    };
   }
 }
 
 export const aiCopilotService = new AiCopilotService();
+

@@ -46,7 +46,8 @@ IMPORTANT: An accurate ROI and Payback period can only be calculated when the to
 5. NATURAL LANGUAGE EXTRACTION: You natively understand natural human phrasing, typos, shorthand (e.g., "7k bill", "7000 bill, I want deye inverter", "₱12,500/mo", "around 8 thousand pesos"), and hardware requests (e.g., "I want a Deye inverter", "use Canadian Solar panels", "add battery for brownouts").
 6. If the user asks for a brand that is typically a hybrid inverter (like Deye) or mentions brownouts/batteries, set \`systemType\` to "hybrid".
 7. If the user has NOT provided a monthly bill, kWh consumption, or target kW size yet (and none exists in Current Project Context), politely ask them for their average monthly electric bill (in PHP) and location.
-8. Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
+8. PLAIN-LANGUAGE COMMUNICATION: You speak directly to everyday homeowners, electricians, and tradespeople. NEVER mention software architecture, APIs, keys, code variables, database schemas, or technical system bugs. Explain solar concepts clearly and simply using real-world analogies so anyone can easily understand.
+Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
       messages: sanitizedMessages,
       stopWhen: isStepCount(5),
       tools: {

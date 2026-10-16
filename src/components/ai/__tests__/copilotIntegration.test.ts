@@ -175,6 +175,28 @@ describe('AI Copilot Tool-Calling & Deterministic PV Sizing Engine', () => {
     });
   });
 
+  describe('Plain-Language Communication & Fallback', () => {
+    it('answers single-string panel limits in plain language without technical jargon', async () => {
+      const response = await aiCopilotService.getFriendlyFallbackResponse(
+        "Why can't I put all 16 of these 580W panels into a single string?"
+      );
+
+      expect(response.content).not.toContain('VITE_GOOGLE_GENERATIVE_AI_API_KEY');
+      expect(response.content).not.toContain('.env.local');
+      expect(response.content).not.toContain('API key');
+      expect(response.content.toLowerCase()).toContain('inverter');
+      expect(response.content.toLowerCase()).toContain('string');
+      expect(response.content.toLowerCase()).toContain('voltage');
+    });
+
+    it('returns a polite non-technical message for general queries when offline', async () => {
+      const response = await aiCopilotService.getFriendlyFallbackResponse('random question here');
+      expect(response.content).not.toContain('API key');
+      expect(response.content).not.toContain('VITE_');
+      expect(response.content).not.toContain('error');
+    });
+  });
+
   describe('Zero Regex Verification', () => {
     it('verifies that regex bill extraction has been eliminated from the service', () => {
       expect((aiCopilotService as any).extractBillAmount).toBeUndefined();
