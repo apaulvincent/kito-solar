@@ -17,6 +17,7 @@ export interface CopilotMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   createdAt: Date;
+  engine?: 'gemini-2.5-flash' | 'deterministic-engine';
   toolInvocations?: Array<{
     toolName: 'generateSolarSetupFromBill' | 'modifyExistingProjectSetup' | 'searchSolarKnowledgeBase';
     state: 'result';
@@ -25,6 +26,16 @@ export interface CopilotMessage {
 }
 
 export class AiCopilotService {
+  /**
+   * Returns active engine mode based on environment availability
+   */
+  getActiveEngineName(): string {
+    const hasClientKey = Boolean(
+      (typeof import.meta !== 'undefined' && (import.meta.env?.VITE_GEMINI_API_KEY || import.meta.env?.GOOGLE_GENERATIVE_AI_API_KEY))
+    );
+    return hasClientKey ? 'Gemini 2.5 Flash (Live AI)' : 'Deterministic Tool Engine (Grounded Safe Mode)';
+  }
+
   /**
    * Process a user message. Attempts to call the serverless endpoint first.
    * If the endpoint fails (e.g. offline, Vite dev server, or no API key provided),
@@ -37,7 +48,7 @@ export class AiCopilotService {
     const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
     const userPrompt = lastUserMessage?.content || '';
 
-    // Attempt Serverless API
+    // 1. Attempt Serverless API (on Vercel or full backend)
     try {
       const response = await fetch('/api/ai/solar-copilot', {
         method: 'POST',
@@ -50,21 +61,21 @@ export class AiCopilotService {
 
       if (response.ok) {
         const text = await response.text();
-        if (text && text.trim().length > 0) {
-          // If the server returned an AI response stream or text
+        if (text && text.trim().length > 0 && !text.includes('GOOGLE_GENERATIVE_AI_API_KEY is not configured')) {
           return {
             id: 'msg-' + Date.now(),
             role: 'assistant',
             content: text,
+            engine: 'gemini-2.5-flash',
             createdAt: new Date(),
           };
         }
       }
     } catch {
-      // Serverless API not available or errored, proceed to deterministic fallback
+      // Serverless API not reachable, proceed to client handling
     }
 
-    // Deterministic Client Engine Fallback
+    // 2. Deterministic Client PV Sizing Engine Fallback
     return this.processDeterministicFallback(userPrompt, messages, projectId);
   }
 
@@ -78,12 +89,15 @@ export class AiCopilotService {
     // Check for "What-If" modifications / overrides on previous setup
     const isOverride =
       promptLower.includes('what if') ||
+      promptLower.includes('how about') ||
+      promptLower.includes('what about') ||
       promptLower.includes('change') ||
       promptLower.includes('override') ||
       promptLower.includes('drop') ||
       promptLower.includes('keep') ||
       promptLower.includes('reduce') ||
-      promptLower.includes('increase');
+      promptLower.includes('increase') ||
+      promptLower.includes('switch to');
 
     // Find previous proposal if any
     const previousProposal = history
@@ -92,8 +106,56 @@ export class AiCopilotService {
       .find((m) => m.toolInvocations?.[0]?.result && 'engineeringSpecs' in m.toolInvocations[0].result)
       ?.toolInvocations?.[0]?.result as ProjectSizingResult | undefined;
 
-    if (isOverride && previousProposal) {
-      return this.handleOverrideQuery(userPrompt, previousProposal, projectId);
+    // Check for requested brands (e.g. Deye, Solis, Growatt, Huawei)
+    let preferredInverterBrand: string | undefined = undefined;
+    if (promptLower.includes('deye')) preferredInverterBrand = 'Deye';
+    else if (promptLower.includes('growatt')) preferredInverterBrand = 'Growatt';
+    else if (promptLower.includes('solis')) preferredInverterBrand = 'Solis';
+    else if (promptLower.includes('huawei')) preferredInverterBrand = 'Huawei';
+
+    // Extract bill amount (e.g., ₱12,000, 12000, 15k, 8,000)
+    // Ignore equipment ratings like 8kW, 5kWh, 580W, 500V
+    let extractedBill: number | null = null;
+
+    // 1. Explicit currency symbol or bill keyword match
+    const currencyMatch =
+      userPrompt.match(/(?:₱|php|pesos?)\s*([\d,]+(?:\.\d+)?)(?:\s*(k)\b(?!w|wh))?/i) ||
+      userPrompt.match(/(?:bill|spend|paying)\s*(?:is|around|of|about)?\s*([\d,]+(?:\.\d+)?)(?:\s*(k)\b(?!w|wh))?/i) ||
+      userPrompt.match(/([\d,]+(?:\.\d+)?)\s*(k)\b(?!w|wh)/i);
+
+    if (currencyMatch) {
+      let rawNumber = currencyMatch[1].replace(/,/g, '');
+      let parsed = parseFloat(rawNumber);
+      if (currencyMatch[2] || userPrompt.toLowerCase().includes(rawNumber + 'k')) {
+        // Ensure not 'kw' or 'kwh'
+        const idx = userPrompt.toLowerCase().indexOf(rawNumber + 'k');
+        if (idx >= 0 && !userPrompt.toLowerCase().slice(idx).match(new RegExp(`^${rawNumber}k(w|wh)`))) {
+          parsed *= 1000;
+        }
+      }
+      if (parsed >= 500) {
+        extractedBill = parsed;
+      }
+    } else {
+      // 2. Standalone number >= 1000 that is NOT followed by electrical units or 'panels'
+      const standaloneMatches = [...userPrompt.matchAll(/\b([\d,]{4,})\b(?!\s*(?:k?w|k?wh|v|a|panels?|modules?|deg|c\b))/gi)];
+      for (const m of standaloneMatches) {
+        const val = parseFloat(m[1].replace(/,/g, ''));
+        if (val >= 1000) {
+          extractedBill = val;
+          break;
+        }
+      }
+    }
+
+    // If there is an existing proposal and user asks an override without changing bill amount
+    if (isOverride && previousProposal && !extractedBill) {
+      return this.handleOverrideQuery(userPrompt, previousProposal, projectId, preferredInverterBrand);
+    }
+
+    // If user provides a bill amount (or "how about 7000 but I want Deye")
+    if (extractedBill) {
+      return this.handleBillSizingQuery(userPrompt, extractedBill, projectId, preferredInverterBrand);
     }
 
     // Check for technical / RAG questions (e.g. Voc, MPPT, single string, net metering)
@@ -107,24 +169,6 @@ export class AiCopilotService {
       promptLower.includes('brownout') ||
       promptLower.includes('voltage');
 
-    // Extract bill amount (e.g., ₱12,000, 12000, 15k, 8,000)
-    const billMatch = userPrompt.match(/(?:₱|php|pesos?)?\s*([\d,]+(?:\.\d+)?)\s*(?:k\b|\/mo|per month|monthly)?/i);
-    let extractedBill: number | null = null;
-    if (billMatch) {
-      let rawNumber = billMatch[1].replace(/,/g, '');
-      let parsed = parseFloat(rawNumber);
-      if (userPrompt.toLowerCase().includes(rawNumber + 'k')) {
-        parsed *= 1000;
-      }
-      if (parsed >= 500) {
-        extractedBill = parsed;
-      }
-    }
-
-    if (extractedBill) {
-      return this.handleBillSizingQuery(userPrompt, extractedBill, projectId);
-    }
-
     if (isTechnicalQuestion) {
       return this.handleKnowledgeQuery(userPrompt);
     }
@@ -133,6 +177,7 @@ export class AiCopilotService {
     return {
       id: 'msg-' + Date.now(),
       role: 'assistant',
+      engine: 'deterministic-engine',
       content:
         "To size your solar system accurately, please share your **average monthly electric bill** (e.g., *₱12,000/month*) and your **location** in the Philippines. Let me know if you would like **Grid-Tie** (daytime savings only) or **Hybrid** with battery storage for brownout backup.",
       createdAt: new Date(),
@@ -142,7 +187,8 @@ export class AiCopilotService {
   private handleBillSizingQuery(
     prompt: string,
     bill: number,
-    projectId?: string | null
+    projectId?: string | null,
+    preferredInverterBrand?: string
   ): CopilotMessage {
     const promptLower = prompt.toLowerCase();
 
@@ -182,11 +228,12 @@ export class AiCopilotService {
       location,
       systemType,
       budgetTier,
+      preferredInverterBrand,
     });
 
     const isHybrid = systemType === 'hybrid';
     const batteryText = isHybrid && result.billOfMaterials.battery
-      ? ` and **${result.billOfMaterials.battery.totalStorageKwh} kWh LiFePO4 battery bank** (${result.billOfMaterials.battery.quantity}x ${result.billOfMaterials.battery.brand} ${result.billOfMaterials.battery.model})`
+      ? ` and **${result.billOfMaterials.battery.totalStorageKwh} kWh LiFePO4 battery storage** (${result.billOfMaterials.battery.quantity}x ${result.billOfMaterials.battery.brand} ${result.billOfMaterials.battery.model})`
       : '';
 
     const content = `Based on your **₱${bill.toLocaleString()}** monthly bill in ${location}, I sized a **${result.engineeringSpecs.actualArrayKwp} kWp ${systemType.toUpperCase()} Solar System** designed to offset approximately **${result.engineeringSpecs.billOffsetPercentage}%** of your monthly utility consumption.
@@ -203,11 +250,12 @@ export class AiCopilotService {
 - **Total Turnkey Investment:** ₱${result.billOfMaterials.totalSystemCostPhp.toLocaleString()}
 - **Estimated Payback Period:** **${result.financialRoi.paybackPeriodYears} years** (25-year net savings: ₱${result.financialRoi.twentyFiveYearNetSavingsPhp.toLocaleString()})
 
-Click **Apply Setup to Calculator** below to load this full single-line schematic, protection schedules, and 3D diagram into your workbench.`;
+Click **Load Setup into 3D Workbench** below to synchronize this equipment and layout into your interactive canvas.`;
 
     return {
       id: 'msg-' + Date.now(),
       role: 'assistant',
+      engine: 'deterministic-engine',
       content,
       createdAt: new Date(),
       toolInvocations: [
@@ -223,7 +271,8 @@ Click **Apply Setup to Calculator** below to load this full single-line schemati
   private handleOverrideQuery(
     prompt: string,
     previous: ProjectSizingResult,
-    projectId?: string | null
+    projectId?: string | null,
+    preferredInverterBrand?: string
   ): CopilotMessage {
     const promptLower = prompt.toLowerCase();
 
@@ -247,20 +296,22 @@ Click **Apply Setup to Calculator** below to load this full single-line schemati
       overridePanelCount,
       overrideInverterKw,
       overrideBatteryKwh,
+      preferredInverterBrand,
     });
 
     const content = `Adjusted your solar setup to match your custom parameters:
 - **PV Array:** ${modified.billOfMaterials.panel.quantity} panels (${modified.engineeringSpecs.actualArrayKwp} kWp)
-- **Inverter Rating:** ${modified.billOfMaterials.inverter.ratedAcKw} kW AC (${modified.billOfMaterials.inverter.model})
-- **Battery Storage:** ${modified.billOfMaterials.battery ? `${modified.billOfMaterials.battery.totalStorageKwh} kWh` : 'None (Grid-Tie)'}
+- **Inverter Unit:** ${modified.billOfMaterials.inverter.brand} ${modified.billOfMaterials.inverter.model} (${modified.billOfMaterials.inverter.ratedAcKw} kW AC)
+- **Battery Storage:** ${modified.billOfMaterials.battery ? `${modified.billOfMaterials.battery.totalStorageKwh} kWh LiFePO4` : 'None (Grid-Tie)'}
 - **Adjusted System Investment:** ₱${modified.billOfMaterials.totalSystemCostPhp.toLocaleString()}
 - **New Payback Period:** ${modified.financialRoi.paybackPeriodYears} years (Est. Monthly Savings: ₱${modified.financialRoi.estimatedMonthlySavingsPhp.toLocaleString()})
 
-The MPPT string configuration check passed safely. Click **Apply Setup to Calculator** to update your active project.`;
+The MPPT string configuration check passed safely. Click **Load Setup into 3D Workbench** below to synchronize the updated hardware.`;
 
     return {
       id: 'msg-' + Date.now(),
       role: 'assistant',
+      engine: 'deterministic-engine',
       content,
       createdAt: new Date(),
       toolInvocations: [
@@ -287,6 +338,7 @@ The MPPT string configuration check passed safely. Click **Apply Setup to Calcul
     return {
       id: 'msg-' + Date.now(),
       role: 'assistant',
+      engine: 'deterministic-engine',
       content: answer,
       createdAt: new Date(),
       toolInvocations: [

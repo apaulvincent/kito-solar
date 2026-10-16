@@ -160,6 +160,7 @@ export interface GenerateSolarSetupParams {
   daytimeLoadRatio?: number;
   targetOffsetRatio?: number;
   budgetTier?: BudgetTier;
+  preferredInverterBrand?: string;
 }
 
 export interface ModifySolarSetupParams {
@@ -171,4 +172,5 @@ export interface ModifySolarSetupParams {
   overrideInverterKw?: number;
   overrideBatteryKwh?: number;
   budgetTier?: BudgetTier;
+  preferredInverterBrand?: string;
 }

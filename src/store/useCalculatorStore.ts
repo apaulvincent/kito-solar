@@ -294,30 +294,47 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   applySizingProposal: (proposal) => {
     const state = get();
 
-    // 1. Match inverter from catalog by model, brand, or rated capacity
+    // 1. Match inverter from catalog by exact model, normalized model, brand + kW, or system type
     const propInv = proposal.billOfMaterials.inverter;
     const isHybridProp = propInv.systemType !== 'grid-tie';
+    const propModelClean = propInv.model.toLowerCase().replace(/[^a-z0-9]/g, '');
+
     const matchedInverter =
+      // Exact model match
       state.inverters.find((i) => i.model.toLowerCase() === propInv.model.toLowerCase()) ||
+      // Normalized alphanumeric match
+      state.inverters.find((i) => i.model.toLowerCase().replace(/[^a-z0-9]/g, '') === propModelClean) ||
+      // Substring match
+      state.inverters.find((i) => {
+        const iModelClean = i.model.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return iModelClean.includes(propModelClean) || propModelClean.includes(iModelClean);
+      }) ||
+      // Matching brand + capacity
+      state.inverters.find((i) => {
+        const matchesBrand = i.brand.toLowerCase() === propInv.brand.toLowerCase();
+        const acW = typeof i.rated_ac_power_w === 'number' ? i.rated_ac_power_w : parseFloat(String(i.rated_ac_power_w)) || 0;
+        const matchesKw = Math.abs(acW / 1000 - propInv.ratedAcKw) <= 1.0;
+        const isHybridInv = Boolean(i.battery_type && i.battery_type.toLowerCase() !== 'none');
+        return matchesBrand && matchesKw && (isHybridProp ? isHybridInv : !isHybridInv);
+      }) ||
+      // Matching brand + system type
       state.inverters.find((i) => {
         const matchesBrand = i.brand.toLowerCase() === propInv.brand.toLowerCase();
         const isHybridInv = Boolean(i.battery_type && i.battery_type.toLowerCase() !== 'none');
         return matchesBrand && (isHybridProp ? isHybridInv : !isHybridInv);
       }) ||
-      state.inverters.find((i) => {
-        const acW = typeof i.rated_ac_power_w === 'number' ? i.rated_ac_power_w : parseFloat(String(i.rated_ac_power_w)) || 0;
-        return Math.abs(acW / 1000 - propInv.ratedAcKw) <= 1.5;
-      }) ||
       state.selectedInverter;
 
     // 2. Match module from catalog
     const propPanel = proposal.billOfMaterials.panel;
+    const propPanelClean = propPanel.model.toLowerCase().replace(/[^a-z0-9]/g, '');
+
     const matchedModule =
       state.modules.find((m) => m.model.toLowerCase() === propPanel.model.toLowerCase()) ||
-      state.modules.find((m) => m.brand.toLowerCase() === propPanel.brand.toLowerCase()) ||
+      state.modules.find((m) => m.model.toLowerCase().replace(/[^a-z0-9]/g, '').includes(propPanelClean)) ||
       state.modules.find((m) => {
         const mW = typeof m.pv_wattage_w === 'number' ? m.pv_wattage_w : parseFloat(String(m.pv_wattage_w)) || 0;
-        return Math.abs(mW - propPanel.wattageWp) <= 60;
+        return Math.abs(mW - propPanel.wattageWp) <= 30;
       }) ||
       state.selectedModule;
 
@@ -326,12 +343,25 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
     let batteryCount = 1;
     if (proposal.billOfMaterials.battery && propInv.systemType !== 'grid-tie') {
       const propBat = proposal.billOfMaterials.battery;
-      batteryCount = Math.max(1, propBat.quantity || 1);
-      matchedBattery =
-        state.batteries.find((b) => b.model.toLowerCase().includes(propBat.model.toLowerCase())) ||
-        state.batteries.find((b) => b.model.toLowerCase().includes(propBat.brand.toLowerCase())) ||
-        state.batteries[0] ||
-        state.selectedBattery;
+      const targetStorage = propBat.totalStorageKwh;
+      if (targetStorage >= 14) {
+        matchedBattery =
+          state.batteries.find((b) => b.model === '51.2V-300 Ah') ||
+          state.batteries.find((b) => b.model === '51.2V-200 Ah') ||
+          state.batteries[0];
+        batteryCount = 1;
+      } else if (targetStorage >= 9) {
+        matchedBattery =
+          state.batteries.find((b) => b.model === '51.2V-200 Ah') ||
+          state.batteries.find((b) => b.model === '51.2V-100 Ah') ||
+          state.batteries[0];
+        batteryCount = 1;
+      } else {
+        matchedBattery =
+          state.batteries.find((b) => b.model === '51.2V-100 Ah') ||
+          state.batteries[0];
+        batteryCount = 1;
+      }
     }
 
     const panelCountOverride = proposal.billOfMaterials.panel.quantity;

@@ -82,7 +82,7 @@ export const SEED_CATALOG_PANELS: CatalogPanelRecord[] = [
   {
     id: 'panel-jinko-580w',
     brand: 'Jinko Solar',
-    model: 'Tiger Neo N-Type 580W',
+    model: 'JKM580N-72HL4',
     wattage_wp: 580,
     voc_v: 51.2,
     vmp_v: 43.1,
@@ -99,7 +99,7 @@ export const SEED_CATALOG_PANELS: CatalogPanelRecord[] = [
   {
     id: 'panel-canadian-550w',
     brand: 'Canadian Solar',
-    model: 'HiKu6 Mono PERC 550W',
+    model: 'CS6W-550MS',
     wattage_wp: 550,
     voc_v: 49.6,
     vmp_v: 41.7,
@@ -116,8 +116,8 @@ export const SEED_CATALOG_PANELS: CatalogPanelRecord[] = [
   {
     id: 'panel-longi-600w',
     brand: 'LONGi Solar',
-    model: 'Hi-MO 6 Explorer 600W',
-    wattage_wp: 600,
+    model: 'Hi-MO 5 570-590W',
+    wattage_wp: 590,
     voc_v: 52.4,
     vmp_v: 44.3,
     isc_a: 14.45,
@@ -174,7 +174,7 @@ export const SEED_CATALOG_INVERTERS: CatalogInverterRecord[] = [
   {
     id: 'inv-deye-5k-hybrid',
     brand: 'Deye',
-    model: 'SUN-5K-SG03LP1-EU',
+    model: 'SUN-5K-SG05LP1-EU',
     system_type: 'hybrid',
     rated_ac_kw: 5.0,
     max_dc_input_kw: 6.5,

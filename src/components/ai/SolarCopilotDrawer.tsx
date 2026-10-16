@@ -132,9 +132,12 @@ export const SolarCopilotDrawer: React.FC = () => {
                     Online
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                  {activeProjectName ? `Sync: ${activeProjectName}` : 'RAG Catalog & PEC 6.90 Grounded'}
-                </p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="inline-flex items-center gap-1 text-[9px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full ring-1 ring-emerald-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    {aiCopilotService.getActiveEngineName()}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -187,6 +190,16 @@ export const SolarCopilotDrawer: React.FC = () => {
                     >
                       {message.content}
                     </div>
+
+                    {!isUser && message.engine && (
+                      <div className="flex items-center gap-1.5 px-1">
+                        <span className="text-[9px] font-mono font-medium text-slate-400 dark:text-slate-500">
+                          {message.engine === 'gemini-2.5-flash'
+                            ? '⚡ Powered by Gemini 2.5 Flash'
+                            : '⚙️ Powered by Deterministic PV Engine'}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Generative UI Proposal Card */}
                     {proposalResult && proposalResult.engineeringSpecs && (

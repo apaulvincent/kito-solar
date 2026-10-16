@@ -171,13 +171,22 @@ export function selectInverter(
   targetAcKw: number,
   systemType: 'grid-tie' | 'hybrid' | 'off-grid',
   tier = 'standard',
-  inverters: CatalogInverterRecord[] = SEED_CATALOG_INVERTERS
+  inverters: CatalogInverterRecord[] = SEED_CATALOG_INVERTERS,
+  preferredBrand?: string
 ): CatalogInverterRecord {
   // Filter by system type (or allow hybrid for off-grid if specified)
   const typeFilter =
     systemType === 'off-grid' ? (i: CatalogInverterRecord) => i.system_type === 'hybrid' : (i: CatalogInverterRecord) => i.system_type === systemType;
 
-  const compatible = inverters.filter(typeFilter).filter((i) => i.in_stock);
+  let compatible = inverters.filter(typeFilter).filter((i) => i.in_stock);
+
+  if (preferredBrand) {
+    const brandLower = preferredBrand.toLowerCase();
+    const brandMatches = compatible.filter((i) => i.brand.toLowerCase().includes(brandLower));
+    if (brandMatches.length > 0) {
+      compatible = brandMatches;
+    }
+  }
 
   if (compatible.length === 0) {
     return inverters[0];
@@ -254,7 +263,8 @@ export function computeAndMatchSolarSystem(
     targetInverterKw,
     systemType,
     budgetTier,
-    options?.invertersCatalog || SEED_CATALOG_INVERTERS
+    options?.invertersCatalog || SEED_CATALOG_INVERTERS,
+    params.preferredInverterBrand
   );
   const dcAcRatio = Number((actualArrayKwp / inverter.rated_ac_kw).toFixed(2));
 
@@ -415,10 +425,11 @@ export function recalculateWithOverrides(
   if (params.overrideInverterKw) {
     const matched = inverters
       .filter((i) => (params.systemType === 'off-grid' ? i.system_type === 'hybrid' : i.system_type === params.systemType))
+      .filter((i) => !params.preferredInverterBrand || i.brand.toLowerCase().includes(params.preferredInverterBrand.toLowerCase()))
       .find((i) => Math.abs(i.rated_ac_kw - (params.overrideInverterKw || 0)) <= 1.0);
-    inverter = matched || selectInverter(params.overrideInverterKw, params.systemType, params.budgetTier, inverters);
+    inverter = matched || selectInverter(params.overrideInverterKw, params.systemType, params.budgetTier, inverters, params.preferredInverterBrand);
   } else {
-    inverter = selectInverter(actualArrayKwp / TARGET_DC_AC_RATIO, params.systemType, params.budgetTier, inverters);
+    inverter = selectInverter(actualArrayKwp / TARGET_DC_AC_RATIO, params.systemType, params.budgetTier, inverters, params.preferredInverterBrand);
   }
 
   // Battery

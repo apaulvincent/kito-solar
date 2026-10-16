@@ -24,7 +24,7 @@ describe('AI Copilot Studio Integration', () => {
 
     const state = useCalculatorStore.getState();
     expect(state.panelCountOverride).toBe(proposal.billOfMaterials.panel.quantity);
-    expect(state.selectedModule.wattage_wp || state.selectedModule.pv_wattage_w).toBeDefined();
+    expect(state.selectedModule.pv_wattage_w).toBeDefined();
     expect(state.calculationResult).toBeDefined();
     expect(state.lastAppliedProposal).toEqual(proposal);
   });
@@ -71,8 +71,8 @@ describe('AI Copilot Studio Integration', () => {
         createdAt: new Date(),
         toolInvocations: [
           {
-            toolName: 'generateSolarSetupFromBill',
-            state: 'result',
+            toolName: 'generateSolarSetupFromBill' as const,
+            state: 'result' as const,
             result: proposal,
           },
         ],
@@ -92,5 +92,31 @@ describe('AI Copilot Studio Integration', () => {
     const modified = reply.toolInvocations?.[0].result as any;
     expect(modified.billOfMaterials.panel.quantity).toBe(10);
     expect(modified.billOfMaterials.inverter.ratedAcKw).toBe(8);
+  });
+
+  it('accurately parses brand preference and applies Deye hybrid inverter to workbench', async () => {
+    const messages = [
+      {
+        id: '1',
+        role: 'user' as const,
+        content: 'how about 7000 but I want Deye Hybrid Inverter',
+        createdAt: new Date(),
+      },
+    ];
+
+    const reply = await aiCopilotService.sendMessage(messages);
+    expect(reply.role).toBe('assistant');
+    const result = reply.toolInvocations?.[0].result as any;
+    expect(result).toBeDefined();
+    expect(result.billOfMaterials.inverter.brand).toBe('Deye');
+    expect(result.billOfMaterials.inverter.model).toBe('SUN-5K-SG05LP1-EU');
+
+    // Now apply to calculator
+    useCalculatorStore.getState().applySizingProposal(result);
+
+    const state = useCalculatorStore.getState();
+    expect(state.selectedInverter.brand.toUpperCase()).toBe('DEYE');
+    expect(state.selectedInverter.model).toBe('SUN-5K-SG05LP1-EU');
+    expect(state.panelCountOverride).toBe(result.billOfMaterials.panel.quantity);
   });
 });
