@@ -3,7 +3,14 @@
 .env.local
 .env.*.local
 *.env
+*.env.*
 !*.env.example
+*.pem
+*.key
+*.cert
+*.pfx
+credentials.json
+secrets.json
 
 # Private documentation & resources
 _docs/

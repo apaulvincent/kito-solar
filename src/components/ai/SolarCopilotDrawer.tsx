@@ -36,7 +36,7 @@ export const SolarCopilotDrawer: React.FC = () => {
       id: 'welcome',
       role: 'assistant',
       content:
-        "Hi! I'm Jenny, your solar assistant. Enter your **monthly electric bill** (in ₱) and **location**, and I'll size a complete setup for you—including panels, inverter, and battery backup.",
+        "Hi! I'm Jenny, your solar assistant. Enter your **monthly electric bill** (in ₱) and **location**, and I'll size a complete setup for you (including panels, inverter, and battery backup).",
       createdAt: new Date(),
     },
   ]);

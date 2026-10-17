@@ -440,7 +440,7 @@ Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
         id: 'msg-' + Date.now(),
         role: 'assistant',
         content:
-          "A grid-tie system connects directly to the power grid with no batteries—it saves you money during the day, but shuts off automatically during blackouts for safety. A hybrid system includes batteries and an automatic transfer switch (ATS), keeping your essential lights, fans, and refrigerator running smoothly even during power outages.",
+          "A grid-tie system connects directly to the power grid with no batteries. It saves you money during the day, but shuts off automatically during blackouts for safety. A hybrid system includes batteries and an automatic transfer switch (ATS), keeping your essential lights, fans, and refrigerator running smoothly even during power outages.",
         createdAt: new Date(),
       };
     }
