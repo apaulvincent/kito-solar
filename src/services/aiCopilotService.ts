@@ -12,6 +12,8 @@ export interface CopilotMessage {
   content: string;
   createdAt: Date;
   engine?: 'gemini-3.5-flash' | 'gemini-3.5-flash-lite' | 'gemini-2.5-flash' | 'gemini-flash';
+  rateLimited?: boolean;
+  retryAfter?: number;
   toolInvocations?: Array<{
     toolName: 'generateSolarSetup' | 'generateSolarSetupFromBill' | 'modifyExistingProjectSetup' | 'searchHardwareKnowledgeBase' | 'searchSolarKnowledgeBase';
     state: 'result';
@@ -61,7 +63,6 @@ export class AiCopilotService {
     projectId?: string | null,
     currentProjectState?: unknown
   ): Promise<CopilotMessage> {
-    // 1. Attempt backend Serverless API (/api/chat) if available
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -72,6 +73,44 @@ export class AiCopilotService {
           currentProjectState,
         }),
       });
+
+      if (response.status === 429) {
+        const data = await response.json().catch(() => ({}));
+        const retryAfterHeader = response.headers.get('Retry-After');
+        const retryAfter = Number(data.retryAfter || (retryAfterHeader ? parseInt(retryAfterHeader, 10) : 60));
+        const reason =
+          data.error ||
+          `You have reached the message limit. Please wait ${retryAfter} seconds before sending another query.`;
+        return {
+          id: 'msg-' + Date.now(),
+          role: 'assistant',
+          content: reason,
+          rateLimited: true,
+          retryAfter,
+          createdAt: new Date(),
+        };
+      }
+
+      if (response.status === 403) {
+        return {
+          id: 'msg-' + Date.now(),
+          role: 'assistant',
+          content: 'Access verification failed. Please access Jenny directly from the official Kito Solar application.',
+          createdAt: new Date(),
+        };
+      }
+
+      if (response.status === 503) {
+        const data = await response.json().catch(() => ({}));
+        return {
+          id: 'msg-' + Date.now(),
+          role: 'assistant',
+          content:
+            data.error ||
+            'The solar sizing engine is currently experiencing high load. Please wait a moment and try again.',
+          createdAt: new Date(),
+        };
+      }
 
       if (response.ok) {
         const contentType = response.headers.get('content-type') || '';
@@ -101,10 +140,9 @@ export class AiCopilotService {
         }
       }
     } catch {
-      // Backend route unreachable (e.g. running in client-side Vite dev), fallback to client-side LLM call
+      // Fallback to client SDK if the serverless endpoint is unreachable.
     }
 
-    // 2. Direct client-side LLM Agent execution via Google GenAI SDK & Vercel AI SDK
     const apiKey = this.getApiKey();
 
     if (!apiKey) {
@@ -185,7 +223,6 @@ Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
                 .describe('Whether to include LiFePO4 battery storage in the configuration.'),
             }),
             execute: async (params) => {
-              // 1. Run deterministic math engine
               const sizingResult: SizingOutput = calculatePvSystem({
                 monthlyBillPhp: params.monthlyBillPhp,
                 monthlyKwh: params.monthlyKwh,
@@ -195,7 +232,6 @@ Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
                 includeBatteryBackup: params.includeBatteryBackup,
               });
 
-              // 2. Query hardware catalog with brand filters
               const hardwareMatch = await matchHardwareCatalog({
                 targetKwp: sizingResult.recommendedArrayKwp,
                 targetInverterKw: sizingResult.recommendedInverterKw,
@@ -205,7 +241,6 @@ Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
                 preferredPanelBrand: params.preferredPanelBrand,
               });
 
-              // 3. Return structured payload for both Frontend UI state sync & LLM explanation
               appliedPayload = {
                 action: 'APPLY_SOLAR_SETUP',
                 projectId: projectId || 'proj-ai-' + Date.now(),
@@ -370,7 +405,6 @@ Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
   async getFriendlyFallbackResponse(userPrompt: string): Promise<CopilotMessage> {
     const promptLower = (userPrompt || '').toLowerCase().trim();
 
-    // 1. Greetings & introduction
     if (/^(hi|hello|hey|good day|morning|afternoon|evening|who are you)\b/i.test(promptLower)) {
       return {
         id: 'msg-' + Date.now(),
@@ -381,7 +415,6 @@ Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
       };
     }
 
-    // 2. Questions about putting all panels in a single string / string voltage limits
     if (
       promptLower.includes('single string') ||
       promptLower.includes('one string') ||
@@ -402,13 +435,12 @@ Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
       };
     }
 
-    // 3. Questions about Hybrid vs Grid-Tie or Batteries
     if (promptLower.includes('hybrid') && promptLower.includes('grid')) {
       return {
         id: 'msg-' + Date.now(),
         role: 'assistant',
         content:
-          "A grid-tie system connects directly to the power grid with no batteries—it saves you money during the day, but shuts off automatically during blackouts for safety. A hybrid system includes batteries and an automatic transfer switch (ATS), keeping your essential lights, fans, and refrigerator running smoothly even during power outages.",
+          "A grid-tie system connects directly to the power grid with no batteries. It saves you money during the day, but shuts off automatically during blackouts for safety. A hybrid system includes batteries and an automatic transfer switch (ATS), keeping your essential lights, fans, and refrigerator running smoothly even during power outages.",
         createdAt: new Date(),
       };
     }
@@ -423,7 +455,6 @@ Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
       };
     }
 
-    // 4. Check if user provided an electricity bill amount
     const billMatch = promptLower.match(/(?:bill|spend|paying|around|php|₱)?\s*([1-9]\d{0,2}(?:,\d{3})+|[1-9]\d{2,6})\s*(?:k|thousand|pesos|php)?/);
     let billNum: number | null = null;
     if (billMatch) {
@@ -564,11 +595,9 @@ Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
           ],
         };
       } catch {
-        // Fallback below
       }
     }
 
-    // 5. Try solar knowledge base retrieval
     try {
       const knowledge = await searchSolarKnowledge(userPrompt);
       if (knowledge && knowledge.length > 0 && knowledge[0].content) {
@@ -580,10 +609,8 @@ Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`,
         };
       }
     } catch {
-      // Fallback below
     }
 
-    // 6. Friendly, plain-language fallback
     return {
       id: 'msg-' + Date.now(),
       role: 'assistant',

@@ -14,6 +14,8 @@ import {
   CheckCircle2,
   Bot,
   User,
+  Clock,
+  ShieldAlert,
 } from 'lucide-react';
 
 const STARTER_PROMPTS = [
@@ -34,12 +36,13 @@ export const SolarCopilotDrawer: React.FC = () => {
       id: 'welcome',
       role: 'assistant',
       content:
-        "Hi! I'm Jenny, your solar assistant. Enter your **monthly electric bill** (in ₱) and **location**, and I'll size a complete setup for you—including panels, inverter, and battery backup.",
+        "Hi! I'm Jenny, your solar assistant. Enter your **monthly electric bill** (in ₱) and **location**, and I'll size a complete setup for you (including panels, inverter, and battery backup).",
       createdAt: new Date(),
     },
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [rateLimitCooldown, setRateLimitCooldown] = useState<number>(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -52,6 +55,20 @@ export const SolarCopilotDrawer: React.FC = () => {
       scrollToBottom();
     }
   }, [messages, isCopilotOpen]);
+
+  useEffect(() => {
+    if (rateLimitCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setRateLimitCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [rateLimitCooldown]);
 
   if (!isCopilotOpen) return null;
 
@@ -73,6 +90,9 @@ export const SolarCopilotDrawer: React.FC = () => {
 
     try {
       const assistantReply = await aiCopilotService.sendMessage(nextMessages, activeProjectId);
+      if (assistantReply.rateLimited && assistantReply.retryAfter) {
+        setRateLimitCooldown(assistantReply.retryAfter);
+      }
       setMessages((prev) => [...prev, assistantReply]);
     } catch (err) {
       console.error('Copilot send error:', err);
@@ -114,11 +134,8 @@ export const SolarCopilotDrawer: React.FC = () => {
       aria-label="Ask Jenny Solar Assistant"
       className="fixed inset-y-0 right-0 z-50 w-full sm:w-[560px] md:w-[620px] lg:w-[680px] bg-slate-950/40 backdrop-blur-2xl p-2 sm:p-4 flex flex-col justify-end transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] shadow-2xl"
     >
-      {/* Double-Bezel Outer Shell */}
       <div className="h-full w-full rounded-[2.25rem] p-2 bg-gradient-to-b from-white/90 via-slate-100/80 to-slate-200/60 dark:from-white/10 dark:via-white/[0.03] dark:to-black/50 ring-1 ring-slate-300/80 dark:ring-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden">
-        {/* Double-Bezel Inner Core */}
         <div className="h-full w-full rounded-[calc(2.25rem-0.5rem)] bg-white/95 dark:bg-[#070B14]/95 flex flex-col overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
-          {/* Header */}
           <header className="px-6 py-4.5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between gap-3 bg-slate-50/60 dark:bg-white/[0.02]">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center shadow-md shadow-amber-500/25 ring-2 ring-amber-400/40">
@@ -162,7 +179,6 @@ export const SolarCopilotDrawer: React.FC = () => {
             </div>
           </header>
 
-          {/* Messages Stream */}
           <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5 scroll-smooth">
             {messages.map((message) => {
               const isUser = message.role === 'user';
@@ -185,7 +201,6 @@ export const SolarCopilotDrawer: React.FC = () => {
                   )}
 
                   <div className={`max-w-[88%] space-y-2 ${isUser ? 'items-end' : 'items-start'}`}>
-                    {/* Chat Bubble with Double-Bezel on Assistant Turn */}
                     {isUser ? (
                       <div className="px-5 py-3.5 rounded-[1.75rem] rounded-tr-sm bg-gradient-to-br from-amber-500 via-amber-500 to-amber-600 text-white font-medium text-[15px] sm:text-[16px] leading-[1.6] shadow-lg shadow-amber-500/20 ring-1 ring-amber-400/30 whitespace-pre-wrap">
                         <ChatMessageContent content={message.content} isUser={true} />
@@ -208,7 +223,6 @@ export const SolarCopilotDrawer: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Generative UI Proposal Card */}
                     {proposalResult && proposalResult.engineeringSpecs && (
                       <SetupProposalCard proposal={proposalResult} />
                     )}
@@ -242,7 +256,6 @@ export const SolarCopilotDrawer: React.FC = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Starter Chips */}
           {messages.length <= 2 && (
             <div className="px-5 pb-3">
               <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-slate-500 block mb-2">
@@ -263,8 +276,19 @@ export const SolarCopilotDrawer: React.FC = () => {
             </div>
           )}
 
-          {/* Machined Input Enclosure */}
           <footer className="p-4 bg-slate-50/80 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/5 space-y-2">
+            {rateLimitCooldown > 0 && (
+              <div className="px-4 py-2.5 rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 flex items-center justify-between text-xs text-amber-800 dark:text-amber-200 animate-in fade-in slide-in-from-bottom-2 duration-200 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-500 shrink-0 animate-spin [animation-duration:4s]" />
+                  <span className="font-medium">Rate limit active. Please wait for cooldown.</span>
+                </div>
+                <span className="font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-900 dark:text-amber-100 ring-1 ring-amber-500/30">
+                  {rateLimitCooldown}s
+                </span>
+              </div>
+            )}
+
             <div className="p-1 rounded-full bg-gradient-to-r from-slate-200/80 to-slate-100/50 dark:from-white/10 dark:to-white/[0.03] ring-1 ring-slate-200 dark:ring-white/10 shadow-inner">
               <div className="flex items-center rounded-full bg-white dark:bg-[#050811] px-2 py-1">
                 <input
@@ -272,14 +296,19 @@ export const SolarCopilotDrawer: React.FC = () => {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask e.g. ₱15,000 bill in Cebu with battery backup..."
-                  className="flex-1 bg-transparent px-4 py-2.5 text-sm sm:text-[15px] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none font-normal"
+                  disabled={isTyping || rateLimitCooldown > 0}
+                  placeholder={
+                    rateLimitCooldown > 0
+                      ? `Cooldown active. Available in ${rateLimitCooldown}s...`
+                      : "Ask e.g. ₱15,000 bill in Cebu with battery backup..."
+                  }
+                  className="flex-1 bg-transparent px-4 py-2.5 text-sm sm:text-[15px] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none font-normal disabled:opacity-50 disabled:cursor-not-allowed"
                 />
 
                 <button
                   type="button"
                   onClick={() => handleSend()}
-                  disabled={!inputValue.trim() || isTyping}
+                  disabled={!inputValue.trim() || isTyping || rateLimitCooldown > 0}
                   className="w-10 h-10 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-amber-500/25 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 group/send shrink-0"
                 >
                   <Send className="w-4 h-4 transition-transform duration-200 group-hover/send:translate-x-0.5 group-hover/send:-translate-y-0.5" />
