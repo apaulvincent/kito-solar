@@ -566,7 +566,7 @@ Current Project Context: ${JSON.stringify(currentProjectState ?? {})}`;
           model: google(modelName),
           system: systemPrompt,
           messages: sanitizedMessages,
-          maxTokens: 1000,
+          maxOutputTokens: 1000,
           stopWhen: isStepCount(5),
           tools: toolsDefinition,
         });
