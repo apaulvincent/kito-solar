@@ -425,13 +425,10 @@ export const Roof3DPreviewCanvas: React.FC = () => {
     setSunHour,
     roofSections,
     activeSectionId,
-    setActiveSectionId,
     loadDemoRoofPolygon,
-    getSummary,
   } = useSolarMapperStore();
 
   const [showWalls, setShowWalls] = useState(true);
-  const summary = getSummary();
 
   const activeSection =
     roofSections.find((s) => s.id === activeSectionId) || roofSections[0];
@@ -482,52 +479,6 @@ export const Roof3DPreviewCanvas: React.FC = () => {
             <Map className="w-4 h-4 text-amber-500 flex-shrink-0" />
             <span className="whitespace-nowrap">2D Satellite Map</span>
           </button>
-        </div>
-
-        {/* Top-Left: Multi-Roof Section Switcher Chips */}
-        <div className="absolute top-4 left-4 z-20 max-w-[calc(100%-12rem)] space-y-1.5">
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-            {roofSections.length > 1 && (
-              <div className="px-3 py-1.5 rounded-xl bg-slate-950/85 border border-slate-800 text-[11px] font-bold text-slate-300 backdrop-blur-md flex items-center gap-1.5 flex-shrink-0">
-                <Layers className="w-3.5 h-3.5 text-amber-500" />
-                <span>
-                  All {roofSections.length} Roofs ({summary.totalMaxPanels} panels • {summary.totalMaxKwp} kWp)
-                </span>
-              </div>
-            )}
-
-            {roofSections.map((sec) => (
-              <button
-                key={sec.id}
-                type="button"
-                onClick={() => setActiveSectionId(sec.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 flex-shrink-0 backdrop-blur-md ${
-                  sec.id === activeSection?.id
-                    ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
-                    : 'bg-slate-950/80 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/80'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                <span>{sec.name}</span>
-                <span className="font-mono text-[10px] opacity-80">
-                  ({sec.recommendedMaxPanels} panels)
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* Active Roof Metadata Inspector Pill */}
-          {activeSection && (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/85 border border-slate-800 backdrop-blur-md text-[11px] font-mono text-slate-300">
-              <span className="font-bold text-amber-400">{activeSection.name}</span>
-              <span>•</span>
-              <span>Pitch: {activeSection.pitchDeg}°</span>
-              <span>•</span>
-              <span>Azimuth: {activeSection.azimuthDeg}°</span>
-              <span>•</span>
-              <span className="text-emerald-400">{activeSection.maxArrayKwp.toFixed(2)} kWp</span>
-            </div>
-          )}
         </div>
 
         {/* Empty State Banner if no roof has been drawn */}
