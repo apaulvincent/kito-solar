@@ -8,6 +8,7 @@ import { AuthPage } from '@/components/auth/AuthPage';
 import { AccountPage } from '@/components/account/AccountPage';
 import { ProjectsPage } from '@/components/projects/ProjectsPage';
 import { ApplianceLoadCalculatorPage } from '@/components/load-calculator/ApplianceLoadCalculatorPage';
+import { SolarMapperPage } from '@/features/solar-mapper/components/SolarMapperPage';
 import { SystemSummary } from '@/components/summary/SystemSummary';
 import { SolarDiagramCanvas } from '@/components/diagram/SolarDiagramCanvas';
 import { DiagramComponentList } from '@/components/diagram/DiagramComponentList';
@@ -112,6 +113,8 @@ export function App() {
       {activeView === 'account' && <AccountPage />}
 
       {activeView === 'load-calculator' && <ApplianceLoadCalculatorPage />}
+
+      {activeView === 'solar-mapper' && <SolarMapperPage />}
 
       {activeView === 'tool' && (
         <main className="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 space-y-6">

@@ -9,6 +9,7 @@ import {
   Box,
   Calculator,
   Home,
+  MapPin,
   Folder,
   User as UserIcon,
 } from 'lucide-react';
@@ -82,6 +83,19 @@ export function Header() {
               >
                 <Calculator className="w-3.5 h-3.5 text-amber-500" />
                 <span>Load Calculator</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveView('solar-mapper')}
+                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                  activeView === 'solar-mapper'
+                    ? 'text-amber-700 dark:text-amber-400 font-bold bg-amber-500/10 border border-amber-500/25'
+                    : 'hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <MapPin className="w-3.5 h-3.5 text-amber-500" />
+                <span>Roof Mapper</span>
               </button>
 
               <button
