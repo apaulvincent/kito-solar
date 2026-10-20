@@ -90,12 +90,15 @@ export function calculateCentroid(vertices: GeoPoint[]): GeoPoint {
 }
 
 /**
- * Projects (lat, lng) coordinates relative to polygon centroid into local (x, y) meters.
+ * Projects (lat, lng) coordinates relative to polygon centroid (or custom origin) into local (x, y) meters.
  * x = East (+), y = North (+)
  */
-export function projectVerticesToLocalMeters(vertices: GeoPoint[]): LocalPoint[] {
+export function projectVerticesToLocalMeters(
+  vertices: GeoPoint[],
+  customCentroid?: GeoPoint
+): LocalPoint[] {
   if (vertices.length === 0) return [];
-  const centroid = calculateCentroid(vertices);
+  const centroid = customCentroid || calculateCentroid(vertices);
   const latCRad = degToRad(centroid.lat);
 
   return vertices.map((v) => {
@@ -110,6 +113,20 @@ export function projectVerticesToLocalMeters(vertices: GeoPoint[]): LocalPoint[]
       y: Math.round(y * 1000) / 1000,
     };
   });
+}
+
+/**
+ * Projects a single GPS coordinate to local meters relative to an origin point.
+ */
+export function projectSinglePointToMeters(point: GeoPoint, origin: GeoPoint): LocalPoint {
+  const latRad = degToRad(origin.lat);
+  const dLngRad = degToRad(point.lng - origin.lng);
+  const dLatRad = degToRad(point.lat - origin.lat);
+
+  return {
+    x: Math.round(dLngRad * EARTH_RADIUS_METERS * Math.cos(latRad) * 1000) / 1000,
+    y: Math.round(dLatRad * EARTH_RADIUS_METERS * 1000) / 1000,
+  };
 }
 
 /**

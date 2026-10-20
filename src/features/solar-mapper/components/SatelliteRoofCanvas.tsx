@@ -436,96 +436,105 @@ export const SatelliteRoofCanvas: React.FC = () => {
           </button>
         </div>
 
-        {/* Floating Drawing & Zoom Action Bar */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 p-1.5 rounded-2xl bg-slate-900/95 border border-slate-800 backdrop-blur-xl shadow-2xl z-30">
+        {/* Floating Drawing & Zoom Studio Dock (Unified, No-Overlap Island) */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[calc(100%-1.5rem)] flex items-center gap-1.5 p-1.5 rounded-full bg-slate-950/90 border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-2xl z-30">
           <button
             type="button"
             onClick={() => setIsDrawingMode(!isDrawingMode)}
-            className={`map-control-btn px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 ${
+            className={`map-control-btn px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 transition-all active:scale-95 ${
               isDrawingMode
-                ? 'bg-amber-500 text-slate-950 shadow-sm'
-                : 'text-slate-200 hover:bg-slate-800 hover:text-white'
+                ? 'bg-amber-400 text-slate-950 shadow-sm shadow-amber-500/30'
+                : 'text-slate-200 hover:bg-white/10 hover:text-white'
             }`}
           >
+            <span
+              className={`w-2 h-2 rounded-full transition-transform ${
+                isDrawingMode ? 'bg-slate-950 animate-pulse' : 'bg-amber-400'
+              }`}
+            />
             <PenTool className="w-3.5 h-3.5" />
-            <span>{isDrawingMode ? 'Finish Drawing' : 'Draw Roof'}</span>
+            <span>{isDrawingMode ? 'Finish Polygon' : 'Draw Roof'}</span>
           </button>
 
           <button
             type="button"
             onClick={loadDemoRoofPolygon}
-            className="map-control-btn px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors flex items-center gap-1.5"
+            className="map-control-btn px-3 py-1.5 rounded-full text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-1.5"
             title="Load sample residential 4-corner roof"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden sm:inline">Sample Roof</span>
           </button>
 
-          <div className="w-[1px] h-5 bg-slate-700/80 my-auto" />
+          <div className="w-px h-4 bg-white/10 my-auto" />
 
           <button
             type="button"
             onClick={undoLastVertex}
             disabled={!activeSection || activeSection.vertices.length === 0}
-            className="map-control-btn p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-40"
+            className="map-control-btn p-1.5 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
             title="Undo last point"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5" />
           </button>
 
           <button
             type="button"
             onClick={clearActivePolygon}
             disabled={!activeSection || activeSection.vertices.length === 0}
-            className="map-control-btn p-2 rounded-xl text-slate-300 hover:text-rose-400 hover:bg-slate-800 transition-colors disabled:opacity-40"
+            className="map-control-btn p-1.5 rounded-full text-slate-300 hover:text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
             title="Clear active roof polygon"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
 
           <button
             type="button"
             onClick={() => addRoofSection()}
-            className="map-control-btn px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors flex items-center gap-1"
+            className="map-control-btn px-3 py-1.5 rounded-full text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-1"
             title="Add second roof section (e.g. Garage)"
           >
             <Plus className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden md:inline">Add Section</span>
+            <span className="hidden md:inline">Add Face</span>
           </button>
 
-          <div className="w-[1px] h-5 bg-slate-700/80 my-auto" />
+          <div className="w-px h-4 bg-white/10 my-auto" />
 
-          {/* Zoom controls */}
-          <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              onClick={() => setZoom(zoom + 1)}
-              disabled={zoom >= 21}
-              className="map-control-btn p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-40"
-              title="Zoom In"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </button>
+          {/* Integrated Tactile Zoom Segment with Live Readout */}
+          <div className="flex items-center gap-0.5 bg-white/5 rounded-full p-0.5 border border-white/5">
             <button
               type="button"
               onClick={() => setZoom(zoom - 1)}
               disabled={zoom <= 16}
-              className="map-control-btn p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-40"
+              className="map-control-btn p-1 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
               title="Zoom Out"
             >
-              <ZoomOut className="w-4 h-4" />
+              <ZoomOut className="w-3.5 h-3.5" />
+            </button>
+            <span className="text-[11px] font-mono text-slate-300 px-2 select-none whitespace-nowrap">
+              Z{zoom}
+              {zoom > MAX_NATIVE_ZOOM && (
+                <span className="text-amber-400 font-semibold ml-1">
+                  ({zoomScale}x)
+                </span>
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={() => setZoom(zoom + 1)}
+              disabled={zoom >= 21}
+              className="map-control-btn p-1 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+              title="Zoom In"
+            >
+              <ZoomIn className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Bottom-Right Coordinates / Zoom Indicator Badge */}
-        <div className="absolute bottom-4 right-4 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] font-mono text-slate-400 backdrop-blur-md z-30">
-          <span>
-            Zoom {zoom}
-            {zoom > MAX_NATIVE_ZOOM && ` (${zoomScale}x Magnification)`}
-          </span>
-          <span>•</span>
-          <span>Esri Satellite</span>
+        {/* Discrete Satellite Attribution Stamp at bottom-left */}
+        <div className="absolute bottom-3 left-4 hidden sm:flex items-center gap-1.5 text-[10px] font-mono text-slate-400/80 pointer-events-none select-none z-20">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+          <span>Esri World Imagery • High-Res</span>
         </div>
       </div>
     </div>

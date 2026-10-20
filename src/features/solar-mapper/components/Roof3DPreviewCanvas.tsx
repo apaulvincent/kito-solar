@@ -1,5 +1,5 @@
 // src/features/solar-mapper/components/Roof3DPreviewCanvas.tsx
-import React, { useMemo, Suspense } from 'react';
+import React, { useMemo, useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Text, Line } from '@react-three/drei';
 import * as THREE from 'three';
@@ -10,10 +10,18 @@ import {
   RotateCcw,
   Sliders,
   Layers,
+  Eye,
+  EyeOff,
+  Sparkles,
+  Maximize2,
 } from 'lucide-react';
 import { useSolarMapperStore } from '../store/useSolarMapperStore';
-import { projectVerticesToLocalMeters } from '../utils/geodesicMath';
-import { RoofPolygonSection } from '../types/solarMapper';
+import {
+  calculateCentroid,
+  projectSinglePointToMeters,
+  projectVerticesToLocalMeters,
+} from '../utils/geodesicMath';
+import { GeoPoint, RoofPolygonSection } from '../types/solarMapper';
 
 const BUILDING_EAVE_HEIGHT = 2.4; // 2.4m residential wall height
 
@@ -21,14 +29,14 @@ const BUILDING_EAVE_HEIGHT = 2.4; // 2.4m residential wall height
  * Calculates the 3D position of the Sun along its celestial transit.
  * East (+X) at 6:00 AM -> Noon South (+Z peak height) -> West (-X) at 6:00 PM.
  */
-function getSunPosition(hour: number, radius = 22): THREE.Vector3 {
+function getSunPosition(hour: number, radius = 24): THREE.Vector3 {
   const progress = (hour - 6) / 12; // 0 (6 AM) to 1 (6 PM)
   const angle = progress * Math.PI; // 0 to PI
 
   // Travel from East (+X) to West (-X)
   const x = Math.cos(angle) * radius;
   // Elevation above horizon (high noon peak)
-  const y = Math.max(1.2, Math.sin(angle) * radius * 0.95);
+  const y = Math.max(1.5, Math.sin(angle) * radius * 0.95);
   // Southern declination in Northern Hemisphere tropics
   const z = Math.sin(angle) * (radius * 0.4);
 
@@ -45,15 +53,30 @@ function formatSunTime(hour: number): string {
 }
 
 // Single 3D Roof & Building Component
-const Roof3DMesh: React.FC<{ section: RoofPolygonSection; isActive: boolean }> = ({
-  section,
-  isActive,
-}) => {
-  const localPts = useMemo(() => {
-    return projectVerticesToLocalMeters(section.vertices);
-  }, [section.vertices]);
+const Roof3DMesh: React.FC<{
+  section: RoofPolygonSection;
+  siteCenter: GeoPoint;
+  isActive: boolean;
+  showWalls: boolean;
+  onSelect: () => void;
+}> = ({ section, siteCenter, isActive, showWalls, onSelect }) => {
+  const secCentroid = useMemo(
+    () => calculateCentroid(section.vertices),
+    [section.vertices]
+  );
 
-  // Construct 2D shape in local meters
+  // Position relative to the shared site center
+  const offsetMeters = useMemo(
+    () => projectSinglePointToMeters(secCentroid, siteCenter),
+    [secCentroid, siteCenter]
+  );
+
+  // 2D shape projected relative to ITS OWN centroid so rotation behaves predictably
+  const localPts = useMemo(
+    () => projectVerticesToLocalMeters(section.vertices, secCentroid),
+    [section.vertices, secCentroid]
+  );
+
   const shape = useMemo(() => {
     if (localPts.length < 3) return null;
     const s = new THREE.Shape();
@@ -65,7 +88,7 @@ const Roof3DMesh: React.FC<{ section: RoofPolygonSection; isActive: boolean }> =
     return s;
   }, [localPts]);
 
-  // Extrude settings for building walls (2.4m height from ground)
+  // Wall extrude settings (from ground to eave height)
   const wallExtrudeSettings = useMemo(
     () => ({
       depth: BUILDING_EAVE_HEIGHT,
@@ -74,7 +97,7 @@ const Roof3DMesh: React.FC<{ section: RoofPolygonSection; isActive: boolean }> =
     []
   );
 
-  // Extrude settings for roof deck slab (140mm thickness with bevel)
+  // Roof deck slab extrude settings
   const roofExtrudeSettings = useMemo(
     () => ({
       depth: 0.14,
@@ -89,38 +112,49 @@ const Roof3DMesh: React.FC<{ section: RoofPolygonSection; isActive: boolean }> =
 
   if (!shape) return null;
 
-  // Azimuth rotation: 180° is South (0 rad rotation in our orientation),
-  // 90° East rotates -90°, 270° West rotates +90°
+  // In Three.js: World +X = East, World +Z = South, World -Z = North
+  // Section offset:
+  const worldX = offsetMeters.x;
+  const worldZ = -offsetMeters.y;
+
+  // Azimuth rotation: 180° is South (0 rad in our orientation)
   const azimuthRad = THREE.MathUtils.degToRad(-section.azimuthDeg + 180);
   const pitchRad = THREE.MathUtils.degToRad(section.pitchDeg);
 
   return (
-    <group>
-      {/* 1. Building Perimeter Walls (Anchors roof to ground plane) */}
-      <mesh
-        position={[0, 0, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        receiveShadow
-        castShadow
-      >
-        <extrudeGeometry args={[shape, wallExtrudeSettings]} />
-        <meshStandardMaterial
-          color="#1e293b"
-          roughness={0.8}
-          metalness={0.1}
-        />
-      </mesh>
+    <group
+      position={[worldX, 0, worldZ]}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
+    >
+      {/* 1. Optional Building Perimeter Walls */}
+      {showWalls && (
+        <group>
+          <mesh
+            position={[0, 0, 0]}
+            rotation={[-Math.PI / 2, 0, 0]}
+            receiveShadow
+            castShadow
+          >
+            <extrudeGeometry args={[shape, wallExtrudeSettings]} />
+            <meshStandardMaterial
+              color={isActive ? '#1e293b' : '#0f172a'}
+              roughness={0.8}
+              metalness={0.1}
+            />
+          </mesh>
 
-      {/* Building Base Foundation Border */}
-      <mesh
-        position={[0, 0.02, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      >
-        <extrudeGeometry args={[shape, { depth: 0.06, bevelEnabled: true, bevelSize: 0.08 }]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.9} />
-      </mesh>
+          {/* Foundation Plinth */}
+          <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <extrudeGeometry args={[shape, { depth: 0.08, bevelEnabled: true, bevelSize: 0.06 }]} />
+            <meshStandardMaterial color="#0b1120" roughness={0.9} />
+          </mesh>
+        </group>
+      )}
 
-      {/* 2. Pitched Roof Assembly Sitting on Top of Building Walls */}
+      {/* 2. Pitched Roof Assembly Sitting on Top of Eave Height */}
       <group position={[0, BUILDING_EAVE_HEIGHT, 0]}>
         {/* Compass Azimuth Rotation */}
         <group rotation={[0, azimuthRad, 0]}>
@@ -132,11 +166,24 @@ const Roof3DMesh: React.FC<{ section: RoofPolygonSection; isActive: boolean }> =
               <mesh receiveShadow castShadow position={[0, 0, 0]}>
                 <extrudeGeometry args={[shape, roofExtrudeSettings]} />
                 <meshStandardMaterial
-                  color={isActive ? '#334155' : '#1e293b'}
-                  roughness={0.5}
-                  metalness={0.3}
+                  color={isActive ? '#293548' : '#1e293b'}
+                  roughness={0.45}
+                  metalness={0.35}
                 />
               </mesh>
+
+              {/* Glowing Outline on Active Roof Section */}
+              {isActive && (
+                <mesh position={[0, 0, 0.145]}>
+                  <extrudeGeometry
+                    args={[
+                      shape,
+                      { depth: 0.01, bevelEnabled: true, bevelSize: 0.04, bevelThickness: 0.01 },
+                    ]}
+                  />
+                  <meshBasicMaterial color="#f59e0b" transparent opacity={0.35} wireframe />
+                </mesh>
+              )}
 
               {/* Photovoltaic Solar Panels Array */}
               {section.placedPanels.map((panel) => {
@@ -144,10 +191,7 @@ const Roof3DMesh: React.FC<{ section: RoofPolygonSection; isActive: boolean }> =
                 const pL = panel.lengthM;
 
                 return (
-                  <group
-                    key={panel.id}
-                    position={[panel.x, panel.y, 0.17]}
-                  >
+                  <group key={panel.id} position={[panel.x, panel.y, 0.17]}>
                     {/* Mounting Rails Underneath Panel */}
                     <mesh position={[0, -pL * 0.25, -0.015]}>
                       <boxGeometry args={[pW * 0.95, 0.04, 0.025]} />
@@ -246,10 +290,23 @@ const SunlightRay: React.FC<{ sunPos: THREE.Vector3 }> = ({ sunPos }) => {
 };
 
 // 3D Scene Environment
-const SceneContent: React.FC<{ sunHour: number }> = ({ sunHour }) => {
-  const { roofSections, activeSectionId } = useSolarMapperStore();
+const SceneContent: React.FC<{
+  sunHour: number;
+  showWalls: boolean;
+}> = ({ sunHour, showWalls }) => {
+  const { roofSections, activeSectionId, setActiveSectionId, coordinates } =
+    useSolarMapperStore();
 
-  const sunPos = useMemo(() => getSunPosition(sunHour, 22), [sunHour]);
+  const sunPos = useMemo(() => getSunPosition(sunHour, 24), [sunHour]);
+
+  // Shared geographic center of all roof polygons combined (centers 3D model at 0,0,0)
+  const siteCenter = useMemo(() => {
+    const allVertices = roofSections.flatMap((s) => s.vertices);
+    if (allVertices.length >= 3) {
+      return calculateCentroid(allVertices);
+    }
+    return coordinates;
+  }, [roofSections, coordinates]);
 
   // Warm dawn/dusk lighting vs bright midday sunlight
   const sunLightColor = useMemo(() => {
@@ -272,11 +329,11 @@ const SceneContent: React.FC<{ sunHour: number }> = ({ sunHour }) => {
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-camera-near={0.5}
-        shadow-camera-far={60}
-        shadow-camera-left={-16}
-        shadow-camera-right={16}
-        shadow-camera-top={16}
-        shadow-camera-bottom={-16}
+        shadow-camera-far={65}
+        shadow-camera-left={-20}
+        shadow-camera-right={20}
+        shadow-camera-top={20}
+        shadow-camera-bottom={-20}
         shadow-bias={-0.0002}
       />
 
@@ -312,38 +369,41 @@ const SceneContent: React.FC<{ sunHour: number }> = ({ sunHour }) => {
       {/* Celestial Sun Transit Arc Across the Sky */}
       <CelestialSunArc />
 
-      {/* Sunlight Ray Connecting Sun to the Roof */}
+      {/* Sunlight Ray Connecting Sun to the Roof Center */}
       <SunlightRay sunPos={sunPos} />
 
       {/* Ground Reference Plane with Grid */}
-      <gridHelper args={[36, 36, '#475569', '#1e293b']} position={[0, -0.02, 0]} />
+      <gridHelper args={[40, 40, '#475569', '#1e293b']} position={[0, -0.02, 0]} />
 
       {/* Ground Shadow Receiver Plane */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]} receiveShadow>
-        <planeGeometry args={[50, 50]} />
+        <planeGeometry args={[60, 60]} />
         <shadowMaterial opacity={0.4} />
       </mesh>
 
       {/* Cardinal Direction Markers on the Ground */}
-      <Text position={[0, 0.05, -16]} fontSize={1.3} color="#f59e0b" rotation={[-Math.PI / 2, 0, 0]}>
+      <Text position={[0, 0.05, -18]} fontSize={1.3} color="#f59e0b" rotation={[-Math.PI / 2, 0, 0]}>
         N (0°)
       </Text>
-      <Text position={[0, 0.05, 16]} fontSize={1.3} color="#f59e0b" rotation={[-Math.PI / 2, 0, 0]}>
+      <Text position={[0, 0.05, 18]} fontSize={1.3} color="#f59e0b" rotation={[-Math.PI / 2, 0, 0]}>
         S (180°)
       </Text>
-      <Text position={[16, 0.05, 0]} fontSize={1.3} color="#94a3b8" rotation={[-Math.PI / 2, 0, 0]}>
+      <Text position={[18, 0.05, 0]} fontSize={1.3} color="#94a3b8" rotation={[-Math.PI / 2, 0, 0]}>
         E (90°)
       </Text>
-      <Text position={[-16, 0.05, 0]} fontSize={1.3} color="#94a3b8" rotation={[-Math.PI / 2, 0, 0]}>
+      <Text position={[-18, 0.05, 0]} fontSize={1.3} color="#94a3b8" rotation={[-Math.PI / 2, 0, 0]}>
         W (270°)
       </Text>
 
-      {/* Render Roof & Building Models */}
+      {/* Render ALL Roof Sections in their true spatial positions */}
       {roofSections.map((sec) => (
         <Roof3DMesh
           key={sec.id}
           section={sec}
+          siteCenter={siteCenter}
           isActive={sec.id === activeSection?.id}
+          showWalls={showWalls}
+          onSelect={() => setActiveSectionId(sec.id)}
         />
       ))}
 
@@ -351,7 +411,7 @@ const SceneContent: React.FC<{ sunHour: number }> = ({ sunHour }) => {
         makeDefault
         target={[0, BUILDING_EAVE_HEIGHT, 0]} // Orbit cleanly around the house roof
         minDistance={5}
-        maxDistance={55}
+        maxDistance={65}
         maxPolarAngle={Math.PI / 2.05} // prevent camera going underneath ground
       />
     </>
@@ -365,8 +425,13 @@ export const Roof3DPreviewCanvas: React.FC = () => {
     setSunHour,
     roofSections,
     activeSectionId,
+    setActiveSectionId,
     loadDemoRoofPolygon,
+    getSummary,
   } = useSolarMapperStore();
+
+  const [showWalls, setShowWalls] = useState(true);
+  const summary = getSummary();
 
   const activeSection =
     roofSections.find((s) => s.id === activeSectionId) || roofSections[0];
@@ -384,15 +449,31 @@ export const Roof3DPreviewCanvas: React.FC = () => {
         >
           <Canvas
             shadows
-            camera={{ position: [14, 18, 24], fov: 48 }}
+            camera={{ position: [16, 20, 26], fov: 46 }}
             className="w-full h-full"
           >
-            <SceneContent sunHour={sunHour} />
+            <SceneContent sunHour={sunHour} showWalls={showWalls} />
           </Canvas>
         </Suspense>
 
-        {/* Top-Right: Return to 2D Satellite View Button */}
+        {/* Top-Right: View Actions & Wall Toggle */}
         <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+          {/* Building Walls Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowWalls(!showWalls)}
+            className={`px-3 py-2 rounded-xl text-xs font-semibold backdrop-blur-md shadow-md border transition-all flex items-center gap-1.5 active:scale-95 ${
+              showWalls
+                ? 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 border-slate-700/80'
+                : 'bg-amber-500/15 text-amber-400 border-amber-500/40'
+            }`}
+            title="Toggle building walls visibility"
+          >
+            {showWalls ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">Walls {showWalls ? 'ON' : 'OFF'}</span>
+          </button>
+
+          {/* Switch back to 2D Map */}
           <button
             type="button"
             onClick={() => setViewMode('2d_satellite')}
@@ -403,19 +484,50 @@ export const Roof3DPreviewCanvas: React.FC = () => {
           </button>
         </div>
 
-        {/* Top-Left: Active Roof Metadata Badge */}
-        <div className="absolute top-4 left-4 z-20 p-3 rounded-xl bg-slate-950/85 border border-slate-800 backdrop-blur-md shadow-md text-xs space-y-1">
-          <div className="font-bold text-white flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <span>{activeSection?.name || 'Roof Section 1'}</span>
+        {/* Top-Left: Multi-Roof Section Switcher Chips */}
+        <div className="absolute top-4 left-4 z-20 max-w-[calc(100%-12rem)] space-y-1.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            {roofSections.length > 1 && (
+              <div className="px-3 py-1.5 rounded-xl bg-slate-950/85 border border-slate-800 text-[11px] font-bold text-slate-300 backdrop-blur-md flex items-center gap-1.5 flex-shrink-0">
+                <Layers className="w-3.5 h-3.5 text-amber-500" />
+                <span>
+                  All {roofSections.length} Roofs ({summary.totalMaxPanels} panels • {summary.totalMaxKwp} kWp)
+                </span>
+              </div>
+            )}
+
+            {roofSections.map((sec) => (
+              <button
+                key={sec.id}
+                type="button"
+                onClick={() => setActiveSectionId(sec.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 flex-shrink-0 backdrop-blur-md ${
+                  sec.id === activeSection?.id
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
+                    : 'bg-slate-950/80 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/80'
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                <span>{sec.name}</span>
+                <span className="font-mono text-[10px] opacity-80">
+                  ({sec.recommendedMaxPanels} panels)
+                </span>
+              </button>
+            ))}
           </div>
-          <div className="text-[11px] text-slate-400 font-mono flex items-center gap-2">
-            <span>Pitch: {activeSection?.pitchDeg ?? 15}° from horizontal</span>
-            <span>•</span>
-            <span>Azimuth: {activeSection?.azimuthDeg ?? 180}° (S)</span>
-            <span>•</span>
-            <span>Panels: {activeSection?.recommendedMaxPanels ?? 0}</span>
-          </div>
+
+          {/* Active Roof Metadata Inspector Pill */}
+          {activeSection && (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/85 border border-slate-800 backdrop-blur-md text-[11px] font-mono text-slate-300">
+              <span className="font-bold text-amber-400">{activeSection.name}</span>
+              <span>•</span>
+              <span>Pitch: {activeSection.pitchDeg}°</span>
+              <span>•</span>
+              <span>Azimuth: {activeSection.azimuthDeg}°</span>
+              <span>•</span>
+              <span className="text-emerald-400">{activeSection.maxArrayKwp.toFixed(2)} kWp</span>
+            </div>
+          )}
         </div>
 
         {/* Empty State Banner if no roof has been drawn */}
@@ -447,17 +559,37 @@ export const Roof3DPreviewCanvas: React.FC = () => {
           </div>
         )}
 
-        {/* Bottom Sun Position & Time Slider Control */}
-        <div className="absolute bottom-4 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-md z-20 p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800 backdrop-blur-xl shadow-2xl">
+        {/* Bottom Sun Position & Time Slider Island */}
+        <div className="absolute bottom-4 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-lg z-20 p-3.5 rounded-2xl bg-slate-950/90 border border-white/10 backdrop-blur-xl shadow-2xl">
           <div className="flex items-center justify-between gap-2 mb-2 text-xs">
             <div className="flex items-center gap-1.5 font-bold text-white">
               <Sun className="w-4 h-4 text-amber-500" />
               <span>Sun Simulation:</span>
               <span className="font-mono text-amber-400">{formatSunTime(sunHour)}</span>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">
-              {sunHour < 12 ? 'Morning Sunlight (East)' : sunHour === 12 ? 'Solar Noon (High South)' : 'Afternoon Harvest (West)'}
-            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setSunHour(6)}
+                className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+              >
+                6 AM
+              </button>
+              <button
+                type="button"
+                onClick={() => setSunHour(12)}
+                className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors font-bold"
+              >
+                12 PM
+              </button>
+              <button
+                type="button"
+                onClick={() => setSunHour(18)}
+                className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+              >
+                6 PM
+              </button>
+            </div>
           </div>
 
           <input
@@ -471,9 +603,9 @@ export const Roof3DPreviewCanvas: React.FC = () => {
           />
 
           <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
-            <span>6:00 AM (East)</span>
-            <span>12:00 PM (Noon South)</span>
-            <span>6:00 PM (West)</span>
+            <span>6:00 AM (Sunrise East)</span>
+            <span>12:00 PM (Solar Noon South)</span>
+            <span>6:00 PM (Sunset West)</span>
           </div>
         </div>
       </div>
