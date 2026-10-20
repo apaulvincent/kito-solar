@@ -8,6 +8,7 @@ import {
   PshDesignBasis,
   RoofMappingSummary,
   RoofPolygonSection,
+  DetectedRoofFace,
 } from '../types/solarMapper';
 import {
   calculateEdgeLengthsMeters,
@@ -57,6 +58,7 @@ export interface SolarMapperState {
   undoLastVertex: () => void;
   clearActivePolygon: () => void;
   loadDemoRoofPolygon: () => void;
+  applyDetectedRoofFaces: (faces: DetectedRoofFace[]) => void;
 
   // Computed getters
   getSummary: () => RoofMappingSummary;
@@ -88,6 +90,7 @@ function recomputeSection(
     setbackRatio: section.setbackRatio,
     panelWattage: section.panelWattage,
     orientationPreference: section.panelOrientation,
+    alignmentAngleDeg: section.panelRotationDeg,
   });
 
   // Daily energy in kWh = (kWp * effectivePsh * (1 - shading))
@@ -352,6 +355,45 @@ export const useSolarMapperStore = create<SolarMapperState>()(
         set({
           roofSections: [computed],
           activeSectionId: computed.id,
+          isDrawingMode: false,
+        });
+      },
+
+      applyDetectedRoofFaces: (faces) => {
+        if (!faces || faces.length === 0) return;
+        const effectivePsh = get().getSelectedPsh();
+        const currentWattage = get().panelWattage;
+
+        const newSections: RoofPolygonSection[] = faces.map((face, idx) => {
+          const rawSection: RoofPolygonSection = {
+            id: `roof-ai-${Date.now().toString(36)}-${idx}`,
+            name: face.name || `Face ${idx + 1} (AI Detected)`,
+            vertices: face.vertices,
+            pitchDeg: face.pitchDeg,
+            azimuthDeg: face.azimuthDeg,
+            shadingLossPercent: face.shadingLossPercent ?? 0,
+            setbackRatio: 0.82,
+            panelOrientation: 'portrait',
+            panelWattage: currentWattage,
+            flatAreaSqm: 0,
+            slopedAreaSqm: 0,
+            usableAreaSqm: 0,
+            edgeLengthsMeters: [],
+            maxPanelsPortrait: 0,
+            maxPanelsLandscape: 0,
+            recommendedMaxPanels: 0,
+            placedPanels: [],
+            maxArrayKwp: 0,
+            orientationYieldFactor: 1.0,
+            estimatedDailyKwh: 0,
+            hasBowtieCross: false,
+          };
+          return recomputeSection(rawSection, effectivePsh);
+        });
+
+        set({
+          roofSections: newSections,
+          activeSectionId: newSections[0]?.id || null,
           isDrawingMode: false,
         });
       },

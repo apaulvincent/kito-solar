@@ -376,6 +376,50 @@ export const RoofSectionInspector: React.FC = () => {
                   </button>
                 ))}
               </div>
+
+              {/* Panel Roof Edge Alignment Status & Rotation */}
+              <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-200/50 dark:border-white/5">
+                <span className="text-slate-500 dark:text-slate-400">
+                  Panel Alignment:
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                    {activeSection.panelRotationDeg !== undefined
+                      ? `${activeSection.panelRotationDeg}° (Custom)`
+                      : `${Math.round(activeSection.placedPanels[0]?.rotationDeg ?? 0)}° (Auto Roof Edge)`}
+                  </span>
+                  <button
+                    type="button"
+                    title="Rotate panel alignment by 90°"
+                    onClick={() => {
+                      const current =
+                        activeSection.panelRotationDeg !== undefined
+                          ? activeSection.panelRotationDeg
+                          : activeSection.placedPanels[0]?.rotationDeg ?? 0;
+                      let next = Math.round(current + 90);
+                      while (next > 90) next -= 180;
+                      updateRoofSectionConfig(activeSection.id, { panelRotationDeg: next });
+                    }}
+                    className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-200/80 dark:bg-white/10 hover:bg-amber-400 hover:text-slate-950 transition-colors cursor-pointer"
+                  >
+                    +90°
+                  </button>
+                  {activeSection.panelRotationDeg !== undefined && (
+                    <button
+                      type="button"
+                      title="Reset to Auto Roof Edge Alignment"
+                      onClick={() =>
+                        updateRoofSectionConfig(activeSection.id, {
+                          panelRotationDeg: undefined,
+                        })
+                      }
+                      className="px-1.5 py-0.5 rounded text-[10px] text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Shading Loss Slider */}

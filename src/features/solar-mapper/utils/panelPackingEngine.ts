@@ -47,11 +47,40 @@ export interface PackingResult {
   placedPanels: PlacedPanel[];
   usableAreaSqm: number;
   totalArrayKwp: number;
+  dominantAngleDeg: number;
+}
+
+/**
+ * Finds the dominant edge angle of a polygon in degrees [-90, 90).
+ * Matches the orientation of the longest edge (eave/ridge) of the roof.
+ */
+export function findDominantEdgeAngle(localVertices: LocalPoint[]): number {
+  if (localVertices.length < 2) return 0;
+  let maxLenSq = -1;
+  let bestAngleRad = 0;
+
+  for (let i = 0; i < localVertices.length; i++) {
+    const nextIdx = (i + 1) % localVertices.length;
+    const dx = localVertices[nextIdx].x - localVertices[i].x;
+    const dy = localVertices[nextIdx].y - localVertices[i].y;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq > maxLenSq) {
+      maxLenSq = lenSq;
+      bestAngleRad = Math.atan2(dy, dx);
+    }
+  }
+
+  // Normalize angle to [-PI/2, PI/2)
+  while (bestAngleRad >= Math.PI / 2) bestAngleRad -= Math.PI;
+  while (bestAngleRad < -Math.PI / 2) bestAngleRad += Math.PI;
+
+  return Math.round(((bestAngleRad * 180) / Math.PI) * 10) / 10;
 }
 
 /**
  * Computes maximum panel packing in portrait and landscape layouts,
- * generates exact 2D/3D panel center coordinates within setback boundaries.
+ * generates exact 2D/3D panel center coordinates within setback boundaries,
+ * aligned with the roof's dominant edge / eave direction.
  */
 export function calculatePanelPacking({
   localVertices,
@@ -60,6 +89,7 @@ export function calculatePanelPacking({
   setbackRatio = 0.82,
   panelWattage = 580,
   orientationPreference = 'auto_best',
+  alignmentAngleDeg,
 }: {
   localVertices: LocalPoint[];
   slopedAreaSqm: number;
@@ -67,9 +97,15 @@ export function calculatePanelPacking({
   setbackRatio?: number;
   panelWattage?: 550 | 580 | 600;
   orientationPreference?: PanelOrientation;
+  alignmentAngleDeg?: number;
 }): PackingResult {
   const spec = PANEL_SPECS[panelWattage] ?? PANEL_SPECS[580];
   const usableAreaSqm = Math.round(slopedAreaSqm * setbackRatio * 100) / 100;
+
+  const dominantAngleDeg =
+    alignmentAngleDeg !== undefined
+      ? alignmentAngleDeg
+      : findDominantEdgeAngle(localVertices);
 
   if (localVertices.length < 3 || usableAreaSqm <= 0) {
     return {
@@ -80,66 +116,81 @@ export function calculatePanelPacking({
       placedPanels: [],
       usableAreaSqm: 0,
       totalArrayKwp: 0,
+      dominantAngleDeg,
     };
   }
 
   const inPolygon = insetPolygon(localVertices, setbackRatio);
 
-  let inMinX = Infinity;
-  let inMaxX = -Infinity;
-  let inMinY = Infinity;
-  let inMaxY = -Infinity;
+  const thetaRad = degToRad(dominantAngleDeg);
+  const cosTheta = Math.cos(thetaRad);
+  const sinTheta = Math.sin(thetaRad);
 
-  for (const v of inPolygon) {
-    if (v.x < inMinX) inMinX = v.x;
-    if (v.x > inMaxX) inMaxX = v.x;
-    if (v.y < inMinY) inMinY = v.y;
-    if (v.y > inMaxY) inMaxY = v.y;
+  // Transform inset polygon vertices to rotated (u, v) space along dominant edge
+  const inPolygonRot: LocalPoint[] = inPolygon.map((p) => ({
+    x: p.x * cosTheta + p.y * sinTheta,
+    y: -p.x * sinTheta + p.y * cosTheta,
+  }));
+
+  let minU = Infinity;
+  let maxU = -Infinity;
+  let minV = Infinity;
+  let maxV = -Infinity;
+
+  for (const v of inPolygonRot) {
+    if (v.x < minU) minU = v.x;
+    if (v.x > maxU) maxU = v.x;
+    if (v.y < minV) minV = v.y;
+    if (v.y > maxV) maxV = v.y;
   }
 
-  // Helper to pack grid in a specific orientation
+  // Helper to pack grid in a specific orientation in rotated (u, v) space
   const packGrid = (isLandscape: boolean): PlacedPanel[] => {
     const widthM = isLandscape ? spec.lengthM : spec.widthM;
     const lengthM = isLandscape ? spec.widthM : spec.lengthM;
 
     const cellW = widthM + CLAMP_GAP_METERS;
-    // Scale slope length along Y by cos(pitch)
+    // Scale slope length along V by cos(pitch)
     const cosPitch = Math.cos(degToRad(Math.min(55, Math.max(0, pitchDeg))));
     const effectiveLengthM = lengthM / Math.max(0.1, cosPitch);
     const cellH = effectiveLengthM + CLAMP_GAP_METERS;
 
-    const spanX = inMaxX - inMinX;
-    const spanY = inMaxY - inMinY;
+    const spanU = maxU - minU;
+    const spanV = maxV - minV;
 
-    if (spanX < cellW || spanY < cellH) return [];
+    if (spanU < cellW || spanV < cellH) return [];
 
-    const cols = Math.max(1, Math.floor(spanX / cellW));
-    const rows = Math.max(1, Math.floor(spanY / cellH));
+    const cols = Math.max(1, Math.floor(spanU / cellW));
+    const rows = Math.max(1, Math.floor(spanV / cellH));
 
-    const startX = inMinX + (spanX - cols * cellW) / 2 + cellW / 2;
-    const startY = inMinY + (spanY - rows * cellH) / 2 + cellH / 2;
+    const startU = minU + (spanU - cols * cellW) / 2 + cellW / 2;
+    const startV = minV + (spanV - rows * cellH) / 2 + cellH / 2;
 
     const panels: PlacedPanel[] = [];
     let panelIdCounter = 1;
 
     for (let r = 0; r < rows; r++) {
-      const y = startY + r * cellH;
+      const v = startV + r * cellH;
       for (let c = 0; c < cols; c++) {
-        const x = startX + c * cellW;
-        // Test corners and center inside inset boundary
-        const center = { x, y };
-        const c1 = { x: x - widthM * 0.45, y: y - effectiveLengthM * 0.45 };
-        const c2 = { x: x + widthM * 0.45, y: y - effectiveLengthM * 0.45 };
-        const c3 = { x: x - widthM * 0.45, y: y + effectiveLengthM * 0.45 };
-        const c4 = { x: x + widthM * 0.45, y: y + effectiveLengthM * 0.45 };
+        const u = startU + c * cellW;
+        // Test corners and center inside rotated inset boundary
+        const center = { x: u, y: v };
+        const c1 = { x: u - widthM * 0.45, y: v - effectiveLengthM * 0.45 };
+        const c2 = { x: u + widthM * 0.45, y: v - effectiveLengthM * 0.45 };
+        const c3 = { x: u - widthM * 0.45, y: v + effectiveLengthM * 0.45 };
+        const c4 = { x: u + widthM * 0.45, y: v + effectiveLengthM * 0.45 };
 
         if (
-          isPointInPolygon(center, inPolygon) &&
-          isPointInPolygon(c1, inPolygon) &&
-          isPointInPolygon(c2, inPolygon) &&
-          isPointInPolygon(c3, inPolygon) &&
-          isPointInPolygon(c4, inPolygon)
+          isPointInPolygon(center, inPolygonRot) &&
+          isPointInPolygon(c1, inPolygonRot) &&
+          isPointInPolygon(c2, inPolygonRot) &&
+          isPointInPolygon(c3, inPolygonRot) &&
+          isPointInPolygon(c4, inPolygonRot)
         ) {
+          // Unrotate back to local (x, y) coordinates
+          const x = u * cosTheta - v * sinTheta;
+          const y = u * sinTheta + v * cosTheta;
+
           panels.push({
             id: `p-${panelIdCounter++}`,
             x: Math.round(x * 100) / 100,
@@ -147,6 +198,7 @@ export function calculatePanelPacking({
             widthM,
             lengthM,
             orientation: isLandscape ? 'landscape' : 'portrait',
+            rotationDeg: dominantAngleDeg,
           });
         }
       }
@@ -197,5 +249,6 @@ export function calculatePanelPacking({
     placedPanels: chosenPanels.slice(0, recommendedMaxPanels),
     usableAreaSqm,
     totalArrayKwp,
+    dominantAngleDeg,
   };
 }

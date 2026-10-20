@@ -4,6 +4,7 @@ import {
   calculatePanelPacking,
   isPointInPolygon,
   insetPolygon,
+  findDominantEdgeAngle,
 } from '../utils/panelPackingEngine';
 import { LocalPoint } from '../types/solarMapper';
 
@@ -93,5 +94,65 @@ describe('Panel Packing Engine & Physical Layout Optimization', () => {
       pitchDeg: 15,
     });
     expect(packingTiny.recommendedMaxPanels).toBe(0);
+  });
+
+  it('accurately identifies dominant edge angle on slanted roofs', () => {
+    // Horizontal 30m x 8m rectangle
+    const horizontalRoof: LocalPoint[] = [
+      { x: 0, y: 0 },
+      { x: 30, y: 0 },
+      { x: 30, y: 8 },
+      { x: 0, y: 8 },
+    ];
+    expect(findDominantEdgeAngle(horizontalRoof)).toBe(0);
+
+    // Slanted 30m x 8m roof rotated by -15° (eave sloping downwards towards the east)
+    const angleRad = (-15 * Math.PI) / 180;
+    const cosA = Math.cos(angleRad);
+    const sinA = Math.sin(angleRad);
+
+    const rotatedRoof: LocalPoint[] = horizontalRoof.map((p) => ({
+      x: p.x * cosA - p.y * sinA,
+      y: p.x * sinA + p.y * cosA,
+    }));
+
+    const detectedAngle = findDominantEdgeAngle(rotatedRoof);
+    expect(detectedAngle).toBeCloseTo(-15, 0);
+  });
+
+  it('packs panels parallel to the roof edge when the roof is not straight north', () => {
+    // 31m long x 8m wide roof tilted by -14° (similar to real user satellite roof)
+    const angleRad = (-14 * Math.PI) / 180;
+    const cosA = Math.cos(angleRad);
+    const sinA = Math.sin(angleRad);
+
+    const basePts: LocalPoint[] = [
+      { x: -15.5, y: -4 },
+      { x: 15.5, y: -4 },
+      { x: 15.5, y: 4 },
+      { x: -15.5, y: 4 },
+    ];
+
+    const slantedRoof: LocalPoint[] = basePts.map((p) => ({
+      x: p.x * cosA - p.y * sinA,
+      y: p.x * sinA + p.y * cosA,
+    }));
+
+    const packing = calculatePanelPacking({
+      localVertices: slantedRoof,
+      slopedAreaSqm: 248, // 31m * 8m
+      pitchDeg: 10,
+      setbackRatio: 0.82,
+      panelWattage: 580,
+      orientationPreference: 'auto_best',
+    });
+
+    expect(packing.recommendedMaxPanels).toBeGreaterThan(30);
+    expect(packing.placedPanels.length).toBe(packing.recommendedMaxPanels);
+
+    // All panels should have rotationDeg matching the dominant roof edge angle (-14°)
+    for (const panel of packing.placedPanels) {
+      expect(panel.rotationDeg).toBeCloseTo(-14, 0);
+    }
   });
 });

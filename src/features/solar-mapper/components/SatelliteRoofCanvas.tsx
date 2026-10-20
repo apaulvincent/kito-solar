@@ -13,10 +13,13 @@ import {
   Move,
   Layers,
   Box,
+  CheckCircle2,
+  Scan,
 } from 'lucide-react';
 import { useSolarMapperStore } from '../store/useSolarMapperStore';
 import { GeoPoint } from '../types/solarMapper';
 import { calculateHaversineDistanceMeters } from '../utils/geodesicMath';
+import { detectRoofFromMarquee } from '../services/aiRoofDetectionService';
 
 const TILE_SIZE = 256;
 const MAX_NATIVE_ZOOM = 19; // Esri native satellite resolution limit
@@ -60,6 +63,7 @@ export const SatelliteRoofCanvas: React.FC = () => {
     clearActivePolygon,
     addRoofSection,
     loadDemoRoofPolygon,
+    applyDetectedRoofFaces,
     setViewMode,
   } = useSolarMapperStore();
 
@@ -72,6 +76,23 @@ export const SatelliteRoofCanvas: React.FC = () => {
     sectionId: string;
     index: number;
   } | null>(null);
+
+  // AI Marquee Roof Scanner State
+  const [isMarqueeMode, setIsMarqueeMode] = useState(false);
+  const [marqueeStart, setMarqueeStart] = useState<{ x: number; y: number } | null>(null);
+  const [marqueeCurrent, setMarqueeCurrent] = useState<{ x: number; y: number } | null>(null);
+  const [isAiScanning, setIsAiScanning] = useState(false);
+  const [aiScanStep, setAiScanStep] = useState('Scanning Satellite Spectral Imagery...');
+  const [aiScanBox, setAiScanBox] = useState<{
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+    widthM: number;
+    lengthM: number;
+    areaSqm: number;
+  } | null>(null);
+  const [scanToast, setScanToast] = useState<string | null>(null);
 
   // Resize observer to keep viewport responsive
   useEffect(() => {
@@ -166,11 +187,130 @@ export const SatelliteRoofCanvas: React.FC = () => {
     return tiles;
   }, [centerTileX, centerTileY, dimensions.width, dimensions.height, tileZoom, scaledTileSize]);
 
-  // Pointer event handlers for drawing, dragging vertices, and panning
+  // Dynamic marquee bounding box computation
+  const currentMarqueeBounds = useMemo(() => {
+    if (!marqueeStart || !marqueeCurrent) return null;
+    const minX = Math.min(marqueeStart.x, marqueeCurrent.x);
+    const maxX = Math.max(marqueeStart.x, marqueeCurrent.x);
+    const minY = Math.min(marqueeStart.y, marqueeCurrent.y);
+    const maxY = Math.max(marqueeStart.y, marqueeCurrent.y);
+    const widthPx = maxX - minX;
+    const heightPx = maxY - minY;
+
+    const nw = pixelToGeo(minX, minY);
+    const se = pixelToGeo(maxX, maxY);
+    const widthM = calculateHaversineDistanceMeters(nw, { lat: nw.lat, lng: se.lng });
+    const lengthM = calculateHaversineDistanceMeters(nw, { lat: se.lat, lng: nw.lng });
+    const areaSqm = Math.round(widthM * lengthM);
+
+    return { minX, maxX, minY, maxY, widthPx, heightPx, widthM, lengthM, areaSqm };
+  }, [marqueeStart, marqueeCurrent, pixelToGeo]);
+
+  // Execute AI roof detection workflow
+  const executeAiRoofDetection = async (
+    p1: { x: number; y: number },
+    p2: { x: number; y: number }
+  ) => {
+    let minX = Math.min(p1.x, p2.x);
+    let maxX = Math.max(p1.x, p2.x);
+    let minY = Math.min(p1.y, p2.y);
+    let maxY = Math.max(p1.y, p2.y);
+
+    // If click or small marquee, default to a 130px x 90px bounding box centered at click
+    if (maxX - minX < 15 || maxY - minY < 15) {
+      const midX = (minX + maxX) / 2;
+      const midY = (minY + maxY) / 2;
+      minX = midX - 65;
+      maxX = midX + 65;
+      minY = midY - 45;
+      maxY = midY + 45;
+    }
+
+    const nw = pixelToGeo(minX, minY);
+    const se = pixelToGeo(maxX, maxY);
+
+    // Physical dimensions
+    const widthM = calculateHaversineDistanceMeters(nw, { lat: nw.lat, lng: se.lng });
+    const lengthM = calculateHaversineDistanceMeters(nw, { lat: se.lat, lng: nw.lng });
+    const areaSqm = Math.round(widthM * lengthM);
+
+    setIsAiScanning(true);
+    setAiScanBox({ minX, maxX, minY, maxY, widthM, lengthM, areaSqm });
+    setAiScanStep('Scanning Satellite Spectral Imagery...');
+
+    // Offscreen canvas image capture
+    let imageCropBase64: string | undefined = undefined;
+    try {
+      const offscreen = document.createElement('canvas');
+      const boxW = Math.max(64, Math.round(maxX - minX));
+      const boxH = Math.max(64, Math.round(maxY - minY));
+      offscreen.width = Math.min(512, boxW);
+      offscreen.height = Math.min(512, boxH);
+      const ctx = offscreen.getContext('2d');
+      if (ctx && containerRef.current) {
+        const tileImgs = containerRef.current.querySelectorAll<HTMLImageElement>('img');
+        const rect = containerRef.current.getBoundingClientRect();
+        tileImgs.forEach((img) => {
+          const imgRect = img.getBoundingClientRect();
+          const sx = imgRect.left - rect.left;
+          const sy = imgRect.top - rect.top;
+          ctx.drawImage(img, sx - minX, sy - minY, img.width, img.height);
+        });
+        imageCropBase64 = offscreen.toDataURL('image/jpeg', 0.85);
+      }
+    } catch {
+      // Graceful fallback
+    }
+
+    const timer1 = setTimeout(() => {
+      setAiScanStep('Segmenting Roof Planes, Valleys & Ridges...');
+    }, 450);
+
+    const timer2 = setTimeout(() => {
+      setAiScanStep('Calculating Azimuth Heading & Tilt Vectors...');
+    }, 900);
+
+    try {
+      const result = await detectRoofFromMarquee({
+        bounds: { northWest: nw, southEast: se },
+        dimensions: { widthM, lengthM, areaSqm },
+        imageCropBase64,
+      });
+
+      applyDetectedRoofFaces(result.faces);
+
+      setScanToast(
+        `AI Mapped ${result.faces.length} Roof Faces (${result.faces[0]?.pitchDeg || 18}° pitch • ${
+          result.faces[0]?.azimuthDeg || 180
+        }° azimuth)`
+      );
+      setTimeout(() => setScanToast(null), 4500);
+    } catch (err) {
+      console.error('[AI Roof Detection Error]:', err);
+    } finally {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      setIsAiScanning(false);
+      setAiScanBox(null);
+      setIsMarqueeMode(false);
+    }
+  };
+
+  // Pointer event handlers for drawing, dragging vertices, marquee scanning, and panning
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('.map-control-btn')) return;
 
     if (e.button === 0) {
+      if (isMarqueeMode) {
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const px = e.clientX - rect.left;
+        const py = e.clientY - rect.top;
+        setMarqueeStart({ x: px, y: py });
+        setMarqueeCurrent({ x: px, y: py });
+        return;
+      }
+
       if (!isDrawingMode && !draggedVertex) {
         setIsPanning(true);
         setDragStart({ x: e.clientX, y: e.clientY });
@@ -179,6 +319,15 @@ export const SatelliteRoofCanvas: React.FC = () => {
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isMarqueeMode && marqueeStart) {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+      setMarqueeCurrent({ x: px, y: py });
+      return;
+    }
+
     if (draggedVertex) {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
@@ -198,6 +347,15 @@ export const SatelliteRoofCanvas: React.FC = () => {
   };
 
   const handlePointerUp = () => {
+    if (isMarqueeMode && marqueeStart && marqueeCurrent) {
+      const p1 = marqueeStart;
+      const p2 = marqueeCurrent;
+      setMarqueeStart(null);
+      setMarqueeCurrent(null);
+      executeAiRoofDetection(p1, p2);
+      return;
+    }
+
     if (isPanning) {
       setIsPanning(false);
       // Persist new center when panning concludes
@@ -212,7 +370,7 @@ export const SatelliteRoofCanvas: React.FC = () => {
 
   // Canvas Click: add vertex when in Draw Mode
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDrawingMode || draggedVertex) return;
+    if (isMarqueeMode || !isDrawingMode || draggedVertex) return;
     if ((e.target as HTMLElement).closest('.vertex-handle') || (e.target as HTMLElement).closest('.map-control-btn')) {
       return;
     }
@@ -239,7 +397,7 @@ export const SatelliteRoofCanvas: React.FC = () => {
         onPointerUp={handlePointerUp}
         onClick={handleCanvasClick}
         className={`relative w-full h-[480px] sm:h-[560px] lg:h-[620px] overflow-hidden ${
-          isDrawingMode
+          isDrawingMode || isMarqueeMode
             ? 'cursor-crosshair'
             : isPanning
             ? 'cursor-grabbing'
@@ -341,6 +499,11 @@ export const SatelliteRoofCanvas: React.FC = () => {
                         y={panelPxY - panelPxH / 2}
                         width={panelPxW}
                         height={panelPxH}
+                        transform={
+                          panel.rotationDeg
+                            ? `rotate(${-panel.rotationDeg}, ${panelPxX}, ${panelPxY})`
+                            : undefined
+                        }
                         fill="#0c4a6e"
                         stroke="#38bdf8"
                         strokeWidth="0.8"
@@ -413,7 +576,117 @@ export const SatelliteRoofCanvas: React.FC = () => {
               </g>
             );
           })}
+
+          {/* Active Marquee Bounding Box during dragging */}
+          {currentMarqueeBounds && currentMarqueeBounds.widthPx > 4 && currentMarqueeBounds.heightPx > 4 && (
+            <g>
+              {/* Marquee Area Tint & Pulsing Dashed Border */}
+              <rect
+                x={currentMarqueeBounds.minX}
+                y={currentMarqueeBounds.minY}
+                width={currentMarqueeBounds.widthPx}
+                height={currentMarqueeBounds.heightPx}
+                fill="rgba(245, 158, 11, 0.14)"
+                stroke="#f59e0b"
+                strokeWidth="2"
+                strokeDasharray="6 3"
+              />
+              {/* Corner Calipers (Top-Left, Top-Right, Bottom-Left, Bottom-Right) */}
+              <path
+                d={`M ${currentMarqueeBounds.minX} ${currentMarqueeBounds.minY + 14} L ${currentMarqueeBounds.minX} ${currentMarqueeBounds.minY} L ${currentMarqueeBounds.minX + 14} ${currentMarqueeBounds.minY}`}
+                stroke="#fbbf24"
+                strokeWidth="2.5"
+                fill="none"
+              />
+              <path
+                d={`M ${currentMarqueeBounds.maxX - 14} ${currentMarqueeBounds.minY} L ${currentMarqueeBounds.maxX} ${currentMarqueeBounds.minY} L ${currentMarqueeBounds.maxX} ${currentMarqueeBounds.minY + 14}`}
+                stroke="#fbbf24"
+                strokeWidth="2.5"
+                fill="none"
+              />
+              <path
+                d={`M ${currentMarqueeBounds.minX} ${currentMarqueeBounds.maxY - 14} L ${currentMarqueeBounds.minX} ${currentMarqueeBounds.maxY} L ${currentMarqueeBounds.minX + 14} ${currentMarqueeBounds.maxY}`}
+                stroke="#fbbf24"
+                strokeWidth="2.5"
+                fill="none"
+              />
+              <path
+                d={`M ${currentMarqueeBounds.maxX - 14} ${currentMarqueeBounds.maxY} L ${currentMarqueeBounds.maxX} ${currentMarqueeBounds.maxY} L ${currentMarqueeBounds.maxX} ${currentMarqueeBounds.maxY - 14}`}
+                stroke="#fbbf24"
+                strokeWidth="2.5"
+                fill="none"
+              />
+            </g>
+          )}
         </svg>
+
+        {/* Live Marquee Dimension Chip while dragging */}
+        {currentMarqueeBounds && currentMarqueeBounds.widthPx > 10 && (
+          <div
+            className="absolute pointer-events-none z-30 transition-all"
+            style={{
+              left: `${currentMarqueeBounds.minX}px`,
+              top: `${Math.max(12, currentMarqueeBounds.minY - 32)}px`,
+            }}
+          >
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/90 border border-amber-500/40 text-amber-400 font-mono text-xs font-bold shadow-xl backdrop-blur-md whitespace-nowrap">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+              <span>
+                {currentMarqueeBounds.widthM.toFixed(1)}m × {currentMarqueeBounds.lengthM.toFixed(1)}m • {currentMarqueeBounds.areaSqm} m²
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* AI Laser Scanning Radar HUD Overlay */}
+        {isAiScanning && aiScanBox && (
+          <div
+            className="absolute pointer-events-none z-30 overflow-hidden border-2 border-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.4)] rounded-xl bg-amber-500/10 backdrop-blur-[1px]"
+            style={{
+              left: `${aiScanBox.minX}px`,
+              top: `${aiScanBox.minY}px`,
+              width: `${aiScanBox.maxX - aiScanBox.minX}px`,
+              height: `${aiScanBox.maxY - aiScanBox.minY}px`,
+            }}
+          >
+            {/* Animated Laser Beam */}
+            <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-amber-300 to-transparent shadow-[0_0_15px_#f59e0b] animate-laser-sweep" />
+
+            {/* Radar Center HUD Card */}
+            <div className="absolute inset-0 flex items-center justify-center p-2">
+              <div className="p-1 rounded-2xl bg-white/10 backdrop-blur-2xl shadow-2xl max-w-xs">
+                <div className="p-3.5 rounded-xl bg-slate-950/95 border border-amber-500/30 text-center space-y-1.5">
+                  <div className="flex items-center justify-center gap-2 text-amber-400">
+                    <Sparkles className="w-4 h-4 animate-spin text-amber-400" />
+                    <span className="text-xs font-bold font-mono uppercase tracking-wider">AI Photogrammetry</span>
+                  </div>
+                  <p className="text-xs font-semibold text-slate-200">
+                    {aiScanStep}
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-mono">
+                    {aiScanBox.widthM.toFixed(1)}m × {aiScanBox.lengthM.toFixed(1)}m • {aiScanBox.areaSqm} m²
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Top-Center: Marquee Guidance Banner */}
+        {isMarqueeMode && !isAiScanning && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-slate-950/90 border border-amber-500/50 text-slate-200 text-xs font-semibold backdrop-blur-xl shadow-2xl flex items-center gap-2 z-30 animate-pulse">
+            <Scan className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <span className="whitespace-nowrap">Drag a box over any roof to map faces, pitch & orientation with AI</span>
+          </div>
+        )}
+
+        {/* Top-Center: AI Scan Success Toast */}
+        {scanToast && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-slate-950/95 border border-emerald-500/50 text-emerald-300 text-xs font-semibold backdrop-blur-xl shadow-2xl flex items-center gap-2 z-30">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            <span className="whitespace-nowrap">{scanToast}</span>
+          </div>
+        )}
 
         {/* Self-Intersection Warning Banner */}
         {activeSection?.hasBowtieCross && (
@@ -484,9 +757,31 @@ export const SatelliteRoofCanvas: React.FC = () => {
 
         {/* Floating Drawing & Zoom Studio Dock (Unified, No-Overlap Island) */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[calc(100%-1.5rem)] overflow-x-auto no-scrollbar flex items-center gap-1.5 p-1.5 rounded-full bg-slate-950/90 border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-2xl z-30 select-none">
+          {/* AI Marquee Auto-Map Button */}
           <button
             type="button"
-            onClick={() => setIsDrawingMode(!isDrawingMode)}
+            onClick={() => {
+              if (isDrawingMode) setIsDrawingMode(false);
+              setIsMarqueeMode(!isMarqueeMode);
+            }}
+            className={`map-control-btn px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 whitespace-nowrap flex-shrink-0 ${
+              isMarqueeMode
+                ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/30'
+                : 'text-amber-300 hover:text-white hover:bg-white/10'
+            }`}
+            title="Marquee Drag over any building roof to auto-detect faces, tilt & azimuth with AI"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-current flex-shrink-0 animate-pulse" />
+            <span className="whitespace-nowrap">{isMarqueeMode ? 'Cancel Marquee' : 'AI Auto-Map'}</span>
+          </button>
+
+          {/* Manual Drawing Mode */}
+          <button
+            type="button"
+            onClick={() => {
+              if (isMarqueeMode) setIsMarqueeMode(false);
+              setIsDrawingMode(!isDrawingMode);
+            }}
             className={`map-control-btn px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 transition-all active:scale-95 whitespace-nowrap flex-shrink-0 ${
               isDrawingMode
                 ? 'bg-amber-400 text-slate-950 shadow-sm shadow-amber-500/30'
@@ -508,7 +803,6 @@ export const SatelliteRoofCanvas: React.FC = () => {
             className="map-control-btn px-3 py-1.5 rounded-full text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
             title="Load sample residential 4-corner roof"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
             <span className="whitespace-nowrap">Sample Roof</span>
           </button>
 

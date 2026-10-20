@@ -154,7 +154,11 @@ const Roof3DMesh: React.FC<{
                 const pL = panel.lengthM;
 
                 return (
-                  <group key={panel.id} position={[panel.x, panel.y, 0.17]}>
+                  <group
+                    key={panel.id}
+                    position={[panel.x, panel.y, 0.17]}
+                    rotation={[0, 0, (panel.rotationDeg || 0) * (Math.PI / 180)]}
+                  >
                     {/* Mounting Rails Underneath Panel */}
                     <mesh position={[0, -pL * 0.25, -0.015]}>
                       <boxGeometry args={[pW * 0.95, 0.04, 0.025]} />

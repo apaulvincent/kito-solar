@@ -51,3 +51,22 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* AI Marquee Laser Scan Beam */
+@keyframes laserSweep {
+  0% {
+    top: 0%;
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0.4;
+  }
+}
+
+.animate-laser-sweep {
+  animation: laserSweep 1.6s ease-in-out infinite alternate;
+}

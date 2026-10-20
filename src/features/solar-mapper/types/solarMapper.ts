@@ -57,6 +57,7 @@ export interface PlacedPanel {
   widthM: number;
   lengthM: number;
   orientation: 'portrait' | 'landscape';
+  rotationDeg?: number; // rotation in degrees relative to local axes
 }
 
 export interface PanelSpec {
@@ -101,6 +102,7 @@ export interface RoofPolygonSection {
   setbackRatio: number; // default 0.82 (18% reserved for edges & walkways)
   panelOrientation: PanelOrientation;
   panelWattage: 550 | 580 | 600;
+  panelRotationDeg?: number; // Custom panel alignment angle in degrees (auto-aligns to roof edge if undefined)
   // Computed metrics
   flatAreaSqm: number;
   slopedAreaSqm: number;
@@ -114,6 +116,23 @@ export interface RoofPolygonSection {
   orientationYieldFactor: number;
   estimatedDailyKwh: number;
   hasBowtieCross: boolean;
+}
+
+export interface DetectedRoofFace {
+  name: string;
+  vertices: GeoPoint[];
+  pitchDeg: number;
+  azimuthDeg: number;
+  shadingLossPercent?: number;
+  confidence?: number;
+}
+
+export interface MarqueeBoundingBox {
+  northWest: GeoPoint;
+  southEast: GeoPoint;
+  widthMeters: number;
+  lengthMeters: number;
+  areaSqm: number;
 }
 
 export interface RoofMappingSummary {
