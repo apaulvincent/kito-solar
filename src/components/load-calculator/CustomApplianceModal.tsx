@@ -144,7 +144,7 @@ export const CustomApplianceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   }`}
                 >
                   <div className="flex items-center gap-1.5 mb-1">
-                    <Lightbulb className="w-4 h-4" stroke="url(#kito-appliance-gradient)" strokeWidth={2} />
+                    <Lightbulb className="w-4 h-4 text-amber-500" strokeWidth={1.75} />
                     <span className="text-xs font-bold text-slate-900 dark:text-white">1.0x Resistive</span>
                   </div>
                   <div className="text-[10px] text-slate-400">LEDs, Heaters, TV</div>
@@ -160,7 +160,7 @@ export const CustomApplianceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   }`}
                 >
                   <div className="flex items-center gap-1.5 mb-1">
-                    <AirVent className="w-4 h-4" stroke="url(#kito-appliance-gradient)" strokeWidth={2} />
+                    <AirVent className="w-4 h-4 text-amber-500" strokeWidth={1.75} />
                     <span className="text-xs font-bold text-slate-900 dark:text-white">1.3x Inverter</span>
                   </div>
                   <div className="text-[10px] text-slate-400">Inverter AC / Fridge</div>
@@ -176,7 +176,7 @@ export const CustomApplianceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   }`}
                 >
                   <div className="flex items-center gap-1.5 mb-1">
-                    <Gauge className="w-4 h-4" stroke="url(#kito-appliance-gradient)" strokeWidth={2} />
+                    <Gauge className="w-4 h-4 text-amber-500" strokeWidth={1.75} />
                     <span className="text-xs font-bold text-slate-900 dark:text-white">3.5x Motor</span>
                   </div>
                   <div className="text-[10px] text-slate-400">Pumps, Compressors</div>

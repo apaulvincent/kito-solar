@@ -72,9 +72,9 @@ export const AppliancePresetPicker: React.FC = () => {
                 key={cat.id}
                 type="button"
                 onClick={() => setActiveCategory(cat.id)}
-                className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] ${
+                className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors ${
                   isSelected
-                    ? 'bg-gradient-to-r from-amber-500 via-amber-600 to-indigo-700 text-white font-bold shadow-md shadow-amber-500/25 ring-1 ring-amber-400/40'
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-xs shadow-amber-500/20'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
                 }`}
               >
@@ -94,22 +94,19 @@ export const AppliancePresetPicker: React.FC = () => {
             return (
               <div
                 key={preset.id}
-                className="group relative p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800/90 bg-slate-50/50 dark:bg-slate-900/40 hover:border-amber-500/60 dark:hover:border-amber-500/50 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col justify-between"
+                className="group relative p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800/90 bg-slate-50/50 dark:bg-slate-900/40 hover:border-amber-500/60 dark:hover:border-amber-500/50 transition-colors flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start gap-3">
-                    {/* High-End Double-Bezel Gradient Icon Enclosure */}
-                    <div className="relative w-12 h-12 rounded-2xl flex-shrink-0 p-0.5 bg-gradient-to-br from-amber-500/40 via-amber-600/30 to-indigo-700/40 border border-amber-500/30 dark:border-white/10 shadow-xs group-hover:scale-105 group-hover:border-amber-400 group-hover:shadow-md group-hover:shadow-amber-500/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]">
-                      <div className="w-full h-full rounded-[calc(1rem-2px)] bg-white/95 dark:bg-[#080d19]/90 backdrop-blur-xs flex items-center justify-center">
-                        <ApplianceIcon
-                          presetId={preset.id}
-                          category={preset.category}
-                          name={preset.name}
-                          className="w-6 h-6"
-                          strokeWidth={2}
-                          useGradient
-                        />
-                      </div>
+                    {/* Clean Minimalist Theme Amber Icon Enclosure */}
+                    <div className="w-11 h-11 rounded-xl flex-shrink-0 bg-amber-500/10 dark:bg-amber-500/10 border border-amber-500/25 dark:border-amber-500/20 flex items-center justify-center text-amber-500 group-hover:bg-amber-500/15 group-hover:border-amber-500/40 transition-colors">
+                      <ApplianceIcon
+                        presetId={preset.id}
+                        category={preset.category}
+                        name={preset.name}
+                        className="w-5.5 h-5.5 text-amber-500"
+                        strokeWidth={1.75}
+                      />
                     </div>
 
                     <div className="flex-1 min-w-0">

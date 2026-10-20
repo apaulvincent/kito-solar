@@ -100,10 +100,14 @@ export const SystemGoalSelector: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-2.5">
-                      <div className="relative w-11 h-11 rounded-xl flex-shrink-0 p-0.5 bg-gradient-to-br from-amber-500/40 via-amber-600/30 to-indigo-700/40 border border-amber-500/30 dark:border-white/10 shadow-xs">
-                        <div className="w-full h-full rounded-[calc(0.75rem-2px)] bg-white/95 dark:bg-[#080d19]/90 backdrop-blur-xs flex items-center justify-center">
-                          <opt.icon className="w-5 h-5" stroke="url(#kito-appliance-gradient)" strokeWidth={2} />
-                        </div>
+                      <div
+                        className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700/60'
+                        }`}
+                      >
+                        <opt.icon className="w-5 h-5 text-amber-500" strokeWidth={1.75} />
                       </div>
                       {isSelected && (
                         <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-4 ring-amber-500/20" />

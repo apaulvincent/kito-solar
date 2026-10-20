@@ -104,17 +104,14 @@ export const ActiveLoadList: React.FC = () => {
                 {/* Top Row: Title, Surge Pill, Critical Toggle, Delete */}
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="relative w-10 h-10 rounded-xl flex-shrink-0 p-0.5 bg-gradient-to-br from-amber-500/40 via-amber-600/30 to-indigo-700/40 border border-amber-500/30 dark:border-white/10 shadow-xs">
-                      <div className="w-full h-full rounded-[calc(0.75rem-2px)] bg-white/95 dark:bg-[#080d19]/90 backdrop-blur-xs flex items-center justify-center">
-                        <ApplianceIcon
-                          presetId={item.presetId}
-                          category={item.category}
-                          name={item.name}
-                          className="w-5 h-5"
-                          strokeWidth={2}
-                          useGradient
-                        />
-                      </div>
+                    <div className="w-9 h-9 rounded-xl flex-shrink-0 bg-amber-500/10 border border-amber-500/25 dark:border-amber-500/20 flex items-center justify-center text-amber-500">
+                      <ApplianceIcon
+                        presetId={item.presetId}
+                        category={item.category}
+                        name={item.name}
+                        className="w-5 h-5 text-amber-500"
+                        strokeWidth={1.75}
+                      />
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">

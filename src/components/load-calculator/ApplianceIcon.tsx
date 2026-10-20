@@ -19,28 +19,8 @@ import {
   Zap,
   Cpu,
   Droplets,
-  Layers,
 } from 'lucide-react';
 import { ApplianceCategory } from '@/lib/applianceSizingEngine';
-
-export const KitoApplianceGradientDefs: React.FC = () => (
-  <svg width="0" height="0" className="absolute -z-10 pointer-events-none opacity-0" aria-hidden="true">
-    <defs>
-      <linearGradient id="kito-appliance-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#F59E0B" />
-        <stop offset="35%" stopColor="#EA580C" />
-        <stop offset="70%" stopColor="#9333EA" />
-        <stop offset="100%" stopColor="#4F46E5" />
-      </linearGradient>
-      <linearGradient id="kito-appliance-gradient-h" x1="0%" y1="50%" x2="100%" y2="50%">
-        <stop offset="0%" stopColor="#F59E0B" />
-        <stop offset="40%" stopColor="#EA580C" />
-        <stop offset="70%" stopColor="#9333EA" />
-        <stop offset="100%" stopColor="#4F46E5" />
-      </linearGradient>
-    </defs>
-  </svg>
-);
 
 interface Props {
   presetId?: string;
@@ -48,24 +28,19 @@ interface Props {
   name?: string;
   className?: string;
   strokeWidth?: number;
-  useGradient?: boolean;
 }
 
 export const ApplianceIcon: React.FC<Props> = ({
   presetId,
   category,
   name = '',
-  className = 'w-6 h-6',
-  strokeWidth = 2,
-  useGradient = true,
+  className = 'w-6 h-6 text-amber-500',
+  strokeWidth = 1.75,
 }) => {
   const normName = name.toLowerCase();
-  const strokeColor = useGradient ? 'url(#kito-appliance-gradient)' : 'currentColor';
   const iconProps = {
     className,
     strokeWidth,
-    stroke: strokeColor,
-    color: strokeColor,
   };
 
   // 1. Direct Preset Mapping
