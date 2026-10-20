@@ -19,6 +19,7 @@ import { GeoPoint } from '../types/solarMapper';
 import { calculateHaversineDistanceMeters } from '../utils/geodesicMath';
 
 const TILE_SIZE = 256;
+const MAX_NATIVE_ZOOM = 19; // Esri native satellite resolution limit
 
 // Mercator Projection Math
 function lngToTileX(lng: number, zoom: number): number {
@@ -87,51 +88,56 @@ export const SatelliteRoofCanvas: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Center coordinate in Web Mercator tile units
+  // Native tile fetch zoom (capped at 19 so Esri never returns placeholder tiles)
+  const tileZoom = Math.min(zoom, MAX_NATIVE_ZOOM);
+  const zoomScale = Math.pow(2, zoom - tileZoom);
+  const scaledTileSize = TILE_SIZE * zoomScale;
+
+  // Center coordinate in Web Mercator tile units at tileZoom
   const centerTileX = useMemo(
-    () => lngToTileX(coordinates.lng, zoom) + panOffset.x / TILE_SIZE,
-    [coordinates.lng, zoom, panOffset.x]
+    () => lngToTileX(coordinates.lng, tileZoom) + panOffset.x / scaledTileSize,
+    [coordinates.lng, tileZoom, panOffset.x, scaledTileSize]
   );
   const centerTileY = useMemo(
-    () => latToTileY(coordinates.lat, zoom) + panOffset.y / TILE_SIZE,
-    [coordinates.lat, zoom, panOffset.y]
+    () => latToTileY(coordinates.lat, tileZoom) + panOffset.y / scaledTileSize,
+    [coordinates.lat, tileZoom, panOffset.y, scaledTileSize]
   );
 
   // Convert (lat, lng) to canvas (px, py)
   const geoToPixel = useCallback(
     (pt: GeoPoint) => {
-      const tileX = lngToTileX(pt.lng, zoom);
-      const tileY = latToTileY(pt.lat, zoom);
-      const px = dimensions.width / 2 + (tileX - centerTileX) * TILE_SIZE;
-      const py = dimensions.height / 2 + (tileY - centerTileY) * TILE_SIZE;
+      const tileX = lngToTileX(pt.lng, tileZoom);
+      const tileY = latToTileY(pt.lat, tileZoom);
+      const px = dimensions.width / 2 + (tileX - centerTileX) * scaledTileSize;
+      const py = dimensions.height / 2 + (tileY - centerTileY) * scaledTileSize;
       return { px, py };
     },
-    [zoom, centerTileX, centerTileY, dimensions.width, dimensions.height]
+    [tileZoom, centerTileX, centerTileY, dimensions.width, dimensions.height, scaledTileSize]
   );
 
   // Convert canvas (px, py) to (lat, lng)
   const pixelToGeo = useCallback(
     (px: number, py: number): GeoPoint => {
-      const tileX = centerTileX + (px - dimensions.width / 2) / TILE_SIZE;
-      const tileY = centerTileY + (py - dimensions.height / 2) / TILE_SIZE;
+      const tileX = centerTileX + (px - dimensions.width / 2) / scaledTileSize;
+      const tileY = centerTileY + (py - dimensions.height / 2) / scaledTileSize;
       return {
-        lat: tileYToLat(tileY, zoom),
-        lng: tileXToLng(tileX, zoom),
+        lat: tileYToLat(tileY, tileZoom),
+        lng: tileXToLng(tileX, tileZoom),
       };
     },
-    [centerTileX, centerTileY, dimensions.width, dimensions.height, zoom]
+    [centerTileX, centerTileY, dimensions.width, dimensions.height, tileZoom, scaledTileSize]
   );
 
-  // Compute visible tile indices for Slippy map
+  // Compute visible tile indices for Slippy map at tileZoom
   const visibleTiles = useMemo(() => {
-    const tilesAcross = Math.ceil(dimensions.width / TILE_SIZE) + 2;
-    const tilesDown = Math.ceil(dimensions.height / TILE_SIZE) + 2;
+    const tilesAcross = Math.ceil(dimensions.width / scaledTileSize) + 2;
+    const tilesDown = Math.ceil(dimensions.height / scaledTileSize) + 2;
 
     const startTileX = Math.floor(centerTileX - tilesAcross / 2);
     const startTileY = Math.floor(centerTileY - tilesDown / 2);
 
-    const tiles: { key: string; x: number; y: number; px: number; py: number; url: string }[] = [];
-    const maxTile = Math.pow(2, zoom);
+    const tiles: { key: string; x: number; y: number; px: number; py: number; size: number; url: string }[] = [];
+    const maxTile = Math.pow(2, tileZoom);
 
     for (let ty = 0; ty <= tilesDown; ty++) {
       for (let tx = 0; tx <= tilesAcross; tx++) {
@@ -139,25 +145,26 @@ export const SatelliteRoofCanvas: React.FC = () => {
         const curY = startTileY + ty;
 
         if (curY >= 0 && curY < maxTile) {
-          const px = dimensions.width / 2 + (startTileX + tx - centerTileX) * TILE_SIZE;
-          const py = dimensions.height / 2 + (curY - centerTileY) * TILE_SIZE;
+          const px = dimensions.width / 2 + (startTileX + tx - centerTileX) * scaledTileSize;
+          const py = dimensions.height / 2 + (curY - centerTileY) * scaledTileSize;
 
           // Esri World Imagery (High-Res Global Satellite Basemap)
-          const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${curY}/${curX}`;
+          const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${tileZoom}/${curY}/${curX}`;
 
           tiles.push({
-            key: `${zoom}-${curX}-${curY}`,
+            key: `${tileZoom}-${curX}-${curY}`,
             x: curX,
             y: curY,
             px,
             py,
+            size: scaledTileSize,
             url,
           });
         }
       }
     }
     return tiles;
-  }, [centerTileX, centerTileY, dimensions.width, dimensions.height, zoom]);
+  }, [centerTileX, centerTileY, dimensions.width, dimensions.height, tileZoom, scaledTileSize]);
 
   // Pointer event handlers for drawing, dragging vertices, and panning
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -248,8 +255,10 @@ export const SatelliteRoofCanvas: React.FC = () => {
               alt=""
               loading="lazy"
               crossOrigin="anonymous"
-              className="absolute w-[256px] h-[256px] object-cover filter contrast-[1.05] brightness-[0.95]"
+              className="absolute object-cover filter contrast-[1.05] brightness-[0.95]"
               style={{
+                width: `${tile.size}px`,
+                height: `${tile.size}px`,
                 transform: `translate3d(${tile.px}px, ${tile.py}px, 0)`,
               }}
             />
@@ -491,7 +500,7 @@ export const SatelliteRoofCanvas: React.FC = () => {
             <button
               type="button"
               onClick={() => setZoom(zoom + 1)}
-              disabled={zoom >= 20}
+              disabled={zoom >= 21}
               className="map-control-btn p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-40"
               title="Zoom In"
             >
@@ -500,7 +509,7 @@ export const SatelliteRoofCanvas: React.FC = () => {
             <button
               type="button"
               onClick={() => setZoom(zoom - 1)}
-              disabled={zoom <= 17}
+              disabled={zoom <= 16}
               className="map-control-btn p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-40"
               title="Zoom Out"
             >
@@ -511,7 +520,10 @@ export const SatelliteRoofCanvas: React.FC = () => {
 
         {/* Bottom-Right Coordinates / Zoom Indicator Badge */}
         <div className="absolute bottom-4 right-4 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] font-mono text-slate-400 backdrop-blur-md z-30">
-          <span>Zoom: {zoom}</span>
+          <span>
+            Zoom {zoom}
+            {zoom > MAX_NATIVE_ZOOM && ` (${zoomScale}x Magnification)`}
+          </span>
           <span>•</span>
           <span>Esri Satellite</span>
         </div>

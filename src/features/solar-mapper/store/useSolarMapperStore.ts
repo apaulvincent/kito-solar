@@ -143,7 +143,7 @@ export const useSolarMapperStore = create<SolarMapperState>()(
         }));
       },
 
-      setZoom: (zoom) => set({ zoom: Math.min(20, Math.max(17, zoom)) }),
+      setZoom: (zoom) => set({ zoom: Math.min(21, Math.max(16, zoom)) }),
       setDesignBasis: (designBasis) => set({ designBasis }),
       setPanelWattage: (panelWattage) => {
         set((state) => {
