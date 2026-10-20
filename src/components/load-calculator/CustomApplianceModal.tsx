@@ -218,8 +218,8 @@ export const CustomApplianceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   className="w-4 h-4 rounded-md text-amber-500 focus:ring-amber-500 border-slate-300"
                 />
                 <div className="text-xs">
-                  <span className="font-semibold text-slate-900 dark:text-white flex items-center gap-1">
-                    <Zap className="w-3.5 h-3.5 text-amber-500 fill-current" />
+                  <span className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-amber-500" />
                     Critical Brownout Backup Load
                   </span>
                   <span className="text-slate-500 dark:text-slate-400 block text-[11px]">

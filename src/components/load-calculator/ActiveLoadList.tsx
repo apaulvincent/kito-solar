@@ -142,7 +142,7 @@ export const ActiveLoadList: React.FC = () => {
                           : 'Non-critical: Runs on solar and grid, does not require battery sizing'
                       }
                     >
-                      <Zap className={`w-3 h-3 ${item.isCriticalBackup ? 'fill-current' : ''}`} />
+                      <Zap className="w-3 h-3 stroke-[1.75]" />
                       <span>{item.isCriticalBackup ? 'Critical Backup' : 'Standard'}</span>
                     </button>
 
