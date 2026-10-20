@@ -462,25 +462,25 @@ export const Roof3DPreviewCanvas: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowWalls(!showWalls)}
-            className={`px-3 py-2 rounded-xl text-xs font-semibold backdrop-blur-md shadow-md border transition-all flex items-center gap-1.5 active:scale-95 ${
+            className={`px-3 py-2 rounded-xl text-xs font-semibold backdrop-blur-md shadow-md border transition-all flex items-center gap-1.5 active:scale-95 whitespace-nowrap flex-shrink-0 ${
               showWalls
                 ? 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 border-slate-700/80'
                 : 'bg-amber-500/15 text-amber-400 border-amber-500/40'
             }`}
             title="Toggle building walls visibility"
           >
-            {showWalls ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">Walls {showWalls ? 'ON' : 'OFF'}</span>
+            {showWalls ? <Eye className="w-3.5 h-3.5 flex-shrink-0" /> : <EyeOff className="w-3.5 h-3.5 flex-shrink-0" />}
+            <span className="hidden sm:inline whitespace-nowrap">Walls {showWalls ? 'ON' : 'OFF'}</span>
           </button>
 
           {/* Switch back to 2D Map */}
           <button
             type="button"
             onClick={() => setViewMode('2d_satellite')}
-            className="px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 text-xs font-bold backdrop-blur-md shadow-md transition-all flex items-center gap-1.5 active:scale-95"
+            className="px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 text-xs font-bold backdrop-blur-md shadow-md transition-all flex items-center gap-1.5 active:scale-95 whitespace-nowrap flex-shrink-0"
           >
-            <Map className="w-4 h-4 text-amber-500" />
-            <span>2D Satellite Map</span>
+            <Map className="w-4 h-4 text-amber-500 flex-shrink-0" />
+            <span className="whitespace-nowrap">2D Satellite Map</span>
           </button>
         </div>
 
@@ -562,30 +562,30 @@ export const Roof3DPreviewCanvas: React.FC = () => {
         {/* Bottom Sun Position & Time Slider Island */}
         <div className="absolute bottom-4 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-lg z-20 p-3.5 rounded-2xl bg-slate-950/90 border border-white/10 backdrop-blur-xl shadow-2xl">
           <div className="flex items-center justify-between gap-2 mb-2 text-xs">
-            <div className="flex items-center gap-1.5 font-bold text-white">
-              <Sun className="w-4 h-4 text-amber-500" />
-              <span>Sun Simulation:</span>
-              <span className="font-mono text-amber-400">{formatSunTime(sunHour)}</span>
+            <div className="flex items-center gap-1.5 font-bold text-white whitespace-nowrap flex-shrink-0">
+              <Sun className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              <span className="whitespace-nowrap">Sun Simulation:</span>
+              <span className="font-mono text-amber-400 whitespace-nowrap">{formatSunTime(sunHour)}</span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setSunHour(6)}
-                className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors whitespace-nowrap"
               >
                 6 AM
               </button>
               <button
                 type="button"
                 onClick={() => setSunHour(12)}
-                className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors font-bold"
+                className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors font-bold whitespace-nowrap"
               >
                 12 PM
               </button>
               <button
                 type="button"
                 onClick={() => setSunHour(18)}
-                className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors whitespace-nowrap"
               >
                 6 PM
               </button>

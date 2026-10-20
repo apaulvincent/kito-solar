@@ -174,7 +174,7 @@ export const RoofSectionInspector: React.FC = () => {
 
           {/* Global Panel Wattage Presets */}
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mr-0.5">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mr-0.5 whitespace-nowrap">
               Panel:
             </span>
             {([550, 580, 600] as const).map((watt) => (
@@ -182,7 +182,7 @@ export const RoofSectionInspector: React.FC = () => {
                 key={watt}
                 type="button"
                 onClick={() => setPanelWattage(watt)}
-                className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold transition-all ${
+                className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold transition-all whitespace-nowrap flex-shrink-0 ${
                   panelWattage === watt
                     ? 'bg-amber-400 text-slate-950 shadow-xs'
                     : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -286,7 +286,7 @@ export const RoofSectionInspector: React.FC = () => {
                   onClick={() =>
                     updateRoofSectionConfig(activeSection.id, { pitchDeg: p.pitch })
                   }
-                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all ${
+                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
                     activeSection.pitchDeg === p.pitch
                       ? 'bg-amber-400 text-slate-950 font-bold shadow-xs'
                       : 'bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-white/5 hover:text-slate-950 dark:hover:text-white'
@@ -337,7 +337,7 @@ export const RoofSectionInspector: React.FC = () => {
                   onClick={() =>
                     updateRoofSectionConfig(activeSection.id, { azimuthDeg: a.deg })
                   }
-                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all ${
+                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
                     activeSection.azimuthDeg === a.deg
                       ? 'bg-amber-400 text-slate-950 font-bold shadow-xs'
                       : 'bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-white/5 hover:text-slate-950 dark:hover:text-white'
@@ -366,7 +366,7 @@ export const RoofSectionInspector: React.FC = () => {
                         panelOrientation: opt.key,
                       })
                     }
-                    className={`py-2 px-1.5 rounded-xl text-center text-xs font-semibold transition-all ${
+                    className={`py-2 px-1.5 rounded-xl text-center text-xs font-semibold transition-all whitespace-nowrap ${
                       activeSection.panelOrientation === opt.key
                         ? 'bg-amber-400 text-slate-950 font-bold shadow-xs'
                         : 'bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10'
