@@ -176,207 +176,197 @@ export const SolarCopilotDrawer: React.FC = () => {
   return (
     <aside
       aria-label="Ask Jenny Solar Assistant"
-      className="fixed inset-y-0 right-0 z-50 w-full sm:w-[560px] md:w-[620px] lg:w-[680px] bg-slate-950/40 backdrop-blur-2xl p-2 sm:p-4 flex flex-col justify-end transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] shadow-2xl"
+      className="fixed inset-y-0 right-0 z-50 w-full sm:w-[500px] md:w-[560px] lg:w-[600px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col shadow-2xl transition-all duration-300"
     >
-      <div className="h-full w-full rounded-[2.25rem] p-2 bg-gradient-to-b from-white/90 via-slate-100/80 to-slate-200/60 dark:from-white/10 dark:via-white/[0.03] dark:to-black/50 ring-1 ring-slate-300/80 dark:ring-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden">
-        <div className="h-full w-full rounded-[calc(2.25rem-0.5rem)] bg-white/95 dark:bg-[#070B14]/95 flex flex-col overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
-          <header className="px-6 py-4.5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between gap-3 bg-slate-50/60 dark:bg-white/[0.02]">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center shadow-md shadow-amber-500/25 ring-2 ring-amber-400/40">
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2.5">
-                  <h2 className="text-sm sm:text-[15px] font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                    Ask Jenny · Solar Assistant
-                  </h2>
-                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-[0.2em] uppercase bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-amber-500/30">
-                    Online
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full ring-1 ring-emerald-500/20">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    {aiCopilotService.getActiveEngineName()}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={handleResetChat}
-                title="Reset conversation"
-                className="p-2 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-200 active:scale-95"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsCopilotOpen(false)}
-                title="Close Copilot"
-                className="p-2 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-200 active:scale-95"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </header>
-
-          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5 scroll-smooth">
-            {messages.map((message) => {
-              const isUser = message.role === 'user';
-              const proposalResult = message.toolInvocations?.find(
-                (t) =>
-                  t.toolName === 'generateSolarSetup' ||
-                  t.toolName === 'generateSolarSetupFromBill' ||
-                  t.toolName === 'modifyExistingProjectSetup'
-              )?.result as any;
-
-              return (
-                <div
-                  key={message.id}
-                  className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
-                >
-                  {!isUser && (
-                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/10 ring-1 ring-slate-200 dark:ring-white/10 flex items-center justify-center shrink-0 mt-1 shadow-sm">
-                      <Bot className="w-4 h-4 text-amber-500" />
-                    </div>
-                  )}
-
-                  <div className={`max-w-[88%] space-y-2 ${isUser ? 'items-end' : 'items-start'}`}>
-                    {isUser ? (
-                      <div className="px-5 py-3.5 rounded-[1.75rem] rounded-tr-sm bg-gradient-to-br from-amber-500 via-amber-500 to-amber-600 text-white font-medium text-[15px] sm:text-[16px] leading-[1.6] shadow-lg shadow-amber-500/20 ring-1 ring-amber-400/30 whitespace-pre-wrap">
-                        <ChatMessageContent content={message.content} isUser={true} />
-                      </div>
-                    ) : (
-                      <div className="p-1 rounded-[1.75rem] rounded-tl-sm bg-gradient-to-b from-slate-200/70 to-slate-100/40 dark:from-white/10 dark:to-white/[0.02] ring-1 ring-slate-200/80 dark:ring-white/5 shadow-sm">
-                        <div className="px-5 py-4 rounded-[calc(1.75rem-0.25rem)] rounded-tl-sm bg-white/95 dark:bg-[#0B1120]/95 text-slate-800 dark:text-slate-100 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)]">
-                          <ChatMessageContent content={message.content} isUser={false} />
-                        </div>
-                      </div>
-                    )}
-
-                    {!isUser && message.engine && (
-                      <div className="flex items-center gap-1.5 px-2">
-                        <span className="text-[10px] font-mono font-medium text-slate-400 dark:text-slate-500">
-                          {message.engine.startsWith('gemini')
-                            ? '⚡ Powered by Gemini Flash'
-                            : '⚙️ Powered by Deterministic PV Engine'}
-                        </span>
-                      </div>
-                    )}
-
-                    {proposalResult && proposalResult.engineeringSpecs && (
-                      <SetupProposalCard proposal={proposalResult} />
-                    )}
-                  </div>
-
-                  {isUser && (
-                    <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30 flex items-center justify-center shrink-0 mt-1">
-                      <User className="w-4 h-4" />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {isTyping && (
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/10 ring-1 ring-slate-200 dark:ring-white/10 flex items-center justify-center shrink-0 shadow-sm">
-                  <Bot className="w-4 h-4 text-amber-500 animate-spin" />
-                </div>
-                <div className="px-5 py-3.5 rounded-[1.5rem] rounded-tl-sm bg-slate-100/90 dark:bg-white/[0.04] text-slate-600 dark:text-slate-300 ring-1 ring-slate-200/60 dark:ring-white/5 flex items-center gap-2 shadow-sm">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-bounce" />
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-bounce [animation-delay:0.2s]" />
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-bounce [animation-delay:0.4s]" />
-                  <span className="text-xs sm:text-sm font-mono ml-2 text-slate-500 dark:text-slate-400">
-                    Sizing system & matching hardware...
-                  </span>
-                </div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
+      <header className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
+            <Sparkles className="w-4.5 h-4.5" />
           </div>
-
-          {messages.length <= 2 && (
-            <div className="px-5 pb-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-slate-500 block">
-                  Quick Sizing Prompts:
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setDisplayedPrompts(getRandomPrompts(ALL_QUICK_SIZING_PROMPTS, 4))}
-                  className="inline-flex items-center gap-1.5 text-[10px] font-mono font-semibold text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors px-2 py-0.5 rounded-full hover:bg-amber-500/10 cursor-pointer active:scale-95"
-                  title="Shuffle 4 new prompts"
-                >
-                  <RotateCcw className="w-2.5 h-2.5" />
-                  <span>Shuffle</span>
-                </button>
-              </div>
-              <div className="flex flex-col gap-2">
-                {displayedPrompts.map((prompt, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleSend(prompt)}
-                    className="text-left text-xs sm:text-[13px] px-4 py-2.5 rounded-2xl bg-slate-50/90 dark:bg-white/[0.03] hover:bg-amber-500/10 dark:hover:bg-amber-500/10 text-slate-700 dark:text-slate-200 hover:text-amber-700 dark:hover:text-amber-300 ring-1 ring-slate-200/70 dark:ring-white/5 hover:ring-amber-500/40 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] line-clamp-1 font-medium cursor-pointer"
-                  >
-                    ✨ {prompt}
-                  </button>
-                ))}
-              </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                Ask Jenny
+              </h2>
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                Online
+              </span>
             </div>
-          )}
-
-          <footer className="p-4 bg-slate-50/80 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/5 space-y-2">
-            {rateLimitCooldown > 0 && (
-              <div className="px-4 py-2.5 rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 flex items-center justify-between text-xs text-amber-800 dark:text-amber-200 animate-in fade-in slide-in-from-bottom-2 duration-200 shadow-sm">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-amber-500 shrink-0 animate-spin [animation-duration:4s]" />
-                  <span className="font-medium">Rate limit active. Please wait for cooldown.</span>
-                </div>
-                <span className="font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-900 dark:text-amber-100 ring-1 ring-amber-500/30">
-                  {rateLimitCooldown}s
-                </span>
-              </div>
-            )}
-
-            <div className="p-1 rounded-full bg-gradient-to-r from-slate-200/80 to-slate-100/50 dark:from-white/10 dark:to-white/[0.03] ring-1 ring-slate-200 dark:ring-white/10 shadow-inner">
-              <div className="flex items-center rounded-full bg-white dark:bg-[#050811] px-2 py-1">
-                <input
-                  type="text"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  disabled={isTyping || rateLimitCooldown > 0}
-                  placeholder={
-                    rateLimitCooldown > 0
-                      ? `Cooldown active. Available in ${rateLimitCooldown}s...`
-                      : "Ask e.g. ₱15,000 bill in Cebu with battery backup..."
-                  }
-                  className="flex-1 bg-transparent px-4 py-2.5 text-sm sm:text-[15px] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none font-normal disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => handleSend()}
-                  disabled={!inputValue.trim() || isTyping || rateLimitCooldown > 0}
-                  className="w-10 h-10 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-amber-500/25 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 group/send shrink-0"
-                >
-                  <Send className="w-4 h-4 transition-transform duration-200 group-hover/send:translate-x-0.5 group-hover/send:-translate-y-0.5" />
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 px-3 pt-0.5">
-              <span>Grounded in Philippine Electrical Code Article 6.90</span>
-              <span>Press Enter to size</span>
-            </div>
-          </footer>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Solar Assistant & System Sizer · <span className="font-mono text-[11px]">{aiCopilotService.getActiveEngineName()}</span>
+            </p>
+          </div>
         </div>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={handleResetChat}
+            title="Reset conversation"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsCopilotOpen(false)}
+            title="Close Copilot"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </header>
+
+      <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 scroll-smooth">
+        {messages.map((message) => {
+          const isUser = message.role === 'user';
+          const proposalResult = message.toolInvocations?.find(
+            (t) =>
+              t.toolName === 'generateSolarSetup' ||
+              t.toolName === 'generateSolarSetupFromBill' ||
+              t.toolName === 'modifyExistingProjectSetup'
+          )?.result as any;
+
+          return (
+            <div
+              key={message.id}
+              className={`flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`}
+            >
+              {!isUser && (
+                <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0 mt-0.5">
+                  <Bot className="w-3.5 h-3.5 text-amber-500" />
+                </div>
+              )}
+
+              <div className={`max-w-[88%] space-y-2 ${isUser ? 'items-end' : 'items-start'}`}>
+                {isUser ? (
+                  <div className="px-4 py-2.5 rounded-2xl rounded-tr-sm bg-amber-500 text-white text-sm leading-relaxed shadow-sm whitespace-pre-wrap">
+                    <ChatMessageContent content={message.content} isUser={true} />
+                  </div>
+                ) : (
+                  <div className="px-4 py-3 rounded-2xl rounded-tl-sm bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 text-slate-800 dark:text-slate-100">
+                    <ChatMessageContent content={message.content} isUser={false} />
+                  </div>
+                )}
+
+                {!isUser && message.engine && (
+                  <div className="flex items-center gap-1.5 px-1">
+                    <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                      {message.engine.startsWith('gemini')
+                        ? '⚡ Powered by Gemini Flash'
+                        : '⚙️ Powered by Deterministic PV Engine'}
+                    </span>
+                  </div>
+                )}
+
+                {proposalResult && proposalResult.engineeringSpecs && (
+                  <SetupProposalCard proposal={proposalResult} />
+                )}
+              </div>
+
+              {isUser && (
+                <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                  <User className="w-3.5 h-3.5" />
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {isTyping && (
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0">
+              <Bot className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+            </div>
+            <div className="px-3.5 py-2 rounded-2xl rounded-tl-sm bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-bounce" />
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-bounce [animation-delay:0.2s]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-bounce [animation-delay:0.4s]" />
+              <span className="text-xs font-mono ml-1.5 text-slate-500 dark:text-slate-400">
+                Sizing system & matching hardware...
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
       </div>
+
+      {messages.length <= 2 && (
+        <div className="px-5 pb-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500 block">
+              Quick Sizing Prompts
+            </span>
+            <button
+              type="button"
+              onClick={() => setDisplayedPrompts(getRandomPrompts(ALL_QUICK_SIZING_PROMPTS, 4))}
+              className="inline-flex items-center gap-1.5 text-[11px] font-mono font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors px-2 py-0.5 rounded-md hover:bg-amber-500/10 cursor-pointer"
+              title="Shuffle 4 new prompts"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Shuffle</span>
+            </button>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            {displayedPrompts.map((prompt, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleSend(prompt)}
+                className="text-left text-xs px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-amber-500/10 dark:hover:bg-amber-500/10 text-slate-700 dark:text-slate-200 hover:text-amber-700 dark:hover:text-amber-300 border border-slate-200 dark:border-slate-800 hover:border-amber-500/40 transition-colors line-clamp-1 cursor-pointer"
+              >
+                ✨ {prompt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <footer className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 space-y-2">
+        {rateLimitCooldown > 0 && (
+          <div className="px-3.5 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs text-amber-800 dark:text-amber-200">
+            <div className="flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0 animate-spin" />
+              <span>Rate limit active. Please wait for cooldown.</span>
+            </div>
+            <span className="font-mono font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-900 dark:text-amber-100">
+              {rateLimitCooldown}s
+            </span>
+          </div>
+        )}
+
+        <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-1.5 focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500/30 transition-all">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isTyping || rateLimitCooldown > 0}
+            placeholder={
+              rateLimitCooldown > 0
+                ? `Cooldown active (${rateLimitCooldown}s)...`
+                : "Ask e.g. ₱15,000 bill in Cebu with battery backup..."
+            }
+            className="flex-1 bg-transparent px-2 py-1.5 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+
+          <button
+            type="button"
+            onClick={() => handleSend()}
+            disabled={!inputValue.trim() || isTyping || rateLimitCooldown > 0}
+            className="w-8 h-8 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:hover:bg-amber-500 text-white flex items-center justify-center shrink-0 transition-colors cursor-pointer disabled:cursor-not-allowed"
+          >
+            <Send className="w-3.5 h-3.5" />
+          </button>
+        </div>
+        <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 px-1">
+          <span>PEC Article 6.90 Compliance</span>
+          <span>Press Enter to send</span>
+        </div>
+      </footer>
     </aside>
   );
 };
