@@ -1,5 +1,5 @@
 // src/features/solar-mapper/components/SolarMapperPage.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   MapPin,
   ArrowLeft,
@@ -11,6 +11,7 @@ import {
   Info,
 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { useSolarMapperStore } from '../store/useSolarMapperStore';
 import { LocationSearchHeader } from './LocationSearchHeader';
 import { SatelliteRoofCanvas } from './SatelliteRoofCanvas';
@@ -20,8 +21,28 @@ import { SeasonalIrradianceChart } from './SeasonalIrradianceChart';
 import { RoofVsLoadComparisonCard } from './RoofVsLoadComparisonCard';
 
 export const SolarMapperPage: React.FC = () => {
+  const user = useAuthStore((s) => s.user);
+  const isLoading = useAuthStore((s) => s.isLoading);
   const setActiveView = useCalculatorStore((s) => s.setActiveView);
   const { viewMode, setViewMode } = useSolarMapperStore();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      setActiveView('login');
+    }
+  }, [isLoading, user, setActiveView]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+        <div className="w-8 h-8 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <main className="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 space-y-6">

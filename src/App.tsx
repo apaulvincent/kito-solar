@@ -28,6 +28,7 @@ export function App() {
   const setActiveView = useCalculatorStore((state) => state.setActiveView);
   const loadProject = useCalculatorStore((state) => state.loadProject);
   const user = useAuthStore((state) => state.user);
+  const isAuthLoading = useAuthStore((state) => state.isLoading);
   const initAuth = useAuthStore((state) => state.initAuth);
 
   useEffect(() => {
@@ -37,6 +38,13 @@ export function App() {
       unsubscribeAuth();
     };
   }, [initializeCatalog, initAuth]);
+
+  // Enforce auth requirement for Roof Mapper
+  useEffect(() => {
+    if (activeView === 'solar-mapper' && !isAuthLoading && !user) {
+      setActiveView('login');
+    }
+  }, [activeView, isAuthLoading, user, setActiveView]);
 
   // Sync browser back/forward (popstate) with store view & strip legacy hash if any
   useEffect(() => {

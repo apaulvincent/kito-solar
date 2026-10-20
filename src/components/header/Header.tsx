@@ -87,7 +87,7 @@ export function Header() {
 
               <button
                 type="button"
-                onClick={() => setActiveView('solar-mapper')}
+                onClick={() => setActiveView(user ? 'solar-mapper' : 'login')}
                 className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
                   activeView === 'solar-mapper'
                     ? 'text-amber-700 dark:text-amber-400 font-bold bg-amber-500/10 border border-amber-500/25'

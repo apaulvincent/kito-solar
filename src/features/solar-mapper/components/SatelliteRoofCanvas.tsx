@@ -757,7 +757,8 @@ export const SatelliteRoofCanvas: React.FC = () => {
 
         {/* Floating Drawing & Zoom Studio Dock (Unified, No-Overlap Island) */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[calc(100%-1.5rem)] overflow-x-auto no-scrollbar flex items-center gap-1.5 p-1.5 rounded-full bg-slate-950/90 border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-2xl z-30 select-none">
-          {/* AI Marquee Auto-Map Button */}
+          {/* AI Marquee Auto-Map Button - Hidden for the meantime */}
+          {/*
           <button
             type="button"
             onClick={() => {
@@ -774,6 +775,7 @@ export const SatelliteRoofCanvas: React.FC = () => {
             <Sparkles className="w-3.5 h-3.5 text-current flex-shrink-0 animate-pulse" />
             <span className="whitespace-nowrap">{isMarqueeMode ? 'Cancel Marquee' : 'AI Auto-Map'}</span>
           </button>
+          */}
 
           {/* Manual Drawing Mode */}
           <button
