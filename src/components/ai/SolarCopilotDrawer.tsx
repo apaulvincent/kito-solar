@@ -18,12 +18,52 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 
-const STARTER_PROMPTS = [
+export const ALL_QUICK_SIZING_PROMPTS: string[] = [
+  // Original starter prompts
   '₱12,000/mo bill in San Pablo Laguna, daytime AC + brownout backup (Hybrid)',
   '₱8,000/mo bill in Metro Manila, daytime office use only (Grid-Tie)',
   'What if we keep the 8kW hybrid inverter, drop battery to 5kWh and use 10 panels?',
   "Why can't I put all 16 of these 580W panels into a single string?",
+
+  // Realistic Philippine Residential & Commercial Sizing
+  '₱5,500/mo bill in Cavite, 2-bedroom home with daytime inverter refrigerator (Grid-Tie)',
+  '₱15,000/mo bill in Cebu City, heavy nighttime aircon + essential brownout backup (Hybrid)',
+  '₱22,000/mo bill in Davao, residential bakery running daytime ovens and freezers',
+  '₱3,500/mo electric bill in Batangas, starter 3kW grid-tie system to zero out daytime power',
+  '₱18,000/mo bill in Quezon City, 2-storey house wanting 100% solar daytime coverage',
+  '₱35,000/mo commercial warehouse in Bulacan with 3-phase connection (Grid-Tie)',
+  '₱9,500/mo bill in Iloilo, frequent typhoon brownouts needing 10kWh battery storage',
+  '₱14,000/mo bill in Pampanga with 4 split-type inverter ACs running during the afternoon',
+  '₱6,000/mo bill in Rizal, GI sheet roof with limited 30 sqm space, maximize kWp',
+  '₱28,000/mo bill in Tagaytay, villa with pool pump and induction cooking (Hybrid)',
+  '₱7,500/mo bill in Baguio, cold-climate string voltage verification with 550W panels',
+  '₱11,000/mo bill in Cagayan de Oro, hybrid system with Deye 6kW and 100Ah battery',
+  '₱16,500/mo bill in Bacolod, farm office with daytime heavy water pump loads',
+  '₱4,800/mo bill in Antipolo, compact grid-tie setup with net metering preparation',
+  '₱25,000/mo cold storage facility in General Santos, daytime solar offset sizing',
+  '₱10,500/mo bill in Naga Camarines Sur, typhoon resilience with essential loads backup',
+  '₱30,000/mo bill in Pasig, commercial restaurant with walk-in chillers (Grid-Tie)',
+
+  // Technical & Electrical Engineering Inquiries
+  'How many hours of backup will a 10kWh battery give my 800W essential load in a brownout?',
+  'Can I parallel two strings of 8 panels into a single MPPT on a Deye 6kW inverter?',
+  'How do I size DC circuit breakers and surge protection (SPD) under PEC 6.90?',
+  'What is the difference in payback between pure Grid-Tie vs Hybrid with 10kWh battery?',
+  'How much roof area in square meters do I need for a 10kWp solar array?',
+  'How does Meralco net-metering credit excess solar power generated on weekends?',
+  'Can I start with a 5kW grid-tie system now and add batteries later?',
 ];
+
+export function getRandomPrompts(pool: string[] = ALL_QUICK_SIZING_PROMPTS, count = 4): string[] {
+  const copy = [...pool];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, count);
+}
+
+export const STARTER_PROMPTS = ALL_QUICK_SIZING_PROMPTS;
 
 export const SolarCopilotDrawer: React.FC = () => {
   const isCopilotOpen = useCalculatorStore((state) => state.isCopilotOpen);
@@ -43,6 +83,9 @@ export const SolarCopilotDrawer: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [rateLimitCooldown, setRateLimitCooldown] = useState<number>(0);
+  const [displayedPrompts, setDisplayedPrompts] = useState<string[]>(() =>
+    getRandomPrompts(ALL_QUICK_SIZING_PROMPTS, 4)
+  );
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -127,6 +170,7 @@ export const SolarCopilotDrawer: React.FC = () => {
         createdAt: new Date(),
       },
     ]);
+    setDisplayedPrompts(getRandomPrompts(ALL_QUICK_SIZING_PROMPTS, 4));
   };
 
   return (
@@ -258,16 +302,27 @@ export const SolarCopilotDrawer: React.FC = () => {
 
           {messages.length <= 2 && (
             <div className="px-5 pb-3">
-              <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-slate-500 block mb-2">
-                Quick Sizing Prompts:
-              </span>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-slate-500 block">
+                  Quick Sizing Prompts:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDisplayedPrompts(getRandomPrompts(ALL_QUICK_SIZING_PROMPTS, 4))}
+                  className="inline-flex items-center gap-1.5 text-[10px] font-mono font-semibold text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors px-2 py-0.5 rounded-full hover:bg-amber-500/10 cursor-pointer active:scale-95"
+                  title="Shuffle 4 new prompts"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                  <span>Shuffle</span>
+                </button>
+              </div>
               <div className="flex flex-col gap-2">
-                {STARTER_PROMPTS.map((prompt, idx) => (
+                {displayedPrompts.map((prompt, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => handleSend(prompt)}
-                    className="text-left text-xs sm:text-[13px] px-4 py-2.5 rounded-2xl bg-slate-50/90 dark:bg-white/[0.03] hover:bg-amber-500/10 dark:hover:bg-amber-500/10 text-slate-700 dark:text-slate-200 hover:text-amber-700 dark:hover:text-amber-300 ring-1 ring-slate-200/70 dark:ring-white/5 hover:ring-amber-500/40 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] line-clamp-1 font-medium"
+                    className="text-left text-xs sm:text-[13px] px-4 py-2.5 rounded-2xl bg-slate-50/90 dark:bg-white/[0.03] hover:bg-amber-500/10 dark:hover:bg-amber-500/10 text-slate-700 dark:text-slate-200 hover:text-amber-700 dark:hover:text-amber-300 ring-1 ring-slate-200/70 dark:ring-white/5 hover:ring-amber-500/40 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] line-clamp-1 font-medium cursor-pointer"
                   >
                     ✨ {prompt}
                   </button>

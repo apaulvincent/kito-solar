@@ -1,3 +1,4 @@
+import { ALL_QUICK_SIZING_PROMPTS, getRandomPrompts } from '../SolarCopilotDrawer';
 // src/components/ai/__tests__/copilotIntegration.test.ts
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
@@ -200,6 +201,35 @@ describe('AI Copilot Tool-Calling & Deterministic PV Sizing Engine', () => {
   describe('Zero Regex Verification', () => {
     it('verifies that regex bill extraction has been eliminated from the service', () => {
       expect((aiCopilotService as any).extractBillAmount).toBeUndefined();
+    });
+  });
+  describe('Quick Sizing Prompts Pool & Random Selection', () => {
+    it('has at least 24 rich, diverse quick sizing prompts in the pool', () => {
+      expect(ALL_QUICK_SIZING_PROMPTS.length).toBeGreaterThanOrEqual(24);
+      ALL_QUICK_SIZING_PROMPTS.forEach((prompt) => {
+        expect(typeof prompt).toBe('string');
+        expect(prompt.trim().length).toBeGreaterThan(15);
+      });
+    });
+
+    it('returns exactly 4 unique random prompts on request', () => {
+      const selected = getRandomPrompts(ALL_QUICK_SIZING_PROMPTS, 4);
+      expect(selected).toHaveLength(4);
+
+      // Verify all 4 prompts are unique
+      const uniqueSet = new Set(selected);
+      expect(uniqueSet.size).toBe(4);
+
+      // Verify all 4 prompts belong to the pool
+      selected.forEach((p) => {
+        expect(ALL_QUICK_SIZING_PROMPTS).toContain(p);
+      });
+    });
+
+    it('handles custom counts cleanly', () => {
+      const two = getRandomPrompts(ALL_QUICK_SIZING_PROMPTS, 2);
+      expect(two).toHaveLength(2);
+      expect(new Set(two).size).toBe(2);
     });
   });
 });
