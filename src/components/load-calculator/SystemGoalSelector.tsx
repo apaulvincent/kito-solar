@@ -2,26 +2,42 @@
 import React, { useState } from 'react';
 import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
 import { PrimaryGoal, GridReliability } from '@/lib/applianceSizingEngine';
-import { ShieldCheck, Zap, Sliders, ChevronDown, ChevronUp, Sun, Sparkles } from 'lucide-react';
+import {
+  ShieldCheck,
+  Zap,
+  Sliders,
+  ChevronDown,
+  ChevronUp,
+  Sun,
+  Sparkles,
+  CircleDollarSign,
+  BatteryCharging,
+  Compass,
+} from 'lucide-react';
 
-const GOAL_OPTIONS: { id: PrimaryGoal; label: string; sub: string; icon: string }[] = [
+const GOAL_OPTIONS: {
+  id: PrimaryGoal;
+  label: string;
+  sub: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
   {
     id: 'bill_savings',
     label: 'Lower Electric Bill',
     sub: 'Maximize daytime solar offset',
-    icon: '💰',
+    icon: CircleDollarSign,
   },
   {
     id: 'bill_and_backup',
     label: 'Bill Savings + Backup',
     sub: 'Uninterrupted power during brownouts',
-    icon: '⚡',
+    icon: BatteryCharging,
   },
   {
     id: 'off_grid',
     label: '100% Independence',
     sub: 'Remote property or zero grid utility',
-    icon: '🏝️',
+    icon: Compass,
   },
 ];
 
@@ -83,10 +99,16 @@ export const SystemGoalSelector: React.FC = () => {
                         : 'border-slate-200/90 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 hover:border-slate-300 dark:hover:border-slate-700'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <span className="text-xl" role="img" aria-label={opt.label}>
-                        {opt.icon}
-                      </span>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        <opt.icon className="w-4 h-4 stroke-[1.75]" />
+                      </div>
                       {isSelected && (
                         <span className="w-2 h-2 rounded-full bg-amber-500 ring-4 ring-amber-500/20" />
                       )}
