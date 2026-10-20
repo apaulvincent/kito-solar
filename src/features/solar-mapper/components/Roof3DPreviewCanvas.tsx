@@ -1,5 +1,5 @@
 // src/features/solar-mapper/components/Roof3DPreviewCanvas.tsx
-import React, { useMemo, useState, Suspense } from 'react';
+import React, { useMemo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Text, Line } from '@react-three/drei';
 import * as THREE from 'three';
@@ -10,8 +10,6 @@ import {
   RotateCcw,
   Sliders,
   Layers,
-  Eye,
-  EyeOff,
   Sparkles,
   Maximize2,
 } from 'lucide-react';
@@ -52,14 +50,13 @@ function formatSunTime(hour: number): string {
   return `${displayH}:${m.toString().padStart(2, '0')} ${period}`;
 }
 
-// Single 3D Roof & Building Component
+// Single 3D Roof Component
 const Roof3DMesh: React.FC<{
   section: RoofPolygonSection;
   siteCenter: GeoPoint;
   isActive: boolean;
-  showWalls: boolean;
   onSelect: () => void;
-}> = ({ section, siteCenter, isActive, showWalls, onSelect }) => {
+}> = ({ section, siteCenter, isActive, onSelect }) => {
   const secCentroid = useMemo(
     () => calculateCentroid(section.vertices),
     [section.vertices]
@@ -87,15 +84,6 @@ const Roof3DMesh: React.FC<{
     s.closePath();
     return s;
   }, [localPts]);
-
-  // Wall extrude settings (from ground to eave height)
-  const wallExtrudeSettings = useMemo(
-    () => ({
-      depth: BUILDING_EAVE_HEIGHT,
-      bevelEnabled: false,
-    }),
-    []
-  );
 
   // Roof deck slab extrude settings
   const roofExtrudeSettings = useMemo(
@@ -129,32 +117,7 @@ const Roof3DMesh: React.FC<{
         onSelect();
       }}
     >
-      {/* 1. Optional Building Perimeter Walls */}
-      {showWalls && (
-        <group>
-          <mesh
-            position={[0, 0, 0]}
-            rotation={[-Math.PI / 2, 0, 0]}
-            receiveShadow
-            castShadow
-          >
-            <extrudeGeometry args={[shape, wallExtrudeSettings]} />
-            <meshStandardMaterial
-              color={isActive ? '#1e293b' : '#0f172a'}
-              roughness={0.8}
-              metalness={0.1}
-            />
-          </mesh>
-
-          {/* Foundation Plinth */}
-          <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <extrudeGeometry args={[shape, { depth: 0.08, bevelEnabled: true, bevelSize: 0.06 }]} />
-            <meshStandardMaterial color="#0b1120" roughness={0.9} />
-          </mesh>
-        </group>
-      )}
-
-      {/* 2. Pitched Roof Assembly Sitting on Top of Eave Height */}
+      {/* Pitched Roof Assembly Sitting on Top of Eave Height */}
       <group position={[0, BUILDING_EAVE_HEIGHT, 0]}>
         {/* Compass Azimuth Rotation */}
         <group rotation={[0, azimuthRad, 0]}>
@@ -292,8 +255,7 @@ const SunlightRay: React.FC<{ sunPos: THREE.Vector3 }> = ({ sunPos }) => {
 // 3D Scene Environment
 const SceneContent: React.FC<{
   sunHour: number;
-  showWalls: boolean;
-}> = ({ sunHour, showWalls }) => {
+}> = ({ sunHour }) => {
   const { roofSections, activeSectionId, setActiveSectionId, coordinates } =
     useSolarMapperStore();
 
@@ -402,7 +364,6 @@ const SceneContent: React.FC<{
           section={sec}
           siteCenter={siteCenter}
           isActive={sec.id === activeSection?.id}
-          showWalls={showWalls}
           onSelect={() => setActiveSectionId(sec.id)}
         />
       ))}
@@ -428,8 +389,6 @@ export const Roof3DPreviewCanvas: React.FC = () => {
     loadDemoRoofPolygon,
   } = useSolarMapperStore();
 
-  const [showWalls, setShowWalls] = useState(true);
-
   const activeSection =
     roofSections.find((s) => s.id === activeSectionId) || roofSections[0];
 
@@ -449,27 +408,12 @@ export const Roof3DPreviewCanvas: React.FC = () => {
             camera={{ position: [16, 20, 26], fov: 46 }}
             className="w-full h-full"
           >
-            <SceneContent sunHour={sunHour} showWalls={showWalls} />
+            <SceneContent sunHour={sunHour} />
           </Canvas>
         </Suspense>
 
-        {/* Top-Right: View Actions & Wall Toggle */}
+        {/* Top-Right: View Mode Switcher */}
         <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
-          {/* Building Walls Toggle */}
-          <button
-            type="button"
-            onClick={() => setShowWalls(!showWalls)}
-            className={`px-3 py-2 rounded-xl text-xs font-semibold backdrop-blur-md shadow-md border transition-all flex items-center gap-1.5 active:scale-95 whitespace-nowrap flex-shrink-0 ${
-              showWalls
-                ? 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 border-slate-700/80'
-                : 'bg-amber-500/15 text-amber-400 border-amber-500/40'
-            }`}
-            title="Toggle building walls visibility"
-          >
-            {showWalls ? <Eye className="w-3.5 h-3.5 flex-shrink-0" /> : <EyeOff className="w-3.5 h-3.5 flex-shrink-0" />}
-            <span className="hidden sm:inline whitespace-nowrap">Walls {showWalls ? 'ON' : 'OFF'}</span>
-          </button>
-
           {/* Switch back to 2D Map */}
           <button
             type="button"
