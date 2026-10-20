@@ -8,6 +8,7 @@ import { ActiveLoadList } from './ActiveLoadList';
 import { SizingSummaryDashboard } from './SizingSummaryDashboard';
 import { MobileBottomSummary } from './MobileBottomSummary';
 import { EngineeringDisclaimer } from '@/components/common/EngineeringDisclaimer';
+import { KitoApplianceGradientDefs } from './ApplianceIcon';
 import { ArrowLeft, Sparkles, Calculator, Zap, Shield, HelpCircle } from 'lucide-react';
 
 export const ApplianceLoadCalculatorPage: React.FC = () => {
@@ -15,6 +16,9 @@ export const ApplianceLoadCalculatorPage: React.FC = () => {
 
   return (
     <main className="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      {/* Global SVG Gradient Defs */}
+      <KitoApplianceGradientDefs />
+
       {/* Top Header & Breadcrumbs */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800/80">
         <button

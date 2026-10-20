@@ -143,8 +143,8 @@ export const CustomApplianceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                       : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 mb-1 text-amber-500">
-                    <Lightbulb className="w-3.5 h-3.5 stroke-[1.75]" />
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Lightbulb className="w-4 h-4" stroke="url(#kito-appliance-gradient)" strokeWidth={2} />
                     <span className="text-xs font-bold text-slate-900 dark:text-white">1.0x Resistive</span>
                   </div>
                   <div className="text-[10px] text-slate-400">LEDs, Heaters, TV</div>
@@ -159,8 +159,8 @@ export const CustomApplianceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                       : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 mb-1 text-amber-500">
-                    <AirVent className="w-3.5 h-3.5 stroke-[1.75]" />
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <AirVent className="w-4 h-4" stroke="url(#kito-appliance-gradient)" strokeWidth={2} />
                     <span className="text-xs font-bold text-slate-900 dark:text-white">1.3x Inverter</span>
                   </div>
                   <div className="text-[10px] text-slate-400">Inverter AC / Fridge</div>
@@ -175,8 +175,8 @@ export const CustomApplianceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                       : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 mb-1 text-rose-500">
-                    <Gauge className="w-3.5 h-3.5 stroke-[1.75]" />
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Gauge className="w-4 h-4" stroke="url(#kito-appliance-gradient)" strokeWidth={2} />
                     <span className="text-xs font-bold text-slate-900 dark:text-white">3.5x Motor</span>
                   </div>
                   <div className="text-[10px] text-slate-400">Pumps, Compressors</div>

@@ -103,9 +103,18 @@ export const ActiveLoadList: React.FC = () => {
               >
                 {/* Top Row: Title, Surge Pill, Critical Toggle, Delete */}
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg flex-shrink-0 bg-slate-200/70 dark:bg-slate-800 border border-slate-300/60 dark:border-white/10 flex items-center justify-center text-slate-700 dark:text-slate-300">
-                      <ApplianceIcon presetId={item.presetId} category={item.category} name={item.name} className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-10 h-10 rounded-xl flex-shrink-0 p-0.5 bg-gradient-to-br from-amber-500/40 via-amber-600/30 to-indigo-700/40 border border-amber-500/30 dark:border-white/10 shadow-xs">
+                      <div className="w-full h-full rounded-[calc(0.75rem-2px)] bg-white/95 dark:bg-[#080d19]/90 backdrop-blur-xs flex items-center justify-center">
+                        <ApplianceIcon
+                          presetId={item.presetId}
+                          category={item.category}
+                          name={item.name}
+                          className="w-5 h-5"
+                          strokeWidth={2}
+                          useGradient
+                        />
+                      </div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">

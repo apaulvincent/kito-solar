@@ -19,7 +19,7 @@ const GOAL_OPTIONS: {
   id: PrimaryGoal;
   label: string;
   sub: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; stroke?: string; strokeWidth?: number; color?: string }>;
 }[] = [
   {
     id: 'bill_savings',
@@ -99,18 +99,14 @@ export const SystemGoalSelector: React.FC = () => {
                         : 'border-slate-200/90 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 hover:border-slate-300 dark:hover:border-slate-700'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div
-                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
-                          isSelected
-                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-                        }`}
-                      >
-                        <opt.icon className="w-4 h-4 stroke-[1.75]" />
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
+                      <div className="relative w-11 h-11 rounded-xl flex-shrink-0 p-0.5 bg-gradient-to-br from-amber-500/40 via-amber-600/30 to-indigo-700/40 border border-amber-500/30 dark:border-white/10 shadow-xs">
+                        <div className="w-full h-full rounded-[calc(0.75rem-2px)] bg-white/95 dark:bg-[#080d19]/90 backdrop-blur-xs flex items-center justify-center">
+                          <opt.icon className="w-5 h-5" stroke="url(#kito-appliance-gradient)" strokeWidth={2} />
+                        </div>
                       </div>
                       {isSelected && (
-                        <span className="w-2 h-2 rounded-full bg-amber-500 ring-4 ring-amber-500/20" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-4 ring-amber-500/20" />
                       )}
                     </div>
                     <div className="text-xs font-bold text-slate-900 dark:text-white">

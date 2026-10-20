@@ -72,9 +72,9 @@ export const AppliancePresetPicker: React.FC = () => {
                 key={cat.id}
                 type="button"
                 onClick={() => setActiveCategory(cat.id)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all duration-200 ${
+                className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] ${
                   isSelected
-                    ? 'bg-amber-500 text-slate-950 shadow-xs shadow-amber-500/20'
+                    ? 'bg-gradient-to-r from-amber-500 via-amber-600 to-indigo-700 text-white font-bold shadow-md shadow-amber-500/25 ring-1 ring-amber-400/40'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
                 }`}
               >
@@ -86,7 +86,7 @@ export const AppliancePresetPicker: React.FC = () => {
         </div>
 
         {/* Preset Appliance Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5 max-h-[360px] overflow-y-auto pr-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 max-h-[420px] overflow-y-auto pr-1">
           {filteredPresets.map((preset) => {
             const addedItem = items.find((i) => i.presetId === preset.id);
             const count = addedItem ? addedItem.quantity : 0;
@@ -94,13 +94,22 @@ export const AppliancePresetPicker: React.FC = () => {
             return (
               <div
                 key={preset.id}
-                className="group relative p-3 rounded-2xl border border-slate-200/90 dark:border-slate-800/90 bg-slate-50/50 dark:bg-slate-900/30 hover:border-amber-500/60 dark:hover:border-amber-500/50 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col justify-between"
+                className="group relative p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800/90 bg-slate-50/50 dark:bg-slate-900/40 hover:border-amber-500/60 dark:hover:border-amber-500/50 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col justify-between"
               >
                 <div>
-                  <div className="flex items-start gap-2.5">
-                    {/* Precision Line Icon Enclosure */}
-                    <div className="w-8 h-8 rounded-xl flex-shrink-0 bg-slate-200/70 dark:bg-slate-800 border border-slate-300/60 dark:border-white/10 flex items-center justify-center text-slate-700 dark:text-slate-300 group-hover:text-amber-500 group-hover:border-amber-500/40 group-hover:scale-105 transition-all duration-300 shadow-2xs">
-                      <ApplianceIcon presetId={preset.id} category={preset.category} name={preset.name} className="w-4 h-4" />
+                  <div className="flex items-start gap-3">
+                    {/* High-End Double-Bezel Gradient Icon Enclosure */}
+                    <div className="relative w-12 h-12 rounded-2xl flex-shrink-0 p-0.5 bg-gradient-to-br from-amber-500/40 via-amber-600/30 to-indigo-700/40 border border-amber-500/30 dark:border-white/10 shadow-xs group-hover:scale-105 group-hover:border-amber-400 group-hover:shadow-md group-hover:shadow-amber-500/20 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]">
+                      <div className="w-full h-full rounded-[calc(1rem-2px)] bg-white/95 dark:bg-[#080d19]/90 backdrop-blur-xs flex items-center justify-center">
+                        <ApplianceIcon
+                          presetId={preset.id}
+                          category={preset.category}
+                          name={preset.name}
+                          className="w-6 h-6"
+                          strokeWidth={2}
+                          useGradient
+                        />
+                      </div>
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -122,7 +131,7 @@ export const AppliancePresetPicker: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-2 mt-3 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                <div className="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-slate-200/60 dark:border-slate-800/60">
                   <div className="flex items-center gap-1.5 font-mono text-[11px]">
                     <span className="font-bold text-slate-900 dark:text-slate-200">
                       {preset.defaultRunningWatts}W
@@ -143,7 +152,7 @@ export const AppliancePresetPicker: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => addPreset(preset.id)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-amber-500 hover:text-slate-950 hover:border-amber-500 transition-colors shadow-2xs"
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-amber-500 hover:text-slate-950 hover:border-amber-500 transition-colors shadow-2xs active:scale-95"
                   >
                     <Plus className="w-3 h-3" />
                     <span>Add</span>
