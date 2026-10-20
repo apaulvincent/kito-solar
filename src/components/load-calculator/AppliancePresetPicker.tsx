@@ -2,23 +2,24 @@
 import React, { useState } from 'react';
 import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
 import { PRESET_APPLIANCES, ApplianceCategory } from '@/lib/applianceSizingEngine';
+import { ApplianceIcon } from './ApplianceIcon';
 import { CustomApplianceModal } from './CustomApplianceModal';
 import {
   Plus,
-  Wind,
-  Flame,
-  Monitor,
-  Lightbulb,
+  AirVent,
+  Refrigerator,
+  MonitorPc,
+  Droplets,
   Layers,
   Sparkles,
 } from 'lucide-react';
 
 const CATEGORIES: { id: ApplianceCategory | 'all'; label: string; icon: React.ReactNode }[] = [
-  { id: 'all', label: 'All Appliances', icon: <Layers className="w-3.5 h-3.5" /> },
-  { id: 'cooling', label: 'Cooling & HVAC', icon: <Wind className="w-3.5 h-3.5" /> },
-  { id: 'kitchen', label: 'Kitchen', icon: <Flame className="w-3.5 h-3.5" /> },
-  { id: 'work_tech', label: 'Work & Tech', icon: <Monitor className="w-3.5 h-3.5" /> },
-  { id: 'lighting_utility', label: 'Pumps & Utility', icon: <Lightbulb className="w-3.5 h-3.5" /> },
+  { id: 'all', label: 'All Appliances', icon: <Layers className="w-3.5 h-3.5 stroke-[1.75]" /> },
+  { id: 'cooling', label: 'Cooling & HVAC', icon: <AirVent className="w-3.5 h-3.5 stroke-[1.75]" /> },
+  { id: 'kitchen', label: 'Kitchen', icon: <Refrigerator className="w-3.5 h-3.5 stroke-[1.75]" /> },
+  { id: 'work_tech', label: 'Work & Tech', icon: <MonitorPc className="w-3.5 h-3.5 stroke-[1.75]" /> },
+  { id: 'lighting_utility', label: 'Pumps & Utility', icon: <Droplets className="w-3.5 h-3.5 stroke-[1.75]" /> },
 ];
 
 export const AppliancePresetPicker: React.FC = () => {
@@ -93,23 +94,32 @@ export const AppliancePresetPicker: React.FC = () => {
             return (
               <div
                 key={preset.id}
-                className="group relative p-3 rounded-2xl border border-slate-200/90 dark:border-slate-800/90 bg-slate-50/50 dark:bg-slate-900/30 hover:border-amber-500/60 dark:hover:border-amber-500/50 transition-all duration-200 flex flex-col justify-between"
+                className="group relative p-3 rounded-2xl border border-slate-200/90 dark:border-slate-800/90 bg-slate-50/50 dark:bg-slate-900/30 hover:border-amber-500/60 dark:hover:border-amber-500/50 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col justify-between"
               >
                 <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
-                      {preset.name}
-                    </h4>
-                    {count > 0 && (
-                      <span className="flex-shrink-0 px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-400 font-mono font-bold text-[10px]">
-                        {count} in list
-                      </span>
-                    )}
-                  </div>
+                  <div className="flex items-start gap-2.5">
+                    {/* Precision Line Icon Enclosure */}
+                    <div className="w-8 h-8 rounded-xl flex-shrink-0 bg-slate-200/70 dark:bg-slate-800 border border-slate-300/60 dark:border-white/10 flex items-center justify-center text-slate-700 dark:text-slate-300 group-hover:text-amber-500 group-hover:border-amber-500/40 group-hover:scale-105 transition-all duration-300 shadow-2xs">
+                      <ApplianceIcon presetId={preset.id} category={preset.category} name={preset.name} className="w-4 h-4" />
+                    </div>
 
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5" title={preset.description}>
-                    {preset.description}
-                  </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-1.5">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-tight truncate">
+                          {preset.name}
+                        </h4>
+                        {count > 0 && (
+                          <span className="flex-shrink-0 px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-400 font-mono font-bold text-[10px]">
+                            {count} in list
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5" title={preset.description}>
+                        {preset.description}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between gap-2 mt-3 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">

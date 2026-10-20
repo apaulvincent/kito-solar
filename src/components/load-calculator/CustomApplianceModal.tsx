@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
 import { ApplianceCategory, LoadType } from '@/lib/applianceSizingEngine';
-import { X, Plus, Zap, AlertCircle } from 'lucide-react';
+import { X, Plus, Zap, AlertCircle, Lightbulb, AirVent, Gauge } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -137,39 +137,48 @@ export const CustomApplianceModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 <button
                   type="button"
                   onClick={() => handleSurgePreset(1.0, 'resistive')}
-                  className={`p-2 rounded-xl text-left border transition-colors ${
+                  className={`p-2.5 rounded-xl text-left border transition-all ${
                     surgeMultiplier === 1.0
                       ? 'border-amber-500 bg-amber-500/10 text-slate-900 dark:text-white font-semibold'
                       : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                   }`}
                 >
-                  <div className="text-xs font-bold">1.0x Resistive</div>
+                  <div className="flex items-center gap-1.5 mb-1 text-amber-500">
+                    <Lightbulb className="w-3.5 h-3.5 stroke-[1.75]" />
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">1.0x Resistive</span>
+                  </div>
                   <div className="text-[10px] text-slate-400">LEDs, Heaters, TV</div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleSurgePreset(1.3, 'inverter_motor')}
-                  className={`p-2 rounded-xl text-left border transition-colors ${
+                  className={`p-2.5 rounded-xl text-left border transition-all ${
                     surgeMultiplier === 1.3
                       ? 'border-amber-500 bg-amber-500/10 text-slate-900 dark:text-white font-semibold'
                       : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                   }`}
                 >
-                  <div className="text-xs font-bold">1.3x Inverter</div>
+                  <div className="flex items-center gap-1.5 mb-1 text-amber-500">
+                    <AirVent className="w-3.5 h-3.5 stroke-[1.75]" />
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">1.3x Inverter</span>
+                  </div>
                   <div className="text-[10px] text-slate-400">Inverter AC / Fridge</div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleSurgePreset(3.5, 'inductive_motor')}
-                  className={`p-2 rounded-xl text-left border transition-colors ${
+                  className={`p-2.5 rounded-xl text-left border transition-all ${
                     surgeMultiplier === 3.5
                       ? 'border-amber-500 bg-amber-500/10 text-slate-900 dark:text-white font-semibold'
                       : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                   }`}
                 >
-                  <div className="text-xs font-bold">3.5x Motor</div>
+                  <div className="flex items-center gap-1.5 mb-1 text-rose-500">
+                    <Gauge className="w-3.5 h-3.5 stroke-[1.75]" />
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">3.5x Motor</span>
+                  </div>
                   <div className="text-[10px] text-slate-400">Pumps, Compressors</div>
                 </button>
               </div>

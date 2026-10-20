@@ -1,6 +1,7 @@
 // src/components/load-calculator/ActiveLoadList.tsx
 import React from 'react';
 import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
+import { ApplianceIcon } from './ApplianceIcon';
 import {
   Minus,
   Plus,
@@ -102,28 +103,34 @@ export const ActiveLoadList: React.FC = () => {
               >
                 {/* Top Row: Title, Surge Pill, Critical Toggle, Delete */}
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-900 dark:text-white font-sans">
-                      {item.name}
-                    </span>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg flex-shrink-0 bg-slate-200/70 dark:bg-slate-800 border border-slate-300/60 dark:border-white/10 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                      <ApplianceIcon presetId={item.presetId} category={item.category} name={item.name} className="w-3.5 h-3.5" />
+                    </div>
 
-                    {item.surgeMultiplier > 1.2 && (
-                      <span
-                        className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-                        title={`Surge multiplier: ${item.surgeMultiplier}x (${peakItemWatts}W startup spike)`}
-                      >
-                        {item.surgeMultiplier}x Spike ({peakItemWatts}W)
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white font-sans">
+                        {item.name}
                       </span>
-                    )}
 
-                    {item.dutyCycle < 1.0 && (
-                      <span
-                        className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800"
-                        title={`Compressor duty cycle factor: ${(item.dutyCycle * 100).toFixed(0)}% runtime`}
-                      >
-                        {(item.dutyCycle * 100).toFixed(0)}% duty cycle
-                      </span>
-                    )}
+                      {item.surgeMultiplier > 1.2 && (
+                        <span
+                          className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                          title={`Surge multiplier: ${item.surgeMultiplier}x (${peakItemWatts}W startup spike)`}
+                        >
+                          {item.surgeMultiplier}x Spike ({peakItemWatts}W)
+                        </span>
+                      )}
+
+                      {item.dutyCycle < 1.0 && (
+                        <span
+                          className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800"
+                          title={`Compressor duty cycle factor: ${(item.dutyCycle * 100).toFixed(0)}% runtime`}
+                        >
+                          {(item.dutyCycle * 100).toFixed(0)}% duty cycle
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2">
