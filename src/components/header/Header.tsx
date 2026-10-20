@@ -7,6 +7,7 @@ import {
   Coffee,
   LogOut,
   Box,
+  Calculator,
   Home,
   Folder,
   User as UserIcon,
@@ -68,6 +69,19 @@ export function Header() {
               >
                 <Box className="w-3.5 h-3.5 text-amber-500" />
                 <span>Solar Tool</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveView('load-calculator')}
+                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                  activeView === 'load-calculator'
+                    ? 'text-amber-700 dark:text-amber-400 font-bold bg-amber-500/10 border border-amber-500/25'
+                    : 'hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <Calculator className="w-3.5 h-3.5 text-amber-500" />
+                <span>Load Calculator</span>
               </button>
 
               <button
