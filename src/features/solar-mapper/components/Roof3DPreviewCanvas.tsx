@@ -1,7 +1,7 @@
 // src/features/solar-mapper/components/Roof3DPreviewCanvas.tsx
 import React, { useMemo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Text } from '@react-three/drei';
+import { OrbitControls, Text, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import {
   Sun,
@@ -15,7 +15,36 @@ import { useSolarMapperStore } from '../store/useSolarMapperStore';
 import { projectVerticesToLocalMeters } from '../utils/geodesicMath';
 import { RoofPolygonSection } from '../types/solarMapper';
 
-// Single 3D Roof Mesh Component
+const BUILDING_EAVE_HEIGHT = 2.4; // 2.4m residential wall height
+
+/**
+ * Calculates the 3D position of the Sun along its celestial transit.
+ * East (+X) at 6:00 AM -> Noon South (+Z peak height) -> West (-X) at 6:00 PM.
+ */
+function getSunPosition(hour: number, radius = 22): THREE.Vector3 {
+  const progress = (hour - 6) / 12; // 0 (6 AM) to 1 (6 PM)
+  const angle = progress * Math.PI; // 0 to PI
+
+  // Travel from East (+X) to West (-X)
+  const x = Math.cos(angle) * radius;
+  // Elevation above horizon (high noon peak)
+  const y = Math.max(1.2, Math.sin(angle) * radius * 0.95);
+  // Southern declination in Northern Hemisphere tropics
+  const z = Math.sin(angle) * (radius * 0.4);
+
+  return new THREE.Vector3(x, y, z);
+}
+
+// Format time for 3D label
+function formatSunTime(hour: number): string {
+  const h = Math.floor(hour);
+  const m = Math.round((hour - h) * 60);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
+  return `${displayH}:${m.toString().padStart(2, '0')} ${period}`;
+}
+
+// Single 3D Roof & Building Component
 const Roof3DMesh: React.FC<{ section: RoofPolygonSection; isActive: boolean }> = ({
   section,
   isActive,
@@ -36,75 +65,183 @@ const Roof3DMesh: React.FC<{ section: RoofPolygonSection; isActive: boolean }> =
     return s;
   }, [localPts]);
 
-  // Extrude settings: 120mm roof deck thickness
-  const extrudeSettings = useMemo(
+  // Extrude settings for building walls (2.4m height from ground)
+  const wallExtrudeSettings = useMemo(
     () => ({
-      depth: 0.12,
-      bevelEnabled: true,
-      bevelSegments: 2,
-      steps: 1,
-      bevelSize: 0.02,
-      bevelThickness: 0.02,
+      depth: BUILDING_EAVE_HEIGHT,
+      bevelEnabled: false,
     }),
     []
   );
 
-  // Azimuth rotation: 0° is North (+Y), 180° is South (-Y)
-  const azimuthRad = THREE.MathUtils.degToRad(-section.azimuthDeg + 180);
-  const pitchRad = THREE.MathUtils.degToRad(section.pitchDeg);
+  // Extrude settings for roof deck slab (140mm thickness with bevel)
+  const roofExtrudeSettings = useMemo(
+    () => ({
+      depth: 0.14,
+      bevelEnabled: true,
+      bevelSegments: 2,
+      steps: 1,
+      bevelSize: 0.03,
+      bevelThickness: 0.03,
+    }),
+    []
+  );
 
   if (!shape) return null;
 
+  // Azimuth rotation: 180° is South (0 rad rotation in our orientation),
+  // 90° East rotates -90°, 270° West rotates +90°
+  const azimuthRad = THREE.MathUtils.degToRad(-section.azimuthDeg + 180);
+  const pitchRad = THREE.MathUtils.degToRad(section.pitchDeg);
+
   return (
-    <group rotation={[0, azimuthRad, 0]}>
-      {/* Pitched Roof Plane */}
-      <group rotation={[pitchRad, 0, 0]}>
-        {/* Roof Deck Slab */}
-        <mesh receiveShadow castShadow>
-          <extrudeGeometry args={[shape, extrudeSettings]} />
-          <meshStandardMaterial
-            color={isActive ? '#334155' : '#1e293b'}
-            roughness={0.7}
-            metalness={0.15}
-          />
-        </mesh>
+    <group>
+      {/* 1. Building Perimeter Walls (Anchors roof to ground plane) */}
+      <mesh
+        position={[0, 0, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+        castShadow
+      >
+        <extrudeGeometry args={[shape, wallExtrudeSettings]} />
+        <meshStandardMaterial
+          color="#1e293b"
+          roughness={0.8}
+          metalness={0.1}
+        />
+      </mesh>
 
-        {/* Photovoltaic Solar Panels Array */}
-        {section.placedPanels.map((panel) => {
-          const isLandscape = panel.orientation === 'landscape';
-          const pW = panel.widthM;
-          const pL = panel.lengthM;
+      {/* Building Base Foundation Border */}
+      <mesh
+        position={[0, 0.02, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+      >
+        <extrudeGeometry args={[shape, { depth: 0.06, bevelEnabled: true, bevelSize: 0.08 }]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.9} />
+      </mesh>
 
-          return (
-            <group
-              key={panel.id}
-              position={[panel.x, panel.y, 0.14]}
-            >
-              {/* Dark Blue Anti-reflective Photovoltaic Glass */}
-              <mesh castShadow receiveShadow>
-                <boxGeometry args={[pW, pL, 0.035]} />
+      {/* 2. Pitched Roof Assembly Sitting on Top of Building Walls */}
+      <group position={[0, BUILDING_EAVE_HEIGHT, 0]}>
+        {/* Compass Azimuth Rotation */}
+        <group rotation={[0, azimuthRad, 0]}>
+          {/* Pitch Rotation from Horizontal: Tilts down towards South */}
+          <group rotation={[pitchRad, 0, 0]}>
+            {/* Lay flat on horizontal plane (Extrusion depth extends upward along +Y) */}
+            <group rotation={[-Math.PI / 2, 0, 0]}>
+              {/* Roof Deck Slab */}
+              <mesh receiveShadow castShadow position={[0, 0, 0]}>
+                <extrudeGeometry args={[shape, roofExtrudeSettings]} />
                 <meshStandardMaterial
-                  color="#0f2b48"
-                  roughness={0.2}
-                  metalness={0.8}
-                  envMapIntensity={1.2}
+                  color={isActive ? '#334155' : '#1e293b'}
+                  roughness={0.5}
+                  metalness={0.3}
                 />
               </mesh>
 
-              {/* Anodized Aluminum Outer Frame */}
-              <mesh position={[0, 0, -0.005]}>
-                <boxGeometry args={[pW + 0.015, pL + 0.015, 0.028]} />
-                <meshStandardMaterial
-                  color="#94a3b8"
-                  roughness={0.3}
-                  metalness={0.9}
-                />
-              </mesh>
+              {/* Photovoltaic Solar Panels Array */}
+              {section.placedPanels.map((panel) => {
+                const pW = panel.widthM;
+                const pL = panel.lengthM;
+
+                return (
+                  <group
+                    key={panel.id}
+                    position={[panel.x, panel.y, 0.17]}
+                  >
+                    {/* Mounting Rails Underneath Panel */}
+                    <mesh position={[0, -pL * 0.25, -0.015]}>
+                      <boxGeometry args={[pW * 0.95, 0.04, 0.025]} />
+                      <meshStandardMaterial color="#94a3b8" metalness={0.9} roughness={0.2} />
+                    </mesh>
+                    <mesh position={[0, pL * 0.25, -0.015]}>
+                      <boxGeometry args={[pW * 0.95, 0.04, 0.025]} />
+                      <meshStandardMaterial color="#94a3b8" metalness={0.9} roughness={0.2} />
+                    </mesh>
+
+                    {/* Dark Blue Anti-reflective Photovoltaic Glass */}
+                    <mesh castShadow receiveShadow>
+                      <boxGeometry args={[pW, pL, 0.035]} />
+                      <meshStandardMaterial
+                        color="#0f2b48"
+                        roughness={0.15}
+                        metalness={0.85}
+                      />
+                    </mesh>
+
+                    {/* Anodized Aluminum Outer Frame */}
+                    <mesh position={[0, 0, -0.002]}>
+                      <boxGeometry args={[pW + 0.02, pL + 0.02, 0.03]} />
+                      <meshStandardMaterial
+                        color="#cbd5e1"
+                        roughness={0.25}
+                        metalness={0.9}
+                      />
+                    </mesh>
+
+                    {/* Subtle Photovoltaic Busbar Grid Line Accent */}
+                    <mesh position={[0, 0, 0.019]}>
+                      <planeGeometry args={[pW * 0.96, pL * 0.96]} />
+                      <meshBasicMaterial
+                        color="#1d4ed8"
+                        transparent
+                        opacity={0.4}
+                        wireframe
+                      />
+                    </mesh>
+                  </group>
+                );
+              })}
             </group>
-          );
-        })}
+          </group>
+        </group>
       </group>
     </group>
+  );
+};
+
+// Celestial Sun Path Arc Curve in the Sky
+const CelestialSunArc: React.FC = () => {
+  const points = useMemo(() => {
+    const pts: [number, number, number][] = [];
+    for (let h = 6.0; h <= 18.0; h += 0.25) {
+      const p = getSunPosition(h);
+      pts.push([p.x, p.y, p.z]);
+    }
+    return pts;
+  }, []);
+
+  return (
+    <Line
+      points={points}
+      color="#f59e0b"
+      lineWidth={2}
+      transparent
+      opacity={0.45}
+    />
+  );
+};
+
+// Sunlight Guide Ray from Sun to Roof Center
+const SunlightRay: React.FC<{ sunPos: THREE.Vector3 }> = ({ sunPos }) => {
+  const points: [number, number, number][] = useMemo(
+    () => [
+      [sunPos.x, sunPos.y, sunPos.z],
+      [0, BUILDING_EAVE_HEIGHT + 0.5, 0],
+    ],
+    [sunPos.x, sunPos.y, sunPos.z]
+  );
+
+  return (
+    <Line
+      points={points}
+      color="#fbbf24"
+      lineWidth={1.5}
+      transparent
+      opacity={0.35}
+      dashed
+      dashSize={0.6}
+      gapSize={0.4}
+    />
   );
 };
 
@@ -112,49 +249,96 @@ const Roof3DMesh: React.FC<{ section: RoofPolygonSection; isActive: boolean }> =
 const SceneContent: React.FC<{ sunHour: number }> = ({ sunHour }) => {
   const { roofSections, activeSectionId } = useSolarMapperStore();
 
-  // Calculate sun trajectory: 6:00 AM (East) -> 12:00 PM (Noon South) -> 18:00 (West)
-  const sunProgress = (sunHour - 6) / 12; // 0 to 1
-  const sunElevationRad = Math.sin(sunProgress * Math.PI) * 1.1; // elevation above horizon
-  const sunAzimuthRad = (sunProgress - 0.5) * Math.PI; // East (-PI/2) to West (+PI/2)
+  const sunPos = useMemo(() => getSunPosition(sunHour, 22), [sunHour]);
 
-  const sunDistance = 28;
-  const sunX = Math.sin(sunAzimuthRad) * sunDistance;
-  const sunY = Math.max(1, Math.sin(sunElevationRad) * sunDistance);
-  const sunZ = -Math.cos(sunAzimuthRad) * (sunDistance * 0.5);
+  // Warm dawn/dusk lighting vs bright midday sunlight
+  const sunLightColor = useMemo(() => {
+    if (sunHour < 7.5 || sunHour > 16.5) return '#fed7aa'; // warm sunset/sunrise amber
+    if (sunHour < 9.5 || sunHour > 14.5) return '#fef08a'; // golden morning/late afternoon
+    return '#ffffff'; // solar noon crisp white
+  }, [sunHour]);
 
   const activeSection =
     roofSections.find((s) => s.id === activeSectionId) || roofSections[0];
 
   return (
     <>
-      <ambientLight intensity={0.45} />
+      <ambientLight intensity={0.55} color="#cbd5e1" />
       <directionalLight
-        position={[sunX, sunY, sunZ]}
-        intensity={1.4}
+        position={[sunPos.x, sunPos.y, sunPos.z]}
+        intensity={2.0}
+        color={sunLightColor}
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-bias={-0.0001}
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-near={0.5}
+        shadow-camera-far={60}
+        shadow-camera-left={-16}
+        shadow-camera-right={16}
+        shadow-camera-top={16}
+        shadow-camera-bottom={-16}
+        shadow-bias={-0.0002}
       />
 
-      {/* Ground Reference Plane with Grid */}
-      <gridHelper args={[30, 30, '#475569', '#1e293b']} position={[0, -0.05, 0]} />
+      {/* Visible Glowing 3D Sun Sphere & Corona */}
+      <group position={[sunPos.x, sunPos.y, sunPos.z]}>
+        {/* Core Glowing Sun Orb */}
+        <mesh>
+          <sphereGeometry args={[1.2, 32, 32]} />
+          <meshBasicMaterial color="#fbbf24" />
+        </mesh>
+        {/* Inner Solar Glow Aura */}
+        <mesh>
+          <sphereGeometry args={[1.8, 24, 24]} />
+          <meshBasicMaterial color="#fef08a" transparent opacity={0.4} />
+        </mesh>
+        {/* Outer Halo */}
+        <mesh>
+          <sphereGeometry args={[2.8, 24, 24]} />
+          <meshBasicMaterial color="#fde047" transparent opacity={0.15} />
+        </mesh>
+        {/* Floating Time Label Next to the Sun in the Sky */}
+        <Text
+          position={[0, 2.2, 0]}
+          fontSize={0.85}
+          color="#fef08a"
+          anchorX="center"
+          anchorY="bottom"
+        >
+          {formatSunTime(sunHour)}
+        </Text>
+      </group>
 
-      {/* Cardinal Direction Markers */}
-      <Text position={[0, 0.05, -14]} fontSize={1.2} color="#f59e0b" rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Celestial Sun Transit Arc Across the Sky */}
+      <CelestialSunArc />
+
+      {/* Sunlight Ray Connecting Sun to the Roof */}
+      <SunlightRay sunPos={sunPos} />
+
+      {/* Ground Reference Plane with Grid */}
+      <gridHelper args={[36, 36, '#475569', '#1e293b']} position={[0, -0.02, 0]} />
+
+      {/* Ground Shadow Receiver Plane */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]} receiveShadow>
+        <planeGeometry args={[50, 50]} />
+        <shadowMaterial opacity={0.4} />
+      </mesh>
+
+      {/* Cardinal Direction Markers on the Ground */}
+      <Text position={[0, 0.05, -16]} fontSize={1.3} color="#f59e0b" rotation={[-Math.PI / 2, 0, 0]}>
         N (0°)
       </Text>
-      <Text position={[0, 0.05, 14]} fontSize={1.2} color="#f59e0b" rotation={[-Math.PI / 2, 0, 0]}>
+      <Text position={[0, 0.05, 16]} fontSize={1.3} color="#f59e0b" rotation={[-Math.PI / 2, 0, 0]}>
         S (180°)
       </Text>
-      <Text position={[14, 0.05, 0]} fontSize={1.2} color="#94a3b8" rotation={[-Math.PI / 2, 0, 0]}>
+      <Text position={[16, 0.05, 0]} fontSize={1.3} color="#94a3b8" rotation={[-Math.PI / 2, 0, 0]}>
         E (90°)
       </Text>
-      <Text position={[-14, 0.05, 0]} fontSize={1.2} color="#94a3b8" rotation={[-Math.PI / 2, 0, 0]}>
+      <Text position={[-16, 0.05, 0]} fontSize={1.3} color="#94a3b8" rotation={[-Math.PI / 2, 0, 0]}>
         W (270°)
       </Text>
 
-      {/* Render Roof Sections */}
+      {/* Render Roof & Building Models */}
       {roofSections.map((sec) => (
         <Roof3DMesh
           key={sec.id}
@@ -165,9 +349,10 @@ const SceneContent: React.FC<{ sunHour: number }> = ({ sunHour }) => {
 
       <OrbitControls
         makeDefault
-        minDistance={4}
-        maxDistance={40}
-        maxPolarAngle={Math.PI / 2.05} // prevent going underneath ground
+        target={[0, BUILDING_EAVE_HEIGHT, 0]} // Orbit cleanly around the house roof
+        minDistance={5}
+        maxDistance={55}
+        maxPolarAngle={Math.PI / 2.05} // prevent camera going underneath ground
       />
     </>
   );
@@ -186,14 +371,6 @@ export const Roof3DPreviewCanvas: React.FC = () => {
   const activeSection =
     roofSections.find((s) => s.id === activeSectionId) || roofSections[0];
 
-  const formatSunTime = (hour: number) => {
-    const h = Math.floor(hour);
-    const m = Math.round((hour - h) * 60);
-    const period = h >= 12 ? 'PM' : 'AM';
-    const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
-    return `${displayH}:${m.toString().padStart(2, '0')} ${period}`;
-  };
-
   return (
     <div className="relative rounded-2xl overflow-hidden border border-slate-200/90 dark:border-slate-800/90 bg-[#090D16] shadow-xl">
       {/* 3D WebGL Canvas */}
@@ -207,7 +384,7 @@ export const Roof3DPreviewCanvas: React.FC = () => {
         >
           <Canvas
             shadows
-            camera={{ position: [12, 14, 16], fov: 42 }}
+            camera={{ position: [14, 18, 24], fov: 48 }}
             className="w-full h-full"
           >
             <SceneContent sunHour={sunHour} />
@@ -233,7 +410,7 @@ export const Roof3DPreviewCanvas: React.FC = () => {
             <span>{activeSection?.name || 'Roof Section 1'}</span>
           </div>
           <div className="text-[11px] text-slate-400 font-mono flex items-center gap-2">
-            <span>Pitch: {activeSection?.pitchDeg ?? 15}°</span>
+            <span>Pitch: {activeSection?.pitchDeg ?? 15}° from horizontal</span>
             <span>•</span>
             <span>Azimuth: {activeSection?.azimuthDeg ?? 180}° (S)</span>
             <span>•</span>
@@ -279,7 +456,7 @@ export const Roof3DPreviewCanvas: React.FC = () => {
               <span className="font-mono text-amber-400">{formatSunTime(sunHour)}</span>
             </div>
             <span className="text-[10px] text-slate-400 font-mono">
-              {sunHour < 12 ? 'Morning Sunlight' : sunHour === 12 ? 'Solar Noon' : 'Afternoon Harvest'}
+              {sunHour < 12 ? 'Morning Sunlight (East)' : sunHour === 12 ? 'Solar Noon (High South)' : 'Afternoon Harvest (West)'}
             </span>
           </div>
 
@@ -294,9 +471,9 @@ export const Roof3DPreviewCanvas: React.FC = () => {
           />
 
           <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
-            <span>6:00 AM (Sunrise)</span>
-            <span>12:00 PM (Noon)</span>
-            <span>6:00 PM (Sunset)</span>
+            <span>6:00 AM (East)</span>
+            <span>12:00 PM (Noon South)</span>
+            <span>6:00 PM (West)</span>
           </div>
         </div>
       </div>
