@@ -35,6 +35,9 @@ describe('App Navigation & Supabase Authentication Suite', () => {
 
     store.setActiveView('account');
     expect(useCalculatorStore.getState().activeView).toBe('account');
+
+    store.setActiveView('load-calculator');
+    expect(useCalculatorStore.getState().activeView).toBe('load-calculator');
   });
 
   it('correctly maps URL pathnames to views without requiring hashes', async () => {
@@ -50,6 +53,9 @@ describe('App Navigation & Supabase Authentication Suite', () => {
     expect(pathToView('/login')).toBe('login');
     expect(pathToView('/register')).toBe('register');
     expect(pathToView('/account')).toBe('account');
+    expect(pathToView('/calculator')).toBe('load-calculator');
+    expect(pathToView('/load-calculator')).toBe('load-calculator');
+    expect(pathToView('/sizing')).toBe('load-calculator');
     // Project ID extraction
     expect(extractProjectIdFromUrl('/projects/RLPwns0Uqe8cJ1xvEbZp')).toBe('RLPwns0Uqe8cJ1xvEbZp');
     expect(extractProjectIdFromUrl('/project/RLPwns0Uqe8cJ1xvEbZp')).toBe('RLPwns0Uqe8cJ1xvEbZp');
