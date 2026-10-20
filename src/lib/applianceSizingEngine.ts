@@ -115,7 +115,7 @@ export const PRESET_APPLIANCES: PresetAppliance[] = [
   },
   {
     id: 'fan_ceiling_stand_std',
-    name: 'Standard Stand / Ceiling Fan',
+    name: 'Ceiling Fan',
     category: 'cooling',
     loadType: 'inductive_motor',
     defaultRunningWatts: 65,
@@ -123,11 +123,11 @@ export const PRESET_APPLIANCES: PresetAppliance[] = [
     dutyCycle: 1.00,
     defaultHoursPerDay: 12,
     defaultDaytimeRatio: 0.50,
-    description: 'Standard AC induction motor fan with continuous air circulation',
+    description: 'Standard ceiling fan with continuous air circulation',
   },
   {
     id: 'fan_dc_inverter',
-    name: 'DC Inverter Stand Fan',
+    name: 'Stand Fan',
     category: 'cooling',
     loadType: 'electronic',
     defaultRunningWatts: 25,
@@ -135,7 +135,7 @@ export const PRESET_APPLIANCES: PresetAppliance[] = [
     dutyCycle: 1.00,
     defaultHoursPerDay: 12,
     defaultDaytimeRatio: 0.50,
-    description: 'Ultra-efficient brushless DC motor with minimal startup surge',
+    description: 'Energy-efficient stand fan with minimal startup surge',
   },
 
   // Kitchen
@@ -348,7 +348,7 @@ export const STARTER_PROFILES: Record<string, StarterProfile> = {
       },
       {
         presetId: 'fan_dc_inverter',
-        name: 'DC Inverter Stand Fan',
+        name: 'Stand Fan',
         category: 'cooling',
         loadType: 'electronic',
         quantity: 2,
@@ -474,7 +474,7 @@ export const STARTER_PROFILES: Record<string, StarterProfile> = {
       },
       {
         presetId: 'fan_ceiling_stand_std',
-        name: 'Standard Stand / Ceiling Fan',
+        name: 'Ceiling Fan',
         category: 'cooling',
         loadType: 'inductive_motor',
         quantity: 3,
@@ -561,7 +561,7 @@ export const STARTER_PROFILES: Record<string, StarterProfile> = {
       },
       {
         presetId: 'fan_dc_inverter',
-        name: 'DC Inverter Stand Fan',
+        name: 'Stand Fan',
         category: 'cooling',
         loadType: 'electronic',
         quantity: 2,
