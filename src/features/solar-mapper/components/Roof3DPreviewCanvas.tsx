@@ -111,7 +111,7 @@ const Roof3DMesh: React.FC<{
 
   // Compute Edge Pivot Frame
   // Edge connects vertex pivotIdx to (pivotIdx + 1) % N
-  const { pivotMidpoint, edgeAngleRad, canonicalVertices, ySign, edgeLength } = useMemo(() => {
+  const { pivotMidpoint, edgeAngleRad, canonicalVertices, ySign, edgeLength, centroidCanonical } = useMemo(() => {
     if (worldMeters.length < 3) {
       return {
         pivotMidpoint: { x: 0, y: 0 },
@@ -119,6 +119,7 @@ const Roof3DMesh: React.FC<{
         canonicalVertices: [],
         ySign: 1,
         edgeLength: 0,
+        centroidCanonical: { x: 0, y: 0 },
       };
     }
 
@@ -153,6 +154,7 @@ const Roof3DMesh: React.FC<{
       canonicalVertices: canonical,
       ySign: sign,
       edgeLength: len,
+      centroidCanonical: { x: cRel.x, y: cRel.y * sign },
     };
   }, [worldMeters, pivotIdx, N, secCentroidMeters]);
 
@@ -197,8 +199,9 @@ const Roof3DMesh: React.FC<{
       const canX = rx * cosA - ry * sinA;
       const canY = (rx * sinA + ry * cosA) * ySign;
 
-      // Local panel rotation
-      const canRot = (panel.rotationDeg || 0) * (Math.PI / 180) - edgeAngleRad;
+      // Local panel rotation (respect reflection when ySign === -1)
+      const baseRot = (panel.rotationDeg || 0) * (Math.PI / 180) - edgeAngleRad;
+      const canRot = ySign < 0 ? -baseRot : baseRot;
 
       return {
         ...panel,
@@ -273,7 +276,7 @@ const Roof3DMesh: React.FC<{
                 return (
                   <group
                     key={panel.id}
-                    position={[panel.canonicalX, panel.canonicalY, 0.17]}
+                    position={[panel.canonicalX, panel.canonicalY, 0.19]}
                     rotation={[0, 0, panel.canonicalRot]}
                   >
                     {/* Mounting Rails */}
@@ -383,8 +386,8 @@ const Roof3DMesh: React.FC<{
               {isActive && (
                 <group
                   position={[
-                    secCentroidMeters.x - pivotMidpoint.x,
-                    (secCentroidMeters.y - pivotMidpoint.y) * ySign,
+                    centroidCanonical.x,
+                    centroidCanonical.y,
                     0.25,
                   ]}
                   onPointerDown={(e) => {

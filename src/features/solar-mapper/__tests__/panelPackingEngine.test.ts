@@ -155,4 +155,35 @@ describe('Panel Packing Engine & Physical Layout Optimization', () => {
       expect(panel.rotationDeg).toBeCloseTo(-14, 0);
     }
   });
+
+  it('ensures panel count never decreases when adjusting roof pitch from 0° to 45°', () => {
+    const roofQuad: LocalPoint[] = [
+      { x: 0, y: 0 },
+      { x: 11.0, y: 0 },
+      { x: 10.2, y: 6.85 },
+      { x: 0.2, y: 6.4 },
+    ];
+
+    const flatArea = 70;
+    let initialCount = 0;
+
+    for (let pitch = 0; pitch <= 45; pitch += 5) {
+      const slopedArea = flatArea / Math.cos((pitch * Math.PI) / 180);
+      const packing = calculatePanelPacking({
+        localVertices: roofQuad,
+        slopedAreaSqm: slopedArea,
+        pitchDeg: pitch,
+        setbackRatio: 0.82,
+        panelWattage: 580,
+      });
+
+      if (pitch === 0) {
+        initialCount = packing.placedPanels.length;
+        expect(initialCount).toBeGreaterThan(0);
+      }
+
+      // Panels must never disappear when tilting the roof
+      expect(packing.placedPanels.length).toBeGreaterThanOrEqual(initialCount);
+    }
+  });
 });

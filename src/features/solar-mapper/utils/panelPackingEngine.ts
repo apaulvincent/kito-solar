@@ -150,10 +150,7 @@ export function calculatePanelPacking({
     const lengthM = isLandscape ? spec.widthM : spec.lengthM;
 
     const cellW = widthM + CLAMP_GAP_METERS;
-    // Scale slope length along V by cos(pitch)
-    const cosPitch = Math.cos(degToRad(Math.min(55, Math.max(0, pitchDeg))));
-    const effectiveLengthM = lengthM / Math.max(0.1, cosPitch);
-    const cellH = effectiveLengthM + CLAMP_GAP_METERS;
+    const cellH = lengthM + CLAMP_GAP_METERS;
 
     const spanU = maxU - minU;
     const spanV = maxV - minV;
@@ -175,10 +172,10 @@ export function calculatePanelPacking({
         const u = startU + c * cellW;
         // Test corners and center inside rotated inset boundary
         const center = { x: u, y: v };
-        const c1 = { x: u - widthM * 0.45, y: v - effectiveLengthM * 0.45 };
-        const c2 = { x: u + widthM * 0.45, y: v - effectiveLengthM * 0.45 };
-        const c3 = { x: u - widthM * 0.45, y: v + effectiveLengthM * 0.45 };
-        const c4 = { x: u + widthM * 0.45, y: v + effectiveLengthM * 0.45 };
+        const c1 = { x: u - widthM * 0.45, y: v - lengthM * 0.45 };
+        const c2 = { x: u + widthM * 0.45, y: v - lengthM * 0.45 };
+        const c3 = { x: u - widthM * 0.45, y: v + lengthM * 0.45 };
+        const c4 = { x: u + widthM * 0.45, y: v + lengthM * 0.45 };
 
         if (
           isPointInPolygon(center, inPolygonRot) &&
