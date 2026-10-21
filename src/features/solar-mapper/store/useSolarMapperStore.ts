@@ -19,6 +19,7 @@ import {
   unprojectLocalMetersToGeo,
   translatePolygonGeo,
   calculateEdgeAzimuthDeg,
+  getOuterTiltSides,
 } from '../utils/geodesicMath';
 import { calculateOrientationYieldFactor } from '../utils/solarPhysics';
 import { calculatePanelPacking } from '../utils/panelPackingEngine';
@@ -118,6 +119,8 @@ function recomputeSection(
     orientationYieldFactor,
     estimatedDailyKwh,
     hasBowtieCross,
+    rollDeg: section.rollDeg ?? 0,
+    pivotEdgeIndex: ((section.pivotEdgeIndex ?? 0) % 4 + 4) % 4,
   };
 }
 
@@ -386,9 +389,11 @@ export const useSolarMapperStore = create<SolarMapperState>()(
         set((state) => ({
           roofSections: state.roofSections.map((sec) => {
             if (sec.id !== id) return sec;
-            const autoAzimuth = calculateEdgeAzimuthDeg(sec.vertices, edgeIndex);
+            const sides = getOuterTiltSides(sec.vertices);
+            const sideIdx = ((edgeIndex % 4) + 4) % 4;
+            const chosenSide = sides[sideIdx] ?? sides[0];
             return recomputeSection(
-              { ...sec, pivotEdgeIndex: edgeIndex, azimuthDeg: autoAzimuth },
+              { ...sec, pivotEdgeIndex: sideIdx, azimuthDeg: chosenSide.azimuthDeg },
               effectivePsh
             );
           }),

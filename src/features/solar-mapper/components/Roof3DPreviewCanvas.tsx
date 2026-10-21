@@ -1,6 +1,6 @@
 // src/features/solar-mapper/components/Roof3DPreviewCanvas.tsx
-import React, { useMemo, useState, useRef, useCallback, useEffect, Suspense } from 'react';
-import { Canvas, useThree, ThreeEvent } from '@react-three/fiber';
+import React, { useMemo, useState, useRef, useCallback, Suspense } from 'react';
+import { Canvas, useThree, useFrame, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Text, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import {
@@ -21,6 +21,7 @@ import { useSolarMapperStore } from '../store/useSolarMapperStore';
 import {
   calculateCentroid,
   projectSinglePointToMeters,
+  getOuterTiltSides,
 } from '../utils/geodesicMath';
 import { GeoPoint, RoofPolygonSection } from '../types/solarMapper';
 
@@ -73,20 +74,31 @@ function getCardinalLabel(azimuthDeg: number): string {
   return 'NW';
 }
 
-// Single 3D Roof Mesh Component with Solar Modules
+/**
+ * Single 3D Roof Mesh Component.
+ * Pivots along one of the EXACTLY 4 OUTER BOUNDING SIDES (never inner cutouts).
+ */
 const Roof3DMesh: React.FC<{
   section: RoofPolygonSection;
   siteCenter: GeoPoint;
   isActive: boolean;
   onSelect: () => void;
   onSetPivotEdge: (edgeIdx: number) => void;
-}> = ({ section, siteCenter, isActive, onSelect, onSetPivotEdge }) => {
+  onCentroidWorldUpdate: (pos: THREE.Vector3) => void;
+}> = ({
+  section,
+  siteCenter,
+  isActive,
+  onSelect,
+  onSetPivotEdge,
+  onCentroidWorldUpdate,
+}) => {
+  const centroidAnchorRef = useRef<THREE.Group>(null);
+
   const secCentroid = useMemo(
     () => calculateCentroid(section.vertices),
     [section.vertices]
   );
-
-  const N = section.vertices.length;
 
   // Project vertices to local meters relative to site center (East = +x, North = +y)
   const worldMeters = useMemo(
@@ -99,41 +111,44 @@ const Roof3DMesh: React.FC<{
     [secCentroid, siteCenter]
   );
 
-  // Selected pivot edge index (0 to N - 1)
-  const pivotIdx = useMemo(() => {
-    if (N < 2) return 0;
-    return (((section.pivotEdgeIndex ?? 0) % N) + N) % N;
-  }, [section.pivotEdgeIndex, N]);
+  // ALWAYS 4 OUTER SIDES (Side 1..4), never inner cutouts
+  const outerSides = useMemo(
+    () => getOuterTiltSides(section.vertices),
+    [section.vertices]
+  );
 
-  // Compute Edge Pivot Frame
-  const { pivotMidpoint, edgeAngleRad, canonicalVertices, ySign } = useMemo(() => {
-    if (worldMeters.length < 3) {
+  const pivotIdx = ((section.pivotEdgeIndex ?? 0) % 4 + 4) % 4;
+  const activeSide = outerSides[pivotIdx] ?? outerSides[0];
+
+  // Active Hinge edge in local meters relative to site center
+  const { pivotMidpoint, edgeAngleRad, canonicalVertices, ySign, centroidCanonical } = useMemo(() => {
+    if (worldMeters.length < 3 || outerSides.length < 4) {
       return {
         pivotMidpoint: { x: 0, y: 0 },
         edgeAngleRad: 0,
         canonicalVertices: [],
         ySign: 1,
-        edgeLength: 0,
+        centroidCanonical: { x: 0, y: 0 },
       };
     }
 
-    const pA = worldMeters[pivotIdx];
-    const pB = worldMeters[(pivotIdx + 1) % N];
+    // Midpoint of active outer side
+    const mid = {
+      x: secCentroidMeters.x + activeSide.midpointMeters.x,
+      y: secCentroidMeters.y + activeSide.midpointMeters.y,
+    };
 
-    const mid = { x: (pA.x + pB.x) / 2, y: (pA.y + pB.y) / 2 };
-    const dx = pB.x - pA.x;
-    const dy = pB.y - pA.y;
-    const len = Math.hypot(dx, dy);
+    const dx = activeSide.endMeters.x - activeSide.startMeters.x;
+    const dy = activeSide.endMeters.y - activeSide.startMeters.y;
     const alpha = Math.atan2(dy, dx);
 
-    // Rotate vertices relative to mid by -alpha so the pivot edge lies on y = 0
+    // Rotate polygon vertices relative to mid by -alpha so hinge lies on y = 0
     const rotated = worldMeters.map((v) => {
       const rx = v.x - mid.x;
       const ry = v.y - mid.y;
       return rotate2D(rx, ry, -alpha);
     });
 
-    // Check centroid y sign so interior is always y >= 0
     const cRel = rotate2D(secCentroidMeters.x - mid.x, secCentroidMeters.y - mid.y, -alpha);
     const sign = cRel.y < 0 ? -1 : 1;
 
@@ -147,9 +162,9 @@ const Roof3DMesh: React.FC<{
       edgeAngleRad: alpha,
       canonicalVertices: canonical,
       ySign: sign,
-      edgeLength: len,
+      centroidCanonical: { x: cRel.x, y: cRel.y * sign },
     };
-  }, [worldMeters, pivotIdx, N, secCentroidMeters]);
+  }, [worldMeters, outerSides, activeSide, secCentroidMeters]);
 
   // 2D shape in canonical frame
   const shape = useMemo(() => {
@@ -210,6 +225,15 @@ const Roof3DMesh: React.FC<{
     canonicalVertices,
   ]);
 
+  // Feed real-time 3D world centroid position to scene gizmos
+  useFrame(() => {
+    if (isActive && centroidAnchorRef.current) {
+      const worldPos = new THREE.Vector3();
+      centroidAnchorRef.current.getWorldPosition(worldPos);
+      onCentroidWorldUpdate(worldPos);
+    }
+  });
+
   if (!shape) return null;
 
   // In Three.js: World +X = East, World +Z = South, World -Z = North
@@ -218,6 +242,7 @@ const Roof3DMesh: React.FC<{
   const anchorZ = -pivotMidpoint.y;
 
   const pitchRad = THREE.MathUtils.degToRad(section.pitchDeg);
+  const rollRad = THREE.MathUtils.degToRad(section.rollDeg ?? 0);
 
   return (
     <group
@@ -226,12 +251,12 @@ const Roof3DMesh: React.FC<{
         onSelect();
       }}
     >
-      {/* Anchor Group located at the Midpoint of the Pivot Edge */}
+      {/* Anchor Group located at the Midpoint of the Active Outer Tilt Edge */}
       <group position={[anchorX, anchorY, anchorZ]}>
-        {/* Horizontal orientation along the edge vector */}
+        {/* Horizontal orientation along the outer edge vector */}
         <group rotation={[0, edgeAngleRad, 0]}>
-          {/* Pitch Rotation along the local X axis (the edge itself!) */}
-          <group rotation={[pitchRad, 0, 0]}>
+          {/* Pitch & Roll Rotation along local X and Z axes */}
+          <group rotation={[pitchRad, 0, rollRad]}>
             {/* Lay flat on horizontal plane (canonical +y extends toward -Z) */}
             <group rotation={[-Math.PI / 2, 0, 0]}>
               {/* Roof Deck Slab */}
@@ -312,23 +337,38 @@ const Roof3DMesh: React.FC<{
                 );
               })}
 
-              {/* 3D Edge Lines & Clickable Rotation Axis Hinge Selectors */}
+              {/* ONLY 4 OUTER SIDES TO TILT (Side 1..4), never inner cutouts */}
               {isActive &&
-                canonicalVertices.map((vStart, i) => {
-                  const vEnd = canonicalVertices[(i + 1) % canonicalVertices.length];
+                outerSides.map((side, i) => {
                   const isPivot = i === pivotIdx;
-                  const edgeLengthM = Math.hypot(vEnd.x - vStart.x, vEnd.y - vStart.y);
+                  // Transform outer side endpoints into canonical coordinates
+                  const cosA = Math.cos(-edgeAngleRad);
+                  const sinA = Math.sin(-edgeAngleRad);
 
-                  const midX = (vStart.x + vEnd.x) / 2;
-                  const midY = (vStart.y + vEnd.y) / 2;
+                  const toCan = (pt: { x: number; y: number }) => {
+                    const worldX = secCentroidMeters.x + pt.x;
+                    const worldY = secCentroidMeters.y + pt.y;
+                    const rx = worldX - pivotMidpoint.x;
+                    const ry = worldY - pivotMidpoint.y;
+                    return {
+                      x: rx * cosA - ry * sinA,
+                      y: (rx * sinA + ry * cosA) * ySign,
+                    };
+                  };
+
+                  const canStart = toCan(side.startMeters);
+                  const canEnd = toCan(side.endMeters);
+                  const midX = (canStart.x + canEnd.x) / 2;
+                  const midY = (canStart.y + canEnd.y) / 2;
+                  const edgeLengthM = side.lengthM;
 
                   return (
-                    <group key={`edge-${i}`}>
-                      {/* Edge Line Segment */}
+                    <group key={`outer-edge-${i}`}>
+                      {/* Edge Line Segment on Outer Perimeter */}
                       <Line
                         points={[
-                          [vStart.x, vStart.y, 0.17],
-                          [vEnd.x, vEnd.y, 0.17],
+                          [canStart.x, canStart.y, 0.17],
+                          [canEnd.x, canEnd.y, 0.17],
                         ]}
                         color={isPivot ? '#f59e0b' : '#94a3b8'}
                         lineWidth={isPivot ? 4.5 : 2}
@@ -342,14 +382,14 @@ const Roof3DMesh: React.FC<{
                         rotation={[
                           0,
                           0,
-                          Math.atan2(vEnd.y - vStart.y, vEnd.x - vStart.x) + Math.PI / 2,
+                          Math.atan2(canEnd.y - canStart.y, canEnd.x - canStart.x) + Math.PI / 2,
                         ]}
                         onClick={(e) => {
                           e.stopPropagation();
                           onSetPivotEdge(i);
                         }}
                       >
-                        <cylinderGeometry args={[0.25, 0.25, edgeLengthM, 8]} />
+                        <cylinderGeometry args={[0.3, 0.3, edgeLengthM, 8]} />
                         <meshBasicMaterial transparent opacity={0} />
                       </mesh>
 
@@ -370,6 +410,12 @@ const Roof3DMesh: React.FC<{
                     </group>
                   );
                 })}
+
+              {/* Anchor Node at Centroid of Roof Face */}
+              <group
+                ref={centroidAnchorRef}
+                position={[centroidCanonical.x, centroidCanonical.y, 0.25]}
+              />
             </group>
           </group>
         </group>
@@ -379,163 +425,33 @@ const Roof3DMesh: React.FC<{
 };
 
 /**
- * 3D ROTATION GIZMO (IMAGE 1 STYLE)
- * Displays:
- * 1. Pitch Elevation Arc: Grab & drag along vertical arc to tilt roof (0° to 50°)
- * 2. Compass Azimuth Ring: Horizontal circular ring to rotate compass heading (0° to 360°)
- * 3. Outer Spherical Orbit Ring: Reference 3D CAD orbit sphere
+ * 3-AXIS 360° XYZ ROTATION GIZMO (MATCHES USER REFERENCE IMAGE EXACTLY)
+ * Features:
+ * - Green Ring (Y-Axis): Full 360° horizontal circle around vertical axis (Yaw / Compass Heading).
+ * - Red Ring (X-Axis): Full 360° vertical circle around X-axis (Pitch / Tilt).
+ * - Blue Ring (Z-Axis): Full 360° vertical circle around Z-axis (Roll / Cross-tilt).
+ * - Center pivot reticle with grab handles matching the user's reference image!
  */
-const RotationGizmo3D: React.FC<{
+const BlenderRotationDial3D: React.FC<{
+  center: THREE.Vector3;
   section: RoofPolygonSection;
-  siteCenter: GeoPoint;
   onIsDraggingChange: (isDragging: boolean) => void;
-}> = ({ section, siteCenter, onIsDraggingChange }) => {
+}> = ({ center, section, onIsDraggingChange }) => {
   const { updateRoofSectionConfig } = useSolarMapperStore();
   const { camera, gl } = useThree();
 
-  const secCentroid = useMemo(
-    () => calculateCentroid(section.vertices),
-    [section.vertices]
-  );
-  const secCentroidMeters = useMemo(
-    () => projectSinglePointToMeters(secCentroid, siteCenter),
-    [secCentroid, siteCenter]
-  );
+  const [activeAxis, setActiveAxis] = useState<'x' | 'y' | 'z' | null>(null);
+  const [hudText, setHudText] = useState<string | null>(null);
 
-  const N = section.vertices.length;
-  const pivotIdx = useMemo(() => {
-    if (N < 2) return 0;
-    return (((section.pivotEdgeIndex ?? 0) % N) + N) % N;
-  }, [section.pivotEdgeIndex, N]);
+  const radius = 3.2; // 3.2m diameter ring
 
-  const worldMeters = useMemo(
-    () => section.vertices.map((v) => projectSinglePointToMeters(v, siteCenter)),
-    [section.vertices, siteCenter]
-  );
-
-  // Compute Pivot Midpoint and Hinge normal direction
-  const { pivotMidpoint3D, vNormal, edgeLength } = useMemo(() => {
-    if (worldMeters.length < 2) {
-      return {
-        pivotMidpoint3D: new THREE.Vector3(0, BUILDING_EAVE_HEIGHT, 0),
-        vNormal: new THREE.Vector3(0, 0, 1),
-        edgeLength: 6,
-      };
-    }
-    const pA = worldMeters[pivotIdx];
-    const pB = worldMeters[(pivotIdx + 1) % N];
-
-    const midX = (pA.x + pB.x) / 2;
-    const midY = (pA.y + pB.y) / 2;
-    const mid3D = new THREE.Vector3(midX, BUILDING_EAVE_HEIGHT, -midY);
-
-    const dx = pB.x - pA.x;
-    const dz = -(pB.y - pA.y); // In Three.js, -Z is North
-    const vEdge = new THREE.Vector3(dx, 0, dz).normalize();
-
-    // Normal perpendicular to edge in horizontal plane
-    let norm = new THREE.Vector3(-vEdge.z, 0, vEdge.x);
-    // Point towards roof centroid
-    const c3D = new THREE.Vector3(secCentroidMeters.x, BUILDING_EAVE_HEIGHT, -secCentroidMeters.y);
-    if (norm.dot(c3D.clone().sub(mid3D)) < 0) {
-      norm.negate();
-    }
-
-    return {
-      pivotMidpoint3D: mid3D,
-      vNormal: norm,
-      edgeLength: Math.hypot(dx, dz),
-    };
-  }, [worldMeters, pivotIdx, N, secCentroidMeters]);
-
-  const centroid3D = useMemo(
-    () => new THREE.Vector3(secCentroidMeters.x, BUILDING_EAVE_HEIGHT, -secCentroidMeters.y),
-    [secCentroidMeters]
-  );
-
-  // Radius of the pitch arc
-  const arcRadius = useMemo(
-    () => Math.min(3.8, Math.max(2.2, edgeLength * 0.35)),
-    [edgeLength]
-  );
-
-  // Points for Pitch Arc (0° to 50°)
-  const pitchArcPoints = useMemo(() => {
-    const pts: [number, number, number][] = [];
-    for (let deg = 0; deg <= 50; deg += 2) {
-      const rad = (deg * Math.PI) / 180;
-      const pt = pivotMidpoint3D
-        .clone()
-        .addScaledVector(vNormal, arcRadius * Math.cos(rad))
-        .add(new THREE.Vector3(0, arcRadius * Math.sin(rad), 0));
-      pts.push([pt.x, pt.y, pt.z]);
-    }
-    return pts;
-  }, [pivotMidpoint3D, vNormal, arcRadius]);
-
-  // Current Pitch Bead 3D Position
-  const pitchBeadPos = useMemo(() => {
-    const rad = (section.pitchDeg * Math.PI) / 180;
-    return pivotMidpoint3D
-      .clone()
-      .addScaledVector(vNormal, arcRadius * Math.cos(rad))
-      .add(new THREE.Vector3(0, arcRadius * Math.sin(rad), 0));
-  }, [pivotMidpoint3D, vNormal, arcRadius, section.pitchDeg]);
-
-  // Points for Compass Azimuth Circle
-  const azimuthRadius = 3.4;
-  const azimuthCirclePoints = useMemo(() => {
-    const pts: [number, number, number][] = [];
-    for (let deg = 0; deg <= 360; deg += 3) {
-      const rad = (deg * Math.PI) / 180;
-      const x = centroid3D.x + azimuthRadius * Math.sin(rad);
-      const z = centroid3D.z - azimuthRadius * Math.cos(rad);
-      pts.push([x, BUILDING_EAVE_HEIGHT + 0.05, z]);
-    }
-    return pts;
-  }, [centroid3D]);
-
-  // Position of Azimuth Handle Arrow
-  const azimuthArrowPos = useMemo(() => {
-    const rad = (section.azimuthDeg * Math.PI) / 180;
-    return new THREE.Vector3(
-      centroid3D.x + azimuthRadius * Math.sin(rad),
-      BUILDING_EAVE_HEIGHT + 0.06,
-      centroid3D.z - azimuthRadius * Math.cos(rad)
-    );
-  }, [centroid3D, section.azimuthDeg]);
-
-  // Interactive Drag for Pitch Arc
-  const handlePitchPointerDown = (e: ThreeEvent<PointerEvent>) => {
+  // Interactive Drag for Green Y-Axis Ring (Full 360° Azimuth / Yaw)
+  const handleYPointerDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     onIsDraggingChange(true);
-    const startY = e.clientY;
-    const startPitch = section.pitchDeg;
+    setActiveAxis('y');
 
-    const onPointerMove = (evt: PointerEvent) => {
-      // Screen-space vertical drag: dragging upward tilts up, downward flattens
-      const deltaY = startY - evt.clientY;
-      const deltaPitch = deltaY * 0.35;
-      const newPitch = Math.max(0, Math.min(50, Math.round(startPitch + deltaPitch)));
-      updateRoofSectionConfig(section.id, { pitchDeg: newPitch });
-    };
-
-    const onPointerUp = () => {
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
-      onIsDraggingChange(false);
-    };
-
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
-  };
-
-  // Interactive Drag for Compass Azimuth Ring
-  const handleAzimuthPointerDown = (e: ThreeEvent<PointerEvent>) => {
-    e.stopPropagation();
-    onIsDraggingChange(true);
-
-    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -BUILDING_EAVE_HEIGHT);
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -center.y);
     const raycaster = new THREE.Raycaster();
 
     const onPointerMove = (evt: PointerEvent) => {
@@ -548,209 +464,236 @@ const RotationGizmo3D: React.FC<{
       const hit = raycaster.ray.intersectPlane(plane, target);
       if (!hit) return;
 
-      const dx = hit.x - centroid3D.x;
-      const dz = hit.z - centroid3D.z;
-      // Clockwise from North (-Z)
+      const dx = hit.x - center.x;
+      const dz = hit.z - center.z;
+      // In Three.js: -Z is North, +X is East, +Z is South, -X is West
       const angleDeg = (Math.atan2(dx, -dz) * (180 / Math.PI) + 360) % 360;
-      updateRoofSectionConfig(section.id, { azimuthDeg: Math.round(angleDeg) });
+      const roundAngle = Math.round(angleDeg);
+      updateRoofSectionConfig(section.id, { azimuthDeg: roundAngle });
+      setHudText(`Yaw (Y): ${roundAngle}° (${getCardinalLabel(roundAngle)})`);
     };
 
     const onPointerUp = () => {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       onIsDraggingChange(false);
+      setActiveAxis(null);
+      setHudText(null);
     };
 
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
   };
 
+  // Interactive Drag for Red X-Axis Ring (Pitch / Elevation Tilt)
+  const handleXPointerDown = (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    onIsDraggingChange(true);
+    setActiveAxis('x');
+    const startY = e.clientY;
+    const startPitch = section.pitchDeg;
+
+    const onPointerMove = (evt: PointerEvent) => {
+      const deltaY = startY - evt.clientY;
+      const deltaPitch = deltaY * 0.35;
+      const newPitch = Math.max(0, Math.min(50, Math.round(startPitch + deltaPitch)));
+      updateRoofSectionConfig(section.id, { pitchDeg: newPitch });
+      setHudText(`Pitch (X): ${newPitch}°`);
+    };
+
+    const onPointerUp = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      onIsDraggingChange(false);
+      setActiveAxis(null);
+      setHudText(null);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  };
+
+  // Interactive Drag for Blue Z-Axis Ring (Roll / Cross-tilt)
+  const handleZPointerDown = (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    onIsDraggingChange(true);
+    setActiveAxis('z');
+    const startX = e.clientX;
+    const startRoll = section.rollDeg ?? 0;
+
+    const onPointerMove = (evt: PointerEvent) => {
+      const deltaX = evt.clientX - startX;
+      const deltaRoll = deltaX * 0.35;
+      const newRoll = Math.max(-45, Math.min(45, Math.round(startRoll + deltaRoll)));
+      updateRoofSectionConfig(section.id, { rollDeg: newRoll });
+      setHudText(`Roll (Z): ${newRoll}°`);
+    };
+
+    const onPointerUp = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      onIsDraggingChange(false);
+      setActiveAxis(null);
+      setHudText(null);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  };
+
+  // Positions of Reticle Grab Handles on each ring
+  const yRad = (section.azimuthDeg * Math.PI) / 180;
+  const yReticlePos: [number, number, number] = [
+    radius * Math.sin(yRad),
+    0,
+    -radius * Math.cos(yRad),
+  ];
+
+  const xRad = (section.pitchDeg * Math.PI) / 180;
+  const xReticlePos: [number, number, number] = [
+    0,
+    radius * Math.sin(xRad),
+    radius * Math.cos(xRad),
+  ];
+
+  const zRad = ((section.rollDeg ?? 0) * Math.PI) / 180;
+  const zReticlePos: [number, number, number] = [
+    radius * Math.cos(zRad),
+    radius * Math.sin(zRad),
+    0,
+  ];
+
   return (
-    <group>
-      {/* 1. Outer Orbit Sphere Ring (Image 1 Style 3D Reference Ring) */}
-      <Line
-        points={azimuthCirclePoints}
-        color="#ffffff"
-        lineWidth={1.5}
-        transparent
-        opacity={0.3}
-        dashed
-        dashSize={0.4}
-        gapSize={0.2}
-      />
+    <group position={[center.x, center.y, center.z]}>
+      {/* Outer Orbit Sphere Reference Ring */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[radius * 1.05, radius * 1.06, 64]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.25} side={THREE.DoubleSide} />
+      </mesh>
 
-      {/* 2. Pitch Tilt Arc (Golden / Amber Curved Rail) */}
-      <Line
-        points={pitchArcPoints}
-        color="#f59e0b"
-        lineWidth={3.5}
-        transparent
-        opacity={0.85}
-      />
-
-      {/* Pitch Angle Degree Tick Marks along the Arc */}
-      {[0, 15, 30, 45].map((tickDeg) => {
-        const rad = (tickDeg * Math.PI) / 180;
-        const tickPos = pivotMidpoint3D
-          .clone()
-          .addScaledVector(vNormal, arcRadius * Math.cos(rad))
-          .add(new THREE.Vector3(0, arcRadius * Math.sin(rad), 0));
-        return (
-          <group key={tickDeg} position={[tickPos.x, tickPos.y, tickPos.z]}>
-            <mesh>
-              <sphereGeometry args={[0.07, 12, 12]} />
-              <meshBasicMaterial color="#fbbf24" />
-            </mesh>
-            <Text
-              fontSize={0.25}
-              color="#fbbf24"
-              anchorX="center"
-              anchorY="bottom"
-              position={[0, 0.12, 0]}
-            >
-              {`${tickDeg}°`}
-            </Text>
-          </group>
-        );
-      })}
-
-      {/* Interactive Pitch Grab Bead */}
-      <group
-        position={[pitchBeadPos.x, pitchBeadPos.y, pitchBeadPos.z]}
-        onPointerDown={handlePitchPointerDown}
-      >
-        {/* Outer glowing halo */}
-        <mesh>
-          <sphereGeometry args={[0.34, 16, 16]} />
-          <meshBasicMaterial color="#f59e0b" transparent opacity={0.35} />
+      {/* 1. GREEN RING (Y-AXIS / 360° YAW & AZIMUTH) */}
+      <group>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} onPointerDown={handleYPointerDown}>
+          <torusGeometry args={[radius, activeAxis === 'y' ? 0.07 : 0.045, 16, 64]} />
+          <meshStandardMaterial
+            color="#22c55e"
+            emissive="#15803d"
+            emissiveIntensity={activeAxis === 'y' ? 1.0 : 0.4}
+            roughness={0.2}
+          />
         </mesh>
-        {/* Core Grab Disc */}
-        <mesh>
-          <sphereGeometry args={[0.22, 16, 16]} />
-          <meshStandardMaterial color="#fbbf24" roughness={0.2} metalness={0.8} />
+        {/* Invisible Hit Area */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} onPointerDown={handleYPointerDown}>
+          <torusGeometry args={[radius, 0.25, 8, 32]} />
+          <meshBasicMaterial transparent opacity={0} />
         </mesh>
-        {/* Live Pitch Badge */}
-        <Text
-          fontSize={0.36}
-          color="#fbbf24"
-          anchorX="center"
-          anchorY="bottom"
-          position={[0, 0.45, 0]}
-        >
-          {`Pitch: ${section.pitchDeg}°`}
-        </Text>
+        {/* Grab Reticle on Y Ring */}
+        <group position={yReticlePos} onPointerDown={handleYPointerDown}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.15, 0.24, 24]} />
+            <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+          </mesh>
+          <mesh>
+            <sphereGeometry args={[0.12, 16, 16]} />
+            <meshBasicMaterial color="#22c55e" />
+          </mesh>
+        </group>
       </group>
 
-      {/* 3. Compass Azimuth Ring (Horizontal Sky-Blue Ring) */}
-      <Line
-        points={azimuthCirclePoints}
-        color="#38bdf8"
-        lineWidth={2.5}
-        transparent
-        opacity={0.7}
-      />
+      {/* 2. RED RING (X-AXIS / PITCH TILT) */}
+      <group>
+        <mesh rotation={[0, Math.PI / 2, 0]} onPointerDown={handleXPointerDown}>
+          <torusGeometry args={[radius, activeAxis === 'x' ? 0.07 : 0.045, 16, 64]} />
+          <meshStandardMaterial
+            color="#ef4444"
+            emissive="#b91c1c"
+            emissiveIntensity={activeAxis === 'x' ? 1.0 : 0.4}
+            roughness={0.2}
+          />
+        </mesh>
+        {/* Invisible Hit Area */}
+        <mesh rotation={[0, Math.PI / 2, 0]} onPointerDown={handleXPointerDown}>
+          <torusGeometry args={[radius, 0.25, 8, 32]} />
+          <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+        {/* Grab Reticle on X Ring */}
+        <group position={xReticlePos} onPointerDown={handleXPointerDown}>
+          <mesh rotation={[0, Math.PI / 2, 0]}>
+            <ringGeometry args={[0.15, 0.24, 24]} />
+            <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+          </mesh>
+          <mesh>
+            <sphereGeometry args={[0.12, 16, 16]} />
+            <meshBasicMaterial color="#ef4444" />
+          </mesh>
+        </group>
+      </group>
 
-      {/* Cardinal Direction Ticks on Compass Ring */}
-      <Text
-        position={[centroid3D.x, BUILDING_EAVE_HEIGHT + 0.12, centroid3D.z - azimuthRadius - 0.4]}
-        fontSize={0.4}
-        color="#f59e0b"
-        rotation={[-Math.PI / 2, 0, 0]}
-        anchorX="center"
-        anchorY="middle"
-      >
-        N (0°)
-      </Text>
-      <Text
-        position={[centroid3D.x, BUILDING_EAVE_HEIGHT + 0.12, centroid3D.z + azimuthRadius + 0.4]}
-        fontSize={0.4}
-        color="#f59e0b"
-        rotation={[-Math.PI / 2, 0, 0]}
-        anchorX="center"
-        anchorY="middle"
-      >
-        S (180°)
-      </Text>
-      <Text
-        position={[centroid3D.x + azimuthRadius + 0.4, BUILDING_EAVE_HEIGHT + 0.12, centroid3D.z]}
-        fontSize={0.4}
-        color="#94a3b8"
-        rotation={[-Math.PI / 2, 0, 0]}
-        anchorX="center"
-        anchorY="middle"
-      >
-        E (90°)
-      </Text>
-      <Text
-        position={[centroid3D.x - azimuthRadius - 0.4, BUILDING_EAVE_HEIGHT + 0.12, centroid3D.z]}
-        fontSize={0.4}
-        color="#94a3b8"
-        rotation={[-Math.PI / 2, 0, 0]}
-        anchorX="center"
-        anchorY="middle"
-      >
-        W (270°)
-      </Text>
+      {/* 3. BLUE RING (Z-AXIS / ROLL TILT) */}
+      <group>
+        <mesh rotation={[0, 0, 0]} onPointerDown={handleZPointerDown}>
+          <torusGeometry args={[radius, activeAxis === 'z' ? 0.07 : 0.045, 16, 64]} />
+          <meshStandardMaterial
+            color="#3b82f6"
+            emissive="#1d4ed8"
+            emissiveIntensity={activeAxis === 'z' ? 1.0 : 0.4}
+            roughness={0.2}
+          />
+        </mesh>
+        {/* Invisible Hit Area */}
+        <mesh rotation={[0, 0, 0]} onPointerDown={handleZPointerDown}>
+          <torusGeometry args={[radius, 0.25, 8, 32]} />
+          <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+        {/* Grab Reticle on Z Ring */}
+        <group position={zReticlePos} onPointerDown={handleZPointerDown}>
+          <mesh rotation={[0, 0, 0]}>
+            <ringGeometry args={[0.15, 0.24, 24]} />
+            <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+          </mesh>
+          <mesh>
+            <sphereGeometry args={[0.12, 16, 16]} />
+            <meshBasicMaterial color="#3b82f6" />
+          </mesh>
+        </group>
+      </group>
 
-      {/* Interactive Compass Heading Arrow & Bead */}
-      <group
-        position={[azimuthArrowPos.x, azimuthArrowPos.y, azimuthArrowPos.z]}
-        onPointerDown={handleAzimuthPointerDown}
-      >
-        {/* Heading Halo Disc */}
+      {/* Center Pivot Reticle matching Reference Image */}
+      <group>
+        <mesh>
+          <sphereGeometry args={[0.15, 16, 16]} />
+          <meshBasicMaterial color="#f59e0b" />
+        </mesh>
         <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.2, 0.42, 24]} />
-          <meshBasicMaterial color="#38bdf8" transparent opacity={0.65} side={THREE.DoubleSide} />
+          <ringGeometry args={[0.25, 0.3, 32]} />
+          <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} transparent opacity={0.6} />
         </mesh>
-        <mesh>
-          <sphereGeometry args={[0.22, 16, 16]} />
-          <meshStandardMaterial color="#0284c7" roughness={0.2} metalness={0.9} />
-        </mesh>
-        {/* Facing Badge */}
-        <Text
-          fontSize={0.34}
-          color="#38bdf8"
-          anchorX="center"
-          anchorY="bottom"
-          position={[0, 0.45, 0]}
-        >
-          {`Facing: ${section.azimuthDeg}° (${getCardinalLabel(section.azimuthDeg)})`}
-        </Text>
       </group>
+
+      {/* Live Floating HUD Badge while dragging */}
+      {hudText && (
+        <group position={[0, radius + 0.6, 0]}>
+          <Text fontSize={0.42} color="#ffffff" anchorX="center" anchorY="bottom">
+            {hudText}
+          </Text>
+        </group>
+      )}
     </group>
   );
 };
 
 /**
  * 3D MOVE GIZMO (PRECISION CAD GROUND TRANSLATION)
- * Provides:
- * 1. Center Planar Disc for Free 2D Dragging
- * 2. East-West / North-South Constrained Translation Axes
- * 3. Live 3D Delta Coordinates Badge
  */
 const MoveGizmo3D: React.FC<{
+  center: THREE.Vector3;
   section: RoofPolygonSection;
-  siteCenter: GeoPoint;
   onIsDraggingChange: (isDragging: boolean) => void;
-}> = ({ section, siteCenter, onIsDraggingChange }) => {
+}> = ({ center, section, onIsDraggingChange }) => {
   const { translateRoofSection } = useSolarMapperStore();
   const { camera, gl } = useThree();
 
   const [dragDelta, setDragDelta] = useState<{ x: number; y: number } | null>(null);
-
-  const secCentroid = useMemo(
-    () => calculateCentroid(section.vertices),
-    [section.vertices]
-  );
-  const secCentroidMeters = useMemo(
-    () => projectSinglePointToMeters(secCentroid, siteCenter),
-    [secCentroid, siteCenter]
-  );
-
-  const centroid3D = useMemo(
-    () => new THREE.Vector3(secCentroidMeters.x, BUILDING_EAVE_HEIGHT + 0.1, -secCentroidMeters.y),
-    [secCentroidMeters]
-  );
 
   const handlePointerDown = (
     e: ThreeEvent<PointerEvent>,
@@ -759,7 +702,7 @@ const MoveGizmo3D: React.FC<{
     e.stopPropagation();
     onIsDraggingChange(true);
 
-    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(BUILDING_EAVE_HEIGHT + 0.1));
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -center.y);
     const raycaster = new THREE.Raycaster();
 
     const getHit = (clientX: number, clientY: number): THREE.Vector3 | null => {
@@ -810,23 +753,19 @@ const MoveGizmo3D: React.FC<{
   };
 
   return (
-    <group position={[centroid3D.x, centroid3D.y, centroid3D.z]}>
+    <group position={[center.x, center.y, center.z]}>
       {/* 1. Center Planar Free 2D Drag Disc */}
       <group onPointerDown={(e) => handlePointerDown(e, 'free')}>
-        {/* Outer Cyan Ring */}
         <mesh rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.55, 0.75, 32]} />
           <meshBasicMaterial color="#38bdf8" side={THREE.DoubleSide} transparent opacity={0.85} />
         </mesh>
-        {/* Inner Ocean Blue Disc */}
         <mesh rotation={[-Math.PI / 2, 0, 0]}>
           <circleGeometry args={[0.5, 32]} />
           <meshBasicMaterial color="#0284c7" side={THREE.DoubleSide} transparent opacity={0.45} />
         </mesh>
-        {/* Crosshair Accent */}
         <Line points={[[-0.4, 0, 0], [0.4, 0, 0]]} color="#ffffff" lineWidth={2} />
         <Line points={[[0, 0, -0.4], [0, 0, 0.4]]} color="#ffffff" lineWidth={2} />
-        {/* Text */}
         <Text
           position={[0, -0.95, 0.05]}
           fontSize={0.34}
@@ -943,6 +882,9 @@ const SceneContent: React.FC<{
   } = useSolarMapperStore();
 
   const [isInteractingWithGizmo, setIsInteractingWithGizmo] = useState(false);
+  const [activeRoofWorldCenter, setActiveRoofWorldCenter] = useState<THREE.Vector3>(
+    () => new THREE.Vector3(0, BUILDING_EAVE_HEIGHT, 0)
+  );
 
   const handleGizmoDragState = useCallback(
     (isDragging: boolean) => {
@@ -1054,22 +996,23 @@ const SceneContent: React.FC<{
           isActive={sec.id === activeSection?.id}
           onSelect={() => setActiveSectionId(sec.id)}
           onSetPivotEdge={(idx) => setRoofSectionPivotEdge(sec.id, idx)}
+          onCentroidWorldUpdate={setActiveRoofWorldCenter}
         />
       ))}
 
-      {/* Interactive 3D Gizmos on Active Section */}
+      {/* 3D GIZMOS MOUNTED AT THE TRUE ROOF 3D CENTER */}
       {activeSection && activeSection.vertices.length >= 3 && (
         <>
           {activeTool === 'move' ? (
             <MoveGizmo3D
+              center={activeRoofWorldCenter}
               section={activeSection}
-              siteCenter={siteCenter}
               onIsDraggingChange={handleGizmoDragState}
             />
           ) : (
-            <RotationGizmo3D
+            <BlenderRotationDial3D
+              center={activeRoofWorldCenter}
               section={activeSection}
-              siteCenter={siteCenter}
               onIsDraggingChange={handleGizmoDragState}
             />
           )}
@@ -1109,7 +1052,13 @@ export const Roof3DPreviewCanvas: React.FC = () => {
   const activeSection =
     roofSections.find((s) => s.id === activeSectionId) || roofSections[0];
 
-  const pivotEdge = activeSection ? (activeSection.pivotEdgeIndex ?? 0) : 0;
+  const pivotEdge = activeSection ? ((activeSection.pivotEdgeIndex ?? 0) % 4) : 0;
+
+  // ALWAYS EXACTLY 4 OUTER SIDES (Side 1..4), never inner cutouts
+  const outerSides = useMemo(
+    () => (activeSection ? getOuterTiltSides(activeSection.vertices) : []),
+    [activeSection]
+  );
 
   // Nudge active roof plane by fixed delta (East/North)
   const handleNudge = (deltaX: number, deltaY: number) => {
@@ -1198,7 +1147,7 @@ export const Roof3DPreviewCanvas: React.FC = () => {
         {activeSection && activeSection.vertices.length >= 3 && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 max-w-[calc(100%-2rem)] overflow-x-auto no-scrollbar">
             <div className="p-1.5 rounded-full bg-slate-950/90 border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-2xl flex items-center gap-1.5 select-none">
-              {/* Tool Mode: Rotate & Tilt (Image 1 Style Gizmo) */}
+              {/* Tool Mode: Rotate & Tilt (XYZ 3D Rotation Gizmo) */}
               <button
                 type="button"
                 onClick={() => setActive3DTool('hinge')}
@@ -1207,7 +1156,7 @@ export const Roof3DPreviewCanvas: React.FC = () => {
                     ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/25'
                     : 'text-slate-300 hover:text-white hover:bg-white/10'
                 }`}
-                title="Rotate pitch and azimuth with 3D arc controls"
+                title="Rotate pitch, azimuth and roll with 3D XYZ rotation dial"
               >
                 <RotateCw className="w-3.5 h-3.5 text-current flex-shrink-0" />
                 <span>Rotate & Tilt</span>
@@ -1230,9 +1179,9 @@ export const Roof3DPreviewCanvas: React.FC = () => {
 
               <div className="w-[1px] h-4 bg-white/15 mx-1 flex-shrink-0" />
 
-              {/* Side Hinge Switcher Chips */}
+              {/* ALWAYS EXACTLY 4 OUTER SIDES (Side 1..4), never inner cutouts */}
               <div className="flex items-center gap-1 flex-shrink-0">
-                {activeSection.edgeLengthsMeters.map((len, idx) => (
+                {outerSides.map((side, idx) => (
                   <button
                     key={idx}
                     type="button"
@@ -1242,10 +1191,10 @@ export const Roof3DPreviewCanvas: React.FC = () => {
                         ? 'bg-amber-400/20 text-amber-300 border border-amber-500/40'
                         : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
                     }`}
-                    title={`Hinge along Side ${idx + 1} (${len.toFixed(1)}m)`}
+                    title={`Hinge along ${side.name} (${side.lengthM.toFixed(1)}m)`}
                   >
-                    <span>S{idx + 1}</span>
-                    <span className="opacity-70 text-[9px]">{len.toFixed(0)}m</span>
+                    <span>{side.shortName}</span>
+                    <span className="opacity-70 text-[9px]">{side.cardinalDir[0]} • {side.lengthM.toFixed(0)}m</span>
                   </button>
                 ))}
               </div>
@@ -1256,7 +1205,7 @@ export const Roof3DPreviewCanvas: React.FC = () => {
               <button
                 type="button"
                 onClick={() =>
-                  updateRoofSectionConfig(activeSection.id, { pitchDeg: 0 })
+                  updateRoofSectionConfig(activeSection.id, { pitchDeg: 0, rollDeg: 0 })
                 }
                 className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1 flex-shrink-0 ${
                   activeSection.pitchDeg === 0

@@ -1,5 +1,5 @@
 // src/features/solar-mapper/utils/geodesicMath.ts
-import { GeoPoint, LocalPoint } from '../types/solarMapper';
+import { GeoPoint, LocalPoint, OuterTiltSide } from '../types/solarMapper';
 
 export const EARTH_RADIUS_METERS = 6378137; // WGS84 Major Axis Radius
 
@@ -230,3 +230,166 @@ export function calculateEdgeAzimuthDeg(vertices: GeoPoint[], edgeIndex: number)
   return Math.round(headingDeg);
 }
 
+
+/**
+ * Computes the exactly 4 outer bounding tilt sides of ANY roof polygon (never inner cutout notches).
+ * Side 1: South / Front Eave
+ * Side 2: East / Right Edge
+ * Side 3: North / Back Ridge
+ * Side 4: West / Left Edge
+ */
+export function getOuterTiltSides(vertices: GeoPoint[]): OuterTiltSide[] {
+  if (vertices.length < 3) {
+    const defaultMeters = { x: 0, y: 0 };
+    return [
+      {
+        sideIndex: 0,
+        name: 'Side 1 (Front Eave)',
+        shortName: 'Side 1',
+        cardinalDir: 'South',
+        azimuthDeg: 180,
+        lengthM: 0,
+        startMeters: defaultMeters,
+        endMeters: defaultMeters,
+        midpointMeters: defaultMeters,
+      },
+      {
+        sideIndex: 1,
+        name: 'Side 2 (Right Edge)',
+        shortName: 'Side 2',
+        cardinalDir: 'East',
+        azimuthDeg: 90,
+        lengthM: 0,
+        startMeters: defaultMeters,
+        endMeters: defaultMeters,
+        midpointMeters: defaultMeters,
+      },
+      {
+        sideIndex: 2,
+        name: 'Side 3 (Back Ridge)',
+        shortName: 'Side 3',
+        cardinalDir: 'North',
+        azimuthDeg: 0,
+        lengthM: 0,
+        startMeters: defaultMeters,
+        endMeters: defaultMeters,
+        midpointMeters: defaultMeters,
+      },
+      {
+        sideIndex: 3,
+        name: 'Side 4 (Left Edge)',
+        shortName: 'Side 4',
+        cardinalDir: 'West',
+        azimuthDeg: 270,
+        lengthM: 0,
+        startMeters: defaultMeters,
+        endMeters: defaultMeters,
+        midpointMeters: defaultMeters,
+      },
+    ];
+  }
+
+  const centroid = calculateCentroid(vertices);
+  const localPts = projectVerticesToLocalMeters(vertices, centroid);
+
+  // Find dominant edge orientation
+  let maxLenSq = -1;
+  let domAngleRad = 0;
+  const n = localPts.length;
+
+  for (let i = 0; i < n; i++) {
+    const next = (i + 1) % n;
+    const dx = localPts[next].x - localPts[i].x;
+    const dy = localPts[next].y - localPts[i].y;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq > maxLenSq) {
+      maxLenSq = lenSq;
+      domAngleRad = Math.atan2(dy, dx);
+    }
+  }
+
+  while (domAngleRad >= Math.PI / 2) domAngleRad -= Math.PI;
+  while (domAngleRad < -Math.PI / 2) domAngleRad += Math.PI;
+
+  const cosTheta = Math.cos(domAngleRad);
+  const sinTheta = Math.sin(domAngleRad);
+
+  let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
+  for (const p of localPts) {
+    const u = p.x * cosTheta + p.y * sinTheta;
+    const v = -p.x * sinTheta + p.y * cosTheta;
+    if (u < minU) minU = u;
+    if (u > maxU) maxU = u;
+    if (v < minV) minV = v;
+    if (v > maxV) maxV = v;
+  }
+
+  const widthU = Math.max(0.1, maxU - minU);
+  const lengthV = Math.max(0.1, maxV - minV);
+
+  const unrot = (u: number, v: number): LocalPoint => ({
+    x: Math.round((u * cosTheta - v * sinTheta) * 100) / 100,
+    y: Math.round((u * sinTheta + v * cosTheta) * 100) / 100,
+  });
+
+  const c1 = unrot(minU, minV);
+  const c2 = unrot(maxU, minV);
+  const c3 = unrot(maxU, maxV);
+  const c4 = unrot(minU, maxV);
+
+  const calcAzimuth = (pA: LocalPoint, pB: LocalPoint): number => {
+    const dx = pB.x - pA.x;
+    const dy = pB.y - pA.y;
+    const nx = dy;
+    const ny = -dx;
+    const az = (Math.atan2(nx, ny) * (180 / Math.PI) + 360) % 360;
+    return Math.round(az);
+  };
+
+  return [
+    {
+      sideIndex: 0,
+      name: 'Side 1 (Front Eave)',
+      shortName: 'Side 1',
+      cardinalDir: 'South',
+      azimuthDeg: calcAzimuth(c1, c2),
+      lengthM: Math.round(widthU * 10) / 10,
+      startMeters: c1,
+      endMeters: c2,
+      midpointMeters: unrot((minU + maxU) / 2, minV),
+    },
+    {
+      sideIndex: 1,
+      name: 'Side 2 (Right Edge)',
+      shortName: 'Side 2',
+      cardinalDir: 'East',
+      azimuthDeg: calcAzimuth(c2, c3),
+      lengthM: Math.round(lengthV * 10) / 10,
+      startMeters: c2,
+      endMeters: c3,
+      midpointMeters: unrot(maxU, (minV + maxV) / 2),
+    },
+    {
+      sideIndex: 2,
+      name: 'Side 3 (Back Ridge)',
+      shortName: 'Side 3',
+      cardinalDir: 'North',
+      azimuthDeg: calcAzimuth(c3, c4),
+      lengthM: Math.round(widthU * 10) / 10,
+      startMeters: c3,
+      endMeters: c4,
+      midpointMeters: unrot((minU + maxU) / 2, maxV),
+    },
+    {
+      sideIndex: 3,
+      name: 'Side 4 (Left Edge)',
+      shortName: 'Side 4',
+      cardinalDir: 'West',
+      azimuthDeg: calcAzimuth(c4, c1),
+      lengthM: Math.round(lengthV * 10) / 10,
+      startMeters: c4,
+      endMeters: c1,
+      midpointMeters: unrot(minU, (minV + maxV) / 2),
+    },
+  ];
+}

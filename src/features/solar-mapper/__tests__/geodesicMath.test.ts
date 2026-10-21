@@ -10,6 +10,7 @@ import {
   unprojectLocalMetersToGeo,
   translatePolygonGeo,
   calculateEdgeAzimuthDeg,
+  getOuterTiltSides,
 } from '../utils/geodesicMath';
 import { GeoPoint } from '../types/solarMapper';
 
@@ -140,5 +141,42 @@ describe('Geodesic Math & Spherical Polygon Utilities', () => {
     expect(calculateEdgeAzimuthDeg(rect, 1)).toBeCloseTo(90, 0);  // East
     expect(calculateEdgeAzimuthDeg(rect, 2)).toBeCloseTo(0, 0);   // North
     expect(calculateEdgeAzimuthDeg(rect, 3)).toBeCloseTo(270, 0); // West
+  });
+  it('computes exactly 4 outer tilt sides for any polygon, ignoring inner notch edges', () => {
+    // 8-vertex U-shaped roof polygon:
+    // Outer bounds: -10 to +10 X, -5 to +5 Y (20m wide x 10m deep)
+    // Has an inner notch / courtyard carved into the top edge (Side 3)
+    const uShapedRoof = [
+      unprojectLocalMetersToGeo({ x: -10, y: -5 }, origin), // Bottom-left
+      unprojectLocalMetersToGeo({ x: 10, y: -5 }, origin),  // Bottom-right
+      unprojectLocalMetersToGeo({ x: 10, y: 5 }, origin),   // Top-right
+      unprojectLocalMetersToGeo({ x: 3, y: 5 }, origin),    // Notch right
+      unprojectLocalMetersToGeo({ x: 3, y: 0 }, origin),    // Notch bottom-right (inner side)
+      unprojectLocalMetersToGeo({ x: -3, y: 0 }, origin),   // Notch bottom-left (inner side)
+      unprojectLocalMetersToGeo({ x: -3, y: 5 }, origin),   // Notch left
+      unprojectLocalMetersToGeo({ x: -10, y: 5 }, origin),  // Top-left
+    ];
+
+    expect(uShapedRoof.length).toBe(8);
+
+    const outerSides = getOuterTiltSides(uShapedRoof);
+    // MUST always produce strictly 4 outer tilt sides, never 8!
+    expect(outerSides).toHaveLength(4);
+
+    expect(outerSides[0].name).toContain('Side 1');
+    expect(outerSides[0].cardinalDir).toBe('South');
+    expect(outerSides[0].lengthM).toBeCloseTo(20.0, 0);
+
+    expect(outerSides[1].name).toContain('Side 2');
+    expect(outerSides[1].cardinalDir).toBe('East');
+    expect(outerSides[1].lengthM).toBeCloseTo(10.0, 0);
+
+    expect(outerSides[2].name).toContain('Side 3');
+    expect(outerSides[2].cardinalDir).toBe('North');
+    expect(outerSides[2].lengthM).toBeCloseTo(20.0, 0);
+
+    expect(outerSides[3].name).toContain('Side 4');
+    expect(outerSides[3].cardinalDir).toBe('West');
+    expect(outerSides[3].lengthM).toBeCloseTo(10.0, 0);
   });
 });

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useSolarMapperStore } from '../store/useSolarMapperStore';
 import { PanelOrientation } from '../types/solarMapper';
+import { getOuterTiltSides } from '../utils/geodesicMath';
 
 function getCardinalDirection(deg: number): string {
   if (deg >= 337.5 || deg < 22.5) return 'North (0°)';
@@ -43,6 +44,11 @@ export const RoofSectionInspector: React.FC = () => {
 
   const activeSection =
     roofSections.find((s) => s.id === activeSectionId) || roofSections[0];
+
+  const outerSides = React.useMemo(
+    () => (activeSection ? getOuterTiltSides(activeSection.vertices) : []),
+    [activeSection]
+  );
 
   if (!activeSection) {
     return (
@@ -309,7 +315,7 @@ export const RoofSectionInspector: React.FC = () => {
                 Rotation Axis / Hinge Side:
               </span>
               <span className="font-mono text-xs font-bold text-amber-500 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
-                Side {(activeSection.pivotEdgeIndex ?? 0) + 1}
+                Side {((activeSection.pivotEdgeIndex ?? 0) % 4) + 1}
               </span>
             </div>
 
@@ -317,10 +323,10 @@ export const RoofSectionInspector: React.FC = () => {
               Select which side acts as the stationary eave hinge. The roof pitches upward from this edge.
             </p>
 
-            {/* Edge Selector Chips */}
+            {/* 4 Outer Tilt Sides: ALWAYS 4 SIDES */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {activeSection.edgeLengthsMeters.map((len, idx) => {
-                const isPivot = (activeSection.pivotEdgeIndex ?? 0) === idx;
+              {outerSides.map((side, idx) => {
+                const isPivot = ((activeSection.pivotEdgeIndex ?? 0) % 4) === idx;
                 return (
                   <button
                     key={idx}
@@ -333,13 +339,16 @@ export const RoofSectionInspector: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold">Side {idx + 1}</span>
+                      <span className="text-[11px] font-bold">{side.shortName}</span>
                       {isPivot && (
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                       )}
                     </div>
-                    <div className="text-xs font-mono font-bold mt-1 text-slate-900 dark:text-white">
-                      {len.toFixed(1)}m
+                    <div className="text-[10px] text-slate-400 font-medium">
+                      {side.cardinalDir}
+                    </div>
+                    <div className="text-xs font-mono font-bold mt-0.5 text-slate-900 dark:text-white">
+                      {side.lengthM.toFixed(1)}m
                     </div>
                   </button>
                 );

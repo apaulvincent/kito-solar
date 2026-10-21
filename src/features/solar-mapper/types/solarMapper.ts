@@ -92,12 +92,25 @@ export const PANEL_SPECS: Record<550 | 580 | 600, PanelSpec> = {
   },
 };
 
+export interface OuterTiltSide {
+  sideIndex: number; // 0, 1, 2, 3
+  name: string; // 'Side 1 (South / Eave)', etc.
+  shortName: string; // 'Side 1', 'Side 2', 'Side 3', 'Side 4'
+  cardinalDir: 'South' | 'East' | 'North' | 'West';
+  azimuthDeg: number; // Downslope compass heading (e.g. 180°, 90°, 0°, 270°)
+  lengthM: number;
+  startMeters: LocalPoint;
+  endMeters: LocalPoint;
+  midpointMeters: LocalPoint;
+}
+
 export interface RoofPolygonSection {
   id: string;
   name: string;
   vertices: GeoPoint[];
   pitchDeg: number; // 0° to 45°
   azimuthDeg: number; // 0° = N, 90° = E, 180° = S, 270° = W
+  rollDeg?: number; // -45° to +45° secondary roll tilt (default 0)
   pivotEdgeIndex?: number; // 0-based index of polygon edge acting as rotation/hinge axis
   shadingLossPercent: number; // 0% to 50%
   setbackRatio: number; // default 0.82 (18% reserved for edges & walkways)
