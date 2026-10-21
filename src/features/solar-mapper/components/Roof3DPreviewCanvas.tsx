@@ -4,93 +4,90 @@ import { Canvas, useThree, useFrame, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Text, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import {
-  Sun,
+  RotateCw,
+  Move,
+  Maximize2,
+  Layers,
   Map,
   Compass,
-  Layers,
-  Anchor,
-  Move,
-  Minus,
-  ArrowUp,
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight,
-  RotateCw,
 } from 'lucide-react';
 import { useSolarMapperStore } from '../store/useSolarMapperStore';
 import {
   calculateCentroid,
   projectSinglePointToMeters,
-  getOuterTiltSides,
+  projectVerticesToLocalMeters,
 } from '../utils/geodesicMath';
 import { GeoPoint, RoofPolygonSection } from '../types/solarMapper';
 
-const BUILDING_EAVE_HEIGHT = 2.4; // 2.4m residential eave height
+// Realistic Building Eave Elevation above ground plane in meters
+const BUILDING_EAVE_HEIGHT = 4.0;
 
-/**
- * Calculates the 3D position of the Sun along its celestial transit.
- * East (+X) at 6:00 AM -> Noon South (+Z peak height) -> West (-X) at 6:00 PM.
- */
-function getSunPosition(hour: number, radius = 24): THREE.Vector3 {
-  const progress = (hour - 6) / 12; // 0 (6 AM) to 1 (6 PM)
-  const angle = progress * Math.PI; // 0 to PI
-
-  const x = Math.cos(angle) * radius;
-  const y = Math.max(1.5, Math.sin(angle) * radius * 0.95);
-  const z = Math.sin(angle) * (radius * 0.4);
-
-  return new THREE.Vector3(x, y, z);
+function degToRad(deg: number): number {
+  return (deg * Math.PI) / 180;
 }
 
-// Format time for 3D label
-function formatSunTime(hour: number): string {
-  const h = Math.floor(hour);
-  const m = Math.round((hour - h) * 60);
+function radToDeg(rad: number): number {
+  return (rad * 180) / Math.PI;
+}
+
+// Convert fractional 24h decimal to 12h AM/PM string
+function formatSunTime(hourDecimal: number): string {
+  const h = Math.floor(hourDecimal);
+  const m = Math.floor((hourDecimal - h) * 60);
   const period = h >= 12 ? 'PM' : 'AM';
-  const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
-  return `${displayH}:${m.toString().padStart(2, '0')} ${period}`;
+  const displayH = h % 12 === 0 ? 12 : h % 12;
+  const displayM = m < 10 ? `0${m}` : m;
+  return `${displayH}:${displayM} ${period}`;
 }
 
-// 2D Rotation Helper
-function rotate2D(x: number, y: number, angleRad: number): { x: number; y: number } {
-  const cos = Math.cos(angleRad);
-  const sin = Math.sin(angleRad);
-  return {
-    x: x * cos - y * sin,
-    y: x * sin + y * cos,
-  };
+// Physical Celestial Solar Orbit Parameters
+const CELESTIAL_ORBIT_RADIUS = 28;
+const PEAK_SOLAR_ELEVATION_RAD = degToRad(72); // Peak solar noon elevation angle (~72° in tropical Philippines)
+
+// Calculate physically true, smooth celestial 3D Sun position from Sunrise (East) -> Solar Noon (South) -> Sunset (West)
+function getSunPosition(
+  hourDecimal: number,
+  radius = CELESTIAL_ORBIT_RADIUS
+): THREE.Vector3 {
+  const clampedH = Math.max(6.0, Math.min(18.0, hourDecimal));
+  const t = (clampedH - 6.0) / 12.0; // 0.0 at 6 AM, 0.5 at 12 PM, 1.0 at 6 PM
+  const omega = (t - 0.5) * Math.PI; // -pi/2 (sunrise East) -> 0 (noon South) -> +pi/2 (sunset West)
+
+  // In Three.js: East is +X, West is -X, North is -Z, South is +Z, Up is +Y
+  const x = -radius * Math.sin(omega);
+  const y = radius * Math.cos(omega) * Math.sin(PEAK_SOLAR_ELEVATION_RAD);
+  const z = radius * Math.cos(omega) * Math.cos(PEAK_SOLAR_ELEVATION_RAD);
+
+  return new THREE.Vector3(x, Math.max(0.5, y), z);
 }
 
-// Cardinal direction label helper
 function getCardinalLabel(azimuthDeg: number): string {
   const normalized = ((azimuthDeg % 360) + 360) % 360;
-  if (normalized >= 337.5 || normalized < 22.5) return 'North';
+  if (normalized >= 337.5 || normalized < 22.5) return 'N';
   if (normalized >= 22.5 && normalized < 67.5) return 'NE';
-  if (normalized >= 67.5 && normalized < 112.5) return 'East';
+  if (normalized >= 67.5 && normalized < 112.5) return 'E';
   if (normalized >= 112.5 && normalized < 157.5) return 'SE';
-  if (normalized >= 157.5 && normalized < 202.5) return 'South';
+  if (normalized >= 157.5 && normalized < 202.5) return 'S';
   if (normalized >= 202.5 && normalized < 247.5) return 'SW';
-  if (normalized >= 247.5 && normalized < 292.5) return 'West';
+  if (normalized >= 247.5 && normalized < 292.5) return 'W';
   return 'NW';
 }
 
 /**
  * Single 3D Roof Mesh Component.
- * Pivots along one of the EXACTLY 4 OUTER BOUNDING SIDES (never inner cutouts).
+ * Rotates directly on its center of mass across XYZ axes.
  */
 const Roof3DMesh: React.FC<{
   section: RoofPolygonSection;
   siteCenter: GeoPoint;
   isActive: boolean;
   onSelect: () => void;
-  onSetPivotEdge: (edgeIdx: number) => void;
   onCentroidWorldUpdate: (pos: THREE.Vector3) => void;
 }> = ({
   section,
   siteCenter,
   isActive,
   onSelect,
-  onSetPivotEdge,
   onCentroidWorldUpdate,
 }) => {
   const centroidAnchorRef = useRef<THREE.Group>(null);
@@ -100,83 +97,28 @@ const Roof3DMesh: React.FC<{
     [section.vertices]
   );
 
-  // Project vertices to local meters relative to site center (East = +x, North = +y)
-  const worldMeters = useMemo(
-    () => section.vertices.map((v) => projectSinglePointToMeters(v, siteCenter)),
-    [section.vertices, siteCenter]
-  );
-
   const secCentroidMeters = useMemo(
     () => projectSinglePointToMeters(secCentroid, siteCenter),
     [secCentroid, siteCenter]
   );
 
-  // ALWAYS 4 OUTER SIDES (Side 1..4), never inner cutouts
-  const outerSides = useMemo(
-    () => getOuterTiltSides(section.vertices),
+  // Local 2D vertices centered at (0, 0) relative to its centroid
+  const localVertices = useMemo(
+    () => projectVerticesToLocalMeters(section.vertices),
     [section.vertices]
   );
 
-  const pivotIdx = ((section.pivotEdgeIndex ?? 0) % 4 + 4) % 4;
-  const activeSide = outerSides[pivotIdx] ?? outerSides[0];
-
-  // Active Hinge edge in local meters relative to site center
-  const { pivotMidpoint, edgeAngleRad, canonicalVertices, ySign, centroidCanonical } = useMemo(() => {
-    if (worldMeters.length < 3 || outerSides.length < 4) {
-      return {
-        pivotMidpoint: { x: 0, y: 0 },
-        edgeAngleRad: 0,
-        canonicalVertices: [],
-        ySign: 1,
-        centroidCanonical: { x: 0, y: 0 },
-      };
-    }
-
-    // Midpoint of active outer side
-    const mid = {
-      x: secCentroidMeters.x + activeSide.midpointMeters.x,
-      y: secCentroidMeters.y + activeSide.midpointMeters.y,
-    };
-
-    const dx = activeSide.endMeters.x - activeSide.startMeters.x;
-    const dy = activeSide.endMeters.y - activeSide.startMeters.y;
-    const alpha = Math.atan2(dy, dx);
-
-    // Rotate polygon vertices relative to mid by -alpha so hinge lies on y = 0
-    const rotated = worldMeters.map((v) => {
-      const rx = v.x - mid.x;
-      const ry = v.y - mid.y;
-      return rotate2D(rx, ry, -alpha);
-    });
-
-    const cRel = rotate2D(secCentroidMeters.x - mid.x, secCentroidMeters.y - mid.y, -alpha);
-    const sign = cRel.y < 0 ? -1 : 1;
-
-    const canonical = rotated.map((v) => ({
-      x: v.x,
-      y: v.y * sign,
-    }));
-
-    return {
-      pivotMidpoint: mid,
-      edgeAngleRad: alpha,
-      canonicalVertices: canonical,
-      ySign: sign,
-      centroidCanonical: { x: cRel.x, y: cRel.y * sign },
-    };
-  }, [worldMeters, outerSides, activeSide, secCentroidMeters]);
-
-  // 2D shape in canonical frame
+  // 2D shape centered at (0, 0)
   const shape = useMemo(() => {
-    if (canonicalVertices.length < 3) return null;
+    if (localVertices.length < 3) return null;
     const s = new THREE.Shape();
-    s.moveTo(canonicalVertices[0].x, canonicalVertices[0].y);
-    for (let i = 1; i < canonicalVertices.length; i++) {
-      s.lineTo(canonicalVertices[i].x, canonicalVertices[i].y);
+    s.moveTo(localVertices[0].x, localVertices[0].y);
+    for (let i = 1; i < localVertices.length; i++) {
+      s.lineTo(localVertices[i].x, localVertices[i].y);
     }
     s.closePath();
     return s;
-  }, [canonicalVertices]);
+  }, [localVertices]);
 
   // Roof deck slab extrude settings
   const roofExtrudeSettings = useMemo(
@@ -191,41 +133,7 @@ const Roof3DMesh: React.FC<{
     []
   );
 
-  // Placed panels projected into canonical frame
-  const canonicalPanels = useMemo(() => {
-    if (!section.placedPanels || canonicalVertices.length < 3) return [];
-    const cosA = Math.cos(-edgeAngleRad);
-    const sinA = Math.sin(-edgeAngleRad);
-
-    return section.placedPanels.map((panel) => {
-      const pWorldX = secCentroidMeters.x + panel.x;
-      const pWorldY = secCentroidMeters.y + panel.y;
-      const rx = pWorldX - pivotMidpoint.x;
-      const ry = pWorldY - pivotMidpoint.y;
-
-      const canX = rx * cosA - ry * sinA;
-      const canY = (rx * sinA + ry * cosA) * ySign;
-
-      const baseRot = (panel.rotationDeg || 0) * (Math.PI / 180) - edgeAngleRad;
-      const canRot = ySign < 0 ? -baseRot : baseRot;
-
-      return {
-        ...panel,
-        canonicalX: canX,
-        canonicalY: canY,
-        canonicalRot: canRot,
-      };
-    });
-  }, [
-    section.placedPanels,
-    secCentroidMeters,
-    pivotMidpoint,
-    edgeAngleRad,
-    ySign,
-    canonicalVertices,
-  ]);
-
-  // Feed real-time 3D world centroid position to scene gizmos
+  // Feed real-time 3D world centroid position to scene gizmos (elevated on top of roof surface)
   useFrame(() => {
     if (isActive && centroidAnchorRef.current) {
       const worldPos = new THREE.Vector3();
@@ -236,13 +144,14 @@ const Roof3DMesh: React.FC<{
 
   if (!shape) return null;
 
-  // In Three.js: World +X = East, World +Z = South, World -Z = North
-  const anchorX = pivotMidpoint.x;
-  const anchorY = BUILDING_EAVE_HEIGHT;
-  const anchorZ = -pivotMidpoint.y;
+  // Center position of the roof in Three.js coordinates (+X East, +Y Up, -Z North)
+  const centerX = secCentroidMeters.x;
+  const centerY = section.baseHeightMeters ?? BUILDING_EAVE_HEIGHT;
+  const centerZ = -secCentroidMeters.y;
 
-  const pitchRad = THREE.MathUtils.degToRad(section.pitchDeg);
-  const rollRad = THREE.MathUtils.degToRad(section.rollDeg ?? 0);
+  const azimuthRad = degToRad(section.azimuthDeg);
+  const pitchRad = degToRad(section.pitchDeg);
+  const rollRad = degToRad(section.rollDeg ?? 0);
 
   return (
     <group
@@ -250,17 +159,20 @@ const Roof3DMesh: React.FC<{
         e.stopPropagation();
         onSelect();
       }}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+      }}
     >
-      {/* Anchor Group located at the Midpoint of the Active Outer Tilt Edge */}
-      <group position={[anchorX, anchorY, anchorZ]}>
-        {/* Horizontal orientation along the outer edge vector */}
-        <group rotation={[0, edgeAngleRad, 0]}>
-          {/* Pitch & Roll Rotation along local X and Z axes */}
-          <group rotation={[pitchRad, 0, rollRad]}>
-            {/* Lay flat on horizontal plane (canonical +y extends toward -Z) */}
+      {/* 1. Root Position at Roof Center in 3D Space */}
+      <group position={[centerX, centerY, centerZ]}>
+        {/* 2. Full 360° Yaw / Azimuth rotation around vertical Y axis */}
+        <group rotation={[0, -azimuthRad, 0]}>
+          {/* 3. Pitch (tilt around X) and Roll (tilt around Z) centered on mass */}
+          <group rotation={[-pitchRad, 0, rollRad]}>
+            {/* 4. Lay flat on horizontal plane: 2D +x -> +X, 2D +y -> -Z, depth -> +Y */}
             <group rotation={[-Math.PI / 2, 0, 0]}>
               {/* Roof Deck Slab */}
-              <mesh receiveShadow castShadow position={[0, 0, 0]}>
+              <mesh receiveShadow castShadow position={[0, 0, -0.07]}>
                 <extrudeGeometry args={[shape, roofExtrudeSettings]} />
                 <meshStandardMaterial
                   color={isActive ? '#293548' : '#1e293b'}
@@ -271,7 +183,7 @@ const Roof3DMesh: React.FC<{
 
               {/* Glowing Outline on Active Roof Section */}
               {isActive && (
-                <mesh position={[0, 0, 0.145]}>
+                <mesh position={[0, 0, 0.075]}>
                   <extrudeGeometry
                     args={[
                       shape,
@@ -283,15 +195,15 @@ const Roof3DMesh: React.FC<{
               )}
 
               {/* Photovoltaic Solar Panels Array */}
-              {canonicalPanels.map((panel) => {
+              {section.placedPanels?.map((panel) => {
                 const pW = panel.widthM;
                 const pL = panel.lengthM;
 
                 return (
                   <group
                     key={panel.id}
-                    position={[panel.canonicalX, panel.canonicalY, 0.19]}
-                    rotation={[0, 0, panel.canonicalRot]}
+                    position={[panel.x, panel.y, 0.12]}
+                    rotation={[0, 0, (panel.rotationDeg || 0) * (Math.PI / 180)]}
                   >
                     {/* Mounting Rails */}
                     <mesh position={[0, -pL * 0.25, -0.015]}>
@@ -337,85 +249,8 @@ const Roof3DMesh: React.FC<{
                 );
               })}
 
-              {/* ONLY 4 OUTER SIDES TO TILT (Side 1..4), never inner cutouts */}
-              {isActive &&
-                outerSides.map((side, i) => {
-                  const isPivot = i === pivotIdx;
-                  // Transform outer side endpoints into canonical coordinates
-                  const cosA = Math.cos(-edgeAngleRad);
-                  const sinA = Math.sin(-edgeAngleRad);
-
-                  const toCan = (pt: { x: number; y: number }) => {
-                    const worldX = secCentroidMeters.x + pt.x;
-                    const worldY = secCentroidMeters.y + pt.y;
-                    const rx = worldX - pivotMidpoint.x;
-                    const ry = worldY - pivotMidpoint.y;
-                    return {
-                      x: rx * cosA - ry * sinA,
-                      y: (rx * sinA + ry * cosA) * ySign,
-                    };
-                  };
-
-                  const canStart = toCan(side.startMeters);
-                  const canEnd = toCan(side.endMeters);
-                  const midX = (canStart.x + canEnd.x) / 2;
-                  const midY = (canStart.y + canEnd.y) / 2;
-                  const edgeLengthM = side.lengthM;
-
-                  return (
-                    <group key={`outer-edge-${i}`}>
-                      {/* Edge Line Segment on Outer Perimeter */}
-                      <Line
-                        points={[
-                          [canStart.x, canStart.y, 0.17],
-                          [canEnd.x, canEnd.y, 0.17],
-                        ]}
-                        color={isPivot ? '#f59e0b' : '#94a3b8'}
-                        lineWidth={isPivot ? 4.5 : 2}
-                        transparent
-                        opacity={isPivot ? 1.0 : 0.6}
-                      />
-
-                      {/* Clickable Hit Cylinder along edge for switching axis */}
-                      <mesh
-                        position={[midX, midY, 0.17]}
-                        rotation={[
-                          0,
-                          0,
-                          Math.atan2(canEnd.y - canStart.y, canEnd.x - canStart.x) + Math.PI / 2,
-                        ]}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSetPivotEdge(i);
-                        }}
-                      >
-                        <cylinderGeometry args={[0.3, 0.3, edgeLengthM, 8]} />
-                        <meshBasicMaterial transparent opacity={0} />
-                      </mesh>
-
-                      {/* Active Hinge Visual Accent & 3D Tag */}
-                      <group position={[midX, midY, 0.23]}>
-                        <Text
-                          fontSize={isPivot ? 0.42 : 0.32}
-                          color={isPivot ? '#fbbf24' : '#94a3b8'}
-                          anchorX="center"
-                          anchorY="middle"
-                          position={[0, 0.35, 0]}
-                        >
-                          {isPivot
-                            ? `★ Hinge Side ${i + 1} (${edgeLengthM.toFixed(1)}m)`
-                            : `Side ${i + 1} (${edgeLengthM.toFixed(1)}m)`}
-                        </Text>
-                      </group>
-                    </group>
-                  );
-                })}
-
-              {/* Anchor Node at Centroid of Roof Face */}
-              <group
-                ref={centroidAnchorRef}
-                position={[centroidCanonical.x, centroidCanonical.y, 0.25]}
-              />
+              {/* Centroid Anchor for gizmos: positioned comfortably on top of the roof surface */}
+              <group ref={centroidAnchorRef} position={[0, 0, 0.45]} />
             </group>
           </group>
         </group>
@@ -425,12 +260,14 @@ const Roof3DMesh: React.FC<{
 };
 
 /**
- * 3-AXIS 360° XYZ ROTATION GIZMO (MATCHES USER REFERENCE IMAGE EXACTLY)
+ * 3-AXIS 360° XYZ ROTATION GIZMO (Blender-Style CAD Controls)
  * Features:
- * - Green Ring (Y-Axis): Full 360° horizontal circle around vertical axis (Yaw / Compass Heading).
- * - Red Ring (X-Axis): Full 360° vertical circle around X-axis (Pitch / Tilt).
- * - Blue Ring (Z-Axis): Full 360° vertical circle around Z-axis (Roll / Cross-tilt).
- * - Center pivot reticle with grab handles matching the user's reference image!
+ * - Positioned on TOP of the roof surface, never submerged or hidden inside the slab.
+ * - depthTest={false} and renderOrder={995} ensure the complete XYZ rings and reticles are always 100% visible from every viewing angle.
+ * - Green Ring: Full 360° horizontal circle around vertical axis (World Compass Heading).
+ * - Red Ring: Vertical circle along the roof's slope (Pitch Tilt). Rotates with roof heading.
+ * - Blue Ring: Vertical circle along the roof's width (Roll Tilt). Rotates with roof heading.
+ * - Moving any dot UP lifts the corresponding side of the roof directly under that dot!
  */
 const BlenderRotationDial3D: React.FC<{
   center: THREE.Vector3;
@@ -444,33 +281,105 @@ const BlenderRotationDial3D: React.FC<{
   const [hudText, setHudText] = useState<string | null>(null);
 
   const radius = 3.2; // 3.2m diameter ring
+  const azimuthRad = degToRad(section.azimuthDeg);
 
-  // Interactive Drag for Green Y-Axis Ring (Full 360° Azimuth / Yaw)
+  // Helper to project cursor ray onto a ring plane and calculate angle
+  const getPointerAngleOnRing = useCallback(
+    (clientX: number, clientY: number, axis: 'x' | 'y' | 'z'): number | null => {
+      const rect = gl.domElement.getBoundingClientRect();
+      const mouse = new THREE.Vector2(
+        ((clientX - rect.left) / rect.width) * 2 - 1,
+        -((clientY - rect.top) / rect.height) * 2 + 1
+      );
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, camera);
+
+      if (axis === 'y') {
+        // Green Ring: horizontal plane Y = center.y in world coordinates
+        const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+          new THREE.Vector3(0, 1, 0),
+          center
+        );
+        const hit = new THREE.Vector3();
+        if (!raycaster.ray.intersectPlane(plane, hit)) return null;
+
+        const dx = hit.x - center.x;
+        const dz = hit.z - center.z;
+        return (radToDeg(Math.atan2(dx, -dz)) + 360) % 360;
+      }
+
+      // For Red (Pitch / X) and Blue (Roll / Z) rings:
+      // In local coordinates of the roof heading group:
+      // Red ring normal is local (1, 0, 0).
+      // In world coords: rotated by -azimuthRad around Y -> (cosA, 0, sinA).
+      // Blue ring normal is local (0, 0, 1).
+      // In world coords: rotated by -azimuthRad around Y -> (-sinA, 0, cosA).
+      const cosA = Math.cos(azimuthRad);
+      const sinA = Math.sin(azimuthRad);
+
+      const normal =
+        axis === 'x'
+          ? new THREE.Vector3(cosA, 0, sinA)
+          : new THREE.Vector3(-sinA, 0, cosA);
+
+      // Check if camera ray is nearly parallel to plane normal (edge-on view fallback)
+      const dot = Math.abs(raycaster.ray.direction.dot(normal));
+      let plane: THREE.Plane;
+      if (dot < 0.08) {
+        const camDir = new THREE.Vector3();
+        camera.getWorldDirection(camDir);
+        plane = new THREE.Plane().setFromNormalAndCoplanarPoint(camDir.negate(), center);
+      } else {
+        plane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, center);
+      }
+
+      const hit = new THREE.Vector3();
+      if (!raycaster.ray.intersectPlane(plane, hit)) return null;
+
+      // Vector from center in world coordinates
+      const vWorldX = hit.x - center.x;
+      const vWorldY = hit.y - center.y;
+      const vWorldZ = hit.z - center.z;
+
+      // Convert world vector to local heading coordinates by rotating by +azimuthRad around Y:
+      const vLocalX = vWorldX * cosA + vWorldZ * sinA;
+      const vLocalY = vWorldY;
+      const vLocalZ = -vWorldX * sinA + vWorldZ * cosA;
+
+      if (axis === 'x') {
+        // Pitch: in local Y-Z plane
+        return radToDeg(Math.atan2(vLocalY, vLocalZ));
+      }
+      if (axis === 'z') {
+        // Roll: in local X-Y plane
+        return radToDeg(Math.atan2(vLocalY, vLocalX));
+      }
+      return null;
+    },
+    [camera, center, gl, azimuthRad]
+  );
+
+  // Interactive Drag for Green Y-Axis Ring (Full 360° Azimuth / Heading)
   const handleYPointerDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     onIsDraggingChange(true);
     setActiveAxis('y');
 
-    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -center.y);
-    const raycaster = new THREE.Raycaster();
+    const startAngle = getPointerAngleOnRing(e.clientX, e.clientY, 'y') ?? section.azimuthDeg;
+    const startAzimuth = section.azimuthDeg;
 
     const onPointerMove = (evt: PointerEvent) => {
-      const rect = gl.domElement.getBoundingClientRect();
-      const x = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
-      const y = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
+      const currentAngle = getPointerAngleOnRing(evt.clientX, evt.clientY, 'y');
+      if (currentAngle === null) return;
 
-      const target = new THREE.Vector3();
-      const hit = raycaster.ray.intersectPlane(plane, target);
-      if (!hit) return;
+      let delta = currentAngle - startAngle;
+      while (delta > 180) delta -= 360;
+      while (delta < -180) delta += 360;
 
-      const dx = hit.x - center.x;
-      const dz = hit.z - center.z;
-      // In Three.js: -Z is North, +X is East, +Z is South, -X is West
-      const angleDeg = (Math.atan2(dx, -dz) * (180 / Math.PI) + 360) % 360;
-      const roundAngle = Math.round(angleDeg);
-      updateRoofSectionConfig(section.id, { azimuthDeg: roundAngle });
-      setHudText(`Yaw (Y): ${roundAngle}° (${getCardinalLabel(roundAngle)})`);
+      const newAzimuth = Math.round(((startAzimuth + delta) % 360 + 360) % 360);
+      updateRoofSectionConfig(section.id, { azimuthDeg: newAzimuth });
+      setHudText(`Yaw (Green): ${newAzimuth}° (${getCardinalLabel(newAzimuth)})`);
     };
 
     const onPointerUp = () => {
@@ -485,20 +394,26 @@ const BlenderRotationDial3D: React.FC<{
     window.addEventListener('pointerup', onPointerUp);
   };
 
-  // Interactive Drag for Red X-Axis Ring (Pitch / Elevation Tilt)
+  // Interactive Drag for Red X-Axis Ring (Pitch Tilt)
   const handleXPointerDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     onIsDraggingChange(true);
     setActiveAxis('x');
-    const startY = e.clientY;
+
+    const startAngle = getPointerAngleOnRing(e.clientX, e.clientY, 'x') ?? section.pitchDeg;
     const startPitch = section.pitchDeg;
 
     const onPointerMove = (evt: PointerEvent) => {
-      const deltaY = startY - evt.clientY;
-      const deltaPitch = deltaY * 0.35;
-      const newPitch = Math.max(0, Math.min(50, Math.round(startPitch + deltaPitch)));
+      const currentAngle = getPointerAngleOnRing(evt.clientX, evt.clientY, 'x');
+      if (currentAngle === null) return;
+
+      let delta = currentAngle - startAngle;
+      while (delta > 180) delta -= 360;
+      while (delta < -180) delta += 360;
+
+      const newPitch = Math.max(-60, Math.min(60, Math.round(startPitch + delta)));
       updateRoofSectionConfig(section.id, { pitchDeg: newPitch });
-      setHudText(`Pitch (X): ${newPitch}°`);
+      setHudText(`Pitch (Red): ${newPitch}°`);
     };
 
     const onPointerUp = () => {
@@ -513,20 +428,26 @@ const BlenderRotationDial3D: React.FC<{
     window.addEventListener('pointerup', onPointerUp);
   };
 
-  // Interactive Drag for Blue Z-Axis Ring (Roll / Cross-tilt)
+  // Interactive Drag for Blue Z-Axis Ring (Roll Tilt)
   const handleZPointerDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     onIsDraggingChange(true);
     setActiveAxis('z');
-    const startX = e.clientX;
+
+    const startAngle = getPointerAngleOnRing(e.clientX, e.clientY, 'z') ?? (section.rollDeg ?? 0);
     const startRoll = section.rollDeg ?? 0;
 
     const onPointerMove = (evt: PointerEvent) => {
-      const deltaX = evt.clientX - startX;
-      const deltaRoll = deltaX * 0.35;
-      const newRoll = Math.max(-45, Math.min(45, Math.round(startRoll + deltaRoll)));
+      const currentAngle = getPointerAngleOnRing(evt.clientX, evt.clientY, 'z');
+      if (currentAngle === null) return;
+
+      let delta = currentAngle - startAngle;
+      while (delta > 180) delta -= 360;
+      while (delta < -180) delta += 360;
+
+      const newRoll = Math.max(-60, Math.min(60, Math.round(startRoll + delta)));
       updateRoofSectionConfig(section.id, { rollDeg: newRoll });
-      setHudText(`Roll (Z): ${newRoll}°`);
+      setHudText(`Roll (Blue): ${newRoll}°`);
     };
 
     const onPointerUp = () => {
@@ -541,22 +462,24 @@ const BlenderRotationDial3D: React.FC<{
     window.addEventListener('pointerup', onPointerUp);
   };
 
-  // Positions of Reticle Grab Handles on each ring
-  const yRad = (section.azimuthDeg * Math.PI) / 180;
+  // 1. Green Dot in World Space (Points to world compass azimuth)
+  const yRad = degToRad(section.azimuthDeg);
   const yReticlePos: [number, number, number] = [
     radius * Math.sin(yRad),
     0,
     -radius * Math.cos(yRad),
   ];
 
-  const xRad = (section.pitchDeg * Math.PI) / 180;
+  // 2. Red Dot in Local Heading Space (Follows pitch angle along the slope)
+  const xRad = degToRad(section.pitchDeg);
   const xReticlePos: [number, number, number] = [
     0,
     radius * Math.sin(xRad),
     radius * Math.cos(xRad),
   ];
 
-  const zRad = ((section.rollDeg ?? 0) * Math.PI) / 180;
+  // 3. Blue Dot in Local Heading Space (Follows roll angle along the width)
+  const zRad = degToRad(section.rollDeg ?? 0);
   const zReticlePos: [number, number, number] = [
     radius * Math.cos(zRad),
     radius * Math.sin(zRad),
@@ -565,115 +488,181 @@ const BlenderRotationDial3D: React.FC<{
 
   return (
     <group position={[center.x, center.y, center.z]}>
-      {/* Outer Orbit Sphere Reference Ring */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Outer Orbit Sphere Reference Ring (Always rendered on top) */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={990}>
         <ringGeometry args={[radius * 1.05, radius * 1.06, 64]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.25} side={THREE.DoubleSide} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.3}
+          side={THREE.DoubleSide}
+          depthTest={false}
+          depthWrite={false}
+        />
       </mesh>
 
-      {/* 1. GREEN RING (Y-AXIS / 360° YAW & AZIMUTH) */}
-      <group>
-        <mesh rotation={[-Math.PI / 2, 0, 0]} onPointerDown={handleYPointerDown}>
-          <torusGeometry args={[radius, activeAxis === 'y' ? 0.07 : 0.045, 16, 64]} />
+      {/* Center Pivot Reticle (Always on top) */}
+      <group renderOrder={999}>
+        <mesh renderOrder={999}>
+          <sphereGeometry args={[0.15, 16, 16]} />
+          <meshBasicMaterial color="#f59e0b" depthTest={false} depthWrite={false} />
+        </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={999}>
+          <ringGeometry args={[0.25, 0.3, 32]} />
+          <meshBasicMaterial
+            color="#ffffff"
+            side={THREE.DoubleSide}
+            transparent
+            opacity={0.7}
+            depthTest={false}
+            depthWrite={false}
+          />
+        </mesh>
+      </group>
+
+      {/* 1. GREEN RING (WORLD COMPASS YAW & AZIMUTH - Always on top, never hidden) */}
+      <group renderOrder={995}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={995} onPointerDown={handleYPointerDown}>
+          <torusGeometry args={[radius, activeAxis === 'y' ? 0.08 : 0.05, 16, 64]} />
           <meshStandardMaterial
             color="#22c55e"
             emissive="#15803d"
-            emissiveIntensity={activeAxis === 'y' ? 1.0 : 0.4}
+            emissiveIntensity={activeAxis === 'y' ? 1.4 : 0.65}
             roughness={0.2}
+            depthTest={false}
+            depthWrite={false}
           />
         </mesh>
-        {/* Invisible Hit Area */}
+        {/* Generous Invisible Hit Area */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} onPointerDown={handleYPointerDown}>
-          <torusGeometry args={[radius, 0.25, 8, 32]} />
+          <torusGeometry args={[radius, 0.35, 8, 32]} />
           <meshBasicMaterial transparent opacity={0} />
         </mesh>
-        {/* Grab Reticle on Y Ring */}
-        <group position={yReticlePos} onPointerDown={handleYPointerDown}>
-          <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0.15, 0.24, 24]} />
-            <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+        {/* Grab Reticle Dot on Green Ring (Points to compass heading) */}
+        <group position={yReticlePos} renderOrder={999} onPointerDown={handleYPointerDown}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={999}>
+            <ringGeometry args={[0.16, 0.26, 24]} />
+            <meshBasicMaterial
+              color="#ffffff"
+              side={THREE.DoubleSide}
+              depthTest={false}
+              depthWrite={false}
+            />
+          </mesh>
+          <mesh renderOrder={999}>
+            <sphereGeometry args={[0.14, 16, 16]} />
+            <meshStandardMaterial
+              color="#22c55e"
+              emissive="#16a34a"
+              emissiveIntensity={activeAxis === 'y' ? 1.6 : 0.8}
+              depthTest={false}
+              depthWrite={false}
+            />
           </mesh>
           <mesh>
-            <sphereGeometry args={[0.12, 16, 16]} />
-            <meshBasicMaterial color="#22c55e" />
+            <sphereGeometry args={[0.4, 8, 8]} />
+            <meshBasicMaterial transparent opacity={0} />
           </mesh>
         </group>
       </group>
 
-      {/* 2. RED RING (X-AXIS / PITCH TILT) */}
-      <group>
-        <mesh rotation={[0, Math.PI / 2, 0]} onPointerDown={handleXPointerDown}>
-          <torusGeometry args={[radius, activeAxis === 'x' ? 0.07 : 0.045, 16, 64]} />
-          <meshStandardMaterial
-            color="#ef4444"
-            emissive="#b91c1c"
-            emissiveIntensity={activeAxis === 'x' ? 1.0 : 0.4}
-            roughness={0.2}
-          />
-        </mesh>
-        {/* Invisible Hit Area */}
-        <mesh rotation={[0, Math.PI / 2, 0]} onPointerDown={handleXPointerDown}>
-          <torusGeometry args={[radius, 0.25, 8, 32]} />
-          <meshBasicMaterial transparent opacity={0} />
-        </mesh>
-        {/* Grab Reticle on X Ring */}
-        <group position={xReticlePos} onPointerDown={handleXPointerDown}>
-          <mesh rotation={[0, Math.PI / 2, 0]}>
-            <ringGeometry args={[0.15, 0.24, 24]} />
-            <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+      {/* 2. LOCAL ORIENTATION GROUP: PITCH & ROLL RINGS ROTATE WITH ROOF HEADING */}
+      <group rotation={[0, -azimuthRad, 0]} renderOrder={995}>
+        {/* RED RING (X-AXIS / PITCH TILT ALONG SLOPE - Always on top) */}
+        <group renderOrder={995}>
+          <mesh rotation={[0, Math.PI / 2, 0]} renderOrder={995} onPointerDown={handleXPointerDown}>
+            <torusGeometry args={[radius, activeAxis === 'x' ? 0.08 : 0.05, 16, 64]} />
+            <meshStandardMaterial
+              color="#ef4444"
+              emissive="#b91c1c"
+              emissiveIntensity={activeAxis === 'x' ? 1.4 : 0.65}
+              roughness={0.2}
+              depthTest={false}
+              depthWrite={false}
+            />
           </mesh>
-          <mesh>
-            <sphereGeometry args={[0.12, 16, 16]} />
-            <meshBasicMaterial color="#ef4444" />
+          <mesh rotation={[0, Math.PI / 2, 0]} onPointerDown={handleXPointerDown}>
+            <torusGeometry args={[radius, 0.35, 8, 32]} />
+            <meshBasicMaterial transparent opacity={0} />
           </mesh>
+          {/* Grab Reticle Dot on Red Ring */}
+          <group position={xReticlePos} renderOrder={999} onPointerDown={handleXPointerDown}>
+            <mesh rotation={[0, Math.PI / 2, 0]} renderOrder={999}>
+              <ringGeometry args={[0.16, 0.26, 24]} />
+              <meshBasicMaterial
+                color="#ffffff"
+                side={THREE.DoubleSide}
+                depthTest={false}
+                depthWrite={false}
+              />
+            </mesh>
+            <mesh renderOrder={999}>
+              <sphereGeometry args={[0.14, 16, 16]} />
+              <meshStandardMaterial
+                color="#ef4444"
+                emissive="#dc2626"
+                emissiveIntensity={activeAxis === 'x' ? 1.6 : 0.8}
+                depthTest={false}
+                depthWrite={false}
+              />
+            </mesh>
+            <mesh>
+              <sphereGeometry args={[0.4, 8, 8]} />
+              <meshBasicMaterial transparent opacity={0} />
+            </mesh>
+          </group>
         </group>
-      </group>
 
-      {/* 3. BLUE RING (Z-AXIS / ROLL TILT) */}
-      <group>
-        <mesh rotation={[0, 0, 0]} onPointerDown={handleZPointerDown}>
-          <torusGeometry args={[radius, activeAxis === 'z' ? 0.07 : 0.045, 16, 64]} />
-          <meshStandardMaterial
-            color="#3b82f6"
-            emissive="#1d4ed8"
-            emissiveIntensity={activeAxis === 'z' ? 1.0 : 0.4}
-            roughness={0.2}
-          />
-        </mesh>
-        {/* Invisible Hit Area */}
-        <mesh rotation={[0, 0, 0]} onPointerDown={handleZPointerDown}>
-          <torusGeometry args={[radius, 0.25, 8, 32]} />
-          <meshBasicMaterial transparent opacity={0} />
-        </mesh>
-        {/* Grab Reticle on Z Ring */}
-        <group position={zReticlePos} onPointerDown={handleZPointerDown}>
-          <mesh rotation={[0, 0, 0]}>
-            <ringGeometry args={[0.15, 0.24, 24]} />
-            <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+        {/* BLUE RING (Z-AXIS / ROLL TILT ALONG WIDTH - Always on top) */}
+        <group renderOrder={995}>
+          <mesh rotation={[0, 0, 0]} renderOrder={995} onPointerDown={handleZPointerDown}>
+            <torusGeometry args={[radius, activeAxis === 'z' ? 0.08 : 0.05, 16, 64]} />
+            <meshStandardMaterial
+              color="#3b82f6"
+              emissive="#1d4ed8"
+              emissiveIntensity={activeAxis === 'z' ? 1.4 : 0.65}
+              roughness={0.2}
+              depthTest={false}
+              depthWrite={false}
+            />
           </mesh>
-          <mesh>
-            <sphereGeometry args={[0.12, 16, 16]} />
-            <meshBasicMaterial color="#3b82f6" />
+          <mesh rotation={[0, 0, 0]} onPointerDown={handleZPointerDown}>
+            <torusGeometry args={[radius, 0.35, 8, 32]} />
+            <meshBasicMaterial transparent opacity={0} />
           </mesh>
+          {/* Grab Reticle Dot on Blue Ring */}
+          <group position={zReticlePos} renderOrder={999} onPointerDown={handleZPointerDown}>
+            <mesh rotation={[0, 0, 0]} renderOrder={999}>
+              <ringGeometry args={[0.16, 0.26, 24]} />
+              <meshBasicMaterial
+                color="#ffffff"
+                side={THREE.DoubleSide}
+                depthTest={false}
+                depthWrite={false}
+              />
+            </mesh>
+            <mesh renderOrder={999}>
+              <sphereGeometry args={[0.14, 16, 16]} />
+              <meshStandardMaterial
+                color="#3b82f6"
+                emissive="#2563eb"
+                emissiveIntensity={activeAxis === 'z' ? 1.6 : 0.8}
+                depthTest={false}
+                depthWrite={false}
+              />
+            </mesh>
+            <mesh>
+              <sphereGeometry args={[0.4, 8, 8]} />
+              <meshBasicMaterial transparent opacity={0} />
+            </mesh>
+          </group>
         </group>
-      </group>
-
-      {/* Center Pivot Reticle matching Reference Image */}
-      <group>
-        <mesh>
-          <sphereGeometry args={[0.15, 16, 16]} />
-          <meshBasicMaterial color="#f59e0b" />
-        </mesh>
-        <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.25, 0.3, 32]} />
-          <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} transparent opacity={0.6} />
-        </mesh>
       </group>
 
       {/* Live Floating HUD Badge while dragging */}
       {hudText && (
-        <group position={[0, radius + 0.6, 0]}>
-          <Text fontSize={0.42} color="#ffffff" anchorX="center" anchorY="bottom">
+        <group position={[0, radius + 0.6, 0]} renderOrder={1000}>
+          <Text>
             {hudText}
           </Text>
         </group>
@@ -683,61 +672,142 @@ const BlenderRotationDial3D: React.FC<{
 };
 
 /**
- * 3D MOVE GIZMO (PRECISION CAD GROUND TRANSLATION)
+ * Helper to compute an optimal raycast projection plane for an axis that directly faces the camera.
+ * Guarantees zero-jitter, 1:1 cursor-following motion across all viewing angles.
+ */
+function getAxisPlane(axisUnit: THREE.Vector3, center: THREE.Vector3, camera: THREE.Camera): THREE.Plane {
+  const vCam = new THREE.Vector3().subVectors(camera.position, center);
+  let w = new THREE.Vector3().crossVectors(axisUnit, vCam);
+  if (w.lengthSq() < 1e-4) {
+    w = new THREE.Vector3().crossVectors(axisUnit, new THREE.Vector3(0, 1, 0));
+    if (w.lengthSq() < 1e-4) {
+      w = new THREE.Vector3().crossVectors(axisUnit, new THREE.Vector3(1, 0, 0));
+    }
+  }
+  const normal = new THREE.Vector3().crossVectors(w, axisUnit).normalize();
+  return new THREE.Plane().setFromNormalAndCoplanarPoint(normal, center);
+}
+
+/**
+ * 3-AXIS XYZ TRANSLATION GIZMO (Precision CAD Coordinate Arrows)
+ * Matches reference CAD design:
+ * - Red Arrow (+X Axis): East-West horizontal translation
+ * - Green Arrow (+Y Axis): Vertical elevation adjustment
+ * - Blue Arrow (+Z Axis): North-South depth translation
+ * - Center Origin Sphere & XZ Corner Quad: Free 2D planar translation
+ * - Always On Top: depthTest={false}, depthWrite={false}, and renderOrder={995..1001}
+ *   ensure all arrows, shafts, heads, and labels remain fully visible on top of roof slabs and panels.
  */
 const MoveGizmo3D: React.FC<{
   center: THREE.Vector3;
   section: RoofPolygonSection;
   onIsDraggingChange: (isDragging: boolean) => void;
 }> = ({ center, section, onIsDraggingChange }) => {
-  const { translateRoofSection } = useSolarMapperStore();
+  const { translateRoofSection, updateRoofSectionConfig } = useSolarMapperStore();
   const { camera, gl } = useThree();
 
-  const [dragDelta, setDragDelta] = useState<{ x: number; y: number } | null>(null);
+  const [activeAxis, setActiveAxis] = useState<'x' | 'y' | 'z' | 'xz' | 'free' | null>(null);
+  const [hudText, setHudText] = useState<string | null>(null);
+
+  const shaftLength = 2.4;
+  const shaftRadius = 0.045;
+  const coneHeight = 0.55;
+  const coneRadius = 0.16;
 
   const handlePointerDown = (
     e: ThreeEvent<PointerEvent>,
-    axis: 'free' | 'x' | 'z'
+    axis: 'x' | 'y' | 'z' | 'xz' | 'free'
   ) => {
     e.stopPropagation();
     onIsDraggingChange(true);
+    setActiveAxis(axis);
 
-    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -center.y);
+    const frozenCenter = center.clone();
     const raycaster = new THREE.Raycaster();
 
-    const getHit = (clientX: number, clientY: number): THREE.Vector3 | null => {
+    const getRay = (clientX: number, clientY: number): THREE.Ray => {
       const rect = gl.domElement.getBoundingClientRect();
-      const x = ((clientX - rect.left) / rect.width) * 2 - 1;
-      const y = -((clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
-      const target = new THREE.Vector3();
-      return raycaster.ray.intersectPlane(plane, target);
+      const mouse = new THREE.Vector2(
+        ((clientX - rect.left) / rect.width) * 2 - 1,
+        -((clientY - rect.top) / rect.height) * 2 + 1
+      );
+      raycaster.setFromCamera(mouse, camera);
+      return raycaster.ray;
     };
 
-    let lastHit = getHit(e.clientX, e.clientY);
+    let plane: THREE.Plane;
+    let axisUnit: THREE.Vector3 | null = null;
+
+    if (axis === 'x') {
+      axisUnit = new THREE.Vector3(1, 0, 0);
+      plane = getAxisPlane(axisUnit, frozenCenter, camera);
+    } else if (axis === 'y') {
+      axisUnit = new THREE.Vector3(0, 1, 0);
+      plane = getAxisPlane(axisUnit, frozenCenter, camera);
+    } else if (axis === 'z') {
+      axisUnit = new THREE.Vector3(0, 0, 1);
+      plane = getAxisPlane(axisUnit, frozenCenter, camera);
+    } else {
+      // 'xz' or 'free': horizontal ground plane through frozenCenter.y
+      plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -frozenCenter.y);
+    }
+
+    const getHitPoint = (clientX: number, clientY: number): THREE.Vector3 | null => {
+      const ray = getRay(clientX, clientY);
+      const target = new THREE.Vector3();
+      return ray.intersectPlane(plane, target);
+    };
+
+    let lastHit = getHitPoint(e.clientX, e.clientY);
+    let lastProj = axisUnit && lastHit ? new THREE.Vector3().subVectors(lastHit, frozenCenter).dot(axisUnit) : 0;
     let accumX = 0;
     let accumY = 0;
+    let accumZ = 0;
+    const initialHeight = section.baseHeightMeters ?? BUILDING_EAVE_HEIGHT;
 
     const onPointerMove = (evt: PointerEvent) => {
-      const currentHit = getHit(evt.clientX, evt.clientY);
-      if (!currentHit || !lastHit) return;
+      const currentHit = getHitPoint(evt.clientX, evt.clientY);
+      if (!currentHit) return;
 
-      let dx = currentHit.x - lastHit.x;
-      let dz = currentHit.z - lastHit.z;
+      if (axisUnit) {
+        const currentProj = new THREE.Vector3().subVectors(currentHit, frozenCenter).dot(axisUnit);
+        const delta = currentProj - lastProj;
 
-      if (axis === 'x') dz = 0;
-      if (axis === 'z') dx = 0;
+        if (Math.abs(delta) >= 0.03) {
+          if (axis === 'x') {
+            // East-West (+X is East)
+            translateRoofSection(section.id, delta, 0);
+            accumX += delta;
+            setHudText(`X (East/West): ${accumX >= 0 ? '+' : ''}${accumX.toFixed(2)}m`);
+          } else if (axis === 'z') {
+            // North-South (+Z is South, so geo latitude delta is -delta)
+            const deltaGeoY = -delta;
+            translateRoofSection(section.id, 0, deltaGeoY);
+            accumZ += delta;
+            setHudText(`Z (North/South): ${-accumZ >= 0 ? '+' : ''}${-accumZ.toFixed(2)}m`);
+          } else if (axis === 'y') {
+            // Vertical elevation
+            accumY += delta;
+            const newHeight = Math.max(0.5, Math.min(35.0, Math.round((initialHeight + accumY) * 10) / 10));
+            updateRoofSectionConfig(section.id, { baseHeightMeters: newHeight });
+            setHudText(`Elevation (Y): ${newHeight.toFixed(1)}m (${accumY >= 0 ? '+' : ''}${accumY.toFixed(1)}m)`);
+          }
+          lastProj = currentProj;
+        }
+      } else {
+        if (!lastHit) return;
+        const dx = currentHit.x - lastHit.x;
+        const dz = currentHit.z - lastHit.z;
+        const deltaGeoX = dx;
+        const deltaGeoY = -dz;
 
-      // In geo space: East is +X, North is -Z
-      const deltaGeoX = dx;
-      const deltaGeoY = -dz;
-
-      if (Math.hypot(dx, dz) >= 0.04) {
-        translateRoofSection(section.id, deltaGeoX, deltaGeoY);
-        accumX += deltaGeoX;
-        accumY += deltaGeoY;
-        setDragDelta({ x: Math.round(accumX * 10) / 10, y: Math.round(accumY * 10) / 10 });
-        lastHit = currentHit;
+        if (Math.hypot(dx, dz) >= 0.03) {
+          translateRoofSection(section.id, deltaGeoX, deltaGeoY);
+          accumX += deltaGeoX;
+          accumZ += deltaGeoY;
+          setHudText(`Δ East: ${accumX >= 0 ? '+' : ''}${accumX.toFixed(1)}m, North: ${accumZ >= 0 ? '+' : ''}${accumZ.toFixed(1)}m`);
+          lastHit = currentHit;
+        }
       }
     };
 
@@ -745,7 +815,8 @@ const MoveGizmo3D: React.FC<{
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       onIsDraggingChange(false);
-      setDragDelta(null);
+      setActiveAxis(null);
+      setHudText(null);
     };
 
     window.addEventListener('pointermove', onPointerMove);
@@ -753,73 +824,263 @@ const MoveGizmo3D: React.FC<{
   };
 
   return (
-    <group position={[center.x, center.y, center.z]}>
-      {/* 1. Center Planar Free 2D Drag Disc */}
-      <group onPointerDown={(e) => handlePointerDown(e, 'free')}>
-        <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.55, 0.75, 32]} />
-          <meshBasicMaterial color="#38bdf8" side={THREE.DoubleSide} transparent opacity={0.85} />
+    <group position={[center.x, center.y, center.z]} renderOrder={995}>
+      {/* 1. RED ARROW (+X AXIS: EAST - WEST) */}
+      <group renderOrder={995}>
+        {/* Shaft */}
+        <mesh
+          position={[shaftLength / 2, 0, 0]}
+          rotation={[0, 0, -Math.PI / 2]}
+          renderOrder={995}
+          onPointerDown={(e) => handlePointerDown(e, 'x')}
+        >
+          <cylinderGeometry args={[shaftRadius, shaftRadius, shaftLength, 16]} />
+          <meshStandardMaterial
+            color="#ef4444"
+            emissive="#b91c1c"
+            emissiveIntensity={activeAxis === 'x' ? 1.6 : 0.7}
+            roughness={0.25}
+            metalness={0.4}
+            depthTest={false}
+            depthWrite={false}
+          />
         </mesh>
-        <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[0.5, 32]} />
-          <meshBasicMaterial color="#0284c7" side={THREE.DoubleSide} transparent opacity={0.45} />
+        {/* Conical Arrowhead */}
+        <mesh
+          position={[shaftLength + coneHeight / 2, 0, 0]}
+          rotation={[0, 0, -Math.PI / 2]}
+          renderOrder={995}
+          onPointerDown={(e) => handlePointerDown(e, 'x')}
+        >
+          <coneGeometry args={[coneRadius, coneHeight, 24]} />
+          <meshStandardMaterial
+            color="#ef4444"
+            emissive="#dc2626"
+            emissiveIntensity={activeAxis === 'x' ? 1.8 : 0.8}
+            roughness={0.2}
+            metalness={0.4}
+            depthTest={false}
+            depthWrite={false}
+          />
         </mesh>
-        <Line points={[[-0.4, 0, 0], [0.4, 0, 0]]} color="#ffffff" lineWidth={2} />
-        <Line points={[[0, 0, -0.4], [0, 0, 0.4]]} color="#ffffff" lineWidth={2} />
+        {/* Generous Invisible Hit Box */}
+        <mesh
+          position={[shaftLength / 2 + 0.2, 0, 0]}
+          rotation={[0, 0, -Math.PI / 2]}
+          onPointerDown={(e) => handlePointerDown(e, 'x')}
+        >
+          <cylinderGeometry args={[0.35, 0.35, shaftLength + coneHeight + 0.4, 8]} />
+          <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+        {/* Axis Label */}
         <Text
-          position={[0, -0.95, 0.05]}
-          fontSize={0.34}
-          color="#38bdf8"
+          position={[shaftLength + coneHeight + 0.45, 0, 0]}
+          fontSize={0.36}
+          color="#fca5a5"
           anchorX="center"
           anchorY="middle"
+          renderOrder={999}
         >
-          Drag to Move (Free 2D)
+          X
         </Text>
       </group>
 
-      {/* 2. East-West Translation Axis Arrow */}
-      <group onPointerDown={(e) => handlePointerDown(e, 'x')}>
-        <Line points={[[-2.0, 0, 0], [2.0, 0, 0]]} color="#f59e0b" lineWidth={3} />
-        <mesh position={[2.0, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
-          <coneGeometry args={[0.16, 0.4, 16]} />
-          <meshBasicMaterial color="#f59e0b" />
+      {/* 2. GREEN ARROW (+Y AXIS: VERTICAL ELEVATION) */}
+      <group renderOrder={995}>
+        {/* Shaft */}
+        <mesh
+          position={[0, shaftLength / 2, 0]}
+          renderOrder={995}
+          onPointerDown={(e) => handlePointerDown(e, 'y')}
+        >
+          <cylinderGeometry args={[shaftRadius, shaftRadius, shaftLength, 16]} />
+          <meshStandardMaterial
+            color="#22c55e"
+            emissive="#15803d"
+            emissiveIntensity={activeAxis === 'y' ? 1.6 : 0.7}
+            roughness={0.25}
+            metalness={0.4}
+            depthTest={false}
+            depthWrite={false}
+          />
         </mesh>
-        <mesh position={[-2.0, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <coneGeometry args={[0.16, 0.4, 16]} />
-          <meshBasicMaterial color="#f59e0b" />
+        {/* Conical Arrowhead */}
+        <mesh
+          position={[0, shaftLength + coneHeight / 2, 0]}
+          renderOrder={995}
+          onPointerDown={(e) => handlePointerDown(e, 'y')}
+        >
+          <coneGeometry args={[coneRadius, coneHeight, 24]} />
+          <meshStandardMaterial
+            color="#22c55e"
+            emissive="#16a34a"
+            emissiveIntensity={activeAxis === 'y' ? 1.8 : 0.8}
+            roughness={0.2}
+            metalness={0.4}
+            depthTest={false}
+            depthWrite={false}
+          />
         </mesh>
-        <Text position={[2.35, 0, 0]} fontSize={0.3} color="#f59e0b" anchorX="left" anchorY="middle">
-          +E
-        </Text>
-        <Text position={[-2.35, 0, 0]} fontSize={0.3} color="#f59e0b" anchorX="right" anchorY="middle">
-          +W
+        {/* Generous Invisible Hit Box */}
+        <mesh
+          position={[0, shaftLength / 2 + 0.2, 0]}
+          onPointerDown={(e) => handlePointerDown(e, 'y')}
+        >
+          <cylinderGeometry args={[0.35, 0.35, shaftLength + coneHeight + 0.4, 8]} />
+          <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+        {/* Axis Label */}
+        <Text
+          position={[0, shaftLength + coneHeight + 0.45, 0]}
+          fontSize={0.36}
+          color="#86efac"
+          anchorX="center"
+          anchorY="middle"
+          renderOrder={999}
+        >
+          Y
         </Text>
       </group>
 
-      {/* 3. North-South Translation Axis Arrow */}
-      <group onPointerDown={(e) => handlePointerDown(e, 'z')}>
-        <Line points={[[0, 0, -2.0], [0, 0, 2.0]]} color="#38bdf8" lineWidth={3} />
-        <mesh position={[0, 0, -2.0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.16, 0.4, 16]} />
-          <meshBasicMaterial color="#38bdf8" />
+      {/* 3. BLUE ARROW (+Z AXIS: NORTH - SOUTH) */}
+      <group renderOrder={995}>
+        {/* Shaft */}
+        <mesh
+          position={[0, 0, shaftLength / 2]}
+          rotation={[Math.PI / 2, 0, 0]}
+          renderOrder={995}
+          onPointerDown={(e) => handlePointerDown(e, 'z')}
+        >
+          <cylinderGeometry args={[shaftRadius, shaftRadius, shaftLength, 16]} />
+          <meshStandardMaterial
+            color="#3b82f6"
+            emissive="#1d4ed8"
+            emissiveIntensity={activeAxis === 'z' ? 1.6 : 0.7}
+            roughness={0.25}
+            metalness={0.4}
+            depthTest={false}
+            depthWrite={false}
+          />
         </mesh>
-        <mesh position={[0, 0, 2.0]} rotation={[Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.16, 0.4, 16]} />
-          <meshBasicMaterial color="#38bdf8" />
+        {/* Conical Arrowhead */}
+        <mesh
+          position={[0, 0, shaftLength + coneHeight / 2]}
+          rotation={[Math.PI / 2, 0, 0]}
+          renderOrder={995}
+          onPointerDown={(e) => handlePointerDown(e, 'z')}
+        >
+          <coneGeometry args={[coneRadius, coneHeight, 24]} />
+          <meshStandardMaterial
+            color="#3b82f6"
+            emissive="#2563eb"
+            emissiveIntensity={activeAxis === 'z' ? 1.8 : 0.8}
+            roughness={0.2}
+            metalness={0.4}
+            depthTest={false}
+            depthWrite={false}
+          />
         </mesh>
-        <Text position={[0, 0, -2.35]} fontSize={0.3} color="#38bdf8" anchorX="center" anchorY="bottom">
-          +N
-        </Text>
-        <Text position={[0, 0, 2.35]} fontSize={0.3} color="#38bdf8" anchorX="center" anchorY="top">
-          +S
+        {/* Generous Invisible Hit Box */}
+        <mesh
+          position={[0, 0, shaftLength / 2 + 0.2]}
+          rotation={[Math.PI / 2, 0, 0]}
+          onPointerDown={(e) => handlePointerDown(e, 'z')}
+        >
+          <cylinderGeometry args={[0.35, 0.35, shaftLength + coneHeight + 0.4, 8]} />
+          <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+        {/* Axis Label */}
+        <Text
+          position={[0, 0, shaftLength + coneHeight + 0.45]}
+          fontSize={0.36}
+          color="#93c5fd"
+          anchorX="center"
+          anchorY="middle"
+          renderOrder={999}
+        >
+          Z
         </Text>
       </group>
 
-      {/* Live Delta Readout Badge while dragging */}
-      {dragDelta && (
-        <group position={[0, 1.2, 0]}>
-          <Text fontSize={0.42} color="#ffffff" anchorX="center" anchorY="bottom">
-            {`Δ East: ${dragDelta.x >= 0 ? '+' : ''}${dragDelta.x}m, North: ${dragDelta.y >= 0 ? '+' : ''}${dragDelta.y}m`}
+      {/* 4. XZ GROUND PLANE CORNER HANDLE (Free horizontal translation between X & Z) */}
+      <group position={[0.7, 0, 0.7]} renderOrder={996}>
+        <mesh
+          rotation={[-Math.PI / 2, 0, 0]}
+          renderOrder={996}
+          onPointerDown={(e) => handlePointerDown(e, 'xz')}
+        >
+          <planeGeometry args={[0.75, 0.75]} />
+          <meshStandardMaterial
+            color="#38bdf8"
+            emissive="#0284c7"
+            emissiveIntensity={activeAxis === 'xz' ? 1.4 : 0.4}
+            transparent
+            opacity={activeAxis === 'xz' ? 0.65 : 0.28}
+            side={THREE.DoubleSide}
+            depthTest={false}
+            depthWrite={false}
+          />
+        </mesh>
+        <Line
+          points={[
+            [-0.375, 0, 0.375],
+            [0.375, 0, 0.375],
+            [0.375, 0, -0.375],
+          ]}
+          color="#38bdf8"
+          lineWidth={2}
+          depthTest={false}
+        />
+      </group>
+
+      {/* 5. CENTER ORIGIN SPHERE (Free 2D Translation) */}
+      <group renderOrder={998} onPointerDown={(e) => handlePointerDown(e, 'free')}>
+        <mesh renderOrder={998}>
+          <sphereGeometry args={[0.15, 20, 20]} />
+          <meshStandardMaterial
+            color="#ffffff"
+            emissive="#38bdf8"
+            emissiveIntensity={activeAxis === 'free' ? 1.8 : 0.9}
+            depthTest={false}
+            depthWrite={false}
+          />
+        </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={998}>
+          <ringGeometry args={[0.2, 0.28, 24]} />
+          <meshBasicMaterial
+            color="#38bdf8"
+            side={THREE.DoubleSide}
+            depthTest={false}
+            depthWrite={false}
+          />
+        </mesh>
+        <mesh>
+          <sphereGeometry args={[0.45, 12, 12]} />
+          <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+      </group>
+
+      {/* 6. LIVE DELTA READOUT HUD BADGE (Elevated in scene) */}
+      {hudText && (
+        <group position={[0, shaftLength + coneHeight + 1.2, 0]} renderOrder={1000}>
+          <mesh renderOrder={1000}>
+            <planeGeometry args={[hudText.length * 0.16 + 0.6, 0.55]} />
+            <meshBasicMaterial
+              color="#020617"
+              transparent
+              opacity={0.88}
+              depthTest={false}
+              depthWrite={false}
+            />
+          </mesh>
+          <Text
+            fontSize={0.24}
+            color="#f8fafc"
+            anchorX="center"
+            anchorY="middle"
+            renderOrder={1001}
+          >
+            {hudText}
           </Text>
         </group>
       )}
@@ -827,30 +1088,85 @@ const MoveGizmo3D: React.FC<{
   );
 };
 
-// Celestial Sun Path Arc Curve in the Sky
+// Celestial Diurnal Sun Path Arc in the Sky (True East-to-West Celestial Circle)
 const CelestialSunArc: React.FC = () => {
   const points = useMemo(() => {
     const pts: [number, number, number][] = [];
-    for (let h = 6.0; h <= 18.0; h += 0.25) {
-      const p = getSunPosition(h);
+    // Smoothly sample the celestial diurnal circle from 6:00 AM to 6:00 PM
+    for (let h = 6.0; h <= 18.0; h += 0.1) {
+      const p = getSunPosition(h, CELESTIAL_ORBIT_RADIUS);
       pts.push([p.x, p.y, p.z]);
     }
     return pts;
   }, []);
 
+  // Solar Milestone Waypoints on the Celestial Orbit
+  const milestoneHours = useMemo(
+    () => [
+      { h: 6.0, label: '6 AM (East)' },
+      { h: 9.0, label: '9 AM' },
+      { h: 12.0, label: '12 PM (South)' },
+      { h: 15.0, label: '3 PM' },
+      { h: 18.0, label: '6 PM (West)' },
+    ],
+    []
+  );
+
   return (
-    <Line points={points} color="#f59e0b" lineWidth={2} transparent opacity={0.45} />
+    <group>
+      {/* Outer Luminous Golden Aura Path */}
+      <Line
+        points={points}
+        color="#fbbf24"
+        lineWidth={3.5}
+        transparent
+        opacity={0.25}
+      />
+      {/* Core Precision Celestial Arc */}
+      <Line
+        points={points}
+        color="#f59e0b"
+        lineWidth={1.5}
+        transparent
+        opacity={0.7}
+      />
+
+      {/* Solar Milestone Nodes on the Celestial Arc */}
+      {milestoneHours.map(({ h, label }) => {
+        const pos = getSunPosition(h, CELESTIAL_ORBIT_RADIUS);
+        return (
+          <group key={h} position={[pos.x, pos.y, pos.z]}>
+            <mesh>
+              <sphereGeometry args={[0.22, 16, 16]} />
+              <meshBasicMaterial color="#fbbf24" transparent opacity={0.7} />
+            </mesh>
+            <Text
+              position={[0, 0.65, 0]}
+              fontSize={0.55}
+              color="#fef08a"
+              anchorX="center"
+              anchorY="bottom"
+            >
+              {label}
+            </Text>
+          </group>
+        );
+      })}
+    </group>
   );
 };
 
-// Sunlight Guide Ray from Sun to Roof Center
-const SunlightRay: React.FC<{ sunPos: THREE.Vector3 }> = ({ sunPos }) => {
+// Sunlight Guide Ray from Sun to Active Roof Center
+const SunlightRay: React.FC<{ sunPos: THREE.Vector3; targetPos: THREE.Vector3 }> = ({
+  sunPos,
+  targetPos,
+}) => {
   const points: [number, number, number][] = useMemo(
     () => [
       [sunPos.x, sunPos.y, sunPos.z],
-      [0, BUILDING_EAVE_HEIGHT + 0.5, 0],
+      [targetPos.x, targetPos.y, targetPos.z],
     ],
-    [sunPos.x, sunPos.y, sunPos.z]
+    [sunPos.x, sunPos.y, sunPos.z, targetPos.x, targetPos.y, targetPos.z]
   );
 
   return (
@@ -877,13 +1193,12 @@ const SceneContent: React.FC<{
     roofSections,
     activeSectionId,
     setActiveSectionId,
-    setRoofSectionPivotEdge,
     coordinates,
   } = useSolarMapperStore();
 
   const [isInteractingWithGizmo, setIsInteractingWithGizmo] = useState(false);
   const [activeRoofWorldCenter, setActiveRoofWorldCenter] = useState<THREE.Vector3>(
-    () => new THREE.Vector3(0, BUILDING_EAVE_HEIGHT, 0)
+    () => new THREE.Vector3(0, BUILDING_EAVE_HEIGHT + 0.5, 0)
   );
 
   const handleGizmoDragState = useCallback(
@@ -894,16 +1209,29 @@ const SceneContent: React.FC<{
     [onIsDraggingChange]
   );
 
-  const sunPos = useMemo(() => getSunPosition(sunHour, 24), [sunHour]);
+  const sunPos = useMemo(() => getSunPosition(sunHour, CELESTIAL_ORBIT_RADIUS), [sunHour]);
 
-  // Center of the coordinate system
+  // Stable 3D Coordinate Origin:
+  // Initialized to project coordinates or initial roof polygon centroid when loaded/added/removed.
+  // We NEVER recalculate this during roof translation or rotation, ensuring each roof moves 100% independently!
+  const stableOriginRef = useRef<GeoPoint | null>(null);
+  const sectionIdsKey = useMemo(() => roofSections.map((s) => s.id).join(','), [roofSections]);
+  const coordsKey = `${coordinates.lat.toFixed(6)},${coordinates.lng.toFixed(6)}`;
+  const prevKeyRef = useRef<string>('');
+
   const siteCenter = useMemo(() => {
-    if (roofSections.length > 0) {
-      const allVertices = roofSections.flatMap((s) => s.vertices);
-      return calculateCentroid(allVertices);
+    const currentKey = `${sectionIdsKey}__${coordsKey}`;
+    if (!stableOriginRef.current || prevKeyRef.current !== currentKey) {
+      prevKeyRef.current = currentKey;
+      if (roofSections.length > 0 && roofSections.some((s) => s.vertices.length > 0)) {
+        const allVertices = roofSections.flatMap((s) => s.vertices);
+        stableOriginRef.current = calculateCentroid(allVertices);
+      } else {
+        stableOriginRef.current = coordinates;
+      }
     }
-    return coordinates;
-  }, [roofSections, coordinates]);
+    return stableOriginRef.current;
+  }, [sectionIdsKey, coordsKey, coordinates, roofSections]);
 
   const sunLightColor = useMemo(() => {
     if (sunHour < 7.5 || sunHour > 16.5) return '#fed7aa';
@@ -911,8 +1239,11 @@ const SceneContent: React.FC<{
     return '#ffffff';
   }, [sunHour]);
 
-  const activeSection =
-    roofSections.find((s) => s.id === activeSectionId) || roofSections[0];
+  const activeSection = activeSectionId
+    ? roofSections.find((s) => s.id === activeSectionId) || null
+    : null;
+
+  const groundDownPosRef = useRef<{ x: number; y: number } | null>(null);
 
   return (
     <>
@@ -961,15 +1292,36 @@ const SceneContent: React.FC<{
       {/* Celestial Sun Transit Arc */}
       <CelestialSunArc />
 
-      {/* Sunlight Ray */}
-      <SunlightRay sunPos={sunPos} />
+      {/* Sunlight Ray (Active Roof) */}
+      {activeSection && (
+        <SunlightRay sunPos={sunPos} targetPos={activeRoofWorldCenter} />
+      )}
 
       {/* Ground Reference Plane with Grid */}
       <gridHelper args={[40, 40, '#475569', '#1e293b']} position={[0, -0.02, 0]} />
 
-      {/* Ground Shadow Receiver */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]} receiveShadow>
-        <planeGeometry args={[60, 60]} />
+      {/* Ground Shadow & Click Deselect Receiver */}
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, -0.04, 0]}
+        receiveShadow
+        onPointerDown={(e) => {
+          groundDownPosRef.current = { x: e.clientX, y: e.clientY };
+        }}
+        onPointerUp={(e) => {
+          if (groundDownPosRef.current) {
+            const dist = Math.hypot(
+              e.clientX - groundDownPosRef.current.x,
+              e.clientY - groundDownPosRef.current.y
+            );
+            groundDownPosRef.current = null;
+            if (dist <= 6) {
+              setActiveSectionId(null);
+            }
+          }
+        }}
+      >
+        <planeGeometry args={[180, 180]} />
         <shadowMaterial opacity={0.4} />
       </mesh>
 
@@ -995,12 +1347,11 @@ const SceneContent: React.FC<{
           siteCenter={siteCenter}
           isActive={sec.id === activeSection?.id}
           onSelect={() => setActiveSectionId(sec.id)}
-          onSetPivotEdge={(idx) => setRoofSectionPivotEdge(sec.id, idx)}
           onCentroidWorldUpdate={setActiveRoofWorldCenter}
         />
       ))}
 
-      {/* 3D GIZMOS MOUNTED AT THE TRUE ROOF 3D CENTER */}
+      {/* 3D GIZMOS MOUNTED AT THE ELEVATED TOP SURFACE OF THE ROOF */}
       {activeSection && activeSection.vertices.length >= 3 && (
         <>
           {activeTool === 'move' ? (
@@ -1039,31 +1390,37 @@ export const Roof3DPreviewCanvas: React.FC = () => {
     setSunHour,
     roofSections,
     activeSectionId,
+    setActiveSectionId,
     active3DTool,
     setActive3DTool,
-    setRoofSectionPivotEdge,
     updateRoofSectionConfig,
     translateRoofSection,
     loadDemoRoofPolygon,
   } = useSolarMapperStore();
 
   const [, setIsDraggingRoof] = useState(false);
+  const canvasPointerDownRef = useRef<{ x: number; y: number } | null>(null);
 
-  const activeSection =
-    roofSections.find((s) => s.id === activeSectionId) || roofSections[0];
+  const activeSection = activeSectionId
+    ? roofSections.find((s) => s.id === activeSectionId) || null
+    : null;
 
-  const pivotEdge = activeSection ? ((activeSection.pivotEdgeIndex ?? 0) % 4) : 0;
+  const handleCanvasPointerDown = (e: React.PointerEvent) => {
+    canvasPointerDownRef.current = { x: e.clientX, y: e.clientY };
+  };
 
-  // ALWAYS EXACTLY 4 OUTER SIDES (Side 1..4), never inner cutouts
-  const outerSides = useMemo(
-    () => (activeSection ? getOuterTiltSides(activeSection.vertices) : []),
-    [activeSection]
-  );
-
-  // Nudge active roof plane by fixed delta (East/North)
-  const handleNudge = (deltaX: number, deltaY: number) => {
-    if (!activeSection) return;
-    translateRoofSection(activeSection.id, deltaX, deltaY);
+  const handleCanvasPointerMissed = (e: MouseEvent) => {
+    if (canvasPointerDownRef.current) {
+      const dist = Math.hypot(
+        e.clientX - canvasPointerDownRef.current.x,
+        e.clientY - canvasPointerDownRef.current.y
+      );
+      if (dist > 6) {
+        // User was orbiting/panning the camera
+        return;
+      }
+    }
+    setActiveSectionId(null);
   };
 
   return (
@@ -1081,6 +1438,8 @@ export const Roof3DPreviewCanvas: React.FC = () => {
             shadows
             camera={{ position: [16, 20, 26], fov: 46 }}
             className="w-full h-full cursor-grab active:cursor-grabbing"
+            onPointerDown={handleCanvasPointerDown}
+            onPointerMissed={handleCanvasPointerMissed}
           >
             <SceneContent
               sunHour={sunHour}
@@ -1109,13 +1468,23 @@ export const Roof3DPreviewCanvas: React.FC = () => {
               {activeSection.name || 'Active Face'}
             </span>
             <span className="text-slate-400 font-mono text-[11px] pr-2">
-              {activeSection.pitchDeg === 0 ? 'Flat (0°)' : `${activeSection.pitchDeg}° Tilt`} • Side {pivotEdge + 1} Hinge
+              {activeSection.pitchDeg === 0 ? 'Flat (0°)' : `${activeSection.pitchDeg}° Pitch`} • {`${activeSection.azimuthDeg}° ${getCardinalLabel(activeSection.azimuthDeg)}`}
             </span>
           </div>
         )}
 
+        {/* Subtle Pill when roofs exist but none is currently selected */}
+        {!activeSection && roofSections.length > 0 && roofSections.some((s) => s.vertices.length >= 3) && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+            <div className="px-4 py-1.5 rounded-full bg-slate-950/80 border border-white/10 text-slate-300 text-xs backdrop-blur-md shadow-md flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <span>Click any roof to select &amp; adjust in 3D</span>
+            </div>
+          </div>
+        )}
+
         {/* Empty State Banner if no roof has been drawn */}
-        {(!activeSection || activeSection.vertices.length < 3) && (
+        {(roofSections.length === 0 || roofSections.every((s) => s.vertices.length < 3)) && (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs z-10 p-6 text-center">
             <div className="max-w-md p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-3">
               <Layers className="w-10 h-10 text-amber-500 mx-auto" />
@@ -1151,7 +1520,7 @@ export const Roof3DPreviewCanvas: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setActive3DTool('hinge')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 whitespace-nowrap flex-shrink-0 ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 whitespace-nowrap flex-shrink-0 ${
                   active3DTool === 'hinge' || active3DTool === 'inspect'
                     ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/25'
                     : 'text-slate-300 hover:text-white hover:bg-white/10'
@@ -1166,170 +1535,61 @@ export const Roof3DPreviewCanvas: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setActive3DTool('move')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 whitespace-nowrap flex-shrink-0 ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 whitespace-nowrap flex-shrink-0 ${
                   active3DTool === 'move'
                     ? 'bg-sky-400 text-slate-950 shadow-md shadow-sky-500/25'
                     : 'text-slate-300 hover:text-white hover:bg-white/10'
                 }`}
-                title="Move roof across the site plane"
+                title="Move roof in 3D: X East/West, Y Elevation, Z North/South"
               >
                 <Move className="w-3.5 h-3.5 text-current flex-shrink-0" />
-                <span>Move Roof</span>
+                <span>Move</span>
               </button>
-
-              <div className="w-[1px] h-4 bg-white/15 mx-1 flex-shrink-0" />
-
-              {/* ALWAYS EXACTLY 4 OUTER SIDES (Side 1..4), never inner cutouts */}
-              <div className="flex items-center gap-1 flex-shrink-0">
-                {outerSides.map((side, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setRoofSectionPivotEdge(activeSection.id, idx)}
-                    className={`px-2.5 py-1 rounded-full text-[11px] font-mono font-bold transition-all flex items-center gap-1 flex-shrink-0 ${
-                      pivotEdge === idx
-                        ? 'bg-amber-400/20 text-amber-300 border border-amber-500/40'
-                        : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
-                    }`}
-                    title={`Hinge along ${side.name} (${side.lengthM.toFixed(1)}m)`}
-                  >
-                    <span>{side.shortName}</span>
-                    <span className="opacity-70 text-[9px]">{side.cardinalDir[0]} • {side.lengthM.toFixed(0)}m</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="w-[1px] h-4 bg-white/15 mx-1 flex-shrink-0" />
-
-              {/* Quick Flat 0° Reset */}
-              <button
-                type="button"
-                onClick={() =>
-                  updateRoofSectionConfig(activeSection.id, { pitchDeg: 0, rollDeg: 0 })
-                }
-                className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1 flex-shrink-0 ${
-                  activeSection.pitchDeg === 0
-                    ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40'
-                    : 'text-slate-300 hover:text-white hover:bg-white/10'
-                }`}
-                title="Make roof completely flat (0° pitch)"
-              >
-                <Minus className="w-3 h-3 text-current" />
-                <span>Flat 0°</span>
-              </button>
-
-              {/* Mini Pitch Slider */}
-              <div className="flex items-center gap-2 px-1.5 flex-shrink-0">
-                <input
-                  type="range"
-                  min="0"
-                  max="45"
-                  step="1"
-                  value={activeSection.pitchDeg}
-                  onChange={(e) =>
-                    updateRoofSectionConfig(activeSection.id, {
-                      pitchDeg: parseInt(e.target.value, 10),
-                    })
-                  }
-                  className="w-16 accent-amber-500 h-1.5 bg-slate-800 rounded-full cursor-pointer"
-                  title="Adjust roof pitch angle"
-                />
-                <span className="font-mono text-xs font-bold text-amber-400 min-w-[28px]">
-                  {activeSection.pitchDeg}°
-                </span>
-              </div>
-
-              {/* Discrete Nudge Buttons (Visible when Move tool is selected) */}
-              {active3DTool === 'move' && (
-                <>
-                  <div className="w-[1px] h-4 bg-white/15 mx-1 flex-shrink-0" />
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleNudge(-0.5, 0)}
-                      className="p-1 rounded-full bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-colors"
-                      title="Nudge West (-0.5m)"
-                    >
-                      <ArrowLeft className="w-3 h-3" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNudge(0.5, 0)}
-                      className="p-1 rounded-full bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-colors"
-                      title="Nudge East (+0.5m)"
-                    >
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNudge(0, 0.5)}
-                      className="p-1 rounded-full bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-colors"
-                      title="Nudge North (+0.5m)"
-                    >
-                      <ArrowUp className="w-3 h-3" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNudge(0, -0.5)}
-                      className="p-1 rounded-full bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-colors"
-                      title="Nudge South (-0.5m)"
-                    >
-                      <ArrowDown className="w-3 h-3" />
-                    </button>
-                  </div>
-                </>
-              )}
             </div>
           </div>
         )}
 
-        {/* BOTTOM SUN POSITION & TIME SLIDER ISLAND */}
-        <div className="absolute bottom-4 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-lg z-20 p-3 rounded-2xl bg-slate-950/90 border border-white/10 backdrop-blur-xl shadow-2xl">
-          <div className="flex items-center justify-between gap-2 mb-1.5 text-xs">
-            <div className="flex items-center gap-1.5 font-bold text-white whitespace-nowrap flex-shrink-0">
-              <Sun className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-              <span className="whitespace-nowrap">Sun Simulation:</span>
-              <span className="font-mono text-amber-400 whitespace-nowrap">{formatSunTime(sunHour)}</span>
+        {/* BOTTOM DOCK: Sun Simulation Slider */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-[92%] max-w-lg">
+          <div className="p-3 rounded-2xl bg-slate-950/90 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-2xl space-y-2 select-none">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-amber-400 flex items-center gap-1.5">
+                <span className="text-amber-400">☀</span>
+                Sun Simulation: {formatSunTime(sunHour)}
+              </span>
+              <div className="flex items-center gap-1">
+                {([6, 12, 18] as const).map((h) => (
+                  <button
+                    key={h}
+                    type="button"
+                    onClick={() => setSunHour(h)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all ${
+                      Math.abs(sunHour - h) < 0.5
+                        ? 'bg-amber-400 text-slate-950'
+                        : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    {h === 6 ? '6 AM' : h === 12 ? '12 PM' : '6 PM'}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setSunHour(6)}
-                className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors whitespace-nowrap"
-              >
-                6 AM
-              </button>
-              <button
-                type="button"
-                onClick={() => setSunHour(12)}
-                className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors font-bold whitespace-nowrap"
-              >
-                12 PM
-              </button>
-              <button
-                type="button"
-                onClick={() => setSunHour(18)}
-                className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors whitespace-nowrap"
-              >
-                6 PM
-              </button>
+
+            <input
+              type="range"
+              min="6.0"
+              max="18.0"
+              step="0.1"
+              value={sunHour}
+              onChange={(e) => setSunHour(parseFloat(e.target.value))}
+              className="w-full h-1.5 bg-white/15 rounded-full appearance-none cursor-pointer accent-amber-400"
+            />
+
+            <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono px-0.5">
+              <span>6:00 AM (Sunrise East)</span>
+              <span>12:00 PM (Solar Noon South)</span>
+              <span>6:00 PM (Sunset West)</span>
             </div>
-          </div>
-
-          <input
-            type="range"
-            min="6"
-            max="18"
-            step="0.25"
-            value={sunHour}
-            onChange={(e) => setSunHour(parseFloat(e.target.value))}
-            className="w-full accent-amber-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
-          />
-
-          <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
-            <span>6:00 AM (Sunrise East)</span>
-            <span>12:00 PM (Solar Noon South)</span>
-            <span>6:00 PM (Sunset West)</span>
           </div>
         </div>
       </div>

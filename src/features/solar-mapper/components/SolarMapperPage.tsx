@@ -118,7 +118,7 @@ export const SolarMapperPage: React.FC = () => {
       {/* Step 3: Main Studio Deck (Left: Satellite/3D Viewport, Right: Section Inspector) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left (lg: 7 cols): Canvas Viewport */}
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-7 min-w-0">
           {viewMode === '2d_satellite' ? (
             <SatelliteRoofCanvas />
           ) : (
@@ -127,7 +127,7 @@ export const SolarMapperPage: React.FC = () => {
         </div>
 
         {/* Right (lg: 5 cols): Roof Section Geometry & Physics Inspector */}
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-5 min-w-0">
           <RoofSectionInspector />
         </div>
       </div>

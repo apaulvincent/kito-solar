@@ -111,6 +111,7 @@ export interface RoofPolygonSection {
   pitchDeg: number; // 0° to 45°
   azimuthDeg: number; // 0° = N, 90° = E, 180° = S, 270° = W
   rollDeg?: number; // -45° to +45° secondary roll tilt (default 0)
+  baseHeightMeters?: number; // Optional elevation above ground in meters (default 4.0)
   pivotEdgeIndex?: number; // 0-based index of polygon edge acting as rotation/hinge axis
   shadingLossPercent: number; // 0% to 50%
   setbackRatio: number; // default 0.82 (18% reserved for edges & walkways)

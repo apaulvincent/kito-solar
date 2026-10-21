@@ -115,4 +115,39 @@ describe('Solar Mapper Zustand Store & Integration Suite', () => {
     // Side 2 faces North (0° / 360°)
     expect(secEdge2.azimuthDeg % 360).toBeCloseTo(0, 0);
   });
+
+  it('automatically initializes a fresh active roof section when drawing with no active selection', () => {
+    // Start with 1 closed demo roof but activeSectionId set to null (e.g. user clicked outside)
+    useSolarMapperStore.getState().loadDemoRoofPolygon();
+    useSolarMapperStore.getState().setActiveSectionId(null);
+
+    let state = useSolarMapperStore.getState();
+    expect(state.activeSectionId).toBeNull();
+    expect(state.roofSections.length).toBe(1);
+    expect(state.roofSections[0].vertices.length).toBe(4);
+
+    // User starts drawing a new roof: adds first vertex
+    const newPoint = { lat: 14.05, lng: 121.16 };
+    useSolarMapperStore.getState().addVertexToActiveSection(newPoint);
+
+    state = useSolarMapperStore.getState();
+    // Must create a new section, activate it, and NOT corrupt the demo roof
+    expect(state.roofSections.length).toBe(2);
+    expect(state.activeSectionId).toBe(state.roofSections[1].id);
+    expect(state.roofSections[0].vertices.length).toBe(4); // Untouched
+    expect(state.roofSections[1].vertices.length).toBe(1);
+    expect(state.roofSections[1].vertices[0]).toEqual(newPoint);
+
+    // Add 2nd, 3rd, and 4th vertex to create a 4-corner rectangle roof
+    useSolarMapperStore.getState().addVertexToActiveSection({ lat: 14.05, lng: 121.17 });
+    useSolarMapperStore.getState().addVertexToActiveSection({ lat: 14.06, lng: 121.17 });
+    useSolarMapperStore.getState().addVertexToActiveSection({ lat: 14.06, lng: 121.16 });
+
+    state = useSolarMapperStore.getState();
+    // Must NOT split or create extra roof sections at 3 or 4 points
+    expect(state.roofSections.length).toBe(2);
+    expect(state.activeSectionId).toBe(state.roofSections[1].id);
+    expect(state.roofSections[1].vertices.length).toBe(4);
+    expect(state.roofSections[1].flatAreaSqm).toBeGreaterThan(0);
+  });
 });

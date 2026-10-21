@@ -1,8 +1,7 @@
 // src/features/solar-mapper/components/RoofSectionInspector.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Compass,
-  Maximize2,
   Sliders,
   Sun,
   Shield,
@@ -12,11 +11,11 @@ import {
   Trash2,
   Plus,
   ArrowUpRight,
-  Anchor,
+  RotateCcw,
+  AlertTriangle,
 } from 'lucide-react';
 import { useSolarMapperStore } from '../store/useSolarMapperStore';
 import { PanelOrientation } from '../types/solarMapper';
-import { getOuterTiltSides } from '../utils/geodesicMath';
 
 function getCardinalDirection(deg: number): string {
   if (deg >= 337.5 || deg < 22.5) return 'North (0°)';
@@ -35,22 +34,19 @@ export const RoofSectionInspector: React.FC = () => {
     activeSectionId,
     setActiveSectionId,
     updateRoofSectionConfig,
-    setRoofSectionPivotEdge,
     removeRoofSection,
     addRoofSection,
     panelWattage,
     setPanelWattage,
   } = useSolarMapperStore();
 
-  const activeSection =
-    roofSections.find((s) => s.id === activeSectionId) || roofSections[0];
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  const outerSides = React.useMemo(
-    () => (activeSection ? getOuterTiltSides(activeSection.vertices) : []),
-    [activeSection]
-  );
+  const activeSection = activeSectionId
+    ? roofSections.find((s) => s.id === activeSectionId) || null
+    : null;
 
-  if (!activeSection) {
+  if (roofSections.length === 0) {
     return (
       <div className="p-1.5 rounded-3xl bg-slate-100/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-white/10 shadow-sm">
         <div className="rounded-[calc(1.5rem-0.375rem)] bg-white dark:bg-[#0B111E] p-8 text-center space-y-4 shadow-xs dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
@@ -78,19 +74,63 @@ export const RoofSectionInspector: React.FC = () => {
     );
   }
 
-  const pitchPresets = [
-    { label: 'Flat 0°', pitch: 0 },
-    { label: 'Low 10°', pitch: 10 },
-    { label: 'Standard 18°', pitch: 18 },
-    { label: 'Steep 30°', pitch: 30 },
-  ];
+  // When roof faces exist, but none is currently selected (clicked blank canvas area)
+  if (!activeSection) {
+    return (
+      <div className="p-1.5 rounded-3xl bg-slate-100/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-white/10 shadow-sm">
+        <div className="rounded-[calc(1.5rem-0.375rem)] bg-white dark:bg-[#0B111E] p-6 space-y-5 shadow-xs dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
+          {/* Section Selection Bar */}
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-white/5">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+              {roofSections.map((sec, idx) => (
+                <button
+                  key={sec.id}
+                  type="button"
+                  onClick={() => setActiveSectionId(sec.id)}
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/10 transition-all flex items-center gap-2"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500" />
+                  <span>{sec.name || `Face ${idx + 1}`}</span>
+                  <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-full bg-black/5 dark:bg-white/10 text-slate-500 dark:text-slate-400">
+                    {sec.recommendedMaxPanels}p
+                  </span>
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => addRoofSection()}
+              className="p-1.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
+              title="Add another roof plane"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
-  const azimuthPresets = [
-    { label: 'North 0°', deg: 0 },
-    { label: 'East 90°', deg: 90 },
-    { label: 'South 180°', deg: 180 },
-    { label: 'West 270°', deg: 270 },
-  ];
+          <div className="text-center py-8 space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto text-amber-500">
+              <Compass className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                No Roof Section Selected
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                Click any roof in the 3D scene or satellite map, or choose a tab above to inspect engineering metrics, pitch, and orientation.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveSectionId(roofSections[0].id)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition-all active:scale-95"
+            >
+              <span>Select {roofSections[0].name || 'First Roof Face'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const orientationOptions: { key: PanelOrientation; label: string }[] = [
     { key: 'auto_best', label: 'Auto (Best Fit)' },
@@ -154,16 +194,28 @@ export const RoofSectionInspector: React.FC = () => {
             </button>
           </div>
 
-          {roofSections.length > 1 && (
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             <button
               type="button"
-              onClick={() => removeRoofSection(activeSection.id)}
-              className="p-1.5 rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors flex-shrink-0"
-              title="Delete this roof plane"
+              onClick={() => setShowResetConfirm(true)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-amber-500 hover:bg-amber-500/10 border border-slate-200/80 dark:border-white/10 transition-all flex-shrink-0 active:scale-95"
+              title="Reset roof flat on the surface (0° pitch, 0° roll)"
             >
-              <Trash2 className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
+              <span className="hidden sm:inline">Reset Flat</span>
             </button>
-          )}
+
+            {roofSections.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeRoofSection(activeSection.id)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors flex-shrink-0"
+                title="Delete this roof plane"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Section Name & Module Power Selector */}
@@ -258,167 +310,81 @@ export const RoofSectionInspector: React.FC = () => {
 
         {/* Engineering Controls (Sliders & Selectors) */}
         <div className="space-y-6 pt-2">
-          {/* Pitch Slider Card */}
+          {/* Orientation & Leveling Control */}
           <div className="p-4 rounded-2xl bg-slate-50/60 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <Maximize2 className="w-3.5 h-3.5 text-amber-500" />
-                Roof Pitch / Tilt Angle:
-              </span>
-              <div className="flex items-center gap-1.5">
-                <span className="font-mono text-xs font-bold text-amber-500 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
-                  {activeSection.pitchDeg}°
-                </span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <Compass className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                <div>
+                  <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    Roof Orientation
+                  </div>
+                  <div className="text-xs font-mono font-semibold text-slate-800 dark:text-slate-200 pt-0.5">
+                    {activeSection.pitchDeg === 0
+                      ? 'Flat Surface (0°)'
+                      : `${activeSection.pitchDeg}° Pitch`}
+                    {' • '}
+                    {getCardinalDirection(activeSection.azimuthDeg)}
+                    {(activeSection.rollDeg ?? 0) !== 0 && ` • ${activeSection.rollDeg}° Roll`}
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <input
-              type="range"
-              min="0"
-              max="45"
-              step="1"
-              value={activeSection.pitchDeg}
-              onChange={(e) =>
-                updateRoofSectionConfig(activeSection.id, {
-                  pitchDeg: parseInt(e.target.value, 10),
-                })
-              }
-              className="w-full h-2 bg-slate-200 dark:bg-white/10 rounded-full appearance-none cursor-pointer accent-amber-500"
-            />
-
-            <div className="flex items-center gap-1.5 pt-0.5 flex-wrap">
-              {pitchPresets.map((p) => (
-                <button
-                  key={p.pitch}
-                  type="button"
-                  onClick={() =>
-                    updateRoofSectionConfig(activeSection.id, { pitchDeg: p.pitch })
-                  }
-                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                    activeSection.pitchDeg === p.pitch
-                      ? 'bg-amber-400 text-slate-950 font-bold shadow-xs'
-                      : 'bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-white/5 hover:text-slate-950 dark:hover:text-white'
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-
-          {/* Side-Based Rotation Axis (Hinge Edge) */}
-          <div className="p-4 rounded-2xl bg-slate-50/60 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <Anchor className="w-3.5 h-3.5 text-amber-500" />
-                Rotation Axis / Hinge Side:
-              </span>
-              <span className="font-mono text-xs font-bold text-amber-500 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
-                Side {((activeSection.pivotEdgeIndex ?? 0) % 4) + 1}
-              </span>
-            </div>
-
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Select which side acts as the stationary eave hinge. The roof pitches upward from this edge.
-            </p>
-
-            {/* 4 Outer Tilt Sides: ALWAYS 4 SIDES */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {outerSides.map((side, idx) => {
-                const isPivot = ((activeSection.pivotEdgeIndex ?? 0) % 4) === idx;
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setRoofSectionPivotEdge(activeSection.id, idx)}
-                    className={`p-2.5 rounded-xl text-left transition-all border flex flex-col justify-between ${
-                      isPivot
-                        ? 'bg-amber-400/15 border-amber-500/50 text-amber-300 shadow-sm shadow-amber-500/10'
-                        : 'bg-white dark:bg-white/5 border-slate-200/80 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:border-amber-500/30 hover:text-slate-950 dark:hover:text-white'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold">{side.shortName}</span>
-                      {isPivot && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                      )}
-                    </div>
-                    <div className="text-[10px] text-slate-400 font-medium">
-                      {side.cardinalDir}
-                    </div>
-                    <div className="text-xs font-mono font-bold mt-0.5 text-slate-900 dark:text-white">
-                      {side.lengthM.toFixed(1)}m
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Derived Downslope Azimuth & Solar Yield */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-200/50 dark:border-white/5 text-xs">
-              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                <Compass className="w-3.5 h-3.5 text-amber-500" />
-                <span>Downslope facing:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">
-                  {getCardinalDirection(activeSection.azimuthDeg)}
-                </span>
-              </div>
-              <span className="font-mono text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-                {Math.round(activeSection.orientationYieldFactor * 100)}% solar yield
-              </span>
-            </div>
-          </div>
-
-          {/* Azimuth / Compass Direction Card */}
-          <div className="p-4 rounded-2xl bg-slate-50/60 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <Compass className="w-3.5 h-3.5 text-amber-500" />
-                Compass Azimuth (Facing):
-              </span>
-              <div className="flex items-center gap-1.5">
-                <span className="font-mono text-xs text-slate-600 dark:text-slate-300">
-                  {getCardinalDirection(activeSection.azimuthDeg)}
-                </span>
-                <span className="font-mono text-xs font-bold text-amber-500 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs font-bold text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
                   {Math.round(activeSection.orientationYieldFactor * 100)}% yield
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setShowResetConfirm(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-white/5 hover:text-amber-500 hover:bg-amber-500/10 border border-slate-200 dark:border-white/10 transition-all shadow-xs active:scale-95"
+                  title="Reset roof flat on surface (0° pitch, 0° roll)"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Reset Flat</span>
+                </button>
               </div>
             </div>
 
-            <input
-              type="range"
-              min="0"
-              max="359"
-              step="1"
-              value={activeSection.azimuthDeg}
-              onChange={(e) =>
-                updateRoofSectionConfig(activeSection.id, {
-                  azimuthDeg: parseInt(e.target.value, 10),
-                })
-              }
-              className="w-full h-2 bg-slate-200 dark:bg-white/10 rounded-full appearance-none cursor-pointer accent-amber-500"
-            />
-
-            <div className="flex items-center gap-1.5 pt-0.5 flex-wrap">
-              {azimuthPresets.map((a) => (
-                <button
-                  key={a.deg}
-                  type="button"
-                  onClick={() =>
-                    updateRoofSectionConfig(activeSection.id, { azimuthDeg: a.deg })
-                  }
-                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                    activeSection.azimuthDeg === a.deg
-                      ? 'bg-amber-400 text-slate-950 font-bold shadow-xs'
-                      : 'bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-white/5 hover:text-slate-950 dark:hover:text-white'
-                  }`}
-                >
-                  {a.label}
-                </button>
-              ))}
-            </div>
+            {/* Inline Confirmation Prompt for Resetting Flat */}
+            {showResetConfirm && (
+              <div className="p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-500/[0.08] border border-amber-500/30 dark:border-amber-500/40 shadow-lg space-y-2.5 animate-in fade-in duration-150">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">
+                      Reset roof flat on surface?
+                    </div>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                      This will reset pitch to 0°, level secondary roll tilt, and align elevation flat to the surface plane.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-2 pt-1 border-t border-amber-500/20">
+                  <button
+                    type="button"
+                    onClick={() => setShowResetConfirm(false)}
+                    className="px-3 py-1 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-white/10 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateRoofSectionConfig(activeSection.id, {
+                        pitchDeg: 0,
+                        rollDeg: 0,
+                        baseHeightMeters: 4.0,
+                      });
+                      setShowResetConfirm(false);
+                    }}
+                    className="px-3.5 py-1 rounded-full text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-sm shadow-amber-500/20 transition-all active:scale-95"
+                  >
+                    Confirm Reset
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Panel Orientation & Shading Factor */}

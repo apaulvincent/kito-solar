@@ -195,7 +195,7 @@ export const useSolarMapperStore = create<SolarMapperState>()(
       setActive3DTool: (active3DTool) => set({ active3DTool }),
 
       addRoofSection: (name) => {
-        const id = `roof-${Date.now().toString(36)}`;
+        const id = `roof-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
         const secCount = get().roofSections.length + 1;
         const newSection: RoofPolygonSection = {
           id,
@@ -257,23 +257,29 @@ export const useSolarMapperStore = create<SolarMapperState>()(
 
       addVertexToActiveSection: (pt) => {
         const { activeSectionId, roofSections } = get();
-        if (!activeSectionId && roofSections.length === 0) {
-          get().addRoofSection();
+        let targetId = activeSectionId;
+        const currentActive = roofSections.find((s) => s.id === targetId);
+
+        // If no active section exists, find an empty draft face or create a fresh section
+        if (!currentActive) {
+          const emptySec = roofSections.find((s) => s.vertices.length === 0);
+          if (emptySec) {
+            targetId = emptySec.id;
+          } else {
+            targetId = get().addRoofSection();
+          }
         }
 
         const effectivePsh = get().getSelectedPsh();
-        set((state) => {
-          const targetId = state.activeSectionId || state.roofSections[0]?.id;
-          if (!targetId) return state;
-
-          return {
-            roofSections: state.roofSections.map((sec) => {
-              if (sec.id !== targetId) return sec;
-              const newVertices = [...sec.vertices, pt];
-              return recomputeSection({ ...sec, vertices: newVertices }, effectivePsh);
-            }),
-          };
-        });
+        set((state) => ({
+          activeSectionId: targetId,
+          isDrawingMode: true,
+          roofSections: state.roofSections.map((sec) => {
+            if (sec.id !== targetId) return sec;
+            const newVertices = [...sec.vertices, pt];
+            return recomputeSection({ ...sec, vertices: newVertices }, effectivePsh);
+          }),
+        }));
       },
 
       updateVertexPosition: (sectionId, index, pt) => {

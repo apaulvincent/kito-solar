@@ -62,6 +62,7 @@ export const SatelliteRoofCanvas: React.FC = () => {
     undoLastVertex,
     clearActivePolygon,
     addRoofSection,
+    removeRoofSection,
     loadDemoRoofPolygon,
     applyDetectedRoofFaces,
     translateRoofSection,
@@ -72,7 +73,6 @@ export const SatelliteRoofCanvas: React.FC = () => {
   const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
-  const [draggingPolygon, setDraggingPolygon] = useState<{ sectionId: string; lastX: number; lastY: number } | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [draggedVertex, setDraggedVertex] = useState<{
     sectionId: string;
@@ -89,13 +89,14 @@ export const SatelliteRoofCanvas: React.FC = () => {
   // Allow canceling vertex move with Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && movingVertex) {
-        setMovingVertex(null);
+      if (e.key === 'Escape') {
+        if (movingVertex) setMovingVertex(null);
+        if (draggedVertex) setDraggedVertex(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [movingVertex]);
+  }, [movingVertex, draggedVertex]);
 
   // AI Marquee Roof Scanner State
   const [isMarqueeMode, setIsMarqueeMode] = useState(false);
@@ -114,19 +115,25 @@ export const SatelliteRoofCanvas: React.FC = () => {
   } | null>(null);
   const [scanToast, setScanToast] = useState<string | null>(null);
 
-  // Resize observer to keep viewport responsive
+  // Resize observer to keep viewport responsive with RAF throttling
   useEffect(() => {
     if (!containerRef.current) return;
+    let rafId: number | null = null;
     const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setDimensions({
-          width: Math.max(300, Math.round(entry.contentRect.width)),
-          height: Math.max(300, Math.round(entry.contentRect.height)),
-        });
-      }
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        for (const entry of entries) {
+          const w = Math.max(300, Math.round(entry.contentRect.width));
+          const h = Math.max(300, Math.round(entry.contentRect.height));
+          setDimensions((prev) => (prev.width === w && prev.height === h ? prev : { width: w, height: h }));
+        }
+      });
     });
     observer.observe(containerRef.current);
-    return () => observer.disconnect();
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      observer.disconnect();
+    };
   }, []);
 
   // Native tile fetch zoom (capped at 19 so Esri never returns placeholder tiles)
@@ -169,10 +176,66 @@ export const SatelliteRoofCanvas: React.FC = () => {
     [centerTileX, centerTileY, dimensions.width, dimensions.height, tileZoom, scaledTileSize]
   );
 
+  // Window-level pointer listeners for silky smooth, fail-safe vertex dragging
+  useEffect(() => {
+    if (!draggedVertex) return;
+
+    const handleWindowPointerMove = (e: PointerEvent) => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+
+      if (dragStartCoordRef.current) {
+        const dx = e.clientX - dragStartCoordRef.current.x;
+        const dy = e.clientY - dragStartCoordRef.current.y;
+        if (Math.hypot(dx, dy) > 2) {
+          dragHasMovedRef.current = true;
+          wasDraggingRef.current = true;
+        }
+      }
+
+      const geo = pixelToGeo(px, py);
+      updateVertexPosition(draggedVertex.sectionId, draggedVertex.index, geo);
+    };
+
+    const handleWindowPointerUp = () => {
+      if (isDrawingMode && draggedVertex.index === 0 && !dragHasMovedRef.current) {
+        const sec = roofSections.find((s) => s.id === draggedVertex.sectionId);
+        if (sec && sec.vertices.length >= 3) {
+          setIsDrawingMode(false);
+        }
+      }
+
+      setDraggedVertex(null);
+      if (dragHasMovedRef.current) {
+        wasDraggingRef.current = true;
+        setTimeout(() => {
+          wasDraggingRef.current = false;
+        }, 120);
+      } else if (!isDrawingMode) {
+        // Clicked dot without dragging in select mode: toggle click-to-move
+        setMovingVertex((prev) => {
+          if (prev && prev.sectionId === draggedVertex.sectionId && prev.index === draggedVertex.index) {
+            return null;
+          }
+          return { sectionId: draggedVertex.sectionId, index: draggedVertex.index };
+        });
+      }
+    };
+
+    window.addEventListener('pointermove', handleWindowPointerMove);
+    window.addEventListener('pointerup', handleWindowPointerUp);
+    return () => {
+      window.removeEventListener('pointermove', handleWindowPointerMove);
+      window.removeEventListener('pointerup', handleWindowPointerUp);
+    };
+  }, [draggedVertex, isDrawingMode, pixelToGeo, updateVertexPosition, roofSections]);
+
   // Compute visible tile indices for Slippy map at tileZoom
   const visibleTiles = useMemo(() => {
-    const tilesAcross = Math.ceil(dimensions.width / scaledTileSize) + 2;
-    const tilesDown = Math.ceil(dimensions.height / scaledTileSize) + 2;
+    const tilesAcross = Math.ceil(dimensions.width / scaledTileSize) + 4;
+    const tilesDown = Math.ceil(dimensions.height / scaledTileSize) + 4;
 
     const startTileX = Math.floor(centerTileX - tilesAcross / 2);
     const startTileY = Math.floor(centerTileY - tilesDown / 2);
@@ -186,8 +249,8 @@ export const SatelliteRoofCanvas: React.FC = () => {
         const curY = startTileY + ty;
 
         if (curY >= 0 && curY < maxTile) {
-          const px = dimensions.width / 2 + (startTileX + tx - centerTileX) * scaledTileSize;
-          const py = dimensions.height / 2 + (curY - centerTileY) * scaledTileSize;
+          const px = Math.round(dimensions.width / 2 + (startTileX + tx - centerTileX) * scaledTileSize);
+          const py = Math.round(dimensions.height / 2 + (curY - centerTileY) * scaledTileSize);
 
           // Esri World Imagery (High-Res Global Satellite Basemap)
           const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${tileZoom}/${curY}/${curX}`;
@@ -354,45 +417,13 @@ export const SatelliteRoofCanvas: React.FC = () => {
       return;
     }
 
-
-    if (draggingPolygon) {
-      const dxPx = e.clientX - draggingPolygon.lastX;
-      const dyPx = e.clientY - draggingPolygon.lastY;
-      const meterToPx =
-        (Math.pow(2, zoom) * 256) /
-        (40075016 * Math.cos((coordinates.lat * Math.PI) / 180));
-      const deltaMetersX = dxPx / meterToPx;
-      const deltaMetersY = -dyPx / meterToPx;
-
-      if (Math.hypot(dxPx, dyPx) >= 2) {
-        translateRoofSection(draggingPolygon.sectionId, deltaMetersX, deltaMetersY);
-        setDraggingPolygon({
-          sectionId: draggingPolygon.sectionId,
-          lastX: e.clientX,
-          lastY: e.clientY,
-        });
-      }
-      return;
-    }
-
-    const activeV = draggedVertex || movingVertex;
-    if (activeV) {
+    if (movingVertex) {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
-
-      if (draggedVertex && dragStartCoordRef.current) {
-        const dx = e.clientX - dragStartCoordRef.current.x;
-        const dy = e.clientY - dragStartCoordRef.current.y;
-        if (Math.hypot(dx, dy) > 3) {
-          dragHasMovedRef.current = true;
-          wasDraggingRef.current = true;
-        }
-      }
-
       const geo = pixelToGeo(px, py);
-      updateVertexPosition(activeV.sectionId, activeV.index, geo);
+      updateVertexPosition(movingVertex.sectionId, movingVertex.index, geo);
       return;
     }
 
@@ -433,7 +464,7 @@ export const SatelliteRoofCanvas: React.FC = () => {
     }
   };
 
-  // Canvas Click: add vertex when in Draw Mode
+  // Canvas Click: add vertex when in Draw Mode, or deselect when clicking blank area in Select Mode
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (wasDraggingRef.current) {
       wasDraggingRef.current = false;
@@ -446,22 +477,33 @@ export const SatelliteRoofCanvas: React.FC = () => {
       return;
     }
 
-    if (isMarqueeMode || !isDrawingMode || draggedVertex) return;
-    if ((e.target as HTMLElement).closest('.vertex-handle') || (e.target as HTMLElement).closest('.map-control-btn')) {
+    if (isMarqueeMode || draggedVertex) return;
+    if (
+      (e.target as HTMLElement).closest('.vertex-handle') ||
+      (e.target as HTMLElement).closest('.map-control-btn')
+    ) {
       return;
     }
 
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    if (isDrawingMode) {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
 
-    const px = e.clientX - rect.left;
-    const py = e.clientY - rect.top;
-    const geo = pixelToGeo(px, py);
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+      const geo = pixelToGeo(px, py);
 
-    addVertexToActiveSection(geo);
+      addVertexToActiveSection(geo);
+    } else {
+      if (!(e.target as HTMLElement).closest('path')) {
+        setActiveSectionId(null);
+      }
+    }
   };
 
-  const activeSection = roofSections.find((s) => s.id === activeSectionId) || roofSections[0];
+  const activeSection = activeSectionId
+    ? roofSections.find((s) => s.id === activeSectionId) || null
+    : null;
 
   return (
     <div className="relative rounded-2xl overflow-hidden border border-slate-200/90 dark:border-slate-800/90 bg-slate-950 shadow-lg select-none">
@@ -487,12 +529,12 @@ export const SatelliteRoofCanvas: React.FC = () => {
               key={tile.key}
               src={tile.url}
               alt=""
-              loading="lazy"
+              decoding="async"
               crossOrigin="anonymous"
-              className="absolute object-cover filter contrast-[1.05] brightness-[0.95]"
+              className="absolute top-0 left-0 object-cover filter contrast-[1.05] brightness-[0.95]"
               style={{
-                width: `${tile.size}px`,
-                height: `${tile.size}px`,
+                width: `${Math.ceil(tile.size) + 1}px`,
+                height: `${Math.ceil(tile.size) + 1}px`,
                 transform: `translate3d(${tile.px}px, ${tile.py}px, 0)`,
               }}
             />
@@ -550,10 +592,11 @@ export const SatelliteRoofCanvas: React.FC = () => {
                     if (isDrawingMode || isMarqueeMode) return;
                     e.stopPropagation();
                     setActiveSectionId(sec.id);
-                    setDraggingPolygon({ sectionId: sec.id, lastX: e.clientX, lastY: e.clientY });
                   }}
                   className={`transition-colors duration-200 ${
-                    isDrawingMode || isMarqueeMode ? '' : 'cursor-move hover:stroke-amber-400'
+                    isDrawingMode || isMarqueeMode
+                      ? 'pointer-events-none'
+                      : 'pointer-events-auto cursor-pointer hover:stroke-amber-400'
                   }`}
                 />
 
@@ -651,39 +694,18 @@ export const SatelliteRoofCanvas: React.FC = () => {
                     return (
                       <g
                         key={`vertex-${sec.id}-${i}`}
-                        className="cursor-move pointer-events-auto vertex-handle group"
+                        className="pointer-events-auto vertex-handle group cursor-move"
                         onPointerDown={(e) => {
                           e.stopPropagation();
                           dragStartCoordRef.current = { x: e.clientX, y: e.clientY };
                           dragHasMovedRef.current = false;
-                          try {
-                            (e.currentTarget as Element).setPointerCapture(e.pointerId);
-                          } catch {}
+                          setActiveSectionId(sec.id);
                           setDraggedVertex({ sectionId: sec.id, index: i });
                         }}
-                        onPointerUp={(e) => {
-                          e.stopPropagation();
-                          try {
-                            (e.currentTarget as Element).releasePointerCapture(e.pointerId);
-                          } catch {}
-                          setDraggedVertex(null);
-
-                          if (dragHasMovedRef.current) {
-                            wasDraggingRef.current = true;
-                            setTimeout(() => {
-                              wasDraggingRef.current = false;
-                            }, 120);
-                          } else {
-                            // Clicked without dragging: toggle click-to-move
-                            setMovingVertex((prev) => {
-                              if (prev && prev.sectionId === sec.id && prev.index === i) {
-                                return null;
-                              }
-                              return { sectionId: sec.id, index: i };
-                            });
-                          }
-                        }}
                       >
+                        {isDrawingMode && i === 0 && pts.length >= 3 && (
+                          <title>Click first corner to close polygon</title>
+                        )}
                         {/* Generous invisible hit-area (28px diameter) so clicks never miss */}
                         <circle
                           cx={p.px}
@@ -949,7 +971,26 @@ export const SatelliteRoofCanvas: React.FC = () => {
             type="button"
             onClick={() => {
               if (isMarqueeMode) setIsMarqueeMode(false);
-              setIsDrawingMode(!isDrawingMode);
+              const nextDrawing = !isDrawingMode;
+              setIsDrawingMode(nextDrawing);
+              if (nextDrawing) {
+                // When entering draw mode: if no section active or active section is already closed,
+                // select an empty face or create a fresh section ready for drawing
+                const active = roofSections.find((s) => s.id === activeSectionId);
+                if (!active || active.vertices.length >= 3) {
+                  const emptySec = roofSections.find((s) => s.vertices.length === 0);
+                  if (emptySec) {
+                    setActiveSectionId(emptySec.id);
+                  } else {
+                    addRoofSection();
+                  }
+                }
+              } else {
+                // If closing polygon with 0 vertices, clean up the empty section
+                if (activeSection && activeSection.vertices.length === 0) {
+                  removeRoofSection(activeSection.id);
+                }
+              }
             }}
             className={`map-control-btn px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 transition-all active:scale-95 whitespace-nowrap flex-shrink-0 ${
               isDrawingMode
