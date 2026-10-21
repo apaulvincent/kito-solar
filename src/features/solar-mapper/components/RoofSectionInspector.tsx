@@ -12,6 +12,7 @@ import {
   Trash2,
   Plus,
   ArrowUpRight,
+  Anchor,
 } from 'lucide-react';
 import { useSolarMapperStore } from '../store/useSolarMapperStore';
 import { PanelOrientation } from '../types/solarMapper';
@@ -33,6 +34,7 @@ export const RoofSectionInspector: React.FC = () => {
     activeSectionId,
     setActiveSectionId,
     updateRoofSectionConfig,
+    setRoofSectionPivotEdge,
     removeRoofSection,
     addRoofSection,
     panelWattage,
@@ -71,8 +73,8 @@ export const RoofSectionInspector: React.FC = () => {
   }
 
   const pitchPresets = [
-    { label: 'Flat 5°', pitch: 5 },
-    { label: 'Low 12°', pitch: 12 },
+    { label: 'Flat 0°', pitch: 0 },
+    { label: 'Low 10°', pitch: 10 },
     { label: 'Standard 18°', pitch: 18 },
     { label: 'Steep 30°', pitch: 30 },
   ];
@@ -295,6 +297,67 @@ export const RoofSectionInspector: React.FC = () => {
                   {p.label}
                 </button>
               ))}
+            </div>
+          </div>
+
+
+          {/* Side-Based Rotation Axis (Hinge Edge) */}
+          <div className="p-4 rounded-2xl bg-slate-50/60 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 space-y-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <Anchor className="w-3.5 h-3.5 text-amber-500" />
+                Rotation Axis / Hinge Side:
+              </span>
+              <span className="font-mono text-xs font-bold text-amber-500 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                Side {(activeSection.pivotEdgeIndex ?? 0) + 1}
+              </span>
+            </div>
+
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Select which side acts as the stationary eave hinge. The roof pitches upward from this edge.
+            </p>
+
+            {/* Edge Selector Chips */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {activeSection.edgeLengthsMeters.map((len, idx) => {
+                const isPivot = (activeSection.pivotEdgeIndex ?? 0) === idx;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setRoofSectionPivotEdge(activeSection.id, idx)}
+                    className={`p-2.5 rounded-xl text-left transition-all border flex flex-col justify-between ${
+                      isPivot
+                        ? 'bg-amber-400/15 border-amber-500/50 text-amber-300 shadow-sm shadow-amber-500/10'
+                        : 'bg-white dark:bg-white/5 border-slate-200/80 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:border-amber-500/30 hover:text-slate-950 dark:hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold">Side {idx + 1}</span>
+                      {isPivot && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                      )}
+                    </div>
+                    <div className="text-xs font-mono font-bold mt-1 text-slate-900 dark:text-white">
+                      {len.toFixed(1)}m
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Derived Downslope Azimuth & Solar Yield */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-200/50 dark:border-white/5 text-xs">
+              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                <Compass className="w-3.5 h-3.5 text-amber-500" />
+                <span>Downslope facing:</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">
+                  {getCardinalDirection(activeSection.azimuthDeg)}
+                </span>
+              </div>
+              <span className="font-mono text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                {Math.round(activeSection.orientationYieldFactor * 100)}% solar yield
+              </span>
             </div>
           </div>
 

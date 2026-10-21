@@ -98,6 +98,7 @@ export interface RoofPolygonSection {
   vertices: GeoPoint[];
   pitchDeg: number; // 0° to 45°
   azimuthDeg: number; // 0° = N, 90° = E, 180° = S, 270° = W
+  pivotEdgeIndex?: number; // 0-based index of polygon edge acting as rotation/hinge axis
   shadingLossPercent: number; // 0% to 50%
   setbackRatio: number; // default 0.82 (18% reserved for edges & walkways)
   panelOrientation: PanelOrientation;

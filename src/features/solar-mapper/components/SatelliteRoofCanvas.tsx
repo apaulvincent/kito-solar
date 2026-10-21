@@ -64,6 +64,7 @@ export const SatelliteRoofCanvas: React.FC = () => {
     addRoofSection,
     loadDemoRoofPolygon,
     applyDetectedRoofFaces,
+    translateRoofSection,
     setViewMode,
   } = useSolarMapperStore();
 
@@ -71,11 +72,30 @@ export const SatelliteRoofCanvas: React.FC = () => {
   const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
+  const [draggingPolygon, setDraggingPolygon] = useState<{ sectionId: string; lastX: number; lastY: number } | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [draggedVertex, setDraggedVertex] = useState<{
     sectionId: string;
     index: number;
   } | null>(null);
+  const [movingVertex, setMovingVertex] = useState<{
+    sectionId: string;
+    index: number;
+  } | null>(null);
+  const wasDraggingRef = useRef(false);
+  const dragStartCoordRef = useRef<{ x: number; y: number } | null>(null);
+  const dragHasMovedRef = useRef(false);
+
+  // Allow canceling vertex move with Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && movingVertex) {
+        setMovingVertex(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [movingVertex]);
 
   // AI Marquee Roof Scanner State
   const [isMarqueeMode, setIsMarqueeMode] = useState(false);
@@ -298,9 +318,15 @@ export const SatelliteRoofCanvas: React.FC = () => {
 
   // Pointer event handlers for drawing, dragging vertices, marquee scanning, and panning
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('.map-control-btn')) return;
+    if ((e.target as HTMLElement).closest('.map-control-btn') || (e.target as HTMLElement).closest('.vertex-handle')) return;
 
     if (e.button === 0) {
+      if (movingVertex) {
+        // Clicking canvas while a vertex is being moved places it down
+        setMovingVertex(null);
+        return;
+      }
+
       if (isMarqueeMode) {
         const rect = containerRef.current?.getBoundingClientRect();
         if (!rect) return;
@@ -328,13 +354,45 @@ export const SatelliteRoofCanvas: React.FC = () => {
       return;
     }
 
-    if (draggedVertex) {
+
+    if (draggingPolygon) {
+      const dxPx = e.clientX - draggingPolygon.lastX;
+      const dyPx = e.clientY - draggingPolygon.lastY;
+      const meterToPx =
+        (Math.pow(2, zoom) * 256) /
+        (40075016 * Math.cos((coordinates.lat * Math.PI) / 180));
+      const deltaMetersX = dxPx / meterToPx;
+      const deltaMetersY = -dyPx / meterToPx;
+
+      if (Math.hypot(dxPx, dyPx) >= 2) {
+        translateRoofSection(draggingPolygon.sectionId, deltaMetersX, deltaMetersY);
+        setDraggingPolygon({
+          sectionId: draggingPolygon.sectionId,
+          lastX: e.clientX,
+          lastY: e.clientY,
+        });
+      }
+      return;
+    }
+
+    const activeV = draggedVertex || movingVertex;
+    if (activeV) {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
+
+      if (draggedVertex && dragStartCoordRef.current) {
+        const dx = e.clientX - dragStartCoordRef.current.x;
+        const dy = e.clientY - dragStartCoordRef.current.y;
+        if (Math.hypot(dx, dy) > 3) {
+          dragHasMovedRef.current = true;
+          wasDraggingRef.current = true;
+        }
+      }
+
       const geo = pixelToGeo(px, py);
-      updateVertexPosition(draggedVertex.sectionId, draggedVertex.index, geo);
+      updateVertexPosition(activeV.sectionId, activeV.index, geo);
       return;
     }
 
@@ -363,13 +421,31 @@ export const SatelliteRoofCanvas: React.FC = () => {
       setCoordinates(newCenter);
       setPanOffset({ x: 0, y: 0 });
     }
+
     if (draggedVertex) {
       setDraggedVertex(null);
+      if (dragHasMovedRef.current) {
+        wasDraggingRef.current = true;
+        setTimeout(() => {
+          wasDraggingRef.current = false;
+        }, 120);
+      }
     }
   };
 
   // Canvas Click: add vertex when in Draw Mode
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (wasDraggingRef.current) {
+      wasDraggingRef.current = false;
+      return;
+    }
+
+    if (movingVertex) {
+      // Click places down the moving vertex
+      setMovingVertex(null);
+      return;
+    }
+
     if (isMarqueeMode || !isDrawingMode || draggedVertex) return;
     if ((e.target as HTMLElement).closest('.vertex-handle') || (e.target as HTMLElement).closest('.map-control-btn')) {
       return;
@@ -470,7 +546,15 @@ export const SatelliteRoofCanvas: React.FC = () => {
                   stroke={strokeColor}
                   strokeWidth={isActive ? 2.5 : 1.5}
                   strokeDasharray={pts.length < 3 ? '4 4' : undefined}
-                  className="transition-colors duration-200"
+                  onPointerDown={(e) => {
+                    if (isDrawingMode || isMarqueeMode) return;
+                    e.stopPropagation();
+                    setActiveSectionId(sec.id);
+                    setDraggingPolygon({ sectionId: sec.id, lastX: e.clientX, lastY: e.clientY });
+                  }}
+                  className={`transition-colors duration-200 ${
+                    isDrawingMode || isMarqueeMode ? '' : 'cursor-move hover:stroke-amber-400'
+                  }`}
                 />
 
                 {/* Render Placed Solar Panels Inside Closed Polygon */}
@@ -555,24 +639,99 @@ export const SatelliteRoofCanvas: React.FC = () => {
                     );
                   })}
 
-                {/* Draggable Vertex Corner Handles */}
+                {/* Draggable & Click-to-Move Vertex Corner Handles */}
                 {isActive &&
-                  pts.map((p, i) => (
-                    <circle
-                      key={`vertex-${sec.id}-${i}`}
-                      cx={p.px}
-                      cy={p.py}
-                      r="6.5"
-                      fill="#f59e0b"
-                      stroke="#ffffff"
-                      strokeWidth="2"
-                      className="cursor-move pointer-events-auto vertex-handle transition-transform hover:scale-125"
-                      onPointerDown={(e) => {
-                        e.stopPropagation();
-                        setDraggedVertex({ sectionId: sec.id, index: i });
-                      }}
-                    />
-                  ))}
+                  pts.map((p, i) => {
+                    const isMoving =
+                      movingVertex?.sectionId === sec.id && movingVertex?.index === i;
+                    const isDragging =
+                      draggedVertex?.sectionId === sec.id && draggedVertex?.index === i;
+                    const isSelected = isMoving || isDragging;
+
+                    return (
+                      <g
+                        key={`vertex-${sec.id}-${i}`}
+                        className="cursor-move pointer-events-auto vertex-handle group"
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          dragStartCoordRef.current = { x: e.clientX, y: e.clientY };
+                          dragHasMovedRef.current = false;
+                          try {
+                            (e.currentTarget as Element).setPointerCapture(e.pointerId);
+                          } catch {}
+                          setDraggedVertex({ sectionId: sec.id, index: i });
+                        }}
+                        onPointerUp={(e) => {
+                          e.stopPropagation();
+                          try {
+                            (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+                          } catch {}
+                          setDraggedVertex(null);
+
+                          if (dragHasMovedRef.current) {
+                            wasDraggingRef.current = true;
+                            setTimeout(() => {
+                              wasDraggingRef.current = false;
+                            }, 120);
+                          } else {
+                            // Clicked without dragging: toggle click-to-move
+                            setMovingVertex((prev) => {
+                              if (prev && prev.sectionId === sec.id && prev.index === i) {
+                                return null;
+                              }
+                              return { sectionId: sec.id, index: i };
+                            });
+                          }
+                        }}
+                      >
+                        {/* Generous invisible hit-area (28px diameter) so clicks never miss */}
+                        <circle
+                          cx={p.px}
+                          cy={p.py}
+                          r="14"
+                          fill="transparent"
+                        />
+
+                        {/* Outer Ring when selected/moving/dragging */}
+                        {isSelected && (
+                          <circle
+                            cx={p.px}
+                            cy={p.py}
+                            r="11"
+                            fill="none"
+                            stroke="#f59e0b"
+                            strokeWidth="2.5"
+                            opacity="0.85"
+                            strokeDasharray="3 2"
+                          />
+                        )}
+
+                        {/* Hover Ring (Stationary, zero bounce or shift) */}
+                        {!isSelected && (
+                          <circle
+                            cx={p.px}
+                            cy={p.py}
+                            r="10"
+                            fill="none"
+                            stroke="#fbbf24"
+                            strokeWidth="1.5"
+                            className="opacity-0 group-hover:opacity-60 transition-opacity"
+                          />
+                        )}
+
+                        {/* Visible Solid Vertex Dot — Rock Steady, No Bouncing */}
+                        <circle
+                          cx={p.px}
+                          cy={p.py}
+                          r={isSelected ? 7.5 : 6.5}
+                          fill={isSelected ? '#fbbf24' : '#f59e0b'}
+                          stroke="#ffffff"
+                          strokeWidth="2.5"
+                          filter="drop-shadow(0 1px 2px rgba(0,0,0,0.4))"
+                        />
+                      </g>
+                    );
+                  })}
               </g>
             );
           })}
@@ -669,6 +828,14 @@ export const SatelliteRoofCanvas: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Top-Center: Active Moving Dot Indicator */}
+        {movingVertex && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-amber-500 text-slate-950 font-bold text-xs shadow-xl backdrop-blur-xl flex items-center gap-2 z-30 animate-in fade-in zoom-in-95 duration-150">
+            <span className="w-2 h-2 rounded-full bg-slate-950 animate-ping" />
+            <span className="whitespace-nowrap">Moving corner dot · Click anywhere to place (or Esc to cancel)</span>
           </div>
         )}
 

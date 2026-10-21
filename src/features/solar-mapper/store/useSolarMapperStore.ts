@@ -17,6 +17,8 @@ import {
   hasSelfIntersection,
   projectVerticesToLocalMeters,
   unprojectLocalMetersToGeo,
+  translatePolygonGeo,
+  calculateEdgeAzimuthDeg,
 } from '../utils/geodesicMath';
 import { calculateOrientationYieldFactor } from '../utils/solarPhysics';
 import { calculatePanelPacking } from '../utils/panelPackingEngine';
@@ -35,6 +37,7 @@ export interface SolarMapperState {
   sunHour: number; // 6.0 to 18.0 (default 12.0)
   irradianceProfile: LocationIrradianceProfile;
   isLoadingIrradiance: boolean;
+  active3DTool: 'inspect' | 'move' | 'hinge';
 
   // Actions
   setCoordinates: (coords: GeoPoint, name?: string) => void;
@@ -46,6 +49,7 @@ export interface SolarMapperState {
   setSunHour: (hour: number) => void;
   setIrradianceProfile: (profile: LocationIrradianceProfile) => void;
   setIsLoadingIrradiance: (loading: boolean) => void;
+  setActive3DTool: (tool: 'inspect' | 'move' | 'hinge') => void;
 
   // Polygon actions
   addRoofSection: (name?: string) => string;
@@ -59,6 +63,8 @@ export interface SolarMapperState {
   clearActivePolygon: () => void;
   loadDemoRoofPolygon: () => void;
   applyDetectedRoofFaces: (faces: DetectedRoofFace[]) => void;
+  translateRoofSection: (id: string, deltaMetersX: number, deltaMetersY: number) => void;
+  setRoofSectionPivotEdge: (id: string, edgeIndex: number) => void;
 
   // Computed getters
   getSummary: () => RoofMappingSummary;
@@ -135,6 +141,7 @@ export const useSolarMapperStore = create<SolarMapperState>()(
       sunHour: 12.0,
       irradianceProfile: initialProfile,
       isLoadingIrradiance: false,
+      active3DTool: 'inspect',
 
       setCoordinates: (coords, name) => {
         set((state) => ({
@@ -182,6 +189,7 @@ export const useSolarMapperStore = create<SolarMapperState>()(
       },
 
       setIsLoadingIrradiance: (isLoadingIrradiance) => set({ isLoadingIrradiance }),
+      setActive3DTool: (active3DTool) => set({ active3DTool }),
 
       addRoofSection: (name) => {
         const id = `roof-${Date.now().toString(36)}`;
@@ -190,8 +198,9 @@ export const useSolarMapperStore = create<SolarMapperState>()(
           id,
           name: name || `Roof Face ${secCount} (South)`,
           vertices: [],
-          pitchDeg: 15,
+          pitchDeg: 0,
           azimuthDeg: 180, // Facing South
+          pivotEdgeIndex: 0,
           shadingLossPercent: 0,
           setbackRatio: 0.82,
           panelOrientation: 'auto_best',
@@ -330,8 +339,9 @@ export const useSolarMapperStore = create<SolarMapperState>()(
           id: `roof-demo-${Date.now().toString(36)}`,
           name: 'Main South Roof (Sample)',
           vertices: [v1, v2, v3, v4],
-          pitchDeg: 15,
+          pitchDeg: 0,
           azimuthDeg: 180,
+          pivotEdgeIndex: 0,
           shadingLossPercent: 0,
           setbackRatio: 0.82,
           panelOrientation: 'portrait',
@@ -357,6 +367,32 @@ export const useSolarMapperStore = create<SolarMapperState>()(
           activeSectionId: computed.id,
           isDrawingMode: false,
         });
+      },
+
+
+      translateRoofSection: (id, deltaMetersX, deltaMetersY) => {
+        const effectivePsh = get().getSelectedPsh();
+        set((state) => ({
+          roofSections: state.roofSections.map((sec) => {
+            if (sec.id !== id) return sec;
+            const newVertices = translatePolygonGeo(sec.vertices, deltaMetersX, deltaMetersY);
+            return recomputeSection({ ...sec, vertices: newVertices }, effectivePsh);
+          }),
+        }));
+      },
+
+      setRoofSectionPivotEdge: (id, edgeIndex) => {
+        const effectivePsh = get().getSelectedPsh();
+        set((state) => ({
+          roofSections: state.roofSections.map((sec) => {
+            if (sec.id !== id) return sec;
+            const autoAzimuth = calculateEdgeAzimuthDeg(sec.vertices, edgeIndex);
+            return recomputeSection(
+              { ...sec, pivotEdgeIndex: edgeIndex, azimuthDeg: autoAzimuth },
+              effectivePsh
+            );
+          }),
+        }));
       },
 
       applyDetectedRoofFaces: (faces) => {

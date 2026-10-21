@@ -64,4 +64,55 @@ describe('Solar Mapper Zustand Store & Integration Suite', () => {
 
     expect(worstPsh).toBeLessThan(avgPsh);
   });
+
+  it('defaults new and sample roofs to flat (0° pitch)', () => {
+    // 1. Manually added section
+    const id = useSolarMapperStore.getState().addRoofSection('Flat House');
+    const sec = useSolarMapperStore.getState().roofSections[0];
+    expect(sec.pitchDeg).toBe(0);
+    expect(sec.pivotEdgeIndex).toBe(0);
+
+    // 2. Demo sample roof
+    useSolarMapperStore.getState().loadDemoRoofPolygon();
+    const demoSec = useSolarMapperStore.getState().roofSections[0];
+    expect(demoSec.pitchDeg).toBe(0);
+    expect(demoSec.pivotEdgeIndex).toBe(0);
+    expect(demoSec.slopedAreaSqm).toBe(demoSec.flatAreaSqm);
+  });
+
+  it('translates roof sections across horizontal ground plane cleanly', () => {
+    useSolarMapperStore.getState().loadDemoRoofPolygon();
+    const secBefore = useSolarMapperStore.getState().roofSections[0];
+    const initialLat = secBefore.vertices[0].lat;
+    const initialLng = secBefore.vertices[0].lng;
+
+    // Translate by 5m East and 2m North
+    useSolarMapperStore.getState().translateRoofSection(secBefore.id, 5.0, 2.0);
+    const secAfter = useSolarMapperStore.getState().roofSections[0];
+
+    // Footprint area should remain invariant under translation
+    expect(secAfter.flatAreaSqm).toBeCloseTo(secBefore.flatAreaSqm, 1);
+    expect(secAfter.recommendedMaxPanels).toBe(secBefore.recommendedMaxPanels);
+    expect(secAfter.vertices[0].lat).toBeGreaterThan(initialLat);
+    expect(secAfter.vertices[0].lng).toBeGreaterThan(initialLng);
+  });
+
+  it('sets roof section pivot edge and automatically updates downslope azimuth', () => {
+    useSolarMapperStore.getState().loadDemoRoofPolygon();
+    const sec = useSolarMapperStore.getState().roofSections[0];
+
+    // By default edge 0 faces South (180°)
+    useSolarMapperStore.getState().setRoofSectionPivotEdge(sec.id, 1);
+    const secEdge1 = useSolarMapperStore.getState().roofSections[0];
+    expect(secEdge1.pivotEdgeIndex).toBe(1);
+    // Side 1 faces East (90°)
+    expect(secEdge1.azimuthDeg).toBeCloseTo(90, 0);
+
+    // Switch to Side 2
+    useSolarMapperStore.getState().setRoofSectionPivotEdge(sec.id, 2);
+    const secEdge2 = useSolarMapperStore.getState().roofSections[0];
+    expect(secEdge2.pivotEdgeIndex).toBe(2);
+    // Side 2 faces North (0° / 360°)
+    expect(secEdge2.azimuthDeg % 360).toBeCloseTo(0, 0);
+  });
 });

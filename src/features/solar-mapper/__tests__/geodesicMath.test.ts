@@ -8,6 +8,8 @@ import {
   hasSelfIntersection,
   projectVerticesToLocalMeters,
   unprojectLocalMetersToGeo,
+  translatePolygonGeo,
+  calculateEdgeAzimuthDeg,
 } from '../utils/geodesicMath';
 import { GeoPoint } from '../types/solarMapper';
 
@@ -102,5 +104,41 @@ describe('Geodesic Math & Spherical Polygon Utilities', () => {
 
     expect(dx).toBeCloseTo(12.5, 1);
     expect(dy).toBeCloseTo(-8.3, 1);
+  });
+
+  it('translates polygon vertices cleanly by delta meters in horizontal plane', () => {
+    const square = [
+      unprojectLocalMetersToGeo({ x: -5, y: -5 }, origin),
+      unprojectLocalMetersToGeo({ x: 5, y: -5 }, origin),
+      unprojectLocalMetersToGeo({ x: 5, y: 5 }, origin),
+      unprojectLocalMetersToGeo({ x: -5, y: 5 }, origin),
+    ];
+
+    // Shift 3 meters East, 4 meters North
+    const shifted = translatePolygonGeo(square, 3.0, 4.0);
+    const originalLocal = projectVerticesToLocalMeters(square, origin);
+    const shiftedLocal = projectVerticesToLocalMeters(shifted, origin);
+
+    expect(shiftedLocal[0].x - originalLocal[0].x).toBeCloseTo(3.0, 1);
+    expect(shiftedLocal[0].y - originalLocal[0].y).toBeCloseTo(4.0, 1);
+  });
+
+  it('calculates physical outward edge azimuth correctly for polygon sides', () => {
+    // 10m x 6m rectangle centered at origin
+    // Side 0 (bottom/South): (-5, -3) to (5, -3) -> midpoint (0, -3), facing South 180°
+    // Side 1 (right/East): (5, -3) to (5, 3) -> midpoint (5, 0), facing East 90°
+    // Side 2 (top/North): (5, 3) to (-5, 3) -> midpoint (0, 3), facing North 0°
+    // Side 3 (left/West): (-5, 3) to (-5, -3) -> midpoint (-5, 0), facing West 270°
+    const rect = [
+      unprojectLocalMetersToGeo({ x: -5, y: -3 }, origin),
+      unprojectLocalMetersToGeo({ x: 5, y: -3 }, origin),
+      unprojectLocalMetersToGeo({ x: 5, y: 3 }, origin),
+      unprojectLocalMetersToGeo({ x: -5, y: 3 }, origin),
+    ];
+
+    expect(calculateEdgeAzimuthDeg(rect, 0)).toBeCloseTo(180, 0); // South
+    expect(calculateEdgeAzimuthDeg(rect, 1)).toBeCloseTo(90, 0);  // East
+    expect(calculateEdgeAzimuthDeg(rect, 2)).toBeCloseTo(0, 0);   // North
+    expect(calculateEdgeAzimuthDeg(rect, 3)).toBeCloseTo(270, 0); // West
   });
 });

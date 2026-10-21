@@ -1,6 +1,6 @@
 // src/features/solar-mapper/components/Roof3DPreviewCanvas.tsx
-import React, { useMemo, Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
+import React, { useMemo, useState, useRef, Suspense } from 'react';
+import { Canvas, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Text, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import {
@@ -12,12 +12,19 @@ import {
   Layers,
   Sparkles,
   Maximize2,
+  Anchor,
+  Move,
+  Minus,
+  Plus,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import { useSolarMapperStore } from '../store/useSolarMapperStore';
 import {
   calculateCentroid,
   projectSinglePointToMeters,
-  projectVerticesToLocalMeters,
 } from '../utils/geodesicMath';
 import { GeoPoint, RoofPolygonSection } from '../types/solarMapper';
 
@@ -50,40 +57,116 @@ function formatSunTime(hour: number): string {
   return `${displayH}:${m.toString().padStart(2, '0')} ${period}`;
 }
 
-// Single 3D Roof Component
+// 2D Rotation Helper
+function rotate2D(x: number, y: number, angleRad: number): { x: number; y: number } {
+  const cos = Math.cos(angleRad);
+  const sin = Math.sin(angleRad);
+  return {
+    x: x * cos - y * sin,
+    y: x * sin + y * cos,
+  };
+}
+
+// Single 3D Roof Component with Side-Axis Rotation & Move Handles
 const Roof3DMesh: React.FC<{
   section: RoofPolygonSection;
   siteCenter: GeoPoint;
   isActive: boolean;
+  activeTool: 'inspect' | 'move' | 'hinge';
   onSelect: () => void;
-}> = ({ section, siteCenter, isActive, onSelect }) => {
+  onSetPivotEdge: (edgeIdx: number) => void;
+  onStartMoveDrag: (e: ThreeEvent<PointerEvent>) => void;
+}> = ({
+  section,
+  siteCenter,
+  isActive,
+  activeTool,
+  onSelect,
+  onSetPivotEdge,
+  onStartMoveDrag,
+}) => {
   const secCentroid = useMemo(
     () => calculateCentroid(section.vertices),
     [section.vertices]
   );
 
-  // Position relative to the shared site center
-  const offsetMeters = useMemo(
+  const N = section.vertices.length;
+
+  // Project vertices to local meters relative to site center (East = +x, North = +y)
+  const worldMeters = useMemo(
+    () => section.vertices.map((v) => projectSinglePointToMeters(v, siteCenter)),
+    [section.vertices, siteCenter]
+  );
+
+  const secCentroidMeters = useMemo(
     () => projectSinglePointToMeters(secCentroid, siteCenter),
     [secCentroid, siteCenter]
   );
 
-  // 2D shape projected relative to ITS OWN centroid so rotation behaves predictably
-  const localPts = useMemo(
-    () => projectVerticesToLocalMeters(section.vertices, secCentroid),
-    [section.vertices, secCentroid]
-  );
+  // Selected pivot edge index (0 to N - 1)
+  const pivotIdx = useMemo(() => {
+    if (N < 2) return 0;
+    return ((section.pivotEdgeIndex ?? 0) % N + N) % N;
+  }, [section.pivotEdgeIndex, N]);
 
+  // Compute Edge Pivot Frame
+  // Edge connects vertex pivotIdx to (pivotIdx + 1) % N
+  const { pivotMidpoint, edgeAngleRad, canonicalVertices, ySign, edgeLength } = useMemo(() => {
+    if (worldMeters.length < 3) {
+      return {
+        pivotMidpoint: { x: 0, y: 0 },
+        edgeAngleRad: 0,
+        canonicalVertices: [],
+        ySign: 1,
+        edgeLength: 0,
+      };
+    }
+
+    const pA = worldMeters[pivotIdx];
+    const pB = worldMeters[(pivotIdx + 1) % N];
+
+    const mid = { x: (pA.x + pB.x) / 2, y: (pA.y + pB.y) / 2 };
+    const dx = pB.x - pA.x;
+    const dy = pB.y - pA.y;
+    const len = Math.hypot(dx, dy);
+    const alpha = Math.atan2(dy, dx);
+
+    // Rotate vertices relative to mid by -alpha so the pivot edge lies on y = 0
+    const rotated = worldMeters.map((v) => {
+      const rx = v.x - mid.x;
+      const ry = v.y - mid.y;
+      return rotate2D(rx, ry, -alpha);
+    });
+
+    // Check centroid y sign so interior is always y >= 0
+    const cRel = rotate2D(secCentroidMeters.x - mid.x, secCentroidMeters.y - mid.y, -alpha);
+    const sign = cRel.y < 0 ? -1 : 1;
+
+    const canonical = rotated.map((v) => ({
+      x: v.x,
+      y: v.y * sign,
+    }));
+
+    return {
+      pivotMidpoint: mid,
+      edgeAngleRad: alpha,
+      canonicalVertices: canonical,
+      ySign: sign,
+      edgeLength: len,
+    };
+  }, [worldMeters, pivotIdx, N, secCentroidMeters]);
+
+  // 2D shape in canonical frame
   const shape = useMemo(() => {
-    if (localPts.length < 3) return null;
+    if (canonicalVertices.length < 3) return null;
     const s = new THREE.Shape();
-    s.moveTo(localPts[0].x, localPts[0].y);
-    for (let i = 1; i < localPts.length; i++) {
-      s.lineTo(localPts[i].x, localPts[i].y);
+    s.moveTo(canonicalVertices[0].x, canonicalVertices[0].y);
+    for (let i = 1; i < canonicalVertices.length; i++) {
+      s.lineTo(canonicalVertices[i].x, canonicalVertices[i].y);
     }
     s.closePath();
     return s;
-  }, [localPts]);
+  }, [canonicalVertices]);
 
   // Roof deck slab extrude settings
   const roofExtrudeSettings = useMemo(
@@ -98,32 +181,66 @@ const Roof3DMesh: React.FC<{
     []
   );
 
+  // Placed panels projected into canonical frame
+  const canonicalPanels = useMemo(() => {
+    if (!section.placedPanels || canonicalVertices.length < 3) return [];
+    const cosA = Math.cos(-edgeAngleRad);
+    const sinA = Math.sin(-edgeAngleRad);
+
+    return section.placedPanels.map((panel) => {
+      // Panel center relative to siteCenter
+      const pWorldX = secCentroidMeters.x + panel.x;
+      const pWorldY = secCentroidMeters.y + panel.y;
+      const rx = pWorldX - pivotMidpoint.x;
+      const ry = pWorldY - pivotMidpoint.y;
+
+      const canX = rx * cosA - ry * sinA;
+      const canY = (rx * sinA + ry * cosA) * ySign;
+
+      // Local panel rotation
+      const canRot = (panel.rotationDeg || 0) * (Math.PI / 180) - edgeAngleRad;
+
+      return {
+        ...panel,
+        canonicalX: canX,
+        canonicalY: canY,
+        canonicalRot: canRot,
+      };
+    });
+  }, [
+    section.placedPanels,
+    secCentroidMeters,
+    pivotMidpoint,
+    edgeAngleRad,
+    ySign,
+    canonicalVertices,
+  ]);
+
   if (!shape) return null;
 
   // In Three.js: World +X = East, World +Z = South, World -Z = North
-  // Section offset:
-  const worldX = offsetMeters.x;
-  const worldZ = -offsetMeters.y;
+  // Pivot point in Three.js world space:
+  const anchorX = pivotMidpoint.x;
+  const anchorY = BUILDING_EAVE_HEIGHT;
+  const anchorZ = -pivotMidpoint.y;
 
-  // Azimuth rotation: 180° is South (0 rad in our orientation)
-  const azimuthRad = THREE.MathUtils.degToRad(-section.azimuthDeg + 180);
+  // Pitch rotation: when pitchDeg is 0°, roof is flat. When > 0, pitches upward!
   const pitchRad = THREE.MathUtils.degToRad(section.pitchDeg);
 
   return (
     <group
-      position={[worldX, 0, worldZ]}
       onClick={(e) => {
         e.stopPropagation();
         onSelect();
       }}
     >
-      {/* Pitched Roof Assembly Sitting on Top of Eave Height */}
-      <group position={[0, BUILDING_EAVE_HEIGHT, 0]}>
-        {/* Compass Azimuth Rotation */}
-        <group rotation={[0, azimuthRad, 0]}>
-          {/* Pitch Rotation from Horizontal: Tilts down towards South */}
+      {/* Anchor Group located at the Midpoint of the Pivot Edge (Eave Height) */}
+      <group position={[anchorX, anchorY, anchorZ]}>
+        {/* Horizontal orientation along the edge vector */}
+        <group rotation={[0, edgeAngleRad, 0]}>
+          {/* Pitch Rotation along the local X axis (the edge itself!) */}
           <group rotation={[pitchRad, 0, 0]}>
-            {/* Lay flat on horizontal plane (Extrusion depth extends upward along +Y) */}
+            {/* Lay flat on horizontal plane (canonical +y extends toward -Z) */}
             <group rotation={[-Math.PI / 2, 0, 0]}>
               {/* Roof Deck Slab */}
               <mesh receiveShadow castShadow position={[0, 0, 0]}>
@@ -149,17 +266,17 @@ const Roof3DMesh: React.FC<{
               )}
 
               {/* Photovoltaic Solar Panels Array */}
-              {section.placedPanels.map((panel) => {
+              {canonicalPanels.map((panel) => {
                 const pW = panel.widthM;
                 const pL = panel.lengthM;
 
                 return (
                   <group
                     key={panel.id}
-                    position={[panel.x, panel.y, 0.17]}
-                    rotation={[0, 0, (panel.rotationDeg || 0) * (Math.PI / 180)]}
+                    position={[panel.canonicalX, panel.canonicalY, 0.17]}
+                    rotation={[0, 0, panel.canonicalRot]}
                   >
-                    {/* Mounting Rails Underneath Panel */}
+                    {/* Mounting Rails */}
                     <mesh position={[0, -pL * 0.25, -0.015]}>
                       <boxGeometry args={[pW * 0.95, 0.04, 0.025]} />
                       <meshStandardMaterial color="#94a3b8" metalness={0.9} roughness={0.2} />
@@ -189,7 +306,7 @@ const Roof3DMesh: React.FC<{
                       />
                     </mesh>
 
-                    {/* Subtle Photovoltaic Busbar Grid Line Accent */}
+                    {/* PV Busbar Grid Line Accent */}
                     <mesh position={[0, 0, 0.019]}>
                       <planeGeometry args={[pW * 0.96, pL * 0.96]} />
                       <meshBasicMaterial
@@ -202,6 +319,131 @@ const Roof3DMesh: React.FC<{
                   </group>
                 );
               })}
+
+              {/* 3D Edge Lines & Clickable Rotation Axis Hinge Selectors */}
+              {isActive &&
+                canonicalVertices.map((vStart, i) => {
+                  const vEnd = canonicalVertices[(i + 1) % canonicalVertices.length];
+                  const isPivot = i === pivotIdx;
+                  const edgeLengthM = Math.hypot(vEnd.x - vStart.x, vEnd.y - vStart.y);
+
+                  const midX = (vStart.x + vEnd.x) / 2;
+                  const midY = (vStart.y + vEnd.y) / 2;
+
+                  return (
+                    <group key={`edge-${i}`}>
+                      {/* Edge Line Segment */}
+                      <Line
+                        points={[
+                          [vStart.x, vStart.y, 0.16],
+                          [vEnd.x, vEnd.y, 0.16],
+                        ]}
+                        color={isPivot ? '#f59e0b' : '#94a3b8'}
+                        lineWidth={isPivot ? 4 : 2}
+                        transparent
+                        opacity={isPivot ? 1.0 : 0.6}
+                      />
+
+                      {/* Clickable Hit Cylinder along edge for switching axis */}
+                      <mesh
+                        position={[midX, midY, 0.16]}
+                        rotation={[
+                          0,
+                          0,
+                          Math.atan2(vEnd.y - vStart.y, vEnd.x - vStart.x) + Math.PI / 2,
+                        ]}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSetPivotEdge(i);
+                        }}
+                      >
+                        <cylinderGeometry args={[0.2, 0.2, edgeLengthM, 8]} />
+                        <meshBasicMaterial transparent opacity={0} />
+                      </mesh>
+
+                      {/* Active Hinge Visual Accent & 3D Tag */}
+                      {isPivot && (
+                        <group position={[midX, midY, 0.22]}>
+                          <Text
+                            fontSize={0.45}
+                            color="#fbbf24"
+                            anchorX="center"
+                            anchorY="middle"
+                            position={[0, 0.35, 0]}
+                          >
+                            {`Hinge Side ${i + 1} (${edgeLengthM.toFixed(1)}m)`}
+                          </Text>
+                        </group>
+                      )}
+                    </group>
+                  );
+                })}
+
+              {/* 3D Planar Move Handle on Roof Centroid */}
+              {isActive && (
+                <group
+                  position={[
+                    secCentroidMeters.x - pivotMidpoint.x,
+                    (secCentroidMeters.y - pivotMidpoint.y) * ySign,
+                    0.25,
+                  ]}
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    onStartMoveDrag(e);
+                  }}
+                >
+                  {/* Outer Move Ring */}
+                  <mesh>
+                    <ringGeometry args={[0.6, 0.75, 32]} />
+                    <meshBasicMaterial
+                      color={activeTool === 'move' ? '#38bdf8' : '#f59e0b'}
+                      side={THREE.DoubleSide}
+                      transparent
+                      opacity={0.85}
+                    />
+                  </mesh>
+
+                  {/* Center Disc */}
+                  <mesh>
+                    <circleGeometry args={[0.45, 32]} />
+                    <meshBasicMaterial
+                      color={activeTool === 'move' ? '#0284c7' : '#d97706'}
+                      side={THREE.DoubleSide}
+                      transparent
+                      opacity={0.4}
+                    />
+                  </mesh>
+
+                  {/* Move Cross Arrows Accent */}
+                  <Line
+                    points={[
+                      [-0.5, 0, 0.01],
+                      [0.5, 0, 0.01],
+                    ]}
+                    color="#ffffff"
+                    lineWidth={2}
+                  />
+                  <Line
+                    points={[
+                      [0, -0.5, 0.01],
+                      [0, 0.5, 0.01],
+                    ]}
+                    color="#ffffff"
+                    lineWidth={2}
+                  />
+
+                  {/* Text label */}
+                  <Text
+                    position={[0, -0.9, 0.05]}
+                    fontSize={0.35}
+                    color="#ffffff"
+                    anchorX="center"
+                    anchorY="middle"
+                  >
+                    {activeTool === 'move' ? 'Drag to Move' : 'Move Tool'}
+                  </Text>
+                </group>
+              )}
             </group>
           </group>
         </group>
@@ -259,9 +501,17 @@ const SunlightRay: React.FC<{ sunPos: THREE.Vector3 }> = ({ sunPos }) => {
 // 3D Scene Environment
 const SceneContent: React.FC<{
   sunHour: number;
-}> = ({ sunHour }) => {
-  const { roofSections, activeSectionId, setActiveSectionId, coordinates } =
-    useSolarMapperStore();
+  activeTool: 'inspect' | 'move' | 'hinge';
+  onIsDraggingChange: (isDragging: boolean) => void;
+}> = ({ sunHour, activeTool, onIsDraggingChange }) => {
+  const {
+    roofSections,
+    activeSectionId,
+    setActiveSectionId,
+    setRoofSectionPivotEdge,
+    translateRoofSection,
+    coordinates,
+  } = useSolarMapperStore();
 
   const sunPos = useMemo(() => getSunPosition(sunHour, 24), [sunHour]);
 
@@ -284,6 +534,45 @@ const SceneContent: React.FC<{
   const activeSection =
     roofSections.find((s) => s.id === activeSectionId) || roofSections[0];
 
+  // Dragging state for move tool
+  const [isMoving, setIsMoving] = useState(false);
+  const dragPlaneRef = useRef<THREE.Mesh>(null);
+  const dragStartPointRef = useRef<{ x: number; z: number } | null>(null);
+
+  const handleStartMoveDrag = (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    setIsMoving(true);
+    onIsDraggingChange(true);
+    if (e.point) {
+      dragStartPointRef.current = { x: e.point.x, z: e.point.z };
+    }
+  };
+
+  const handlePointerMoveOnPlane = (e: ThreeEvent<PointerEvent>) => {
+    if (!isMoving || !dragStartPointRef.current || !activeSection) return;
+    const currentX = e.point.x;
+    const currentZ = e.point.z;
+
+    const deltaX = currentX - dragStartPointRef.current.x;
+    const deltaZ = currentZ - dragStartPointRef.current.z;
+
+    // Delta in meters: In Three.js, +X is East, +Z is South.
+    // In our 2D geodesic coordinates: x = East (+), y = North (+).
+    // So deltaMetersX = deltaX, deltaMetersY = -deltaZ.
+    if (Math.hypot(deltaX, deltaZ) >= 0.1) {
+      translateRoofSection(activeSection.id, deltaX, -deltaZ);
+      dragStartPointRef.current = { x: currentX, z: currentZ };
+    }
+  };
+
+  const handlePointerUp = () => {
+    if (isMoving) {
+      setIsMoving(false);
+      onIsDraggingChange(false);
+      dragStartPointRef.current = null;
+    }
+  };
+
   return (
     <>
       <ambientLight intensity={0.55} color="#cbd5e1" />
@@ -305,22 +594,18 @@ const SceneContent: React.FC<{
 
       {/* Visible Glowing 3D Sun Sphere & Corona */}
       <group position={[sunPos.x, sunPos.y, sunPos.z]}>
-        {/* Core Glowing Sun Orb */}
         <mesh>
           <sphereGeometry args={[1.2, 32, 32]} />
           <meshBasicMaterial color="#fbbf24" />
         </mesh>
-        {/* Inner Solar Glow Aura */}
         <mesh>
           <sphereGeometry args={[1.8, 24, 24]} />
           <meshBasicMaterial color="#fef08a" transparent opacity={0.4} />
         </mesh>
-        {/* Outer Halo */}
         <mesh>
           <sphereGeometry args={[2.8, 24, 24]} />
           <meshBasicMaterial color="#fde047" transparent opacity={0.15} />
         </mesh>
-        {/* Floating Time Label Next to the Sun in the Sky */}
         <Text
           position={[0, 2.2, 0]}
           fontSize={0.85}
@@ -361,6 +646,19 @@ const SceneContent: React.FC<{
         W (270°)
       </Text>
 
+      {/* Horizontal Drag Interaction Plane for Move Tool */}
+      <mesh
+        ref={dragPlaneRef}
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, BUILDING_EAVE_HEIGHT, 0]}
+        visible={false}
+        onPointerMove={handlePointerMoveOnPlane}
+        onPointerUp={handlePointerUp}
+      >
+        <planeGeometry args={[120, 120]} />
+        <meshBasicMaterial transparent opacity={0} />
+      </mesh>
+
       {/* Render ALL Roof Sections in their true spatial positions */}
       {roofSections.map((sec) => (
         <Roof3DMesh
@@ -368,12 +666,16 @@ const SceneContent: React.FC<{
           section={sec}
           siteCenter={siteCenter}
           isActive={sec.id === activeSection?.id}
+          activeTool={activeTool}
           onSelect={() => setActiveSectionId(sec.id)}
+          onSetPivotEdge={(idx) => setRoofSectionPivotEdge(sec.id, idx)}
+          onStartMoveDrag={handleStartMoveDrag}
         />
       ))}
 
       <OrbitControls
         makeDefault
+        enabled={!isMoving}
         target={[0, BUILDING_EAVE_HEIGHT, 0]} // Orbit cleanly around the house roof
         minDistance={5}
         maxDistance={65}
@@ -390,16 +692,32 @@ export const Roof3DPreviewCanvas: React.FC = () => {
     setSunHour,
     roofSections,
     activeSectionId,
+    active3DTool,
+    setActive3DTool,
+    setRoofSectionPivotEdge,
+    updateRoofSectionConfig,
+    translateRoofSection,
     loadDemoRoofPolygon,
   } = useSolarMapperStore();
+
+  const [isDraggingRoof, setIsDraggingRoof] = useState(false);
 
   const activeSection =
     roofSections.find((s) => s.id === activeSectionId) || roofSections[0];
 
+  const pivotEdge = activeSection ? (activeSection.pivotEdgeIndex ?? 0) : 0;
+  const numEdges = activeSection ? activeSection.vertices.length : 0;
+
+  // Nudge active roof plane by fixed delta
+  const handleNudge = (deltaX: number, deltaY: number) => {
+    if (!activeSection) return;
+    translateRoofSection(activeSection.id, deltaX, deltaY);
+  };
+
   return (
     <div className="relative rounded-2xl overflow-hidden border border-slate-200/90 dark:border-slate-800/90 bg-[#090D16] shadow-xl">
       {/* 3D WebGL Canvas */}
-      <div className="w-full h-[480px] sm:h-[560px] lg:h-[620px] relative">
+      <div className="w-full h-[520px] sm:h-[600px] lg:h-[660px] relative">
         <Suspense
           fallback={
             <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-xs">
@@ -410,24 +728,39 @@ export const Roof3DPreviewCanvas: React.FC = () => {
           <Canvas
             shadows
             camera={{ position: [16, 20, 26], fov: 46 }}
-            className="w-full h-full"
+            className="w-full h-full cursor-grab active:cursor-grabbing"
           >
-            <SceneContent sunHour={sunHour} />
+            <SceneContent
+              sunHour={sunHour}
+              activeTool={active3DTool}
+              onIsDraggingChange={setIsDraggingRoof}
+            />
           </Canvas>
         </Suspense>
 
         {/* Top-Right: View Mode Switcher */}
         <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
-          {/* Switch back to 2D Map */}
           <button
             type="button"
             onClick={() => setViewMode('2d_satellite')}
-            className="px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 text-xs font-bold backdrop-blur-md shadow-md transition-all flex items-center gap-1.5 active:scale-95 whitespace-nowrap flex-shrink-0"
+            className="px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 text-xs font-bold backdrop-blur-md shadow-md transition-all flex items-center gap-1.5 active:scale-95 whitespace-nowrap flex-shrink-0"
           >
             <Map className="w-4 h-4 text-amber-500 flex-shrink-0" />
             <span className="whitespace-nowrap">2D Satellite Map</span>
           </button>
         </div>
+
+        {/* Top-Left: Active Roof & Tool Status HUD */}
+        {activeSection && activeSection.vertices.length >= 3 && (
+          <div className="absolute top-4 left-4 z-20 hidden sm:flex items-center gap-2 p-1.5 rounded-full bg-slate-950/80 border border-white/10 backdrop-blur-md shadow-md text-xs">
+            <span className="px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 font-bold font-mono">
+              {activeSection.name || 'Active Face'}
+            </span>
+            <span className="text-slate-400 font-mono text-[11px] pr-2">
+              {activeSection.pitchDeg === 0 ? 'Flat (0°)' : `${activeSection.pitchDeg}° Tilt`} • Side {pivotEdge + 1} Hinge
+            </span>
+          </div>
+        )}
 
         {/* Empty State Banner if no roof has been drawn */}
         {(!activeSection || activeSection.vertices.length < 3) && (
@@ -458,11 +791,151 @@ export const Roof3DPreviewCanvas: React.FC = () => {
           </div>
         )}
 
+        {/* Floating 3D Studio Controls Dock (Double-Bezel High-End Visual Design) */}
+        {activeSection && activeSection.vertices.length >= 3 && (
+          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 max-w-[calc(100%-2rem)] overflow-x-auto no-scrollbar">
+            <div className="p-1.5 rounded-full bg-slate-950/90 border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-2xl flex items-center gap-1.5 select-none">
+              {/* Tool Mode: Tilt by Side Axis */}
+              <button
+                type="button"
+                onClick={() => setActive3DTool('hinge')}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 whitespace-nowrap flex-shrink-0 ${
+                  active3DTool === 'hinge' || active3DTool === 'inspect'
+                    ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/25'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
+                title="Rotate and pitch roof around its sides (edges)"
+              >
+                <Anchor className="w-3.5 h-3.5 text-current flex-shrink-0" />
+                <span>Tilt by Side</span>
+              </button>
+
+              {/* Tool Mode: Move Roof */}
+              <button
+                type="button"
+                onClick={() => setActive3DTool('move')}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 whitespace-nowrap flex-shrink-0 ${
+                  active3DTool === 'move'
+                    ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/25'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
+                title="Move roof across the site plane"
+              >
+                <Move className="w-3.5 h-3.5 text-current flex-shrink-0" />
+                <span>Move Roof</span>
+              </button>
+
+              <div className="w-[1px] h-4 bg-white/15 mx-1 flex-shrink-0" />
+
+              {/* Side Hinge Switcher Chips */}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {activeSection.edgeLengthsMeters.map((len, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setRoofSectionPivotEdge(activeSection.id, idx)}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-mono font-bold transition-all flex items-center gap-1 flex-shrink-0 ${
+                      pivotEdge === idx
+                        ? 'bg-amber-400/20 text-amber-300 border border-amber-500/40'
+                        : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+                    }`}
+                    title={`Make Side ${idx + 1} (${len.toFixed(1)}m) the rotation axis`}
+                  >
+                    <span>S{idx + 1}</span>
+                    <span className="opacity-70 text-[9px]">{len.toFixed(0)}m</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="w-[1px] h-4 bg-white/15 mx-1 flex-shrink-0" />
+
+              {/* Quick Flat 0° Reset */}
+              <button
+                type="button"
+                onClick={() =>
+                  updateRoofSectionConfig(activeSection.id, { pitchDeg: 0 })
+                }
+                className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1 flex-shrink-0 ${
+                  activeSection.pitchDeg === 0
+                    ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
+                title="Make roof completely flat (0° pitch)"
+              >
+                <Minus className="w-3 h-3 text-current" />
+                <span>Flat 0°</span>
+              </button>
+
+              {/* Quick Pitch Degrees Slider */}
+              <div className="flex items-center gap-2 px-2 flex-shrink-0">
+                <input
+                  type="range"
+                  min="0"
+                  max="45"
+                  step="1"
+                  value={activeSection.pitchDeg}
+                  onChange={(e) =>
+                    updateRoofSectionConfig(activeSection.id, {
+                      pitchDeg: parseInt(e.target.value, 10),
+                    })
+                  }
+                  className="w-20 accent-amber-500 h-1.5 bg-slate-800 rounded-full cursor-pointer"
+                  title="Adjust roof pitch angle"
+                />
+                <span className="font-mono text-xs font-bold text-amber-400 min-w-[28px]">
+                  {activeSection.pitchDeg}°
+                </span>
+              </div>
+
+              {/* Move Nudge Buttons (Visible when Move tool is selected) */}
+              {active3DTool === 'move' && (
+                <>
+                  <div className="w-[1px] h-4 bg-white/15 mx-1 flex-shrink-0" />
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleNudge(-0.5, 0)}
+                      className="p-1 rounded-full bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-colors"
+                      title="Nudge West (-0.5m)"
+                    >
+                      <ArrowLeft className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNudge(0.5, 0)}
+                      className="p-1 rounded-full bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-colors"
+                      title="Nudge East (+0.5m)"
+                    >
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNudge(0, 0.5)}
+                      className="p-1 rounded-full bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-colors"
+                      title="Nudge North (+0.5m)"
+                    >
+                      <ArrowUp className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNudge(0, -0.5)}
+                      className="p-1 rounded-full bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-colors"
+                      title="Nudge South (-0.5m)"
+                    >
+                      <ArrowDown className="w-3 h-3" />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Bottom Sun Position & Time Slider Island */}
-        <div className="absolute bottom-4 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-lg z-20 p-3.5 rounded-2xl bg-slate-950/90 border border-white/10 backdrop-blur-xl shadow-2xl">
-          <div className="flex items-center justify-between gap-2 mb-2 text-xs">
+        <div className="absolute bottom-4 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-lg z-20 p-3 rounded-2xl bg-slate-950/90 border border-white/10 backdrop-blur-xl shadow-2xl">
+          <div className="flex items-center justify-between gap-2 mb-1.5 text-xs">
             <div className="flex items-center gap-1.5 font-bold text-white whitespace-nowrap flex-shrink-0">
-              <Sun className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              <Sun className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
               <span className="whitespace-nowrap">Sun Simulation:</span>
               <span className="font-mono text-amber-400 whitespace-nowrap">{formatSunTime(sunHour)}</span>
             </div>
@@ -498,7 +971,7 @@ export const Roof3DPreviewCanvas: React.FC = () => {
             step="0.25"
             value={sunHour}
             onChange={(e) => setSunHour(parseFloat(e.target.value))}
-            className="w-full accent-amber-500 h-2 bg-slate-800 rounded-lg cursor-pointer"
+            className="w-full accent-amber-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
           />
 
           <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">

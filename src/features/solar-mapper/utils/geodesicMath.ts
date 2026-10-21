@@ -183,3 +183,50 @@ export function hasSelfIntersection(vertices: GeoPoint[]): boolean {
 
   return false;
 }
+
+/**
+ * Translates all vertices of a polygon by delta meters in local horizontal plane.
+ * deltaMetersX = East (+), deltaMetersY = North (+)
+ */
+export function translatePolygonGeo(
+  vertices: GeoPoint[],
+  deltaMetersX: number,
+  deltaMetersY: number
+): GeoPoint[] {
+  if (vertices.length === 0) return [];
+  const centroid = calculateCentroid(vertices);
+  const latCRad = degToRad(centroid.lat);
+  const dLatDeg = radToDeg(deltaMetersY / EARTH_RADIUS_METERS);
+  const dLngDeg = radToDeg(deltaMetersX / (EARTH_RADIUS_METERS * Math.cos(latCRad)));
+
+  return vertices.map((v) => ({
+    lat: v.lat + dLatDeg,
+    lng: v.lng + dLngDeg,
+  }));
+}
+
+/**
+ * Calculates outward downslope compass azimuth (0°=N, 90°=E, 180°=S, 270°=W)
+ * for a specific polygon edge (side).
+ */
+export function calculateEdgeAzimuthDeg(vertices: GeoPoint[], edgeIndex: number): number {
+  const n = vertices.length;
+  if (n < 3) return 180;
+  const idx = ((edgeIndex % n) + n) % n;
+  const centroid = calculateCentroid(vertices);
+  const localPts = projectVerticesToLocalMeters(vertices, centroid);
+  
+  const p1 = localPts[idx];
+  const p2 = localPts[(idx + 1) % n];
+  // Midpoint of the edge relative to centroid
+  const mx = (p1.x + p2.x) / 2;
+  const my = (p1.y + p2.y) / 2;
+
+  // Vector from centroid (0,0) to edge midpoint points outwards towards this side
+  // In our local meters: +x is East, +y is North.
+  // Compass azimuth: 0° is North (+y), 90° is East (+x), 180° is South (-y), 270° is West (-x).
+  const headingRad = Math.atan2(mx, my);
+  const headingDeg = (radToDeg(headingRad) + 360) % 360;
+  return Math.round(headingDeg);
+}
+
