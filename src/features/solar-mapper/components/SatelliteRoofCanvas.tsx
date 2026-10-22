@@ -601,43 +601,44 @@ export const SatelliteRoofCanvas: React.FC = () => {
 
                 {/* Render Placed Solar Panels Inside Closed Polygon */}
                 {pts.length >= 3 &&
-                  sec.placedPanels.map((panel) => {
-                    // Approximate meter-to-pixel scale at current zoom & latitude
+                  sec.placedPanels.length > 0 &&
+                  (() => {
+                    // Precompute meter-to-pixel scale and centroid once for the section
                     const meterToPx =
                       (Math.pow(2, zoom) * 256) /
                       (40075016 * Math.cos((coordinates.lat * Math.PI) / 180));
-
-                    // Centroid pixel
                     const centroidPx = {
                       x: pts.reduce((s, p) => s + p.px, 0) / pts.length,
                       y: pts.reduce((s, p) => s + p.py, 0) / pts.length,
                     };
 
-                    const panelPxX = centroidPx.x + panel.x * meterToPx;
-                    const panelPxY = centroidPx.y - panel.y * meterToPx;
-                    const panelPxW = Math.max(3, panel.widthM * meterToPx);
-                    const panelPxH = Math.max(4, panel.lengthM * meterToPx);
+                    return sec.placedPanels.map((panel) => {
+                      const panelPxX = centroidPx.x + panel.x * meterToPx;
+                      const panelPxY = centroidPx.y - panel.y * meterToPx;
+                      const panelPxW = Math.max(3, panel.widthM * meterToPx);
+                      const panelPxH = Math.max(4, panel.lengthM * meterToPx);
 
-                    return (
-                      <rect
-                        key={panel.id}
-                        x={panelPxX - panelPxW / 2}
-                        y={panelPxY - panelPxH / 2}
-                        width={panelPxW}
-                        height={panelPxH}
-                        transform={
-                          panel.rotationDeg
-                            ? `rotate(${-panel.rotationDeg}, ${panelPxX}, ${panelPxY})`
-                            : undefined
-                        }
-                        fill="#0c4a6e"
-                        stroke="#38bdf8"
-                        strokeWidth="0.8"
-                        rx="1"
-                        opacity={0.88}
-                      />
-                    );
-                  })}
+                      return (
+                        <rect
+                          key={panel.id}
+                          x={panelPxX - panelPxW / 2}
+                          y={panelPxY - panelPxH / 2}
+                          width={panelPxW}
+                          height={panelPxH}
+                          transform={
+                            panel.rotationDeg
+                              ? `rotate(${-panel.rotationDeg}, ${panelPxX}, ${panelPxY})`
+                              : undefined
+                          }
+                          fill="#0c4a6e"
+                          stroke="#38bdf8"
+                          strokeWidth="0.8"
+                          rx="1"
+                          opacity={0.88}
+                        />
+                      );
+                    });
+                  })()}
 
                 {/* Edge Length Measurement Badges */}
                 {pts.length >= 2 &&
