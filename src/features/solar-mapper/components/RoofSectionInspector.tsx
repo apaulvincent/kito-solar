@@ -1,20 +1,15 @@
 // src/features/solar-mapper/components/RoofSectionInspector.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Compass,
-  Sliders,
-  Sun,
-  Shield,
   Layers,
-  Sparkles,
-  Zap,
   Trash2,
   Plus,
-  ArrowUpRight,
   RotateCcw,
+  Maximize2,
 } from 'lucide-react';
 import { useSolarMapperStore } from '../store/useSolarMapperStore';
-import { PanelOrientation } from '../types/solarMapper';
+import { PanelOrientation, PANEL_SPECS } from '../types/solarMapper';
 
 function getCardinalDirection(deg: number): string {
   if (deg >= 337.5 || deg < 22.5) return 'North (0°)';
@@ -44,6 +39,103 @@ export const RoofSectionInspector: React.FC = () => {
   const activeSection = activeSectionId
     ? roofSections.find((s) => s.id === activeSectionId) || null
     : null;
+
+  // Active module specs (computed with fallbacks)
+  const activeSecSpec = activeSection
+    ? PANEL_SPECS[activeSection.panelWattage] ?? PANEL_SPECS[580]
+    : PANEL_SPECS[580];
+
+  const currentWidthM = activeSection?.customPanelWidthM ?? activeSecSpec.widthM;
+  const currentLengthM = activeSection?.customPanelLengthM ?? activeSecSpec.lengthM;
+  const currentWattage =
+    activeSection?.customPanelWattage ?? activeSection?.panelWattage ?? panelWattage ?? 580;
+
+  const isCustom = Boolean(
+    activeSection &&
+      (activeSection.customPanelWidthM !== undefined ||
+        activeSection.customPanelLengthM !== undefined ||
+        activeSection.customPanelWattage !== undefined ||
+        ![550, 580, 600].includes(currentWattage))
+  );
+
+  // Local string inputs for fluid typing without jumping cursors
+  const [lengthInput, setLengthInput] = useState<string>(currentLengthM.toString());
+  const [widthInput, setWidthInput] = useState<string>(currentWidthM.toString());
+  const [wattageInput, setWattageInput] = useState<string>(currentWattage.toString());
+
+  useEffect(() => {
+    setLengthInput(currentLengthM.toString());
+    setWidthInput(currentWidthM.toString());
+    setWattageInput(currentWattage.toString());
+  }, [
+    activeSection?.id,
+    activeSection?.customPanelLengthM,
+    activeSection?.customPanelWidthM,
+    activeSection?.customPanelWattage,
+    activeSection?.panelWattage,
+  ]);
+
+  const handleLengthChange = (valStr: string) => {
+    setLengthInput(valStr);
+    const val = parseFloat(valStr);
+    if (!isNaN(val) && val >= 0.3 && val <= 5.0 && activeSection) {
+      updateRoofSectionConfig(activeSection.id, {
+        customPanelLengthM: Math.round(val * 1000) / 1000,
+        customPanelWidthM: currentWidthM,
+        customPanelWattage: currentWattage,
+      });
+    }
+  };
+
+  const handleWidthChange = (valStr: string) => {
+    setWidthInput(valStr);
+    const val = parseFloat(valStr);
+    if (!isNaN(val) && val >= 0.2 && val <= 3.5 && activeSection) {
+      updateRoofSectionConfig(activeSection.id, {
+        customPanelWidthM: Math.round(val * 1000) / 1000,
+        customPanelLengthM: currentLengthM,
+        customPanelWattage: currentWattage,
+      });
+    }
+  };
+
+  const handleWattageChange = (valStr: string) => {
+    setWattageInput(valStr);
+    const val = parseInt(valStr, 10);
+    if (!isNaN(val) && val >= 50 && val <= 1500 && activeSection) {
+      updateRoofSectionConfig(activeSection.id, {
+        customPanelWattage: val,
+        customPanelWidthM: currentWidthM,
+        customPanelLengthM: currentLengthM,
+      });
+    }
+  };
+
+  const handleSelectPreset = (w: 550 | 580 | 600) => {
+    setPanelWattage(w);
+    const spec = PANEL_SPECS[w];
+    if (activeSection) {
+      updateRoofSectionConfig(activeSection.id, {
+        panelWattage: w,
+        customPanelWidthM: undefined,
+        customPanelLengthM: undefined,
+        customPanelWattage: undefined,
+      });
+    }
+    setLengthInput(spec.lengthM.toString());
+    setWidthInput(spec.widthM.toString());
+    setWattageInput(w.toString());
+  };
+
+  const handleApplyToAllFaces = () => {
+    roofSections.forEach((sec) => {
+      updateRoofSectionConfig(sec.id, {
+        customPanelWidthM: currentWidthM,
+        customPanelLengthM: currentLengthM,
+        customPanelWattage: currentWattage,
+      });
+    });
+  };
 
   if (roofSections.length === 0) {
     return (
@@ -148,7 +240,7 @@ export const RoofSectionInspector: React.FC = () => {
 
   return (
     <div className="p-1.5 rounded-3xl bg-slate-100/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-white/10 shadow-sm">
-      <div className="rounded-[calc(1.5rem-0.375rem)] bg-white dark:bg-[#0B111E] p-5 sm:p-6 space-y-6 shadow-xs dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
+      <div className="rounded-[calc(1.5rem-0.375rem)] bg-white dark:bg-[#0B111E] p-5 sm:p-6 space-y-5 shadow-xs dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
         {/* Section Switcher Tabs & Actions */}
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 pb-3">
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
@@ -193,12 +285,12 @@ export const RoofSectionInspector: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             {roofSections.length > 1 && (
               <button
                 type="button"
                 onClick={() => removeRoofSection(activeSection.id)}
-                className="p-1.5 rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors flex-shrink-0"
+                className="p-1.5 rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors shrink-0"
                 title="Delete this roof plane"
               >
                 <Trash2 className="w-4 h-4" />
@@ -207,39 +299,157 @@ export const RoofSectionInspector: React.FC = () => {
           </div>
         </div>
 
-        {/* Section Name & Module Power Selector */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex-1">
-            <input
-              type="text"
-              value={activeSection.name}
-              onChange={(e) =>
-                updateRoofSectionConfig(activeSection.id, { name: e.target.value })
-              }
-              placeholder="Section Name (e.g. Main South Roof)"
-              className="w-full text-base font-bold text-slate-900 dark:text-white bg-transparent border-b border-dashed border-slate-300 dark:border-white/15 focus:border-amber-400 focus:outline-hidden pb-1"
-            />
-          </div>
+        {/* Section Name Input */}
+        <div className="flex items-center justify-between gap-3">
+          <input
+            type="text"
+            value={activeSection.name}
+            onChange={(e) =>
+              updateRoofSectionConfig(activeSection.id, { name: e.target.value })
+            }
+            placeholder="Section Name (e.g. Main South Roof)"
+            className="w-full text-base font-bold text-slate-900 dark:text-white bg-transparent border-b border-dashed border-slate-300 dark:border-white/15 focus:border-amber-400 focus:outline-hidden pb-1"
+          />
+        </div>
 
-          {/* Global Panel Wattage Presets */}
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mr-0.5 whitespace-nowrap">
-              Panel:
-            </span>
-            {([550, 580, 600] as const).map((watt) => (
-              <button
-                key={watt}
-                type="button"
-                onClick={() => setPanelWattage(watt)}
-                className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold transition-all whitespace-nowrap flex-shrink-0 ${
-                  panelWattage === watt
-                    ? 'bg-amber-400 text-slate-950 shadow-xs'
-                    : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                {watt}W
-              </button>
-            ))}
+        {/* Double-Bezel: PV Module Dimensions & Sizing Specifications */}
+        <div className="p-1 rounded-2xl bg-slate-100/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-white/10 shadow-xs">
+          <div className="rounded-[calc(1rem-0.25rem)] bg-white dark:bg-[#0B111E] p-3.5 space-y-3 shadow-xs dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Maximize2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                  PV Module Specifications
+                </span>
+              </div>
+
+              {/* Module Presets */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {([550, 580, 600] as const).map((w) => {
+                  const isPresetActive = !isCustom && currentWattage === w;
+                  return (
+                    <button
+                      key={w}
+                      type="button"
+                      onClick={() => handleSelectPreset(w)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold transition-all ${
+                        isPresetActive
+                          ? 'bg-amber-400 text-slate-950 shadow-xs'
+                          : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {w}W
+                    </button>
+                  );
+                })}
+                <span
+                  className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold transition-all ${
+                    isCustom
+                      ? 'bg-amber-400 text-slate-950 shadow-xs'
+                      : 'bg-slate-100 dark:bg-white/5 text-slate-400 opacity-60'
+                  }`}
+                >
+                  Custom
+                </span>
+              </div>
+            </div>
+
+            {/* Tactile Dimension & Power Inputs */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {/* Length */}
+              <div className="p-2.5 rounded-xl bg-slate-50/80 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/5 space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                  Length
+                </span>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.3"
+                    max="5.0"
+                    value={lengthInput}
+                    onChange={(e) => handleLengthChange(e.target.value)}
+                    className="w-full font-mono text-sm font-bold text-slate-900 dark:text-white bg-transparent border-none p-0 focus:outline-hidden"
+                  />
+                  <span className="text-xs font-mono text-slate-400 shrink-0">m</span>
+                </div>
+                <div className="text-[10px] font-mono text-slate-400">
+                  {Math.round(currentLengthM * 1000)} mm
+                </div>
+              </div>
+
+              {/* Width */}
+              <div className="p-2.5 rounded-xl bg-slate-50/80 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/5 space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                  Width
+                </span>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.2"
+                    max="3.5"
+                    value={widthInput}
+                    onChange={(e) => handleWidthChange(e.target.value)}
+                    className="w-full font-mono text-sm font-bold text-slate-900 dark:text-white bg-transparent border-none p-0 focus:outline-hidden"
+                  />
+                  <span className="text-xs font-mono text-slate-400 shrink-0">m</span>
+                </div>
+                <div className="text-[10px] font-mono text-slate-400">
+                  {Math.round(currentWidthM * 1000)} mm
+                </div>
+              </div>
+
+              {/* Wattage */}
+              <div className="p-2.5 rounded-xl bg-slate-50/80 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/5 space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                  Power
+                </span>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    step="5"
+                    min="50"
+                    max="1500"
+                    value={wattageInput}
+                    onChange={(e) => handleWattageChange(e.target.value)}
+                    className="w-full font-mono text-sm font-bold text-slate-900 dark:text-white bg-transparent border-none p-0 focus:outline-hidden"
+                  />
+                  <span className="text-xs font-mono text-slate-400 shrink-0">W</span>
+                </div>
+                <div className="text-[10px] font-mono text-slate-400">
+                  {(currentWattage / 1000).toFixed(2)} kWp
+                </div>
+              </div>
+
+              {/* Unit Area Readout */}
+              <div className="p-2.5 rounded-xl bg-amber-500/[0.04] dark:bg-amber-500/[0.06] border border-amber-500/20 space-y-1">
+                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider block">
+                  Footprint
+                </span>
+                <div className="font-mono text-sm font-bold text-amber-600 dark:text-amber-400">
+                  {(currentLengthM * currentWidthM).toFixed(2)}{' '}
+                  <span className="text-xs font-normal">m²</span>
+                </div>
+                <div className="text-[10px] font-mono text-amber-600/80 dark:text-amber-400/80">
+                  {(currentLengthM / (currentWidthM || 1)).toFixed(2)}:1 ratio
+                </div>
+              </div>
+            </div>
+
+            {/* Micro footer action */}
+            {roofSections.length > 1 && (
+              <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100 dark:border-white/5 text-slate-500 dark:text-slate-400">
+                <span>{(currentLengthM * currentWidthM).toFixed(3)} m² per panel</span>
+                <button
+                  type="button"
+                  onClick={handleApplyToAllFaces}
+                  className="text-amber-600 dark:text-amber-400 hover:underline font-semibold cursor-pointer"
+                >
+                  Apply to all {roofSections.length} faces
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -298,12 +508,12 @@ export const RoofSectionInspector: React.FC = () => {
         </div>
 
         {/* Engineering Controls (Sliders & Selectors) */}
-        <div className="space-y-6 pt-2">
+        <div className="space-y-4 pt-1">
           {/* Orientation & Leveling Control */}
           <div className="p-4 rounded-2xl bg-slate-50/60 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <Compass className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                <Compass className="w-4 h-4 text-amber-500 shrink-0" />
                 <div>
                   <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                     Roof Orientation
@@ -449,7 +659,7 @@ export const RoofSectionInspector: React.FC = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500 flex-shrink-0">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500 shrink-0">
                   <RotateCcw className="w-5 h-5" />
                 </div>
                 <div className="space-y-1">

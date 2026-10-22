@@ -98,7 +98,10 @@ function recomputeSection(
     slopedAreaSqm,
     pitchDeg: section.pitchDeg,
     setbackRatio: section.setbackRatio,
-    panelWattage: section.panelWattage,
+    panelWattage: section.customPanelWattage ?? section.panelWattage,
+    customWidthM: section.customPanelWidthM,
+    customLengthM: section.customPanelLengthM,
+    customWattage: section.customPanelWattage,
     orientationPreference: section.panelOrientation,
     alignmentAngleDeg: section.panelRotationDeg,
   });

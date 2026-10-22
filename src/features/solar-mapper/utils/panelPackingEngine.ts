@@ -90,16 +90,25 @@ export function calculatePanelPacking({
   panelWattage = 580,
   orientationPreference = 'auto_best',
   alignmentAngleDeg,
+  customWidthM,
+  customLengthM,
+  customWattage,
 }: {
   localVertices: LocalPoint[];
   slopedAreaSqm: number;
   pitchDeg: number;
   setbackRatio?: number;
-  panelWattage?: 550 | 580 | 600;
+  panelWattage?: 550 | 580 | 600 | number;
   orientationPreference?: PanelOrientation;
   alignmentAngleDeg?: number;
+  customWidthM?: number;
+  customLengthM?: number;
+  customWattage?: number;
 }): PackingResult {
-  const spec = PANEL_SPECS[panelWattage] ?? PANEL_SPECS[580];
+  const fallbackSpec = PANEL_SPECS[(panelWattage as 550 | 580 | 600)] ?? PANEL_SPECS[580];
+  const effectiveWidthM = customWidthM && customWidthM > 0.1 ? customWidthM : fallbackSpec.widthM;
+  const effectiveLengthM = customLengthM && customLengthM > 0.1 ? customLengthM : fallbackSpec.lengthM;
+  const effectiveWattage = customWattage && customWattage > 0 ? customWattage : (panelWattage ?? fallbackSpec.wattage);
   const usableAreaSqm = Math.round(slopedAreaSqm * setbackRatio * 100) / 100;
 
   const dominantAngleDeg =
@@ -146,8 +155,8 @@ export function calculatePanelPacking({
 
   // Helper to pack grid in a specific orientation in rotated (u, v) space
   const packGrid = (isLandscape: boolean): PlacedPanel[] => {
-    const widthM = isLandscape ? spec.lengthM : spec.widthM;
-    const lengthM = isLandscape ? spec.widthM : spec.lengthM;
+    const widthM = isLandscape ? effectiveLengthM : effectiveWidthM;
+    const lengthM = isLandscape ? effectiveWidthM : effectiveLengthM;
 
     const cellW = widthM + CLAMP_GAP_METERS;
     const cellH = lengthM + CLAMP_GAP_METERS;
@@ -208,7 +217,7 @@ export function calculatePanelPacking({
   const landscapePanels = packGrid(true);
 
   // Area-based theoretical limits with clamp gap
-  const panelGrossArea = (spec.widthM + CLAMP_GAP_METERS) * (spec.lengthM + CLAMP_GAP_METERS);
+  const panelGrossArea = (effectiveWidthM + CLAMP_GAP_METERS) * (effectiveLengthM + CLAMP_GAP_METERS);
   const areaBasedMax = Math.floor(usableAreaSqm / panelGrossArea);
 
   // Take the geometric grid placement, with area-based upper bound
@@ -236,7 +245,7 @@ export function calculatePanelPacking({
   }
 
   const recommendedMaxPanels = Math.min(areaBasedMax, chosenPanels.length);
-  const totalArrayKwp = Math.round(((recommendedMaxPanels * spec.wattage) / 1000) * 100) / 100;
+  const totalArrayKwp = Math.round(((recommendedMaxPanels * effectiveWattage) / 1000) * 100) / 100;
 
   return {
     maxPanelsPortrait,

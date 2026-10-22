@@ -117,6 +117,9 @@ export interface RoofPolygonSection {
   setbackRatio: number; // default 0.82 (18% reserved for edges & walkways)
   panelOrientation: PanelOrientation;
   panelWattage: 550 | 580 | 600;
+  customPanelWidthM?: number;
+  customPanelLengthM?: number;
+  customPanelWattage?: number;
   panelRotationDeg?: number; // Custom panel alignment angle in degrees (auto-aligns to roof edge if undefined)
   hasCustomAzimuth?: boolean;
   // Computed metrics

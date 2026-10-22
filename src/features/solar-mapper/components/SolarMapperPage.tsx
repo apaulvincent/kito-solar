@@ -1,15 +1,6 @@
 // src/features/solar-mapper/components/SolarMapperPage.tsx
 import React, { useEffect } from 'react';
-import {
-  MapPin,
-  ArrowLeft,
-  Sun,
-  Layers,
-  Box,
-  Compass,
-  Sparkles,
-  Info,
-} from 'lucide-react';
+import { ArrowLeft, MapPin } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSolarMapperStore } from '../store/useSolarMapperStore';
@@ -24,7 +15,7 @@ export const SolarMapperPage: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const isLoading = useAuthStore((s) => s.isLoading);
   const setActiveView = useCalculatorStore((s) => s.setActiveView);
-  const { viewMode, setViewMode } = useSolarMapperStore();
+  const { viewMode, coordinates } = useSolarMapperStore();
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -45,77 +36,41 @@ export const SolarMapperPage: React.FC = () => {
   }
 
   return (
-    <main className="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 space-y-6">
-      {/* Top Breadcrumb & Page Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-200 dark:border-slate-800">
-        <button
-          type="button"
-          onClick={() => setActiveView('home')}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Home</span>
-        </button>
+    <main className="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-5 space-y-4">
+      {/* Studio Header: Clean Navigation & Context */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-white/10">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setActiveView('home')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200/60 dark:border-white/10 transition-all active:scale-95"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Home</span>
+          </button>
+          <div>
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white font-sans">
+              Solar Irradiance & Roof Mapper
+            </h1>
+          </div>
+        </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
-          <MapPin className="w-3.5 h-3.5 text-amber-500" />
-          <span className="font-bold text-slate-700 dark:text-slate-300">
-            Location-Aware Irradiance & Polygon Roof Mapping
+        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 font-mono text-[11px]">
+            <MapPin className="w-3 h-3 text-amber-500" />
+            <span>{coordinates.locationName.split(',')[0]}</span>
+            <span className="text-slate-400">({coordinates.lat.toFixed(2)}°, {coordinates.lng.toFixed(2)}°)</span>
           </span>
         </div>
       </div>
 
-      {/* Hero Headline & Value Proposition Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25 text-[11px] font-bold uppercase tracking-wider mb-2">
-            <Sparkles className="w-3 h-3 text-amber-500" />
-            <span>NASA Climatology & Rooftop Geometry Studio</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white font-sans">
-            Solar Irradiance & Roof Mapper
-          </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
-            Eliminate flat-average solar guesswork. Pull 20-year NASA solar climatology for your exact coordinates and trace your physical roof polygon on high-resolution satellite imagery.
-          </p>
-        </div>
-
-        {/* View Mode Toggle Switch */}
-        <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 self-start md:self-auto">
-          <button
-            type="button"
-            onClick={() => setViewMode('2d_satellite')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              viewMode === '2d_satellite'
-                ? 'bg-white dark:bg-slate-900 text-slate-950 dark:text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <Layers className="w-4 h-4 text-amber-500" />
-            <span>Satellite Tracer</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('3d_preview')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              viewMode === '3d_preview'
-                ? 'bg-white dark:bg-slate-900 text-slate-950 dark:text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <Box className="w-4 h-4 text-amber-500" />
-            <span>3D Roof & Sun</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Step 1: Location & Climatology Search Bar */}
+      {/* Location & Climatology Search Bar */}
       <LocationSearchHeader />
 
-      {/* Step 2: Roof Capacity vs Electrical Load Verification Alert */}
+      {/* Roof Capacity vs Electrical Load Verification Alert */}
       <RoofVsLoadComparisonCard />
 
-      {/* Step 3: Main Studio Deck (Left: Satellite/3D Viewport, Right: Section Inspector) */}
+      {/* Main Studio Deck (Left: Satellite/3D Viewport, Right: Section Inspector) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left (lg: 7 cols): Canvas Viewport */}
         <div className="lg:col-span-7 min-w-0">
@@ -132,7 +87,7 @@ export const SolarMapperPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Step 4: 12-Month Seasonal Irradiance & Thermal Derating Chart */}
+      {/* Seasonal Irradiance & Thermal Derating Chart */}
       <SeasonalIrradianceChart />
     </main>
   );
