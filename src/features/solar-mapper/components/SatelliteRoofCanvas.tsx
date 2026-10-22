@@ -63,7 +63,6 @@ export const SatelliteRoofCanvas: React.FC = () => {
     clearActivePolygon,
     addRoofSection,
     removeRoofSection,
-    loadDemoRoofPolygon,
     applyDetectedRoofFaces,
     translateRoofSection,
     setViewMode,
@@ -1005,15 +1004,6 @@ export const SatelliteRoofCanvas: React.FC = () => {
             />
             <PenTool className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="whitespace-nowrap">{isDrawingMode ? 'Finish Polygon' : 'Draw Roof'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={loadDemoRoofPolygon}
-            className="map-control-btn px-3 py-1.5 rounded-full text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
-            title="Load sample residential 4-corner roof"
-          >
-            <span className="whitespace-nowrap">Sample Roof</span>
           </button>
 
           <div className="w-px h-4 bg-white/10 my-auto flex-shrink-0" />

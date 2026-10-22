@@ -1,5 +1,5 @@
 // src/features/solar-mapper/components/Roof3DPreviewCanvas.tsx
-import React, { useMemo, useState, useRef, useCallback, Suspense } from 'react';
+import React, { useMemo, useState, useRef, useCallback, useEffect, Suspense } from 'react';
 import { Canvas, useThree, useFrame, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Text, Line } from '@react-three/drei';
 import * as THREE from 'three';
@@ -16,8 +16,10 @@ import {
   calculateCentroid,
   projectSinglePointToMeters,
   projectVerticesToLocalMeters,
+  getOuterTiltSides,
 } from '../utils/geodesicMath';
 import { GeoPoint, RoofPolygonSection } from '../types/solarMapper';
+import { getDefaultSunHour } from '../utils/solarPhysics';
 
 // Realistic Building Eave Elevation above ground plane in meters
 const BUILDING_EAVE_HEIGHT = 4.0;
@@ -108,7 +110,7 @@ const Roof3DMesh: React.FC<{
     [section.vertices]
   );
 
-  // 2D shape centered at (0, 0)
+  // 2D shape centered at (0, 0) directly matching the 2D satellite map geometry
   const shape = useMemo(() => {
     if (localVertices.length < 3) return null;
     const s = new THREE.Shape();
@@ -119,6 +121,17 @@ const Roof3DMesh: React.FC<{
     s.closePath();
     return s;
   }, [localVertices]);
+
+  // Calculate side orientation angle for tilting along the rectangle edge
+  const { sideAngleRad } = useMemo(() => {
+    if (section.vertices.length < 3) return { sideAngleRad: 0 };
+    const sides = getOuterTiltSides(section.vertices);
+    const pivotIdx = ((section.pivotEdgeIndex ?? 0) % 4 + 4) % 4;
+    const pivotSide = sides[pivotIdx] || sides[0];
+    const dx = pivotSide.endMeters.x - pivotSide.startMeters.x;
+    const dy = pivotSide.endMeters.y - pivotSide.startMeters.y;
+    return { sideAngleRad: Math.atan2(dy, dx) };
+  }, [section.vertices, section.pivotEdgeIndex]);
 
   // Roof deck slab extrude settings
   const roofExtrudeSettings = useMemo(
@@ -149,7 +162,6 @@ const Roof3DMesh: React.FC<{
   const centerY = section.baseHeightMeters ?? BUILDING_EAVE_HEIGHT;
   const centerZ = -secCentroidMeters.y;
 
-  const azimuthRad = degToRad(section.azimuthDeg);
   const pitchRad = degToRad(section.pitchDeg);
   const rollRad = degToRad(section.rollDeg ?? 0);
 
@@ -165,46 +177,51 @@ const Roof3DMesh: React.FC<{
     >
       {/* 1. Root Position at Roof Center in 3D Space */}
       <group position={[centerX, centerY, centerZ]}>
-        {/* 2. Full 360° Yaw / Azimuth rotation around vertical Y axis */}
-        <group rotation={[0, -azimuthRad, 0]}>
-          {/* 3. Pitch (tilt around X) and Roll (tilt around Z) centered on mass */}
-          <group rotation={[-pitchRad, 0, rollRad]}>
-            {/* 4. Lay flat on horizontal plane: 2D +x -> +X, 2D +y -> -Z, depth -> +Y */}
-            <group rotation={[-Math.PI / 2, 0, 0]}>
-              {/* Roof Deck Slab */}
-              <mesh receiveShadow castShadow position={[0, 0, -0.07]}>
-                <extrudeGeometry args={[shape, roofExtrudeSettings]} />
-                <meshStandardMaterial
-                  color={isActive ? '#293548' : '#1e293b'}
-                  roughness={0.45}
-                  metalness={0.35}
-                />
-              </mesh>
-
-              {/* Glowing Outline on Active Roof Section */}
-              {isActive && (
-                <mesh position={[0, 0, 0.075]}>
-                  <extrudeGeometry
-                    args={[
-                      shape,
-                      { depth: 0.01, bevelEnabled: true, bevelSize: 0.04, bevelThickness: 0.01 },
-                    ]}
+        {/* 2. Side-aligned Tilt Frame:
+             - Outer Y-rotation (+sideAngleRad) aligns local X with the rectangle side
+             - Middle rotation tilts pitch strictly along the rectangle side and roll along perpendicular side
+             - Inner Y-rotation (-sideAngleRad) returns the flat 2D shape to its EXACT world satellite orientation!
+             When pitch=0 & roll=0, sideAngleRad - sideAngleRad = 0 (100% matches 2D map)!
+        */}
+        <group rotation={[0, sideAngleRad, 0]}>
+          <group rotation={[pitchRad, 0, rollRad]}>
+            <group rotation={[0, -sideAngleRad, 0]}>
+              {/* Lay flat on horizontal plane: 2D +x -> +X, 2D +y -> -Z, depth -> +Y */}
+              <group rotation={[-Math.PI / 2, 0, 0]}>
+                {/* Roof Deck Slab */}
+                <mesh receiveShadow castShadow position={[0, 0, -0.07]}>
+                  <extrudeGeometry args={[shape, roofExtrudeSettings]} />
+                  <meshStandardMaterial
+                    color={isActive ? '#e2e8f0' : '#cbd5e1'}
+                    roughness={0.65}
+                    metalness={0.1}
                   />
-                  <meshBasicMaterial color="#f59e0b" transparent opacity={0.35} wireframe />
                 </mesh>
-              )}
 
-              {/* Photovoltaic Solar Panels Array */}
-              {section.placedPanels?.map((panel) => {
-                const pW = panel.widthM;
-                const pL = panel.lengthM;
+                {/* Glowing Outline on Active Roof Section */}
+                {isActive && (
+                  <mesh position={[0, 0, 0.075]}>
+                    <extrudeGeometry
+                      args={[
+                        shape,
+                        { depth: 0.01, bevelEnabled: true, bevelSize: 0.04, bevelThickness: 0.01 },
+                      ]}
+                    />
+                    <meshBasicMaterial color="#f59e0b" transparent opacity={0.65} wireframe />
+                  </mesh>
+                )}
 
-                return (
-                  <group
-                    key={panel.id}
-                    position={[panel.x, panel.y, 0.12]}
-                    rotation={[0, 0, (panel.rotationDeg || 0) * (Math.PI / 180)]}
-                  >
+                {/* Photovoltaic Solar Panels Array */}
+                {section.placedPanels?.map((panel) => {
+                  const pW = panel.widthM;
+                  const pL = panel.lengthM;
+
+                  return (
+                    <group
+                      key={panel.id}
+                      position={[panel.x, panel.y, 0.12]}
+                      rotation={[0, 0, (panel.rotationDeg || 0) * (Math.PI / 180)]}
+                    >
                     {/* Mounting Rails */}
                     <mesh position={[0, -pL * 0.25, -0.015]}>
                       <boxGeometry args={[pW * 0.95, 0.04, 0.025]} />
@@ -256,18 +273,19 @@ const Roof3DMesh: React.FC<{
         </group>
       </group>
     </group>
-  );
+  </group>
+);
 };
 
 /**
- * 3-AXIS 360° XYZ ROTATION GIZMO (Blender-Style CAD Controls)
+ * DUAL-AXIS INCLINE GIMBAL (Pitch & Roll Controls)
  * Features:
- * - Positioned on TOP of the roof surface, never submerged or hidden inside the slab.
- * - depthTest={false} and renderOrder={995} ensure the complete XYZ rings and reticles are always 100% visible from every viewing angle.
- * - Green Ring: Full 360° horizontal circle around vertical axis (World Compass Heading).
- * - Red Ring: Vertical circle along the roof's slope (Pitch Tilt). Rotates with roof heading.
- * - Blue Ring: Vertical circle along the roof's width (Roll Tilt). Rotates with roof heading.
- * - Moving any dot UP lifts the corresponding side of the roof directly under that dot!
+ * - Positioned on TOP of the roof surface, aligned to the traced building edges.
+ * - depthTest={false} and renderOrder={995} ensure the rings and reticles stay visible from every viewing angle.
+ * - Red Ring: Vertical circle along the roof's eave edge (Pitch Tilt). Rotates with roof rectangle orientation.
+ * - Blue Ring: Vertical circle along the roof's rake edge (Roll Tilt). Rotates with roof rectangle orientation.
+ * - Moving any reticle UP tilts the roof along that specific side.
+ * - Yaw orientation is strictly locked to the 2D traced footprint to preserve roof orientation.
  */
 const BlenderRotationDial3D: React.FC<{
   center: THREE.Vector3;
@@ -277,15 +295,24 @@ const BlenderRotationDial3D: React.FC<{
   const { updateRoofSectionConfig } = useSolarMapperStore();
   const { camera, gl } = useThree();
 
-  const [activeAxis, setActiveAxis] = useState<'x' | 'y' | 'z' | null>(null);
+  const [activeAxis, setActiveAxis] = useState<'x' | 'z' | null>(null);
   const [hudText, setHudText] = useState<string | null>(null);
 
   const radius = 3.2; // 3.2m diameter ring
-  const azimuthRad = degToRad(section.azimuthDeg);
+
+  const { sideAngleRad } = useMemo(() => {
+    if (section.vertices.length < 3) return { sideAngleRad: 0 };
+    const sides = getOuterTiltSides(section.vertices);
+    const pivotIdx = ((section.pivotEdgeIndex ?? 0) % 4 + 4) % 4;
+    const pivotSide = sides[pivotIdx] || sides[0];
+    const dx = pivotSide.endMeters.x - pivotSide.startMeters.x;
+    const dy = pivotSide.endMeters.y - pivotSide.startMeters.y;
+    return { sideAngleRad: Math.atan2(dy, dx) };
+  }, [section.vertices, section.pivotEdgeIndex]);
 
   // Helper to project cursor ray onto a ring plane and calculate angle
   const getPointerAngleOnRing = useCallback(
-    (clientX: number, clientY: number, axis: 'x' | 'y' | 'z'): number | null => {
+    (clientX: number, clientY: number, axis: 'x' | 'z'): number | null => {
       const rect = gl.domElement.getBoundingClientRect();
       const mouse = new THREE.Vector2(
         ((clientX - rect.left) / rect.width) * 2 - 1,
@@ -295,33 +322,19 @@ const BlenderRotationDial3D: React.FC<{
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(mouse, camera);
 
-      if (axis === 'y') {
-        // Green Ring: horizontal plane Y = center.y in world coordinates
-        const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
-          new THREE.Vector3(0, 1, 0),
-          center
-        );
-        const hit = new THREE.Vector3();
-        if (!raycaster.ray.intersectPlane(plane, hit)) return null;
-
-        const dx = hit.x - center.x;
-        const dz = hit.z - center.z;
-        return (radToDeg(Math.atan2(dx, -dz)) + 360) % 360;
-      }
-
       // For Red (Pitch / X) and Blue (Roll / Z) rings:
-      // In local coordinates of the roof heading group:
-      // Red ring normal is local (1, 0, 0).
-      // In world coords: rotated by -azimuthRad around Y -> (cosA, 0, sinA).
-      // Blue ring normal is local (0, 0, 1).
-      // In world coords: rotated by -azimuthRad around Y -> (-sinA, 0, cosA).
-      const cosA = Math.cos(azimuthRad);
-      const sinA = Math.sin(azimuthRad);
+      // In local coordinates of the roof rectangle sides (rotated by sideAngleRad around Y):
+      // Red ring normal is local X (1, 0, 0) aligned with rectangle eave.
+      // In world coords: rotated by sideAngleRad around Y -> (cosY, 0, -sinY).
+      // Blue ring normal is local Z (0, 0, 1) aligned with perpendicular rectangle rake.
+      // In world coords: rotated by sideAngleRad around Y -> (sinY, 0, cosY).
+      const cosY = Math.cos(sideAngleRad);
+      const sinY = Math.sin(sideAngleRad);
 
       const normal =
         axis === 'x'
-          ? new THREE.Vector3(cosA, 0, sinA)
-          : new THREE.Vector3(-sinA, 0, cosA);
+          ? new THREE.Vector3(cosY, 0, -sinY)
+          : new THREE.Vector3(sinY, 0, cosY);
 
       // Check if camera ray is nearly parallel to plane normal (edge-on view fallback)
       const dot = Math.abs(raycaster.ray.direction.dot(normal));
@@ -342,14 +355,14 @@ const BlenderRotationDial3D: React.FC<{
       const vWorldY = hit.y - center.y;
       const vWorldZ = hit.z - center.z;
 
-      // Convert world vector to local heading coordinates by rotating by +azimuthRad around Y:
-      const vLocalX = vWorldX * cosA + vWorldZ * sinA;
+      // Convert world vector to local heading coordinates by rotating by -sideAngleRad around Y:
+      const vLocalX = vWorldX * cosY - vWorldZ * sinY;
       const vLocalY = vWorldY;
-      const vLocalZ = -vWorldX * sinA + vWorldZ * cosA;
+      const vLocalZ = vWorldX * sinY + vWorldZ * cosY;
 
       if (axis === 'x') {
-        // Pitch: in local Y-Z plane
-        return radToDeg(Math.atan2(vLocalY, vLocalZ));
+        // Pitch: in local Y-Z plane (vLocalY is Up, -vLocalZ is Up-Slope towards ridge)
+        return radToDeg(Math.atan2(vLocalY, -vLocalZ));
       }
       if (axis === 'z') {
         // Roll: in local X-Y plane
@@ -357,42 +370,8 @@ const BlenderRotationDial3D: React.FC<{
       }
       return null;
     },
-    [camera, center, gl, azimuthRad]
+    [camera, center, gl, sideAngleRad]
   );
-
-  // Interactive Drag for Green Y-Axis Ring (Full 360° Azimuth / Heading)
-  const handleYPointerDown = (e: ThreeEvent<PointerEvent>) => {
-    e.stopPropagation();
-    onIsDraggingChange(true);
-    setActiveAxis('y');
-
-    const startAngle = getPointerAngleOnRing(e.clientX, e.clientY, 'y') ?? section.azimuthDeg;
-    const startAzimuth = section.azimuthDeg;
-
-    const onPointerMove = (evt: PointerEvent) => {
-      const currentAngle = getPointerAngleOnRing(evt.clientX, evt.clientY, 'y');
-      if (currentAngle === null) return;
-
-      let delta = currentAngle - startAngle;
-      while (delta > 180) delta -= 360;
-      while (delta < -180) delta += 360;
-
-      const newAzimuth = Math.round(((startAzimuth + delta) % 360 + 360) % 360);
-      updateRoofSectionConfig(section.id, { azimuthDeg: newAzimuth });
-      setHudText(`Yaw (Green): ${newAzimuth}° (${getCardinalLabel(newAzimuth)})`);
-    };
-
-    const onPointerUp = () => {
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
-      onIsDraggingChange(false);
-      setActiveAxis(null);
-      setHudText(null);
-    };
-
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
-  };
 
   // Interactive Drag for Red X-Axis Ring (Pitch Tilt)
   const handleXPointerDown = (e: ThreeEvent<PointerEvent>) => {
@@ -462,23 +441,15 @@ const BlenderRotationDial3D: React.FC<{
     window.addEventListener('pointerup', onPointerUp);
   };
 
-  // 1. Green Dot in World Space (Points to world compass azimuth)
-  const yRad = degToRad(section.azimuthDeg);
-  const yReticlePos: [number, number, number] = [
-    radius * Math.sin(yRad),
-    0,
-    -radius * Math.cos(yRad),
-  ];
-
-  // 2. Red Dot in Local Heading Space (Follows pitch angle along the slope)
+  // 1. Red Dot in Local Heading Space (Follows pitch angle along the slope)
   const xRad = degToRad(section.pitchDeg);
   const xReticlePos: [number, number, number] = [
     0,
     radius * Math.sin(xRad),
-    radius * Math.cos(xRad),
+    -radius * Math.cos(xRad),
   ];
 
-  // 3. Blue Dot in Local Heading Space (Follows roll angle along the width)
+  // 2. Blue Dot in Local Heading Space (Follows roll angle along the width)
   const zRad = degToRad(section.rollDeg ?? 0);
   const zReticlePos: [number, number, number] = [
     radius * Math.cos(zRad),
@@ -488,19 +459,6 @@ const BlenderRotationDial3D: React.FC<{
 
   return (
     <group position={[center.x, center.y, center.z]}>
-      {/* Outer Orbit Sphere Reference Ring (Always rendered on top) */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={990}>
-        <ringGeometry args={[radius * 1.05, radius * 1.06, 64]} />
-        <meshBasicMaterial
-          color="#ffffff"
-          transparent
-          opacity={0.3}
-          side={THREE.DoubleSide}
-          depthTest={false}
-          depthWrite={false}
-        />
-      </mesh>
-
       {/* Center Pivot Reticle (Always on top) */}
       <group renderOrder={999}>
         <mesh renderOrder={999}>
@@ -520,54 +478,8 @@ const BlenderRotationDial3D: React.FC<{
         </mesh>
       </group>
 
-      {/* 1. GREEN RING (WORLD COMPASS YAW & AZIMUTH - Always on top, never hidden) */}
-      <group renderOrder={995}>
-        <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={995} onPointerDown={handleYPointerDown}>
-          <torusGeometry args={[radius, activeAxis === 'y' ? 0.08 : 0.05, 16, 64]} />
-          <meshStandardMaterial
-            color="#22c55e"
-            emissive="#15803d"
-            emissiveIntensity={activeAxis === 'y' ? 1.4 : 0.65}
-            roughness={0.2}
-            depthTest={false}
-            depthWrite={false}
-          />
-        </mesh>
-        {/* Generous Invisible Hit Area */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} onPointerDown={handleYPointerDown}>
-          <torusGeometry args={[radius, 0.35, 8, 32]} />
-          <meshBasicMaterial transparent opacity={0} />
-        </mesh>
-        {/* Grab Reticle Dot on Green Ring (Points to compass heading) */}
-        <group position={yReticlePos} renderOrder={999} onPointerDown={handleYPointerDown}>
-          <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={999}>
-            <ringGeometry args={[0.16, 0.26, 24]} />
-            <meshBasicMaterial
-              color="#ffffff"
-              side={THREE.DoubleSide}
-              depthTest={false}
-              depthWrite={false}
-            />
-          </mesh>
-          <mesh renderOrder={999}>
-            <sphereGeometry args={[0.14, 16, 16]} />
-            <meshStandardMaterial
-              color="#22c55e"
-              emissive="#16a34a"
-              emissiveIntensity={activeAxis === 'y' ? 1.6 : 0.8}
-              depthTest={false}
-              depthWrite={false}
-            />
-          </mesh>
-          <mesh>
-            <sphereGeometry args={[0.4, 8, 8]} />
-            <meshBasicMaterial transparent opacity={0} />
-          </mesh>
-        </group>
-      </group>
-
-      {/* 2. LOCAL ORIENTATION GROUP: PITCH & ROLL RINGS ROTATE WITH ROOF HEADING */}
-      <group rotation={[0, -azimuthRad, 0]} renderOrder={995}>
+      {/* LOCAL ORIENTATION GROUP: PITCH & ROLL RINGS ROTATE WITH RECTANGLE SIDES */}
+      <group rotation={[0, sideAngleRad, 0]} renderOrder={995}>
         {/* RED RING (X-AXIS / PITCH TILT ALONG SLOPE - Always on top) */}
         <group renderOrder={995}>
           <mesh rotation={[0, Math.PI / 2, 0]} renderOrder={995} onPointerDown={handleXPointerDown}>
@@ -1395,11 +1307,15 @@ export const Roof3DPreviewCanvas: React.FC = () => {
     setActive3DTool,
     updateRoofSectionConfig,
     translateRoofSection,
-    loadDemoRoofPolygon,
   } = useSolarMapperStore();
 
   const [, setIsDraggingRoof] = useState(false);
   const canvasPointerDownRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Set sun simulation by default to user's current local time upon mounting 3D view
+  useEffect(() => {
+    setSunHour(getDefaultSunHour());
+  }, [setSunHour]);
 
   const activeSection = activeSectionId
     ? roofSections.find((s) => s.id === activeSectionId) || null
@@ -1490,20 +1406,13 @@ export const Roof3DPreviewCanvas: React.FC = () => {
               <Layers className="w-10 h-10 text-amber-500 mx-auto" />
               <h4 className="text-sm font-bold text-white">No Roof Polygons Traced Yet</h4>
               <p className="text-xs text-slate-400">
-                Trace your roof corners on the satellite map or load our sample roof to inspect the 3D pitched model and packed solar array.
+                Trace your roof corners on the satellite map to inspect the 3D model and packed solar array.
               </p>
-              <div className="flex items-center justify-center gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={loadDemoRoofPolygon}
-                  className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 transition-colors shadow-sm"
-                >
-                  Load Sample Roof
-                </button>
+              <div className="flex items-center justify-center pt-2">
                 <button
                   type="button"
                   onClick={() => setViewMode('2d_satellite')}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-semibold text-xs hover:bg-slate-700 transition-colors"
+                  className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 transition-colors shadow-sm"
                 >
                   Return to Satellite
                 </button>
@@ -1516,7 +1425,7 @@ export const Roof3DPreviewCanvas: React.FC = () => {
         {activeSection && activeSection.vertices.length >= 3 && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 max-w-[calc(100%-2rem)] overflow-x-auto no-scrollbar">
             <div className="p-1.5 rounded-full bg-slate-950/90 border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-2xl flex items-center gap-1.5 select-none">
-              {/* Tool Mode: Rotate & Tilt (XYZ 3D Rotation Gizmo) */}
+              {/* Tool Mode: Tilt & Pitch (Dual-Axis Incline Gizmo) */}
               <button
                 type="button"
                 onClick={() => setActive3DTool('hinge')}
@@ -1525,10 +1434,10 @@ export const Roof3DPreviewCanvas: React.FC = () => {
                     ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/25'
                     : 'text-slate-300 hover:text-white hover:bg-white/10'
                 }`}
-                title="Rotate pitch, azimuth and roll with 3D XYZ rotation dial"
+                title="Adjust roof pitch and roll tilt along building edges"
               >
                 <RotateCw className="w-3.5 h-3.5 text-current flex-shrink-0" />
-                <span>Rotate & Tilt</span>
+                <span>Tilt & Pitch</span>
               </button>
 
               {/* Tool Mode: Move Roof */}
@@ -1558,20 +1467,48 @@ export const Roof3DPreviewCanvas: React.FC = () => {
                 Sun Simulation: {formatSunTime(sunHour)}
               </span>
               <div className="flex items-center gap-1">
-                {([6, 12, 18] as const).map((h) => (
-                  <button
-                    key={h}
-                    type="button"
-                    onClick={() => setSunHour(h)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all ${
-                      Math.abs(sunHour - h) < 0.5
-                        ? 'bg-amber-400 text-slate-950'
-                        : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    {h === 6 ? '6 AM' : h === 12 ? '12 PM' : '6 PM'}
-                  </button>
-                ))}
+                <button
+                  type="button"
+                  onClick={() => setSunHour(getDefaultSunHour())}
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all ${
+                    Math.abs(sunHour - (new Date().getHours() + new Date().getMinutes() / 60)) < 0.2
+                      ? 'bg-amber-400 text-slate-950'
+                      : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+                  }`}
+                  title="Snap sun to current local time"
+                >
+                  Now
+                </button>
+                {([6, 9, 12, 15, 18] as const).map((h) => {
+                  const isCurrentTimeSelected =
+                    Math.abs(sunHour - (new Date().getHours() + new Date().getMinutes() / 60)) < 0.2;
+                  const isPresetActive = Math.abs(sunHour - h) < 0.5 && !isCurrentTimeSelected;
+                  const label =
+                    h === 6
+                      ? '6 AM'
+                      : h === 9
+                      ? '9 AM'
+                      : h === 12
+                      ? '12 PM'
+                      : h === 15
+                      ? '3 PM'
+                      : '6 PM';
+
+                  return (
+                    <button
+                      key={h}
+                      type="button"
+                      onClick={() => setSunHour(h)}
+                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all ${
+                        isPresetActive
+                          ? 'bg-amber-400 text-slate-950'
+                          : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

@@ -311,8 +311,14 @@ export function getOuterTiltSides(vertices: GeoPoint[]): OuterTiltSide[] {
   while (domAngleRad >= Math.PI / 2) domAngleRad -= Math.PI;
   while (domAngleRad < -Math.PI / 2) domAngleRad += Math.PI;
 
-  const cosTheta = Math.cos(domAngleRad);
-  const sinTheta = Math.sin(domAngleRad);
+  // The eave of a building is the primary horizontal axis (closest to East-West / facing South)
+  let eaveAngleRad = domAngleRad;
+  if (Math.abs(eaveAngleRad) > Math.PI / 4) {
+    eaveAngleRad = eaveAngleRad > 0 ? eaveAngleRad - Math.PI / 2 : eaveAngleRad + Math.PI / 2;
+  }
+
+  const cosTheta = Math.cos(eaveAngleRad);
+  const sinTheta = Math.sin(eaveAngleRad);
 
   let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
   for (const p of localPts) {

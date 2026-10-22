@@ -5,6 +5,7 @@ import {
   calculateOrientationYieldFactor,
   calculateThermalDerating,
   buildMonthlyClimateSeries,
+  getDefaultSunHour,
 } from '../utils/solarPhysics';
 
 describe('Solar Physics & Tropical Climatology Calculations', () => {
@@ -76,5 +77,31 @@ describe('Solar Physics & Tropical Climatology Calculations', () => {
 
     // P25 should be <= annual average
     expect(profile.p25EffectivePsh).toBeLessThanOrEqual(profile.annualAvgEffectivePsh);
+  });
+
+  it('determines default sun hour from daytime local time or falls back to solar noon at night', () => {
+    // 9:30 AM -> 9.5
+    const morning = new Date(2026, 9, 22, 9, 30);
+    expect(getDefaultSunHour(morning)).toBe(9.5);
+
+    // 1:45 PM -> 13.75
+    const afternoon = new Date(2026, 9, 22, 13, 45);
+    expect(getDefaultSunHour(afternoon)).toBe(13.75);
+
+    // 6:00 AM sunrise boundary -> 6.0
+    const sunrise = new Date(2026, 9, 22, 6, 0);
+    expect(getDefaultSunHour(sunrise)).toBe(6.0);
+
+    // 6:00 PM sunset boundary -> 18.0
+    const sunset = new Date(2026, 9, 22, 18, 0);
+    expect(getDefaultSunHour(sunset)).toBe(18.0);
+
+    // 10:30 PM nighttime -> defaults to 12.0 (solar noon) for clear 3D roof lighting
+    const night = new Date(2026, 9, 22, 22, 30);
+    expect(getDefaultSunHour(night)).toBe(12.0);
+
+    // 3:00 AM pre-dawn -> defaults to 12.0
+    const preDawn = new Date(2026, 9, 22, 3, 0);
+    expect(getDefaultSunHour(preDawn)).toBe(12.0);
   });
 });

@@ -21,7 +21,10 @@ import {
   calculateEdgeAzimuthDeg,
   getOuterTiltSides,
 } from '../utils/geodesicMath';
-import { calculateOrientationYieldFactor } from '../utils/solarPhysics';
+import {
+  calculateOrientationYieldFactor,
+  getDefaultSunHour,
+} from '../utils/solarPhysics';
 import { calculatePanelPacking } from '../utils/panelPackingEngine';
 import { DEFAULT_PRESET } from '../services/regionalPresets';
 import { createProfileFromPreset } from '../services/nasaPowerApi';
@@ -141,7 +144,7 @@ export const useSolarMapperStore = create<SolarMapperState>()(
       activeSectionId: null,
       isDrawingMode: false,
       viewMode: '2d_satellite',
-      sunHour: 12.0,
+      sunHour: getDefaultSunHour(),
       irradianceProfile: initialProfile,
       isLoadingIrradiance: false,
       active3DTool: 'inspect',
@@ -249,7 +252,8 @@ export const useSolarMapperStore = create<SolarMapperState>()(
         set((state) => ({
           roofSections: state.roofSections.map((sec) => {
             if (sec.id !== id) return sec;
-            const updated = { ...sec, ...updates };
+            const hasCustomAzimuth = updates.azimuthDeg !== undefined ? true : sec.hasCustomAzimuth;
+            const updated = { ...sec, ...updates, hasCustomAzimuth };
             return recomputeSection(updated, effectivePsh);
           }),
         }));
@@ -277,7 +281,15 @@ export const useSolarMapperStore = create<SolarMapperState>()(
           roofSections: state.roofSections.map((sec) => {
             if (sec.id !== targetId) return sec;
             const newVertices = [...sec.vertices, pt];
-            return recomputeSection({ ...sec, vertices: newVertices }, effectivePsh);
+            const updated = { ...sec, vertices: newVertices };
+            if (newVertices.length >= 3 && !sec.hasCustomAzimuth) {
+              const sides = getOuterTiltSides(newVertices);
+              const pivotIdx = ((sec.pivotEdgeIndex ?? 0) % 4 + 4) % 4;
+              if (sides[pivotIdx]) {
+                updated.azimuthDeg = sides[pivotIdx].azimuthDeg;
+              }
+            }
+            return recomputeSection(updated, effectivePsh);
           }),
         }));
       },
@@ -289,7 +301,15 @@ export const useSolarMapperStore = create<SolarMapperState>()(
             if (sec.id !== sectionId) return sec;
             const newVertices = [...sec.vertices];
             newVertices[index] = pt;
-            return recomputeSection({ ...sec, vertices: newVertices }, effectivePsh);
+            const updated = { ...sec, vertices: newVertices };
+            if (newVertices.length >= 3 && !sec.hasCustomAzimuth) {
+              const sides = getOuterTiltSides(newVertices);
+              const pivotIdx = ((sec.pivotEdgeIndex ?? 0) % 4 + 4) % 4;
+              if (sides[pivotIdx]) {
+                updated.azimuthDeg = sides[pivotIdx].azimuthDeg;
+              }
+            }
+            return recomputeSection(updated, effectivePsh);
           }),
         }));
       },
@@ -300,7 +320,15 @@ export const useSolarMapperStore = create<SolarMapperState>()(
           roofSections: state.roofSections.map((sec) => {
             if (sec.id !== sectionId) return sec;
             const newVertices = sec.vertices.filter((_, i) => i !== index);
-            return recomputeSection({ ...sec, vertices: newVertices }, effectivePsh);
+            const updated = { ...sec, vertices: newVertices };
+            if (newVertices.length >= 3 && !sec.hasCustomAzimuth) {
+              const sides = getOuterTiltSides(newVertices);
+              const pivotIdx = ((sec.pivotEdgeIndex ?? 0) % 4 + 4) % 4;
+              if (sides[pivotIdx]) {
+                updated.azimuthDeg = sides[pivotIdx].azimuthDeg;
+              }
+            }
+            return recomputeSection(updated, effectivePsh);
           }),
         }));
       },
@@ -314,7 +342,15 @@ export const useSolarMapperStore = create<SolarMapperState>()(
           roofSections: state.roofSections.map((sec) => {
             if (sec.id !== activeSectionId) return sec;
             const newVertices = sec.vertices.slice(0, -1);
-            return recomputeSection({ ...sec, vertices: newVertices }, effectivePsh);
+            const updated = { ...sec, vertices: newVertices };
+            if (newVertices.length >= 3 && !sec.hasCustomAzimuth) {
+              const sides = getOuterTiltSides(newVertices);
+              const pivotIdx = ((sec.pivotEdgeIndex ?? 0) % 4 + 4) % 4;
+              if (sides[pivotIdx]) {
+                updated.azimuthDeg = sides[pivotIdx].azimuthDeg;
+              }
+            }
+            return recomputeSection(updated, effectivePsh);
           }),
         }));
       },
@@ -385,7 +421,15 @@ export const useSolarMapperStore = create<SolarMapperState>()(
           roofSections: state.roofSections.map((sec) => {
             if (sec.id !== id) return sec;
             const newVertices = translatePolygonGeo(sec.vertices, deltaMetersX, deltaMetersY);
-            return recomputeSection({ ...sec, vertices: newVertices }, effectivePsh);
+            const updated = { ...sec, vertices: newVertices };
+            if (newVertices.length >= 3 && !sec.hasCustomAzimuth) {
+              const sides = getOuterTiltSides(newVertices);
+              const pivotIdx = ((sec.pivotEdgeIndex ?? 0) % 4 + 4) % 4;
+              if (sides[pivotIdx]) {
+                updated.azimuthDeg = sides[pivotIdx].azimuthDeg;
+              }
+            }
+            return recomputeSection(updated, effectivePsh);
           }),
         }));
       },
@@ -399,7 +443,7 @@ export const useSolarMapperStore = create<SolarMapperState>()(
             const sideIdx = ((edgeIndex % 4) + 4) % 4;
             const chosenSide = sides[sideIdx] ?? sides[0];
             return recomputeSection(
-              { ...sec, pivotEdgeIndex: sideIdx, azimuthDeg: chosenSide.azimuthDeg },
+              { ...sec, pivotEdgeIndex: sideIdx, azimuthDeg: chosenSide.azimuthDeg, hasCustomAzimuth: true },
               effectivePsh
             );
           }),

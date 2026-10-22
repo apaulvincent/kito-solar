@@ -118,6 +118,7 @@ export interface RoofPolygonSection {
   panelOrientation: PanelOrientation;
   panelWattage: 550 | 580 | 600;
   panelRotationDeg?: number; // Custom panel alignment angle in degrees (auto-aligns to roof edge if undefined)
+  hasCustomAzimuth?: boolean;
   // Computed metrics
   flatAreaSqm: number;
   slopedAreaSqm: number;

@@ -179,3 +179,15 @@ export function buildMonthlyClimateSeries(
     monthlySeries: series,
   };
 }
+
+/**
+ * Calculates default sun hour matching the user's current local time during daylight hours (6 AM to 6 PM).
+ * Defaults to 12 PM solar noon if outside daylight hours to ensure the 3D roof is clearly illuminated.
+ */
+export function getDefaultSunHour(date: Date = new Date()): number {
+  const decimal = date.getHours() + date.getMinutes() / 60;
+  if (decimal >= 6.0 && decimal <= 18.0) {
+    return Math.round(decimal * 100) / 100;
+  }
+  return 12.0;
+}
