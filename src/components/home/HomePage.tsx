@@ -16,6 +16,7 @@ import {
   Zap,
   Calculator,
   MapPin,
+  TrendingUp,
 } from 'lucide-react';
 
 export function HomePage() {
@@ -88,6 +89,15 @@ export function HomePage() {
                 >
                   <MapPin className="w-4 h-4 text-amber-500" />
                   <span>Roof & Irradiance</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveView(user ? 'financial-roi' : 'login')}
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-800 dark:text-white font-bold text-sm border border-slate-200 dark:border-slate-700 shadow-xs active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <TrendingUp className="w-4 h-4 text-amber-500" />
+                  <span>ROI Simulator</span>
                 </button>
 
                 <button
