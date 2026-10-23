@@ -105,12 +105,17 @@ describe('App Navigation & Supabase Authentication Suite', () => {
     expect(content).toContain('My Solar Projects');
   });
 
-  it('verifies HomePage provides direct links to the tool and account', () => {
+  it('verifies HomePage provides direct studio command dock and Header omits duplicate Account nav tab', () => {
     const homePagePath = path.resolve(process.cwd(), 'src/components/home/HomePage.tsx');
     const content = fs.readFileSync(homePagePath, 'utf-8');
 
-    expect(content).toContain('Open Solar Tool');
-    expect(content).toContain('Everything you need to size, wire, and lay out your solar install.');
-    expect(content).toContain('3D Solar CAD Studio');
+    expect(content).toContain('Launch 3D Electrical Studio');
+    expect(content).toContain('Workspace Command Dock');
+    expect(content).toContain('3D Electrical Workbench');
+    expect(content).toContain('Financial ROI Simulator');
+
+    const headerPath = path.resolve(process.cwd(), 'src/components/header/Header.tsx');
+    const headerContent = fs.readFileSync(headerPath, 'utf-8');
+    expect(headerContent).not.toContain('<span>Account</span>');
   });
 });

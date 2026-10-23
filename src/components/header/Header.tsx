@@ -13,7 +13,6 @@ import {
   TrendingUp,
   Activity,
   Folder,
-  User as UserIcon,
 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -46,7 +45,7 @@ export function Header() {
               </span>
             </button>
 
-            {/* Navigation Links: Home, Tool, Account */}
+            {/* Navigation Links */}
             <nav className="flex items-center gap-1 font-sans text-xs font-semibold text-slate-600 dark:text-slate-300">
               <button
                 type="button"
@@ -138,21 +137,6 @@ export function Header() {
                 <Folder className="w-3.5 h-3.5 text-amber-500" />
                 <span>Projects</span>
               </button>
-
-              {user && (
-                <button
-                  type="button"
-                  onClick={() => setActiveView('account')}
-                  className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
-                    activeView === 'account'
-                      ? 'text-amber-700 dark:text-amber-400 font-bold bg-amber-500/10 border border-amber-500/25'
-                      : 'hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
-                  }`}
-                >
-                  <UserIcon className="w-3.5 h-3.5" />
-                  <span>Account</span>
-                </button>
-              )}
             </nav>
           </div>
 
