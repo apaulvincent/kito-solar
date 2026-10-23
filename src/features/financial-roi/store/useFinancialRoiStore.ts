@@ -1,6 +1,7 @@
 // src/features/financial-roi/store/useFinancialRoiStore.ts
 // Zustand store managing user financial parameters, utility tariffs, CAPEX overrides, and simulation results.
 
+import { useMemo } from 'react';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import {
@@ -40,20 +41,11 @@ export interface FinancialRoiState {
   setHighlightedTimelineYear: (year: number | null) => void;
   resetToDefaults: () => void;
 
-  // Selectors
+  // Imperative helpers (for store.getState() calls & tests)
   getSystemSizingInput: () => SystemSizingInput;
   getActiveSimulation: () => ScenarioSimulationResult;
   getAllScenarioSimulations: () => Record<ExportStrategy, ScenarioSimulationResult>;
 }
-
-export type PersistedFinancialRoiState = Pick<
-  FinancialRoiState,
-  | 'config'
-  | 'standaloneMonthlyBillPhp'
-  | 'useStandaloneBillOverride'
-  | 'activeScenarioComparison'
-  | 'showAllCurvesOnTimeline'
->;
 
 const safeLocalStorage = {
   getItem: (name: string): string | null => {
@@ -247,3 +239,50 @@ export const useFinancialRoiStore = create<FinancialRoiState>()(
     }
   )
 );
+
+/**
+ * React 19 safe memoized hook that subscribes to stable state primitives/references
+ * and computes `sizingInput`, `activeSim`, and `allScenarios` without triggering
+ * `useSyncExternalStore` infinite snapshot loops.
+ */
+export function useFinancialRoiSimulation() {
+  const config = useFinancialRoiStore((s) => s.config);
+  const standaloneMonthlyBillPhp = useFinancialRoiStore((s) => s.standaloneMonthlyBillPhp);
+  const useStandaloneBillOverride = useFinancialRoiStore((s) => s.useStandaloneBillOverride);
+  const getSystemSizingInput = useFinancialRoiStore((s) => s.getSystemSizingInput);
+
+  // Subscribe to relevant external store state so changes re-compute memoized simulation
+  const loadItems = useApplianceLoadStore((s) => s.items);
+  const loadConfig = useApplianceLoadStore((s) => s.config);
+  const effectivePsh = useSolarMapperStore((s) => s.irradianceProfile?.annualAvgEffectivePsh);
+
+  const sizingInput = useMemo(
+    () => getSystemSizingInput(),
+    [
+      getSystemSizingInput,
+      config.retailRatePhp,
+      standaloneMonthlyBillPhp,
+      useStandaloneBillOverride,
+      loadItems,
+      loadConfig,
+      effectivePsh,
+    ]
+  );
+
+  const activeSim = useMemo(
+    () => computeScenarioSimulation(sizingInput, config, config.exportStrategy),
+    [sizingInput, config]
+  );
+
+  const allScenarios = useMemo(
+    () => simulateAllScenarios(sizingInput, config),
+    [sizingInput, config]
+  );
+
+  return {
+    config,
+    sizingInput,
+    activeSim,
+    allScenarios,
+  };
+}

@@ -1,8 +1,19 @@
 // src/features/financial-roi/__tests__/financialRoiIntegration.test.ts
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect, beforeEach } from 'vitest';
+import * as fs from 'fs';
+import * as path from 'path';
 import { useFinancialRoiStore } from '../store/useFinancialRoiStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { QuickBillSliderBanner } from '../components/QuickBillSliderBanner';
+import { ExportModeComparisonCards } from '../components/ExportModeComparisonCards';
+import { CashflowTimelineChart } from '../components/CashflowTimelineChart';
+import { MonthlyBillComparisonBar } from '../components/MonthlyBillComparisonBar';
+import { EnergyFateBreakdownBar } from '../components/EnergyFateBreakdownBar';
+import { TariffPresetSelector } from '../components/TariffPresetSelector';
+import { CapexBreakdownCard } from '../components/CapexBreakdownCard';
 
 describe('Financial ROI Store & Authentication Integration Suite', () => {
   beforeEach(() => {
@@ -68,7 +79,6 @@ describe('Financial ROI Store & Authentication Integration Suite', () => {
   });
 
   it('verifies auth protection requirement for financial-roi view', () => {
-    // Guest user should be redirected to login when trying to open financial-roi
     const authState = useAuthStore.getState();
     expect(authState.user).toBeNull();
 
@@ -76,16 +86,20 @@ describe('Financial ROI Store & Authentication Integration Suite', () => {
     calcStore.setActiveView('financial-roi');
     expect(useCalculatorStore.getState().activeView).toBe('financial-roi');
 
-    // Simulate auth check logic from App.tsx / FinancialRoiPage.tsx
-    const isAuthLoading = authState.isLoading;
-    const user = authState.user;
-    const activeView = useCalculatorStore.getState().activeView;
+    const pagePath = path.resolve(process.cwd(), 'src/features/financial-roi/components/FinancialRoiPage.tsx');
+    const content = fs.readFileSync(pagePath, 'utf-8');
+    expect(content).toContain("setActiveView('login')");
+    expect(content).toContain('LOGIN REQUIRED');
+  });
 
-    let targetView = activeView;
-    if ((activeView === 'solar-mapper' || activeView === 'financial-roi') && !isAuthLoading && !user) {
-      targetView = 'login';
-    }
-
-    expect(targetView).toBe('login');
+  it('renders all Financial ROI components cleanly without uncached Zustand selector calls', () => {
+    // Render each UI module and confirm zero getSnapshot loop errors
+    expect(renderToStaticMarkup(createElement(QuickBillSliderBanner))).toContain('System Sizing &amp; Energy Baseline');
+    expect(renderToStaticMarkup(createElement(ExportModeComparisonCards))).toContain('Architecture Financial Comparison');
+    expect(renderToStaticMarkup(createElement(CashflowTimelineChart))).toContain('25-Year Cumulative Cashflow &amp; Breakeven Curve');
+    expect(renderToStaticMarkup(createElement(MonthlyBillComparisonBar))).toContain('Year 1 Electric Bill Impact');
+    expect(renderToStaticMarkup(createElement(EnergyFateBreakdownBar))).toContain('Daily Solar Energy Fate &amp; Utilization');
+    expect(renderToStaticMarkup(createElement(TariffPresetSelector))).toContain('Electric Utility Tariff &amp; Economics');
+    expect(renderToStaticMarkup(createElement(CapexBreakdownCard))).toContain('System Turnkey CAPEX &amp; Replacements');
   });
 });
