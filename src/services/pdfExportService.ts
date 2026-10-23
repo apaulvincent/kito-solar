@@ -3,6 +3,11 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { SystemCalculationResult } from '@/types/calculator';
 import { SolarInverterRecord, SolarModuleRecord, BatteryRecord } from '@/types/supabase';
+import { DailySimulationSummary } from '@/features/yield-simulator/types/yieldSimulator';
+import { useYieldSimulatorStore } from '@/features/yield-simulator/store/useYieldSimulatorStore';
+import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
+import { useSolarMapperStore } from '@/features/solar-mapper/store/useSolarMapperStore';
+import { runYieldSimulation } from '@/features/yield-simulator/utils/yieldSimulationEngine';
 
 export interface ExportPdfParams {
   calculationResult: SystemCalculationResult;
@@ -14,6 +19,7 @@ export interface ExportPdfParams {
   mainBreakerA: number | null;
   userEmail?: string;
   userName?: string;
+  yieldSummary?: DailySimulationSummary;
 }
 
 export function generateSizingPdf({
@@ -26,6 +32,7 @@ export function generateSizingPdf({
   mainBreakerA,
   userEmail,
   userName,
+  yieldSummary,
 }: ExportPdfParams): jsPDF {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -404,6 +411,113 @@ export function generateSizingPdf({
         0: { fontStyle: 'bold', textColor: [217, 119, 6], cellWidth: 24 },
         1: { fontStyle: 'bold', textColor: [15, 23, 42], cellWidth: 40 },
         2: { textColor: [71, 85, 105], cellWidth: 54 },
+        3: { textColor: [100, 116, 139] },
+      },
+      margin: { left: MARGIN_X, right: MARGIN_X },
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 12;
+  }
+
+  // 7B. 24-HOUR SYSTEM DISPATCH & SELF-SUFFICIENCY SUMMARY (Digital Twin Telemetry)
+  let effectiveYieldSummary = yieldSummary;
+  if (!effectiveYieldSummary) {
+    try {
+      const simState = useYieldSimulatorStore.getState();
+      const loadState = useApplianceLoadStore.getState();
+      const mapperState = useSolarMapperStore.getState();
+      effectiveYieldSummary = runYieldSimulation({
+        pvArrayKwp: summary.totalArrayPowerKw || simState.pvArrayKwp,
+        inverterKw: summary.inverterPowerKw || simState.inverterKw,
+        batteryCapacityKwh: isHybrid ? Number((battery.totalEnergyWh / 1000).toFixed(2)) : 0,
+        initialBatterySocPercent: simState.initialBatterySocPercent,
+        minReserveSocPercent: simState.minReserveSocPercent,
+        roundTripEfficiency: 0.92,
+        maxBatteryCRate: 0.5,
+        systemTopology: isHybrid ? 'hybrid' : 'grid_tie',
+        isZeroExport: simState.isZeroExport,
+        weatherScenario: simState.weatherScenario === 'live_open_meteo' ? 'clear_sky' : simState.weatherScenario,
+        emsMode: simState.emsMode,
+        peakSunHours: mapperState.getSelectedPsh(),
+        latitude: mapperState.coordinates.lat,
+        tariffPhpPerKwh: simState.tariffPhpPerKwh,
+        brownout: simState.brownout,
+        instantBlackoutActive: false,
+        currentStepIndex: simState.currentStepIndex,
+        appliances: loadState.items,
+        disabledApplianceIds: simState.disabledApplianceIds,
+        forcedOnApplianceIds: simState.forcedOnApplianceIds,
+        shiftedToMiddayIds: simState.shiftedToMiddayIds,
+      });
+    } catch {
+      effectiveYieldSummary = undefined;
+    }
+  }
+
+  if (effectiveYieldSummary) {
+    if (currentY > 205) {
+      doc.addPage();
+      currentY = 22;
+    }
+
+    renderSectionHeading(
+      warnings.length > 0 ? '05' : '04',
+      '24-HOUR SYSTEM DISPATCH & SELF-SUFFICIENCY SUMMARY'
+    );
+
+    const dispatchRows = [
+      [
+        'Daily Solar Harvest',
+        `${effectiveYieldSummary.totalHarvestedPvKwh.toFixed(2)} kWh`,
+        `Potential: ${effectiveYieldSummary.totalPotentialPvKwh.toFixed(2)} kWh`,
+        `Clipped / Curtailed: ${effectiveYieldSummary.totalClippedPvKwh.toFixed(2)} kWh`,
+      ],
+      [
+        'Household Energy Served',
+        `${effectiveYieldSummary.totalLoadConsumedKwh.toFixed(2)} kWh`,
+        `Direct Daytime PV: ${effectiveYieldSummary.directSolarToLoadKwh.toFixed(2)} kWh`,
+        `Self-Sufficiency Ratio: ${effectiveYieldSummary.selfSufficiencyPercent.toFixed(1)}%`,
+      ],
+      [
+        'LiFePO4 Battery Cycling',
+        `+${effectiveYieldSummary.batteryChargedKwh.toFixed(2)} / -${effectiveYieldSummary.batteryDischargedKwh.toFixed(2)} kWh`,
+        `SoC Range: ${effectiveYieldSummary.minBatterySocPercent.toFixed(0)}% to ${effectiveYieldSummary.maxBatterySocPercent.toFixed(0)}%`,
+        effectiveYieldSummary.brownoutSurvived
+          ? 'Outage Stress Test: Survived (0 min unmet)'
+          : `Outage Unmet Window: ${effectiveYieldSummary.blackoutUnmetMinutes} mins`,
+      ],
+      [
+        'Utility Grid Exchange',
+        `${effectiveYieldSummary.gridImportedKwh.toFixed(2)} kWh Imported`,
+        `${effectiveYieldSummary.gridExportedKwh.toFixed(2)} kWh Exported`,
+        `Solar Local Use: ${effectiveYieldSummary.solarSelfConsumptionPercent.toFixed(1)}%`,
+      ],
+    ];
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [['DISPATCH METRIC', '24-HR TOTAL', 'PRIMARY BREAKDOWN', 'PERFORMANCE BENCHMARK']],
+      body: dispatchRows,
+      theme: 'plain',
+      headStyles: {
+        textColor: [100, 116, 139],
+        fontSize: 7.5,
+        fontStyle: 'bold',
+        cellPadding: { top: 3, bottom: 3, left: 1, right: 1 },
+        lineColor: [226, 232, 240],
+        lineWidth: { bottom: 0.25 },
+      },
+      bodyStyles: {
+        textColor: [51, 65, 85],
+        fontSize: 8.5,
+        cellPadding: { top: 3.2, bottom: 3.2, left: 1, right: 1 },
+        lineColor: [241, 245, 249],
+        lineWidth: { bottom: 0.15 },
+      },
+      columnStyles: {
+        0: { fontStyle: 'bold', textColor: [15, 23, 42], cellWidth: 42 },
+        1: { fontStyle: 'bold', textColor: [217, 119, 6], cellWidth: 36 },
+        2: { textColor: [71, 85, 105], cellWidth: 46 },
         3: { textColor: [100, 116, 139] },
       },
       margin: { left: MARGIN_X, right: MARGIN_X },

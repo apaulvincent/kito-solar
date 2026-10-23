@@ -22,7 +22,7 @@ import { projectService } from '@/services/projectService';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export type WorkbenchTabKey = 'electrical' | 'pv_sizing' | 'mounting_bom' | 'warnings';
-export type ActiveView = 'home' | 'tool' | 'projects' | 'login' | 'register' | 'account' | 'load-calculator' | 'solar-mapper' | 'financial-roi';
+export type ActiveView = 'home' | 'tool' | 'projects' | 'login' | 'register' | 'account' | 'load-calculator' | 'solar-mapper' | 'financial-roi' | 'yield-simulator';
 export type DetailMode = 'min' | 'detailed';
 
 interface CalculatorState {
@@ -153,7 +153,8 @@ export const pathToView = (pathname: string, hash?: string): ActiveView => {
   if (cleanPath === 'tool' || cleanPath === 'studio') return 'tool';
   if (cleanPath === 'load-calculator' || cleanPath === 'calculator' || cleanPath === 'sizing' || cleanPath === 'appliances') return 'load-calculator';
   if (cleanPath === 'solar-mapper' || cleanPath === 'mapper' || cleanPath === 'roof-mapper' || cleanPath === 'irradiance' || cleanPath === 'roof') return 'solar-mapper';
-  if (cleanPath === 'financial-roi' || cleanPath === 'roi' || cleanPath === 'roi-simulator' || cleanPath === 'tariff' || cleanPath === 'simulator') return 'financial-roi';
+  if (cleanPath === 'financial-roi' || cleanPath === 'roi' || cleanPath === 'roi-simulator' || cleanPath === 'tariff') return 'financial-roi';
+  if (cleanPath === 'yield-simulator' || cleanPath === 'simulator' || cleanPath === 'yield' || cleanPath === 'monitoring') return 'yield-simulator';
   if (cleanPath === 'projects') return 'projects';
   if (cleanPath === 'login') return 'login';
   if (cleanPath === 'register') return 'register';
@@ -166,7 +167,8 @@ export const pathToView = (pathname: string, hash?: string): ActiveView => {
       if (cleanHash === 'tool' || cleanHash === 'studio') return 'tool';
       if (cleanHash === 'load-calculator' || cleanHash === 'calculator' || cleanHash === 'sizing' || cleanHash === 'appliances') return 'load-calculator';
       if (cleanHash === 'solar-mapper' || cleanHash === 'mapper' || cleanHash === 'roof-mapper' || cleanHash === 'irradiance' || cleanHash === 'roof') return 'solar-mapper';
-      if (cleanHash === 'financial-roi' || cleanHash === 'roi' || cleanHash === 'roi-simulator' || cleanHash === 'tariff' || cleanHash === 'simulator') return 'financial-roi';
+      if (cleanHash === 'financial-roi' || cleanHash === 'roi' || cleanHash === 'roi-simulator' || cleanHash === 'tariff') return 'financial-roi';
+      if (cleanHash === 'yield-simulator' || cleanHash === 'simulator' || cleanHash === 'yield' || cleanHash === 'monitoring') return 'yield-simulator';
       if (cleanHash === 'projects') return 'projects';
       if (cleanHash === 'login') return 'login';
       if (cleanHash === 'register') return 'register';
@@ -708,8 +710,6 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
           targetPath = targetProjectId ? `/projects/${targetProjectId}` : '/tool';
         } else if (view === 'load-calculator') {
           targetPath = '/calculator';
-        } else if (view === 'financial-roi') {
-          targetPath = '/roi';
         } else {
           targetPath = `/${view}`;
         }

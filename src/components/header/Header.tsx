@@ -11,6 +11,7 @@ import {
   Home,
   MapPin,
   TrendingUp,
+  Activity,
   Folder,
   User as UserIcon,
 } from 'lucide-react';
@@ -110,6 +111,19 @@ export function Header() {
               >
                 <TrendingUp className="w-3.5 h-3.5 text-amber-500" />
                 <span>ROI Simulator</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveView(user ? 'yield-simulator' : 'login')}
+                className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                  activeView === 'yield-simulator'
+                    ? 'text-amber-700 dark:text-amber-400 font-bold bg-amber-500/10 border border-amber-500/25'
+                    : 'hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5 text-amber-500" />
+                <span>Yield Monitor</span>
               </button>
 
               <button

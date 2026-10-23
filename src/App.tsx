@@ -10,6 +10,7 @@ import { ProjectsPage } from '@/components/projects/ProjectsPage';
 import { ApplianceLoadCalculatorPage } from '@/components/load-calculator/ApplianceLoadCalculatorPage';
 import { SolarMapperPage } from '@/features/solar-mapper/components/SolarMapperPage';
 import { FinancialRoiPage } from '@/features/financial-roi/components/FinancialRoiPage';
+import { YieldSimulatorPage } from '@/features/yield-simulator/components/YieldSimulatorPage';
 import { SystemSummary } from '@/components/summary/SystemSummary';
 import { SolarDiagramCanvas } from '@/components/diagram/SolarDiagramCanvas';
 import { DiagramComponentList } from '@/components/diagram/DiagramComponentList';
@@ -40,9 +41,15 @@ export function App() {
     };
   }, [initializeCatalog, initAuth]);
 
-  // Enforce auth requirement for Roof Mapper
+  // Enforce auth requirement for Roof Mapper, ROI Simulator, and Yield Simulator
   useEffect(() => {
-    if ((activeView === 'solar-mapper' || activeView === 'financial-roi') && !isAuthLoading && !user) {
+    if (
+      (activeView === 'solar-mapper' ||
+        activeView === 'financial-roi' ||
+        activeView === 'yield-simulator') &&
+      !isAuthLoading &&
+      !user
+    ) {
       setActiveView('login');
     }
   }, [activeView, isAuthLoading, user, setActiveView]);
@@ -126,6 +133,8 @@ export function App() {
       {activeView === 'solar-mapper' && <SolarMapperPage />}
 
       {activeView === 'financial-roi' && <FinancialRoiPage />}
+
+      {activeView === 'yield-simulator' && <YieldSimulatorPage />}
 
       {activeView === 'tool' && (
         <main className="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 space-y-6">
