@@ -1,39 +1,40 @@
 // src/features/yield-simulator/components/TelemetryChartSuite.tsx
 import React, { useRef } from 'react';
+import { Sun, BatteryCharging } from 'lucide-react';
 import {
   BrownoutSchedule,
   TelemetryTimeStep,
+  SystemTopologyMode,
 } from '../types/yieldSimulator';
-import { useYieldSimulatorStore } from '../store/useYieldSimulatorStore';
 import { isHourInWindow } from '../utils/yieldSimulationEngine';
 
 interface TelemetryChartSuiteProps {
   steps: TelemetryTimeStep[];
   currentStepIndex: number;
-  minReserveSocPercent: number;
-  brownout: BrownoutSchedule;
-  hasBattery: boolean;
+  inverterKw: number;
+  systemTopology: SystemTopologyMode;
+  brownoutSchedule: BrownoutSchedule;
+  onSelectStep: (stepIndex: number) => void;
 }
 
 export const TelemetryChartSuite: React.FC<TelemetryChartSuiteProps> = ({
   steps,
   currentStepIndex,
-  minReserveSocPercent,
-  brownout,
-  hasBattery,
+  inverterKw,
+  systemTopology,
+  brownoutSchedule,
+  onSelectStep,
 }) => {
-  const setCurrentStepIndex = useYieldSimulatorStore(
-    (s) => s.setCurrentStepIndex
-  );
   const powerChartRef = useRef<SVGSVGElement | null>(null);
   const socChartRef = useRef<SVGSVGElement | null>(null);
 
   if (!steps || steps.length === 0) return null;
 
+  const hasBattery = systemTopology !== 'grid_tie';
   const currentStep = steps[currentStepIndex] || steps[0];
 
   const W = 860;
-  const H = 228;
+  const H = 240;
   const PAD_L = 46;
   const PAD_R = 18;
   const PAD_T = 18;
@@ -43,6 +44,7 @@ export const TelemetryChartSuite: React.FC<TelemetryChartSuiteProps> = ({
 
   const maxPowerKw = Math.max(
     4.0,
+    inverterKw * 1.1,
     ...steps.map((s) =>
       Math.max(
         s.potentialPvKw,
@@ -53,7 +55,7 @@ export const TelemetryChartSuite: React.FC<TelemetryChartSuiteProps> = ({
       )
     )
   );
-  const yCeilingKw = Math.ceil(maxPowerKw * 1.12);
+  const yCeilingKw = Math.ceil(maxPowerKw * 1.1);
 
   const stepToX = (idx: number) => PAD_L + (idx / 95) * plotW;
   const kwToY = (kw: number) =>
@@ -78,381 +80,322 @@ export const TelemetryChartSuite: React.FC<TelemetryChartSuiteProps> = ({
     )} L ${stepToX(95).toFixed(1)},${baselineY.toFixed(1)} Z`;
   };
 
-  const potentialPvArea = buildAreaPath(
-    (s) => kwToY(s.potentialPvKw),
-    PAD_T + plotH
-  );
-  const actualPvArea = buildAreaPath((s) => kwToY(s.actualPvKw), PAD_T + plotH);
-  const actualPvLine = buildPolyline((s) => kwToY(s.actualPvKw));
-  const potentialPvLine = buildPolyline((s) => kwToY(s.potentialPvKw));
-  const loadLine = buildPolyline((s) => kwToY(s.activeLoadKw));
-  const gridImportLine = buildPolyline((s) => kwToY(s.gridImportKw));
-  const batteryAbsLine = buildPolyline((s) =>
-    kwToY(Math.abs(s.batteryPowerKw))
-  );
-
-  const socArea = buildAreaPath(
-    (s) => socToY(s.batterySocPercent),
-    PAD_T + plotH
-  );
-  const socLine = buildPolyline((s) => socToY(s.batterySocPercent));
-
-  const cursorX = stepToX(currentStepIndex);
-  const reserveY = socToY(minReserveSocPercent);
-
-  const handleSvgPointer = (
+  const handleSvgClick = (
     e: React.MouseEvent<SVGSVGElement>,
-    svgEl: SVGSVGElement | null
+    ref: React.RefObject<SVGSVGElement | null>
   ) => {
-    if (!svgEl) return;
-    const rect = svgEl.getBoundingClientRect();
+    const svg = ref.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
     const relX = ((e.clientX - rect.left) / rect.width) * W;
-    const normalized = Math.max(0, Math.min(1, (relX - PAD_L) / plotW));
-    const targetIdx = Math.round(normalized * 95);
-    setCurrentStepIndex(targetIdx);
+    const ratio = (relX - PAD_L) / plotW;
+    const idx = Math.max(0, Math.min(95, Math.round(ratio * 95)));
+    onSelectStep(idx);
   };
 
-  const timeTicks = [
-    { step: 0, label: '00:00' },
-    { step: 16, label: '04:00' },
-    { step: 32, label: '08:00' },
-    { step: 48, label: '12:00' },
-    { step: 64, label: '16:00' },
-    { step: 80, label: '20:00' },
-    { step: 95, label: '23:45' },
-  ];
+  const baselineY = PAD_T + plotH;
+  const cursorX = stepToX(currentStepIndex);
+  const inverterLimitY = kwToY(inverterKw);
+  const reserveSocY = socToY(20);
 
   return (
     <section
-      aria-label="Synchronized 24-Hour Power Dispatch and Battery State of Charge Telemetry Charts"
-      className="grid grid-cols-1 xl:grid-cols-2 gap-6"
+      aria-label="24-Hour Solar and Battery Charts"
+      className="grid grid-cols-1 xl:grid-cols-12 gap-6"
     >
-      {/* CHART 1: 24-HOUR POWER DISPATCH STACK (kW) */}
-      <div className="rounded-[2rem] p-1.5 bg-slate-200/65 dark:bg-slate-900/70 ring-1 ring-slate-900/5 dark:ring-white/10">
-        <div className="rounded-[calc(2rem-0.375rem)] bg-white dark:bg-[#0c1220] p-5 sm:p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)] space-y-4">
-          <div className="flex flex-wrap items-start justify-between gap-2">
+      {/* =====================================================================
+          CHART 1: 24-HOUR SOLAR vs HOME DEMAND (7 cols)
+         ===================================================================== */}
+      <div className="xl:col-span-7 rounded-2xl bg-white dark:bg-[#0E1420] border border-slate-200/80 dark:border-white/[0.07] p-5 sm:p-6 space-y-5 shadow-[0_16px_40px_-15px_rgba(15,23,42,0.06)] dark:shadow-[0_24px_50px_-15px_rgba(0,0,0,0.5)]">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0 mt-0.5">
+              <Sun className="w-4 h-4" strokeWidth={1.75} />
+            </div>
             <div>
-              <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
-                Where does solar power flow every 15 minutes, and when is midday harvest clipped?
+              <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
+                24-Hour Power Curve: Solar vs. Home Demand
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Click or drag across the chart to inspect any 15-minute interval
+                Click any hour on the chart to jump the simulator clock to that moment
               </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 text-[11px] font-mono">
-              <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
-                PV: {currentStep.actualPvKw.toFixed(2)} kW
-              </span>
-              {currentStep.clippedPvKw > 0.02 && (
-                <span className="flex items-center gap-1 text-amber-700 dark:text-amber-300 font-bold">
-                  Clipped: {currentStep.clippedPvKw.toFixed(2)} kW
-                </span>
-              )}
-              <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
-                Load: {currentStep.activeLoadKw.toFixed(2)} kW
-              </span>
-              <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block" />
-                Batt: {Math.abs(currentStep.batteryPowerKw).toFixed(2)} kW
-              </span>
-              <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 font-bold">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-600 inline-block" />
-                Grid In: {currentStep.gridImportKw.toFixed(2)} kW
-              </span>
             </div>
           </div>
 
+          <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-300">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+              Solar ({currentStep.actualPvKw.toFixed(2)} kW)
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
+              Home Load ({currentStep.totalHomeLoadKw.toFixed(2)} kW)
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-sky-500" />
+              Grid Import ({currentStep.gridImportKw.toFixed(2)} kW)
+            </span>
+          </div>
+        </div>
+
+        <div className="w-full overflow-hidden">
           <svg
             ref={powerChartRef}
             viewBox={`0 0 ${W} ${H}`}
-            onClick={(e) => handleSvgPointer(e, powerChartRef.current)}
-            onMouseMove={(e) => {
-              if (e.buttons === 1) handleSvgPointer(e, powerChartRef.current);
-            }}
-            className="w-full h-56 cursor-crosshair select-none"
+            onClick={(e) => handleSvgClick(e, powerChartRef)}
+            className="w-full h-auto cursor-pointer select-none"
             role="img"
-            aria-label="24-hour power dispatch stack chart in kilowatts"
+            aria-label="24-Hour Solar and Home Load Chart"
           >
-            <defs>
-              <pattern
-                id="clippedHatchPattern"
-                width="8"
-                height="8"
-                patternTransform="rotate(45 0 0)"
-                patternUnits="userSpaceOnUse"
-              >
-                <line
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="8"
-                  stroke="#D97706"
-                  strokeWidth="2.5"
-                  strokeOpacity="0.45"
-                />
-              </pattern>
-            </defs>
-
-            {[0, 0.25, 0.5, 0.75, 1].map((frac, idx) => {
-              const valKw = yCeilingKw * frac;
-              const y = kwToY(valKw);
+            {/* Horizontal grid lines */}
+            {[0, 0.25, 0.5, 0.75, 1].map((f) => {
+              const kwVal = yCeilingKw * f;
+              const y = kwToY(kwVal);
               return (
-                <g key={idx}>
+                <g key={f}>
                   <line
                     x1={PAD_L}
                     y1={y}
                     x2={W - PAD_R}
                     y2={y}
                     stroke="currentColor"
-                    className="text-slate-200 dark:text-slate-800"
-                    strokeDasharray={frac === 0 ? undefined : '3 3'}
-                    strokeWidth="1"
+                    className="text-slate-200/80 dark:text-white/[0.06]"
+                    strokeDasharray="3 3"
                   />
                   <text
-                    x={PAD_L - 6}
-                    y={y + 3.5}
+                    x={PAD_L - 8}
+                    y={y + 3}
                     textAnchor="end"
-                    className="text-[10px] font-mono fill-slate-500 dark:fill-slate-400"
+                    className="fill-slate-400 dark:fill-slate-500 text-[10px] font-mono tabular-nums"
                   >
-                    {valKw.toFixed(1)}kW
+                    {kwVal.toFixed(1)}kW
                   </text>
                 </g>
               );
             })}
 
-            <path d={potentialPvArea} fill="url(#clippedHatchPattern)" />
+            {/* Outage highlight bands */}
+            {brownoutSchedule.enabled &&
+              steps.map((s, idx) => {
+                if (
+                  !isHourInWindow(
+                    s.hourDecimal,
+                    brownoutSchedule.startHour,
+                    brownoutSchedule.endHour
+                  )
+                )
+                  return null;
+                return (
+                  <rect
+                    key={idx}
+                    x={stepToX(idx) - plotW / 190}
+                    y={PAD_T}
+                    width={plotW / 95 + 0.5}
+                    height={plotH}
+                    fill="rgba(239,68,68,0.12)"
+                  />
+                );
+              })}
+
+            {/* Potential unclipped PV dashed curve */}
             <polyline
               fill="none"
-              stroke="#D97706"
-              strokeWidth="1.25"
-              strokeDasharray="3 3"
-              points={potentialPvLine}
+              stroke="#F59E0B"
+              strokeWidth="1.2"
+              strokeDasharray="4 4"
+              strokeOpacity="0.45"
+              points={buildPolyline((s) => kwToY(s.potentialPvKw))}
             />
 
-            <path d={actualPvArea} fill="#D97706" fillOpacity="0.16" />
+            {/* Actual harvested PV area & line */}
+            <path
+              d={buildAreaPath((s) => kwToY(s.actualPvKw), baselineY)}
+              fill="rgba(245, 158, 11, 0.22)"
+            />
             <polyline
               fill="none"
-              stroke="#D97706"
-              strokeWidth="2.5"
-              points={actualPvLine}
+              stroke="#F59E0B"
+              strokeWidth="2.4"
+              points={buildPolyline((s) => kwToY(s.actualPvKw))}
             />
 
-            {hasBattery && (
-              <polyline
-                fill="none"
-                stroke="#059669"
-                strokeWidth="1.8"
-                strokeDasharray="4 2"
-                points={batteryAbsLine}
+            {/* Grid import area */}
+            <path
+              d={buildAreaPath((s) => kwToY(s.gridImportKw), baselineY)}
+              fill="rgba(56, 189, 248, 0.16)"
+            />
+            <polyline
+              fill="none"
+              stroke="#38BDF8"
+              strokeWidth="1.6"
+              points={buildPolyline((s) => kwToY(s.gridImportKw))}
+            />
+
+            {/* Home Load curve */}
+            <polyline
+              fill="none"
+              stroke="#06B6D4"
+              strokeWidth="2.2"
+              points={buildPolyline((s) => kwToY(s.totalHomeLoadKw))}
+            />
+
+            {/* Inverter AC limit line */}
+            {inverterKw <= yCeilingKw && (
+              <line
+                x1={PAD_L}
+                y1={inverterLimitY}
+                x2={W - PAD_R}
+                y2={inverterLimitY}
+                stroke="#F59E0B"
+                strokeDasharray="5 5"
+                strokeOpacity="0.45"
               />
             )}
 
-            <polyline
-              fill="none"
-              stroke="#DC2626"
-              strokeWidth="1.8"
-              points={gridImportLine}
-            />
-
-            <polyline
-              fill="none"
-              stroke="#2563EB"
-              strokeWidth="2.2"
-              points={loadLine}
-            />
-
+            {/* Current time step vertical playhead */}
             <line
               x1={cursorX}
               y1={PAD_T}
               x2={cursorX}
-              y2={PAD_T + plotH}
-              stroke="#0F172A"
-              className="dark:stroke-white"
-              strokeWidth="1.75"
+              y2={baselineY}
+              stroke="#F59E0B"
+              strokeWidth="2"
             />
             <circle
               cx={cursorX}
               cy={kwToY(currentStep.actualPvKw)}
               r="4.5"
-              fill="#D97706"
-              stroke="#FFFFFF"
-              strokeWidth="1.5"
+              fill="#F59E0B"
             />
             <circle
               cx={cursorX}
-              cy={kwToY(currentStep.activeLoadKw)}
-              r="4.5"
-              fill="#2563EB"
-              stroke="#FFFFFF"
-              strokeWidth="1.5"
+              cy={kwToY(currentStep.totalHomeLoadKw)}
+              r="4"
+              fill="#06B6D4"
             />
 
-            {timeTicks.map((t) => (
+            {/* X-axis time labels */}
+            {[0, 16, 32, 48, 64, 80, 95].map((idx) => (
               <text
-                key={t.step}
-                x={stepToX(t.step)}
-                y={H - 8}
+                key={idx}
+                x={stepToX(idx)}
+                y={H - 6}
                 textAnchor="middle"
-                className="text-[10px] font-mono fill-slate-500 dark:fill-slate-400"
+                className="fill-slate-400 dark:fill-slate-500 text-[10px] font-mono tabular-nums"
               >
-                {t.label}
+                {steps[idx]?.timeLabel}
               </text>
             ))}
           </svg>
         </div>
       </div>
 
-      {/* CHART 2: BATTERY STATE OF CHARGE (0%-100% SoC) & BROWNOUT WINDOW */}
-      <div className="rounded-[2rem] p-1.5 bg-slate-200/65 dark:bg-slate-900/70 ring-1 ring-slate-900/5 dark:ring-white/10">
-        <div className="rounded-[calc(2rem-0.375rem)] bg-white dark:bg-[#0c1220] p-5 sm:p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)] space-y-4">
-          <div className="flex flex-wrap items-start justify-between gap-2">
+      {/* =====================================================================
+          CHART 2: 24-HOUR BATTERY STATE OF CHARGE (5 cols)
+         ===================================================================== */}
+      <div className="xl:col-span-5 rounded-2xl bg-white dark:bg-[#0E1420] border border-slate-200/80 dark:border-white/[0.07] p-5 sm:p-6 space-y-5 shadow-[0_16px_40px_-15px_rgba(15,23,42,0.06)] dark:shadow-[0_24px_50px_-15px_rgba(0,0,0,0.5)]">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
+              <BatteryCharging className="w-4 h-4" strokeWidth={1.75} />
+            </div>
             <div>
-              <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
-                Does the LiFePO4 battery stay above the {minReserveSocPercent}% reserve floor through the night?
+              <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
+                Battery Level Throughout the Day (%)
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {hasBattery
-                  ? `Dashed crimson line marks ${minReserveSocPercent}% minimum protection floor`
-                  : 'Grid-Tie mode active (0 kWh battery storage)'}
+                Tracks when your battery fills up from the sun and drains at night
               </p>
-            </div>
-
-            <div className="flex items-center gap-3 text-[11px] font-mono">
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                SoC @ {currentStep.timeLabel}:{' '}
-                {currentStep.batterySocPercent.toFixed(0)}%
-              </span>
-              <span className="text-rose-600 dark:text-rose-400 font-bold">
-                Floor: {minReserveSocPercent}%
-              </span>
             </div>
           </div>
 
+          <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-mono font-bold tabular-nums">
+            {hasBattery ? `${currentStep.batterySocPercent.toFixed(0)}% Now` : 'No Battery'}
+          </span>
+        </div>
+
+        <div className="w-full overflow-hidden">
           <svg
             ref={socChartRef}
             viewBox={`0 0 ${W} ${H}`}
-            onClick={(e) => handleSvgPointer(e, socChartRef.current)}
-            onMouseMove={(e) => {
-              if (e.buttons === 1) handleSvgPointer(e, socChartRef.current);
-            }}
-            className="w-full h-56 cursor-crosshair select-none"
+            onClick={(e) => handleSvgClick(e, socChartRef)}
+            className="w-full h-auto cursor-pointer select-none"
             role="img"
-            aria-label="24-hour battery state of charge percentage chart"
+            aria-label="24-Hour Battery State of Charge Chart"
           >
-            {brownout.enabled &&
-              steps.map((s, idx) => {
-                if (
-                  !isHourInWindow(
-                    s.hourDecimal,
-                    brownout.startHour,
-                    brownout.endHour
-                  )
-                ) {
-                  return null;
-                }
-                const x0 = stepToX(idx);
-                const wStep = plotW / 95 + 0.5;
-                return (
-                  <rect
-                    key={idx}
-                    x={x0}
-                    y={PAD_T}
-                    width={wStep}
-                    height={plotH}
-                    fill="#DC2626"
-                    fillOpacity="0.12"
-                  />
-                );
-              })}
-
-            {[0, 25, 50, 75, 100].map((pct) => {
-              const y = socToY(pct);
+            {[0, 25, 50, 75, 100].map((socVal) => {
+              const y = socToY(socVal);
               return (
-                <g key={pct}>
+                <g key={socVal}>
                   <line
                     x1={PAD_L}
                     y1={y}
                     x2={W - PAD_R}
                     y2={y}
                     stroke="currentColor"
-                    className="text-slate-200 dark:text-slate-800"
-                    strokeDasharray={pct === 0 ? undefined : '3 3'}
-                    strokeWidth="1"
+                    className="text-slate-200/80 dark:text-white/[0.06]"
+                    strokeDasharray="3 3"
                   />
                   <text
-                    x={PAD_L - 6}
-                    y={y + 3.5}
+                    x={PAD_L - 8}
+                    y={y + 3}
                     textAnchor="end"
-                    className="text-[10px] font-mono fill-slate-500 dark:fill-slate-400"
+                    className="fill-slate-400 dark:fill-slate-500 text-[10px] font-mono tabular-nums"
                   >
-                    {pct}%
+                    {socVal}%
                   </text>
                 </g>
               );
             })}
 
+            {/* Minimum reserve floor */}
             <line
               x1={PAD_L}
-              y1={reserveY}
+              y1={reserveSocY}
               x2={W - PAD_R}
-              y2={reserveY}
-              stroke="#DC2626"
-              strokeWidth="1.5"
-              strokeDasharray="5 4"
+              y2={reserveSocY}
+              stroke="#EF4444"
+              strokeDasharray="4 4"
+              strokeOpacity="0.65"
             />
-            <text
-              x={W - PAD_R - 4}
-              y={reserveY - 5}
-              textAnchor="end"
-              className="text-[10px] font-mono font-bold fill-rose-600 dark:fill-rose-400"
-            >
-              Reserve Floor ({minReserveSocPercent}% SoC)
-            </text>
 
-            {hasBattery && (
-              <>
-                <path d={socArea} fill="#059669" fillOpacity="0.15" />
-                <polyline
-                  fill="none"
-                  stroke="#059669"
-                  strokeWidth="2.5"
-                  points={socLine}
-                />
-              </>
-            )}
+            {/* SoC area and line */}
+            <path
+              d={buildAreaPath((s) => socToY(s.batterySocPercent), baselineY)}
+              fill="rgba(16, 185, 129, 0.22)"
+            />
+            <polyline
+              fill="none"
+              stroke="#10B981"
+              strokeWidth="2.5"
+              points={buildPolyline((s) => socToY(s.batterySocPercent))}
+            />
 
+            {/* Playhead */}
             <line
               x1={cursorX}
               y1={PAD_T}
               x2={cursorX}
-              y2={PAD_T + plotH}
-              stroke="#0F172A"
-              className="dark:stroke-white"
-              strokeWidth="1.75"
+              y2={baselineY}
+              stroke="#F59E0B"
+              strokeWidth="2"
             />
-            {hasBattery && (
-              <circle
-                cx={cursorX}
-                cy={socToY(currentStep.batterySocPercent)}
-                r="5"
-                fill="#059669"
-                stroke="#FFFFFF"
-                strokeWidth="1.5"
-              />
-            )}
+            <circle
+              cx={cursorX}
+              cy={socToY(currentStep.batterySocPercent)}
+              r="4.5"
+              fill="#10B981"
+            />
 
-            {timeTicks.map((t) => (
+            {[0, 16, 32, 48, 64, 80, 95].map((idx) => (
               <text
-                key={t.step}
-                x={stepToX(t.step)}
-                y={H - 8}
+                key={idx}
+                x={stepToX(idx)}
+                y={H - 6}
                 textAnchor="middle"
-                className="text-[10px] font-mono fill-slate-500 dark:fill-slate-400"
+                className="fill-slate-400 dark:fill-slate-500 text-[10px] font-mono tabular-nums"
               >
-                {t.label}
+                {steps[idx]?.timeLabel}
               </text>
             ))}
           </svg>

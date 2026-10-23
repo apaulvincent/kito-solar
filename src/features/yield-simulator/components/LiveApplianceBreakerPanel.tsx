@@ -1,249 +1,242 @@
 // src/features/yield-simulator/components/LiveApplianceBreakerPanel.tsx
-import React from 'react';
-import {
-  Power,
-  RotateCcw,
-  Plus,
-  Home,
-  Building2,
-  ShieldCheck,
-  Zap,
-} from 'lucide-react';
-import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
-import { useYieldSimulatorStore } from '../store/useYieldSimulatorStore';
-import { StepLoadBreakdown } from '../utils/loadProfileDistributor';
+import React, { useMemo } from 'react';
+import { Power, Zap, RotateCcw, Plus, Clock } from 'lucide-react';
+import { ApplianceItem } from '@/lib/applianceSizingEngine';
+import { TelemetryTimeStep } from '../types/yieldSimulator';
+import { distributeHouseholdLoadProfile } from '../utils/loadProfileDistributor';
 
 interface LiveApplianceBreakerPanelProps {
-  currentLoadBreakdown: StepLoadBreakdown;
-  timeLabel: string;
+  appliances: ApplianceItem[];
+  currentStep: TelemetryTimeStep;
+  inverterKw: number;
+  disabledApplianceIds: string[];
+  forcedOnApplianceIds: string[];
+  shiftedToMiddayIds: string[];
+  onToggleDisabled: (id: string) => void;
+  onToggleForcedOn: (id: string) => void;
+  onShiftToMidday: (id: string) => void;
+  onResetOverrides: () => void;
+  onAddQuickPreset: (presetId: string) => void;
 }
 
-export const LiveApplianceBreakerPanel: React.FC<
-  LiveApplianceBreakerPanelProps
-> = ({ currentLoadBreakdown, timeLabel }) => {
-  const appliances = useApplianceLoadStore((s) => s.items);
-  const loadProfile = useApplianceLoadStore((s) => s.loadProfile);
-  const addPreset = useApplianceLoadStore((s) => s.addPreset);
-
-  const disabledApplianceIds = useYieldSimulatorStore(
-    (s) => s.disabledApplianceIds
-  );
-  const forcedOnApplianceIds = useYieldSimulatorStore(
-    (s) => s.forcedOnApplianceIds
-  );
-  const shiftedToMiddayIds = useYieldSimulatorStore(
-    (s) => s.shiftedToMiddayIds
-  );
-  const toggleApplianceBreaker = useYieldSimulatorStore(
-    (s) => s.toggleApplianceBreaker
-  );
-  const toggleApplianceForceOn = useYieldSimulatorStore(
-    (s) => s.toggleApplianceForceOn
-  );
-  const resetBreakerOverrides = useYieldSimulatorStore(
-    (s) => s.resetBreakerOverrides
-  );
-
+export const LiveApplianceBreakerPanel: React.FC<LiveApplianceBreakerPanelProps> = ({
+  appliances,
+  currentStep,
+  inverterKw,
+  disabledApplianceIds,
+  forcedOnApplianceIds,
+  shiftedToMiddayIds,
+  onToggleDisabled,
+  onToggleForcedOn,
+  onShiftToMidday,
+  onResetOverrides,
+  onAddQuickPreset,
+}) => {
   const hasOverrides =
     disabledApplianceIds.length > 0 ||
     forcedOnApplianceIds.length > 0 ||
     shiftedToMiddayIds.length > 0;
 
-  if (appliances.length === 0) {
-    return (
-      <div className="rounded-[2rem] p-1.5 bg-slate-200/65 dark:bg-slate-900/70 ring-1 ring-slate-900/5 dark:ring-white/10">
-        <div className="rounded-[calc(2rem-0.375rem)] bg-white dark:bg-[#0c1220] p-6 space-y-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)]">
-          <div className="space-y-1">
-            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-              Smart Breaker Panel (Live Appliance Tray)
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              No household appliances are currently configured in your Load Calculator, so simulated AC load is 0.00 kW. Load a starter household profile below to test circuit breakers.
-            </p>
-          </div>
+  const stepLoadPoint = useMemo(() => {
+    const profile = distributeHouseholdLoadProfile({
+      appliances,
+      disabledApplianceIds,
+      forcedOnApplianceIds,
+      shiftedToMiddayIds,
+    });
+    return profile[currentStep.stepIndex];
+  }, [
+    appliances,
+    disabledApplianceIds,
+    forcedOnApplianceIds,
+    shiftedToMiddayIds,
+    currentStep.stepIndex,
+  ]);
 
-          <div className="flex flex-wrap gap-2.5">
-            <button
-              type="button"
-              onClick={() => loadProfile('small_home_wfh')}
-              className="min-h-[42px] px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-2 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] cursor-pointer"
-            >
-              <Home className="w-3.5 h-3.5" strokeWidth={1.75} />
-              <span>Load WFH Home Profile</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => loadProfile('standard_family_home')}
-              className="min-h-[42px] px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/80 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] cursor-pointer"
-            >
-              <Building2 className="w-3.5 h-3.5 text-amber-600" strokeWidth={1.75} />
-              <span>Load Family Home (2 ACs)</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const loadPct =
+    inverterKw > 0
+      ? Math.min(100, (currentStep.totalHomeLoadKw / inverterKw) * 100)
+      : 0;
 
   return (
-    <div className="rounded-[2rem] p-1.5 bg-slate-200/65 dark:bg-slate-900/70 ring-1 ring-slate-900/5 dark:ring-white/10 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
-      <div className="rounded-[calc(2rem-0.375rem)] bg-white dark:bg-[#0c1220] p-5 sm:p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)] space-y-4">
+    <div className="rounded-2xl bg-white dark:bg-[#0E1420] border border-slate-200/80 dark:border-white/[0.07] p-5 sm:p-6 flex flex-col justify-between gap-5 shadow-[0_16px_40px_-15px_rgba(15,23,42,0.06)] dark:shadow-[0_24px_50px_-15px_rgba(0,0,0,0.5)] h-full">
+      <div className="space-y-4">
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800/80">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Smart Breaker Panel
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+              Home Appliance Switchboard
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Flip circuit breakers ON/OFF or test a live load spike at{' '}
-              <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
-                {timeLabel}
-              </span>
+              Flip appliances on or off to test how your solar and battery respond
             </p>
           </div>
 
           {hasOverrides && (
             <button
               type="button"
-              onClick={resetBreakerOverrides}
-              className="min-h-[36px] px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/80 text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer"
+              onClick={onResetOverrides}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer shrink-0"
             >
-              <RotateCcw className="w-3 h-3" strokeWidth={1.75} />
-              <span>Reset Breakers</span>
+              <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.75} />
+              <span>Reset All</span>
             </button>
           )}
         </div>
 
-        {/* Quick High-Wattage Test Injectors */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 mr-1">
-            Add Heavy Load:
-          </span>
-          <button
-            type="button"
-            onClick={() => addPreset('induction_cooker_1800w')}
-            className="min-h-[32px] px-3 py-1 rounded-full bg-slate-50 dark:bg-slate-900 ring-1 ring-slate-900/5 dark:ring-white/10 hover:ring-amber-500/40 text-[11px] font-mono font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 transition-all duration-300 cursor-pointer"
-          >
-            <Plus className="w-3 h-3 text-amber-600" strokeWidth={1.75} />
-            <span>1,800W Induction</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => addPreset('water_pump_0_5hp')}
-            className="min-h-[32px] px-3 py-1 rounded-full bg-slate-50 dark:bg-slate-900 ring-1 ring-slate-900/5 dark:ring-white/10 hover:ring-amber-500/40 text-[11px] font-mono font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 transition-all duration-300 cursor-pointer"
-          >
-            <Plus className="w-3 h-3 text-amber-600" strokeWidth={1.75} />
-            <span>750W Pump</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => addPreset('washing_machine_auto')}
-            className="min-h-[32px] px-3 py-1 rounded-full bg-slate-50 dark:bg-slate-900 ring-1 ring-slate-900/5 dark:ring-white/10 hover:ring-amber-500/40 text-[11px] font-mono font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 transition-all duration-300 cursor-pointer"
-          >
-            <Plus className="w-3 h-3 text-amber-600" strokeWidth={1.75} />
-            <span>500W Washer</span>
-          </button>
+        {/* Live Inverter Capacity Meter */}
+        <div className="rounded-xl bg-slate-50 dark:bg-[#131B2B] p-3.5 space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-slate-600 dark:text-slate-300">
+              Active Load at {currentStep.timeLabel}
+            </span>
+            <span className="font-mono font-bold tabular-nums text-cyan-600 dark:text-cyan-400">
+              {currentStep.totalHomeLoadKw.toFixed(2)} kW / {inverterKw.toFixed(1)} kW max
+            </span>
+          </div>
+          <div className="w-full h-2 rounded-full bg-slate-200/80 dark:bg-white/[0.06] overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${
+                currentStep.isOverloadFault
+                  ? 'bg-rose-500'
+                  : loadPct > 80
+                    ? 'bg-amber-500'
+                    : 'bg-cyan-500'
+              }`}
+              style={{ width: `${Math.max(3, loadPct)}%` }}
+            />
+          </div>
         </div>
 
-        {/* MCB Breaker List */}
-        <div className="space-y-2.5 max-h-[450px] overflow-y-auto pr-1">
+        {/* Appliance List (No double borders — clean rows) */}
+        <div className="divide-y divide-slate-100 dark:divide-white/[0.06] max-h-[340px] overflow-y-auto pr-1">
           {appliances.map((item) => {
-            const isTrippedOff = disabledApplianceIds.includes(item.id);
+            const isDisabled = disabledApplianceIds.includes(item.id);
             const isForcedOn = forcedOnApplianceIds.includes(item.id);
             const isShifted = shiftedToMiddayIds.includes(item.id);
-            const liveWatts = currentLoadBreakdown.applianceWatts[item.id] ?? 0;
-            const ratedWatts = item.quantity * item.runningWatts;
-            const isDrawingPower = liveWatts > 0;
+            const liveWatts = stepLoadPoint?.applianceWatts[item.id] ?? 0;
+            const liveKw = liveWatts / 1000;
+            const isRunningNow = liveKw > 0.005 && !isDisabled;
+            const totalNominalWatts = item.runningWatts * item.quantity;
 
             return (
               <div
                 key={item.id}
-                className={`p-3.5 rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] flex items-center justify-between gap-3 ${
-                  isTrippedOff
-                    ? 'bg-slate-50/50 dark:bg-slate-900/20 ring-1 ring-slate-900/5 dark:ring-white/5 opacity-55'
-                    : isDrawingPower
-                    ? 'bg-amber-500/[0.05] dark:bg-amber-500/[0.04] ring-1 ring-amber-500/35'
-                    : 'bg-slate-50/70 dark:bg-slate-900/40 ring-1 ring-slate-900/5 dark:ring-white/5'
+                className={`py-3 flex items-center justify-between gap-3 transition-opacity ${
+                  isDisabled ? 'opacity-45' : 'opacity-100'
                 }`}
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    <span
+                      className={`w-2 h-2 rounded-full shrink-0 ${
+                        isDisabled
+                          ? 'bg-slate-300 dark:bg-slate-600'
+                          : isRunningNow
+                            ? 'bg-cyan-500'
+                            : 'bg-slate-300 dark:bg-slate-600'
+                      }`}
+                    />
+                    <span className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
                       {item.quantity > 1 ? `${item.quantity}x ` : ''}
                       {item.name}
                     </span>
-                    {item.isCriticalBackup && (
-                      <span
-                        title="Critical backup load (stays powered during brownout)"
-                        className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-800 dark:text-amber-300"
-                      >
-                        <ShieldCheck className="w-3 h-3" strokeWidth={1.75} />
-                        <span>EPS</span>
-                      </span>
-                    )}
-                    {isShifted && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
-                        12:30 PM Solar Shift
-                      </span>
-                    )}
                   </div>
 
-                  <div className="flex items-center gap-3 mt-1 text-[11px] font-mono text-slate-500 dark:text-slate-400">
-                    <span>Rated: {ratedWatts}W</span>
-                    <span>·</span>
-                    <span
-                      className={
-                        isDrawingPower
-                          ? 'font-bold text-amber-700 dark:text-amber-400'
-                          : ''
-                      }
-                    >
-                      Now @ {timeLabel}: {liveWatts}W
-                    </span>
+                  <div className="flex flex-wrap items-center gap-2 mt-0.5 pl-4 text-[11px] font-mono tabular-nums text-slate-400 dark:text-slate-500">
+                    <span>{totalNominalWatts}W rated</span>
+                    {isRunningNow && (
+                      <span className="text-cyan-600 dark:text-cyan-400 font-semibold">
+                        • Drawing {liveKw.toFixed(2)} kW now
+                      </span>
+                    )}
+                    {item.hoursPerDay < 18 && totalNominalWatts >= 250 && !isDisabled && (
+                      <button
+                        type="button"
+                        onClick={() => onShiftToMidday(item.id)}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-sans font-medium cursor-pointer transition-colors ${
+                          isShifted
+                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                            : 'bg-slate-100 dark:bg-white/[0.05] text-slate-500 hover:text-amber-500'
+                        }`}
+                      >
+                        <Clock className="w-2.5 h-2.5" strokeWidth={1.75} />
+                        <span>{isShifted ? 'Moved to Midday' : 'Move to Daytime'}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                {/* Right: Spike Test + Breaker Switch */}
-                <div className="flex items-center gap-1.5 flex-shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     type="button"
-                    onClick={() => toggleApplianceForceOn(item.id)}
-                    title={
+                    onClick={() => onToggleForcedOn(item.id)}
+                    title="Force this appliance ON at the current time step"
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       isForcedOn
-                        ? 'Return appliance to scheduled hours'
-                        : 'Force appliance ON right now to test instant load spike'
-                    }
-                    className={`min-h-[36px] px-3 py-1 rounded-full font-mono text-[10px] font-bold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer ${
-                      isForcedOn
-                        ? 'bg-amber-500 text-slate-950'
-                        : 'bg-white dark:bg-slate-800 ring-1 ring-slate-900/10 dark:ring-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
+                        ? 'bg-amber-500 text-slate-950 shadow-xs'
+                        : 'bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-slate-300 hover:bg-amber-500/15 hover:text-amber-600 dark:hover:text-amber-300'
                     }`}
                   >
-                    <span className="flex items-center gap-1">
+                    <span className="inline-flex items-center gap-1">
                       <Zap className="w-3 h-3" strokeWidth={1.75} />
-                      <span>{isForcedOn ? 'FORCED ON' : 'RUN NOW'}</span>
+                      <span>{isForcedOn ? 'Testing' : 'Test Now'}</span>
                     </span>
                   </button>
 
                   <button
                     type="button"
                     role="switch"
-                    aria-checked={!isTrippedOff}
-                    aria-label={`Toggle ${item.name} circuit breaker`}
-                    onClick={() => toggleApplianceBreaker(item.id)}
-                    className={`min-h-[36px] px-3 py-1 rounded-full font-mono text-xs font-bold flex items-center gap-1.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer ${
-                      !isTrippedOff
-                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                        : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    aria-checked={!isDisabled}
+                    onClick={() => onToggleDisabled(item.id)}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1 ${
+                      isDisabled
+                        ? 'bg-rose-500/15 text-rose-600 dark:text-rose-300'
+                        : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
                     }`}
                   >
-                    <Power className="w-3.5 h-3.5" strokeWidth={1.75} />
-                    <span>{!isTrippedOff ? 'ON' : 'OFF'}</span>
+                    <Power className="w-3 h-3" strokeWidth={1.75} />
+                    <span>{isDisabled ? 'OFF' : 'ON'}</span>
                   </button>
                 </div>
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Bottom: Quick Add Test Loads */}
+      <div className="pt-3 border-t border-slate-100 dark:border-white/[0.06] space-y-2">
+        <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 block">
+          Quickly add a heavy appliance to test capacity:
+        </span>
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={() => onAddQuickPreset('ac_1hp_inverter')}
+            className="inline-flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl bg-slate-100/90 dark:bg-white/[0.04] hover:bg-amber-500/15 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-300 transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5 text-amber-500 shrink-0" strokeWidth={1.75} />
+            <span className="truncate">+1HP Aircon</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onAddQuickPreset('water_pump_1hp')}
+            className="inline-flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl bg-slate-100/90 dark:bg-white/[0.04] hover:bg-amber-500/15 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-300 transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5 text-amber-500 shrink-0" strokeWidth={1.75} />
+            <span className="truncate">+1HP Pump</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onAddQuickPreset('induction_cooker')}
+            className="inline-flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl bg-slate-100/90 dark:bg-white/[0.04] hover:bg-amber-500/15 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-300 transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5 text-amber-500 shrink-0" strokeWidth={1.75} />
+            <span className="truncate">+2kW Cooker</span>
+          </button>
         </div>
       </div>
     </div>
