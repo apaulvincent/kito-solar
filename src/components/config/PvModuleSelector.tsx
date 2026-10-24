@@ -104,9 +104,8 @@ export function PvModuleSelector() {
         </div>
       </div>
 
-      {/* Solar Panel Card (Collapsible Doppelrand Card) */}
-      <div className="rounded-2xl bg-slate-900/[0.03] dark:bg-white/[0.03] ring-1 ring-slate-900/10 dark:ring-white/10 p-1 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]">
-        <div className="rounded-[calc(1rem-2px)] bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)] overflow-hidden">
+      {/* Solar Panel Card (Collapsible Card) */}
+      <div className="rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]">
           {/* Header Toggle Row */}
           <button
             type="button"
@@ -174,7 +173,6 @@ export function PvModuleSelector() {
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 }

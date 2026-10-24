@@ -75,4 +75,18 @@ describe('STEP 1: Technical Specifications Collapsible Accordion Suite', () => {
     // Sliders
     expect(markup).toContain('Configured Panel Quantity');
   });
+
+  it('uses a clean single border for spec accordions without outer double border wrappers', () => {
+    const invCode = fs.readFileSync(path.resolve(process.cwd(), 'src/components/config/InverterSelector.tsx'), 'utf-8');
+    const pvCode = fs.readFileSync(path.resolve(process.cwd(), 'src/components/config/PvModuleSelector.tsx'), 'utf-8');
+    const batCode = fs.readFileSync(path.resolve(process.cwd(), 'src/components/config/BatterySelector.tsx'), 'utf-8');
+
+    for (const code of [invCode, pvCode, batCode]) {
+      // Must not have nested concentric ring/doppelrand wrapper
+      expect(code).not.toContain('ring-1 ring-slate-900/10');
+      expect(code).not.toContain('rounded-2xl bg-slate-900/[0.03]');
+      // Must have clean single border container
+      expect(code).toContain('rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-white/10');
+    }
+  });
 });
