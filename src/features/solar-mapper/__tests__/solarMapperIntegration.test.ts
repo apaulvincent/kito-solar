@@ -15,10 +15,11 @@ describe('Solar Mapper Zustand Store & Integration Suite', () => {
     });
   });
 
-  it('initializes with Batangas regional preset as default location', () => {
+  it('initializes with Samson Street, Baritan, Malabon (NCR) regional preset as default location', () => {
     const state = useSolarMapperStore.getState();
-    expect(state.coordinates.lat).toBeCloseTo(14.044, 2);
-    expect(state.coordinates.lng).toBeCloseTo(121.158, 2);
+    expect(state.coordinates.lat).toBeCloseTo(14.6704, 2);
+    expect(state.coordinates.lng).toBeCloseTo(120.9477, 2);
+    expect(state.coordinates.locationName).toContain('Samson Street, Baritan, Malabon');
     expect(state.irradianceProfile).toBeDefined();
     expect(state.irradianceProfile.annualAvgEffectivePsh).toBeGreaterThan(4.0);
   });

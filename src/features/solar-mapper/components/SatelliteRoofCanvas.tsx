@@ -15,14 +15,79 @@ import {
   Box,
   CheckCircle2,
   Scan,
+  ChevronUp,
+  Check,
+  Globe,
 } from 'lucide-react';
 import { useSolarMapperStore } from '../store/useSolarMapperStore';
-import { GeoPoint } from '../types/solarMapper';
+import { GeoPoint, BasemapProvider } from '../types/solarMapper';
 import { calculateHaversineDistanceMeters } from '../utils/geodesicMath';
 import { detectRoofFromMarquee } from '../services/aiRoofDetectionService';
 
 const TILE_SIZE = 256;
-const MAX_NATIVE_ZOOM = 19; // Esri native satellite resolution limit
+
+interface BasemapOption {
+  id: BasemapProvider;
+  name: string;
+  badge: string;
+  description: string;
+}
+
+const BASEMAP_OPTIONS: BasemapOption[] = [
+  {
+    id: 'google_satellite',
+    name: 'Google Satellite (HD)',
+    badge: 'Ultra-Res • 20x',
+    description: 'Updated high-resolution aerial & satellite imagery across the Philippines.',
+  },
+  {
+    id: 'google_hybrid',
+    name: 'Google Hybrid',
+    badge: 'Satellite + Roads',
+    description: 'Google satellite with street names, barangay borders, and landmarks.',
+  },
+  {
+    id: 'esri_satellite',
+    name: 'Esri World Imagery',
+    badge: 'Global Survey',
+    description: 'ArcGIS survey imagery (native capped at 18x to prevent missing tiles).',
+  },
+  {
+    id: 'osm_streets',
+    name: 'OpenStreetMap Streets',
+    badge: 'Cadastral & Roads',
+    description: 'Clear vector road network and property boundaries.',
+  },
+];
+
+function getTileUrl(provider: BasemapProvider, x: number, y: number, z: number): string {
+  switch (provider) {
+    case 'google_satellite':
+      return `https://mt${(x + y) % 4}.google.com/vt/lyrs=s&x=${x}&y=${y}&z=${z}`;
+    case 'google_hybrid':
+      return `https://mt${(x + y) % 4}.google.com/vt/lyrs=y&x=${x}&y=${y}&z=${z}`;
+    case 'esri_satellite':
+      return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
+    case 'osm_streets':
+      return `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
+    default:
+      return `https://mt${(x + y) % 4}.google.com/vt/lyrs=s&x=${x}&y=${y}&z=${z}`;
+  }
+}
+
+function getMaxNativeZoom(provider: BasemapProvider): number {
+  switch (provider) {
+    case 'google_satellite':
+    case 'google_hybrid':
+      return 20;
+    case 'esri_satellite':
+      return 18;
+    case 'osm_streets':
+      return 19;
+    default:
+      return 20;
+  }
+}
 
 // Mercator Projection Math
 function lngToTileX(lng: number, zoom: number): number {
@@ -66,6 +131,8 @@ export const SatelliteRoofCanvas: React.FC = () => {
     applyDetectedRoofFaces,
     translateRoofSection,
     setViewMode,
+    basemapProvider,
+    setBasemapProvider,
   } = useSolarMapperStore();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -135,8 +202,23 @@ export const SatelliteRoofCanvas: React.FC = () => {
     };
   }, []);
 
-  // Native tile fetch zoom (capped at 19 so Esri never returns placeholder tiles)
-  const tileZoom = Math.min(zoom, MAX_NATIVE_ZOOM);
+  const [isBasemapMenuOpen, setIsBasemapMenuOpen] = useState(false);
+  const basemapMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close basemap menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (basemapMenuRef.current && !basemapMenuRef.current.contains(e.target as Node)) {
+        setIsBasemapMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Provider-aware native zoom ceiling
+  const maxNativeZoom = getMaxNativeZoom(basemapProvider);
+  const tileZoom = Math.min(zoom, maxNativeZoom);
   const zoomScale = Math.pow(2, zoom - tileZoom);
   const scaledTileSize = TILE_SIZE * zoomScale;
 
@@ -251,11 +333,10 @@ export const SatelliteRoofCanvas: React.FC = () => {
           const px = Math.round(dimensions.width / 2 + (startTileX + tx - centerTileX) * scaledTileSize);
           const py = Math.round(dimensions.height / 2 + (curY - centerTileY) * scaledTileSize);
 
-          // Esri World Imagery (High-Res Global Satellite Basemap)
-          const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${tileZoom}/${curY}/${curX}`;
+          const url = getTileUrl(basemapProvider, curX, curY, tileZoom);
 
           tiles.push({
-            key: `${tileZoom}-${curX}-${curY}`,
+            key: `${basemapProvider}-${tileZoom}-${curX}-${curY}`,
             x: curX,
             y: curY,
             px,
@@ -267,7 +348,7 @@ export const SatelliteRoofCanvas: React.FC = () => {
       }
     }
     return tiles;
-  }, [centerTileX, centerTileY, dimensions.width, dimensions.height, tileZoom, scaledTileSize]);
+  }, [centerTileX, centerTileY, dimensions.width, dimensions.height, tileZoom, scaledTileSize, basemapProvider]);
 
   // Dynamic marquee bounding box computation
   const currentMarqueeBounds = useMemo(() => {
@@ -530,11 +611,15 @@ export const SatelliteRoofCanvas: React.FC = () => {
               alt=""
               decoding="async"
               crossOrigin="anonymous"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.opacity = '0';
+              }}
               className="absolute top-0 left-0 object-cover filter contrast-[1.05] brightness-[0.95]"
               style={{
                 width: `${Math.ceil(tile.size) + 1}px`,
                 height: `${Math.ceil(tile.size) + 1}px`,
                 transform: `translate3d(${tile.px}px, ${tile.py}px, 0)`,
+                imageRendering: zoom > maxNativeZoom ? 'crisp-edges' : 'auto',
               }}
             />
           ))}
@@ -1054,7 +1139,7 @@ export const SatelliteRoofCanvas: React.FC = () => {
             </button>
             <span className="text-[11px] font-mono text-slate-300 px-2 select-none whitespace-nowrap flex-shrink-0">
               Z{zoom}
-              {zoom > MAX_NATIVE_ZOOM && (
+              {zoom > maxNativeZoom && (
                 <span className="text-amber-400 font-semibold ml-1 whitespace-nowrap">
                   ({zoomScale}x)
                 </span>
@@ -1072,10 +1157,100 @@ export const SatelliteRoofCanvas: React.FC = () => {
           </div>
         </div>
 
-        {/* Discrete Satellite Attribution Stamp at bottom-left */}
-        <div className="absolute bottom-3 left-4 hidden sm:flex items-center gap-1.5 text-[10px] font-mono text-slate-400/80 pointer-events-none select-none z-20">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-          <span>Esri World Imagery • High-Res</span>
+        {/* Floating High-End Basemap Selector (Bottom-Left) */}
+        <div className="absolute bottom-4 left-4 z-30 select-none" ref={basemapMenuRef}>
+          {/* Popover Card (Double-Bezel Architecture) */}
+          {isBasemapMenuOpen && (
+            <div className="absolute bottom-full left-0 mb-2.5 w-72 sm:w-80 p-1.5 rounded-2xl bg-slate-950/95 dark:bg-[#070A11] border border-white/15 shadow-[0_24px_50px_rgba(0,0,0,0.85)] backdrop-blur-2xl z-40 animate-in fade-in slide-in-from-bottom-2 duration-200">
+              <div className="rounded-[calc(1rem-2px)] bg-slate-900/90 dark:bg-[#0B0F18] border border-white/10 overflow-hidden">
+                {/* Header */}
+                <div className="px-3.5 py-2 bg-white/[0.03] border-b border-white/10 flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono font-bold tracking-[0.18em] text-slate-300">
+                    <Layers className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Map Layer Provider</span>
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                    High-Res PH
+                  </span>
+                </div>
+
+                {/* Options List */}
+                <div className="p-1.5 space-y-1">
+                  {BASEMAP_OPTIONS.map((opt) => {
+                    const isSelected = basemapProvider === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          setBasemapProvider(opt.id);
+                          setIsBasemapMenuOpen(false);
+                        }}
+                        className={`w-full text-left p-2.5 rounded-xl flex items-start gap-2.5 transition-all duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer group ${
+                          isSelected
+                            ? 'bg-amber-500/15 border border-amber-500/40 text-white shadow-xs'
+                            : 'hover:bg-white/[0.05] border border-transparent text-slate-300'
+                        }`}
+                      >
+                        <div
+                          className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                            isSelected
+                              ? 'bg-amber-500 text-slate-950 font-bold'
+                              : 'bg-white/10 text-slate-400 group-hover:text-white'
+                          }`}
+                        >
+                          {isSelected ? (
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          ) : (
+                            <Globe className="w-3.5 h-3.5" />
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1.5">
+                            <span className="text-xs font-bold truncate">
+                              {opt.name}
+                            </span>
+                            <span
+                              className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full whitespace-nowrap ${
+                                isSelected
+                                  ? 'bg-amber-400/20 text-amber-300'
+                                  : 'bg-white/5 text-slate-400'
+                              }`}
+                            >
+                              {opt.badge}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 leading-tight mt-0.5 truncate font-normal">
+                            {opt.description}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Island Trigger Pill */}
+          <button
+            type="button"
+            onClick={() => setIsBasemapMenuOpen(!isBasemapMenuOpen)}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-950/90 border border-white/15 text-slate-200 hover:text-white backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] text-xs font-semibold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-amber-500/40 active:scale-95 cursor-pointer group"
+            title="Switch satellite or road map provider"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
+            <Layers className="w-3.5 h-3.5 text-amber-400 group-hover:rotate-12 transition-transform" />
+            <span className="hidden sm:inline text-xs font-medium">
+              {BASEMAP_OPTIONS.find((o) => o.id === basemapProvider)?.name || 'Google Satellite (HD)'}
+            </span>
+            <ChevronUp
+              className={`w-3.5 h-3.5 text-slate-400 group-hover:text-amber-400 transition-transform duration-300 ${
+                isBasemapMenuOpen ? 'rotate-180 text-amber-400' : ''
+              }`}
+            />
+          </button>
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { z } from 'zod';
 export type IrradianceSource = 'nasa_power' | 'pvgis_v52' | 'regional_fallback';
 export type PshDesignBasis = 'annual_avg' | 'p25_conservative' | 'worst_month';
 export type PanelOrientation = 'portrait' | 'landscape' | 'auto_best';
+export type BasemapProvider = 'google_satellite' | 'google_hybrid' | 'esri_satellite' | 'osm_streets';
 
 export interface MonthlyClimatePoint {
   monthIndex: number; // 0 = Jan, 11 = Dec
@@ -168,6 +169,7 @@ export interface RoofMappingSummary {
 export interface RegionalPreset {
   id: string;
   name: string;
+  defaultAddress?: string;
   provinceOrState: string;
   country: string;
   coordinates: GeoPoint;

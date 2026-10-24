@@ -6,6 +6,7 @@ import {
   LocationIrradianceProfile,
   PanelOrientation,
   PshDesignBasis,
+  BasemapProvider,
   RoofMappingSummary,
   RoofPolygonSection,
   DetectedRoofFace,
@@ -38,6 +39,8 @@ export interface SolarMapperState {
   activeSectionId: string | null;
   isDrawingMode: boolean;
   viewMode: '2d_satellite' | '3d_preview';
+  basemapProvider: BasemapProvider;
+  setBasemapProvider: (provider: BasemapProvider) => void;
   sunHour: number; // 6.0 to 18.0 (default 12.0)
   irradianceProfile: LocationIrradianceProfile;
   isLoadingIrradiance: boolean;
@@ -138,7 +141,7 @@ export const useSolarMapperStore = create<SolarMapperState>()(
       coordinates: {
         lat: DEFAULT_PRESET.coordinates.lat,
         lng: DEFAULT_PRESET.coordinates.lng,
-        locationName: `${DEFAULT_PRESET.name}, ${DEFAULT_PRESET.country}`,
+        locationName: DEFAULT_PRESET.defaultAddress ?? `${DEFAULT_PRESET.name}, ${DEFAULT_PRESET.country}`,
       },
       zoom: 19,
       designBasis: 'annual_avg',
@@ -147,6 +150,8 @@ export const useSolarMapperStore = create<SolarMapperState>()(
       activeSectionId: null,
       isDrawingMode: false,
       viewMode: '2d_satellite',
+      basemapProvider: 'google_satellite',
+      setBasemapProvider: (basemapProvider) => set({ basemapProvider }),
       sunHour: getDefaultSunHour(),
       irradianceProfile: initialProfile,
       isLoadingIrradiance: false,
@@ -540,10 +545,11 @@ export const useSolarMapperStore = create<SolarMapperState>()(
       },
     }),
     {
-      name: 'kito_solar_mapper_v1',
+      name: 'kito_solar_mapper_v4',
       partialize: (state) => ({
         coordinates: state.coordinates,
         zoom: state.zoom,
+        basemapProvider: state.basemapProvider,
         designBasis: state.designBasis,
         panelWattage: state.panelWattage,
         roofSections: state.roofSections,

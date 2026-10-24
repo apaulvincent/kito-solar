@@ -3,6 +3,23 @@ import { RegionalPreset } from '../types/solarMapper';
 
 export const REGIONAL_PRESETS: RegionalPreset[] = [
   {
+    id: 'ncr_manila',
+    name: 'Manila (NCR)',
+    defaultAddress: 'Samson Street, Baritan, Malabon, Metro Manila',
+    provinceOrState: 'National Capital Region',
+    country: 'Philippines',
+    coordinates: { lat: 14.6704, lng: 120.9477 },
+    elevationM: 16,
+    annualRawPsh: 4.92,
+    annualEffectivePsh: 4.43,
+    worstMonthPsh: 3.78, // August
+    bestMonthPsh: 5.95, // April
+    optimalTiltDeg: 12,
+    optimalAzimuthDeg: 180,
+    monthlyGhi: [4.7, 5.2, 5.85, 5.95, 5.3, 4.55, 4.1, 3.78, 4.15, 4.6, 4.75, 4.5],
+    monthlyT2m: [26.5, 27.2, 28.9, 30.8, 31.2, 29.7, 28.5, 28.2, 28.3, 28.4, 27.9, 26.9],
+  },
+  {
     id: 'batangas_calabarzon',
     name: 'Batangas / Calabarzon',
     provinceOrState: 'Batangas',
@@ -17,22 +34,6 @@ export const REGIONAL_PRESETS: RegionalPreset[] = [
     optimalAzimuthDeg: 180,
     monthlyGhi: [4.65, 5.12, 5.75, 5.82, 5.24, 4.62, 4.15, 3.75, 4.22, 4.58, 4.68, 4.45],
     monthlyT2m: [25.8, 26.5, 28.1, 29.8, 30.1, 28.9, 27.8, 27.5, 27.7, 27.6, 27.1, 26.2],
-  },
-  {
-    id: 'metro_manila',
-    name: 'Metro Manila (NCR)',
-    provinceOrState: 'National Capital Region',
-    country: 'Philippines',
-    coordinates: { lat: 14.5995, lng: 120.9842 },
-    elevationM: 16,
-    annualRawPsh: 4.92,
-    annualEffectivePsh: 4.43,
-    worstMonthPsh: 3.78, // August
-    bestMonthPsh: 5.95, // April
-    optimalTiltDeg: 12,
-    optimalAzimuthDeg: 180,
-    monthlyGhi: [4.7, 5.2, 5.85, 5.95, 5.3, 4.55, 4.1, 3.78, 4.15, 4.6, 4.75, 4.5],
-    monthlyT2m: [26.5, 27.2, 28.9, 30.8, 31.2, 29.7, 28.5, 28.2, 28.3, 28.4, 27.9, 26.9],
   },
   {
     id: 'cebu_central_visayas',
@@ -90,7 +91,7 @@ export const REGIONAL_PRESETS: RegionalPreset[] = [
     coordinates: { lat: 16.4023, lng: 120.596 },
     elevationM: 1470,
     annualRawPsh: 4.62,
-    annualEffectivePsh: 4.38, // Cooler ambient temps yield lower thermal derating!
+    annualEffectivePsh: 4.38, // Cooler ambient temps yield lower thermal derating
     worstMonthPsh: 2.85, // August heavy rain/fog
     bestMonthPsh: 5.92, // March
     optimalTiltDeg: 14,
@@ -100,4 +101,4 @@ export const REGIONAL_PRESETS: RegionalPreset[] = [
   },
 ];
 
-export const DEFAULT_PRESET = REGIONAL_PRESETS[0]; // Batangas / Calabarzon
+export const DEFAULT_PRESET = REGIONAL_PRESETS[0]; // Manila (NCR) - Samson Street, Baritan, Malabon
