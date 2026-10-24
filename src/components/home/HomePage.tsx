@@ -94,20 +94,21 @@ export function HomePage() {
               {/* Microscopic Pill Eyebrow Badge */}
               <div className="inline-flex items-center gap-2.5 rounded-full px-3.5 py-1.5 text-[10px] uppercase tracking-[0.22em] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/25">
                 <Zap className="w-3 h-3 fill-current text-amber-500" />
-                <span>Solar Engineering &amp; CAD Studio • PH PEC 6.90</span>
+                <span>Built for Solar Installers & Electricians</span>
               </div>
 
-              {/* High-Contrast Architectural Headline */}
+              {/* High-Contrast Bold Headline */}
               <h1 className="text-4xl sm:text-6xl lg:text-[4.15rem] font-black text-slate-900 dark:text-white tracking-[-0.035em] leading-[1.04]">
-                Engineer every watt, wire, and{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 dark:from-amber-300 dark:via-amber-400 dark:to-orange-400">
-                  25-year return.
-                </span>
+                Size your solar system,{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 dark:from-amber-400 dark:via-amber-300 dark:to-orange-400">
+                  breakers & wires
+                </span>{' '}
+                in seconds.
               </h1>
 
-              {/* Concise Technical Narrative */}
+              {/* Clear Subtitle */}
               <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-xl leading-relaxed font-normal">
-                Four synchronized workspaces built for Philippine solar installers and homeowners. Size appliance surge loads, trace 3D satellite roofs, generate continuous-duty breaker schedules, and model ERC Net Metering payback in one place.
+                Pick your inverter, solar panels, and battery. Get instant continuous-duty breaker sizes, DC/AC cable gauges, conduit sizing, and a 3D equipment placement guide ready for the job site.
               </p>
 
               {/* Primary Island CTAs (Button-in-Button Architecture) */}
