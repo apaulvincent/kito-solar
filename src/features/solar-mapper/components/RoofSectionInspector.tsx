@@ -139,8 +139,7 @@ export const RoofSectionInspector: React.FC = () => {
 
   if (roofSections.length === 0) {
     return (
-      <div className="p-1.5 rounded-3xl bg-slate-100/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-white/10 shadow-sm">
-        <div className="rounded-[calc(1.5rem-0.375rem)] bg-white dark:bg-[#0B111E] p-8 text-center space-y-4 shadow-xs dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
+      <div className="rounded-2xl bg-white dark:bg-[#0B111E] border border-slate-200/80 dark:border-white/10 p-8 text-center space-y-4 shadow-sm">
           <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto text-amber-500">
             <Layers className="w-6 h-6" />
           </div>
@@ -160,7 +159,6 @@ export const RoofSectionInspector: React.FC = () => {
             <Plus className="w-4 h-4" />
             <span>Add First Roof Plane</span>
           </button>
-        </div>
       </div>
     );
   }
@@ -168,8 +166,7 @@ export const RoofSectionInspector: React.FC = () => {
   // When roof faces exist, but none is currently selected (clicked blank canvas area)
   if (!activeSection) {
     return (
-      <div className="p-1.5 rounded-3xl bg-slate-100/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-white/10 shadow-sm">
-        <div className="rounded-[calc(1.5rem-0.375rem)] bg-white dark:bg-[#0B111E] p-6 space-y-5 shadow-xs dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
+      <div className="rounded-2xl bg-white dark:bg-[#0B111E] border border-slate-200/80 dark:border-white/10 p-6 space-y-5 shadow-sm">
           {/* Section Selection Bar */}
           <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-white/5">
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
@@ -218,7 +215,6 @@ export const RoofSectionInspector: React.FC = () => {
               <span>Select {roofSections[0].name || 'First Roof Face'}</span>
             </button>
           </div>
-        </div>
       </div>
     );
   }
@@ -239,8 +235,7 @@ export const RoofSectionInspector: React.FC = () => {
       : 0;
 
   return (
-    <div className="p-1.5 rounded-3xl bg-slate-100/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-white/10 shadow-sm">
-      <div className="rounded-[calc(1.5rem-0.375rem)] bg-white dark:bg-[#0B111E] p-5 sm:p-6 space-y-5 shadow-xs dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
+    <div className="rounded-2xl bg-white dark:bg-[#0B111E] border border-slate-200/80 dark:border-white/10 p-5 sm:p-6 space-y-5 shadow-sm">
         {/* Section Switcher Tabs & Actions */}
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 pb-3">
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
@@ -312,9 +307,8 @@ export const RoofSectionInspector: React.FC = () => {
           />
         </div>
 
-        {/* Double-Bezel: PV Module Dimensions & Sizing Specifications */}
-        <div className="p-1 rounded-2xl bg-slate-100/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-white/10 shadow-xs">
-          <div className="rounded-[calc(1rem-0.25rem)] bg-white dark:bg-[#0B111E] p-3.5 space-y-3 shadow-xs dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
+        {/* PV Module Dimensions & Sizing Specifications */}
+        <div className="rounded-xl bg-white dark:bg-[#0B111E] border border-slate-200/80 dark:border-white/10 p-3.5 space-y-3 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Maximize2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -450,7 +444,6 @@ export const RoofSectionInspector: React.FC = () => {
                 </button>
               </div>
             )}
-          </div>
         </div>
 
         {/* Metrics Readout Bento Grid */}
@@ -699,6 +692,5 @@ export const RoofSectionInspector: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
   );
 };

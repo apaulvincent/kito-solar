@@ -1159,10 +1159,9 @@ export const SatelliteRoofCanvas: React.FC = () => {
 
         {/* Floating High-End Basemap Selector (Bottom-Left) */}
         <div className="absolute bottom-4 left-4 z-30 select-none" ref={basemapMenuRef}>
-          {/* Popover Card (Double-Bezel Architecture) */}
+          {/* Popover Card */}
           {isBasemapMenuOpen && (
-            <div className="absolute bottom-full left-0 mb-2.5 w-72 sm:w-80 p-1.5 rounded-2xl bg-slate-950/95 dark:bg-[#070A11] border border-white/15 shadow-[0_24px_50px_rgba(0,0,0,0.85)] backdrop-blur-2xl z-40 animate-in fade-in slide-in-from-bottom-2 duration-200">
-              <div className="rounded-[calc(1rem-2px)] bg-slate-900/90 dark:bg-[#0B0F18] border border-white/10 overflow-hidden">
+            <div className="absolute bottom-full left-0 mb-2.5 w-72 sm:w-80 rounded-xl bg-slate-900/95 dark:bg-[#0B0F18] border border-white/10 shadow-[0_24px_50px_rgba(0,0,0,0.85)] backdrop-blur-2xl overflow-hidden z-40 animate-in fade-in slide-in-from-bottom-2 duration-200">
                 {/* Header */}
                 <div className="px-3.5 py-2 bg-white/[0.03] border-b border-white/10 flex items-center justify-between">
                   <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono font-bold tracking-[0.18em] text-slate-300">
@@ -1229,7 +1228,6 @@ export const SatelliteRoofCanvas: React.FC = () => {
                     );
                   })}
                 </div>
-              </div>
             </div>
           )}
 

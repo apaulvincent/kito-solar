@@ -12,8 +12,7 @@ export function QuickBillSliderBanner() {
   const estimatedMonthlyKwh = Math.round(standaloneMonthlyBillPhp / Math.max(1, config.retailRatePhp));
 
   return (
-    <div className="p-1.5 sm:p-2 rounded-[2rem] bg-slate-900/[0.03] dark:bg-white/[0.03] ring-1 ring-slate-900/[0.06] dark:ring-white/[0.08] shadow-[0_20px_40px_-15px_rgba(15,23,42,0.05)] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]">
-      <div className="rounded-[calc(2rem-0.375rem)] sm:rounded-[calc(2rem-0.5rem)] bg-white dark:bg-[#0B0F17] p-5 sm:p-7 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.07)] ring-1 ring-slate-900/[0.04] dark:ring-white/[0.04]">
+    <div className="rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0B0F17] border border-slate-200/80 dark:border-white/10 p-5 sm:p-7 shadow-sm transition-all duration-300">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           {/* Left: Eyebrow & Telemetry Context */}
           <div className="space-y-2">
@@ -157,6 +156,5 @@ export function QuickBillSliderBanner() {
           </div>
         )}
       </div>
-    </div>
   );
 }

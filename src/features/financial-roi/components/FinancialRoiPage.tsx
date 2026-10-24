@@ -50,8 +50,7 @@ export const FinancialRoiPage: React.FC = () => {
   if (!user) {
     return (
       <div className="min-h-[calc(100dvh-4rem)] flex items-center justify-center p-4 sm:p-6 bg-slate-50 dark:bg-[#050505]">
-        <div className="w-full max-w-md p-2 rounded-[2rem] bg-slate-900/[0.04] dark:bg-white/[0.04] ring-1 ring-slate-900/[0.08] dark:ring-white/[0.08] shadow-2xl">
-          <div className="rounded-[calc(2rem-0.5rem)] bg-white dark:bg-[#0B0F17] p-7 space-y-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
+        <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#0B0F17] border border-slate-200/80 dark:border-white/10 p-7 space-y-6 shadow-2xl">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-amber-500/10 ring-1 ring-amber-500/25 text-amber-500 flex items-center justify-center shrink-0">
                 <Lock className="w-5 h-5" />
@@ -94,7 +93,6 @@ export const FinancialRoiPage: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
       </div>
     );
   }

@@ -118,8 +118,7 @@ Generated via Kito Solar (kito-solar.vercel.app)`;
   };
 
   return (
-    <div className="rounded-[2rem] p-1.5 bg-slate-100/90 dark:bg-slate-900/80 ring-1 ring-slate-900/10 dark:ring-white/10 shadow-xl space-y-4">
-      <div className="rounded-[calc(2rem-0.375rem)] bg-white dark:bg-[#0c1220] p-5 sm:p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] space-y-5">
+    <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0c1220] p-5 sm:p-6 shadow-sm space-y-5">
         {/* Recommended System Topology Card */}
         <div
           className={`p-4 rounded-2xl border bg-gradient-to-br ${getTopologyColor()} transition-all duration-300`}
@@ -296,6 +295,5 @@ Generated via Kito Solar (kito-solar.vercel.app)`;
           </button>
         </div>
       </div>
-    </div>
   );
 };

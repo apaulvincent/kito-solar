@@ -40,10 +40,8 @@ export const SetupProposalCard: React.FC<SetupProposalCardProps> = ({ proposal }
 
   return (
     <div className="relative my-3 group">
-      {/* Outer Machined Double-Bezel Shell */}
-      <div className="rounded-[2rem] p-1.5 sm:p-2 bg-gradient-to-br from-amber-500/20 via-slate-200/50 to-slate-300/30 dark:from-amber-500/15 dark:via-slate-800/60 dark:to-[#070B14]/80 ring-1 ring-slate-300/80 dark:ring-white/10 shadow-xl shadow-black/5 dark:shadow-black/40 backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
-        {/* Inner Core Enclosure */}
-        <div className="rounded-[calc(2rem-0.5rem)] bg-white/95 dark:bg-[#0B101E]/95 p-4 sm:p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)] space-y-4">
+      {/* Proposal Card */}
+      <div className="rounded-2xl sm:rounded-3xl bg-white/95 dark:bg-[#0B101E]/95 border border-slate-200/80 dark:border-white/10 p-4 sm:p-5 shadow-sm space-y-4">
           
           {/* Header Eyebrow & System Tag */}
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-white/5 pb-3">
@@ -249,7 +247,6 @@ export const SetupProposalCard: React.FC<SetupProposalCardProps> = ({ proposal }
           </div>
 
         </div>
-      </div>
     </div>
   );
 };

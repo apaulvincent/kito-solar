@@ -63,19 +63,12 @@ export function ExportModeComparisonCards() {
             <div
               key={key}
               onClick={() => setActiveScenarioComparison(key)}
-              className={`group p-1.5 sm:p-2 rounded-[2rem] cursor-pointer transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+              className={`group rounded-2xl sm:rounded-3xl cursor-pointer transition-all duration-300 p-5 sm:p-6 flex flex-col justify-between border ${
                 isSelected
-                  ? 'bg-gradient-to-b from-amber-500/25 via-amber-500/10 to-amber-500/5 ring-1 ring-amber-500/50 shadow-[0_24px_48px_-12px_rgba(245,158,11,0.18)] -translate-y-0.5'
-                  : 'bg-slate-900/[0.03] dark:bg-white/[0.03] ring-1 ring-slate-900/[0.06] dark:ring-white/[0.08] hover:ring-slate-900/15 dark:hover:ring-white/15 hover:-translate-y-0.5'
+                  ? 'border-amber-500 bg-amber-500/[0.04] dark:bg-[#0D131F] shadow-[0_12px_28px_-8px_rgba(245,158,11,0.2)] -translate-y-0.5'
+                  : 'border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0B0F17] hover:border-slate-300 dark:hover:border-white/20 hover:-translate-y-0.5'
               }`}
             >
-              <div
-                className={`h-full rounded-[calc(2rem-0.375rem)] sm:rounded-[calc(2rem-0.5rem)] p-5 sm:p-6 flex flex-col justify-between transition-colors duration-500 ${
-                  isSelected
-                    ? 'bg-white dark:bg-[#0D131F] shadow-[inset_0_1px_1px_rgba(255,255,255,0.95)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] ring-1 ring-amber-500/20'
-                    : 'bg-white/95 dark:bg-[#0B0F17] shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)] ring-1 ring-slate-900/[0.04] dark:ring-white/[0.04]'
-                }`}
-              >
                 <div className="space-y-5">
                   {/* Card Header */}
                   <div className="flex items-start justify-between gap-3">
@@ -179,7 +172,6 @@ export function ExportModeComparisonCards() {
                   </button>
                 </div>
               </div>
-            </div>
           );
         })}
       </div>

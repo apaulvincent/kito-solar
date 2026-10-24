@@ -262,23 +262,18 @@ export function ProjectCostSummaryCard() {
             onClick={() => setIsModalOpen(false)}
             className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 md:p-8 bg-slate-950/80 backdrop-blur-2xl animate-in fade-in duration-300"
           >
-            {/* Double-Bezel Outer Shell */}
+            {/* Modal Dialog */}
             <div
               role="dialog"
               aria-modal="true"
               aria-labelledby="itemized-pricing-modal-title"
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[92vh] flex flex-col p-1.5 sm:p-2.5 rounded-[2.5rem] bg-gradient-to-b from-white/15 via-white/5 to-white/0 border border-white/10 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.85)] animate-in zoom-in-95 duration-300 overflow-hidden"
-            >
-              {/* Double-Bezel Inner Core */}
-              <div className="relative flex flex-col w-full h-full rounded-[calc(2.5rem-0.625rem)] bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-white/5 p-5 sm:p-8 space-y-6 overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
+              className="relative w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[92vh] flex flex-col rounded-3xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-white/10 p-5 sm:p-8 space-y-6 overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
                 {/* Modal Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-200/80 dark:border-white/10">
                   <div className="flex items-center gap-4">
-                    <div className="p-1 rounded-2xl bg-amber-500/10 border border-amber-500/20 shadow-sm flex-shrink-0">
-                      <div className="w-12 h-12 rounded-[calc(1rem-2px)] bg-amber-500/15 flex items-center justify-center text-amber-500">
-                        <Receipt className="w-6 h-6 stroke-[1.75]" />
-                      </div>
+                    <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500 shadow-sm flex-shrink-0">
+                      <Receipt className="w-6 h-6 stroke-[1.75]" />
                     </div>
                     <div>
                       <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-amber-600 dark:text-amber-400 font-bold block mb-1">
@@ -318,9 +313,8 @@ export function ProjectCostSummaryCard() {
                   </div>
                 </div>
 
-                {/* Scrollable Table Area (Double-Bezel Nested) */}
-                <div className="p-1 rounded-2xl bg-slate-100/70 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 overflow-hidden flex flex-col flex-1 min-h-0">
-                  <div className="overflow-y-auto max-h-[58vh] rounded-[calc(1rem-2px)] bg-white dark:bg-slate-950/70">
+                {/* Scrollable Table Area */}
+                <div className="rounded-xl border border-slate-200/80 dark:border-white/10 overflow-y-auto max-h-[58vh] bg-white dark:bg-slate-950/70 flex flex-col flex-1 min-h-0">
                     <table className="table-fixed w-full text-left font-mono border-collapse">
                       <colgroup>
                         <col className="w-[40%] min-w-[280px]" />
@@ -458,7 +452,6 @@ export function ProjectCostSummaryCard() {
                         ))}
                       </tbody>
                     </table>
-                  </div>
                 </div>
 
                 {/* Modal Footer */}
@@ -491,7 +484,6 @@ export function ProjectCostSummaryCard() {
                   </button>
                 </div>
               </div>
-            </div>
           </div>,
           document.body
         )}

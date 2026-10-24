@@ -55,8 +55,7 @@ export const CustomApplianceModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-lg rounded-[2rem] p-1.5 bg-slate-100/90 dark:bg-slate-900/90 ring-1 ring-slate-900/10 dark:ring-white/10 shadow-2xl">
-        <div className="rounded-[calc(2rem-0.375rem)] bg-white dark:bg-[#0c1220] p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]">
+      <div className="w-full max-w-lg rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0c1220] p-6 shadow-2xl">
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
@@ -259,7 +258,6 @@ export const CustomApplianceModal: React.FC<Props> = ({ isOpen, onClose }) => {
             </div>
           </form>
         </div>
-      </div>
     </div>
   );
 };

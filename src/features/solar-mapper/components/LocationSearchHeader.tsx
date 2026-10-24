@@ -144,11 +144,10 @@ export const LocationSearchHeader: React.FC = () => {
 
   return (
     <div
-      className={`relative transition-all duration-300 p-1.5 sm:p-2 rounded-2xl sm:rounded-[1.75rem] bg-slate-900/[0.04] dark:bg-white/[0.03] ring-1 ring-slate-900/[0.07] dark:ring-white/[0.08] ${
+      className={`relative transition-all duration-300 rounded-2xl bg-white dark:bg-[#0B0F17] border border-slate-200/80 dark:border-white/10 p-3 sm:p-4 shadow-sm space-y-3 ${
         isOpen ? 'z-[100]' : 'z-30'
       }`}
     >
-      <div className="rounded-[calc(1.75rem-0.375rem)] bg-white dark:bg-[#0B0F17] p-3 sm:p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)] ring-1 ring-slate-900/[0.04] dark:ring-white/[0.05] space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           {/* Location Search Input & GPS */}
           <div className="flex-1 relative" ref={containerRef}>
@@ -217,10 +216,9 @@ export const LocationSearchHeader: React.FC = () => {
               </button>
             </div>
 
-            {/* High-End Autocomplete Dropdown with Maximum Z-Index (Doppelrand Bezel) */}
+            {/* High-End Autocomplete Dropdown */}
             {isOpen && results.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-2 p-1.5 rounded-2xl bg-slate-900/10 dark:bg-white/[0.08] ring-1 ring-slate-900/15 dark:ring-white/15 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.85)] z-[100] animate-in fade-in slide-in-from-top-1 duration-200">
-                <div className="rounded-[calc(1rem-2px)] bg-white dark:bg-[#090D16] border border-slate-200/80 dark:border-white/10 overflow-hidden">
+              <div className="absolute left-0 right-0 top-full mt-2 rounded-xl bg-white dark:bg-[#090D16] border border-slate-200/80 dark:border-white/10 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.85)] overflow-hidden z-[100] animate-in fade-in slide-in-from-top-1 duration-200">
                   {/* Dropdown Header Bar */}
                   <div className="px-3.5 py-2 bg-slate-50 dark:bg-white/[0.025] border-b border-slate-200/60 dark:border-white/10 flex items-center justify-between">
                     <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono font-bold tracking-[0.18em] text-slate-500 dark:text-slate-400">
@@ -280,7 +278,6 @@ export const LocationSearchHeader: React.FC = () => {
                       );
                     })}
                   </div>
-                </div>
               </div>
             )}
           </div>
@@ -351,6 +348,5 @@ export const LocationSearchHeader: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
   );
 };

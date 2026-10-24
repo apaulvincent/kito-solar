@@ -54,8 +54,7 @@ export const SystemGoalSelector: React.FC = () => {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
-    <div className="rounded-[1.75rem] p-1.5 bg-slate-100/80 dark:bg-slate-900/50 ring-1 ring-slate-900/5 dark:ring-white/10 transition-all duration-300">
-      <div className="rounded-[calc(1.75rem-0.375rem)] bg-white dark:bg-[#0c1220] p-5 sm:p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]">
+    <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0c1220] p-5 sm:p-6 shadow-sm transition-all duration-300">
         {/* Header with Micro-Badge */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <div className="space-y-1">
@@ -237,6 +236,5 @@ export const SystemGoalSelector: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
   );
 };

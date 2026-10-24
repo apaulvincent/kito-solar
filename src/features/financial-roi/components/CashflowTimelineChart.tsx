@@ -106,8 +106,7 @@ export function CashflowTimelineChart() {
   };
 
   return (
-    <div className="p-1.5 sm:p-2 rounded-[2rem] bg-slate-900/[0.03] dark:bg-white/[0.03] ring-1 ring-slate-900/[0.06] dark:ring-white/[0.08] shadow-[0_24px_48px_-12px_rgba(15,23,42,0.05)] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]">
-      <div className="rounded-[calc(2rem-0.375rem)] sm:rounded-[calc(2rem-0.5rem)] bg-white dark:bg-[#0B0F17] p-5 sm:p-8 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.07)] ring-1 ring-slate-900/[0.04] dark:ring-white/[0.04] space-y-6">
+    <div className="rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0B0F17] border border-slate-200/80 dark:border-white/10 p-5 sm:p-8 shadow-sm transition-all duration-300 space-y-6">
         {/* Top Header & Multi-Line Switcher */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-900/[0.06] dark:border-white/[0.06]">
           <div className="space-y-1.5">
@@ -507,6 +506,5 @@ export function CashflowTimelineChart() {
           </span>
         </div>
       </div>
-    </div>
   );
 }

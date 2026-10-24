@@ -1710,7 +1710,7 @@ export const Roof3DPreviewCanvas: React.FC = () => {
           </div>
         )}
 
-        {/* TOP-CENTER FLOATING STUDIO CONTROLS DOCK (High-End Double-Bezel Design) */}
+        {/* TOP-CENTER FLOATING STUDIO CONTROLS DOCK */}
         {activeSection && activeSection.vertices.length >= 3 && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 max-w-[calc(100%-2rem)] overflow-x-auto no-scrollbar">
             <div className="p-1.5 rounded-full bg-slate-950/90 border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-2xl flex items-center gap-1.5 select-none">
