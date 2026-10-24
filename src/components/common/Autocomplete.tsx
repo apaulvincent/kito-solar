@@ -169,6 +169,7 @@ export function Autocomplete<T>({
     onChange(null);
     setInputValue('');
     setActiveIndex(-1);
+    setIsOpen(true);
     inputRef.current?.focus();
   };
 
@@ -266,7 +267,8 @@ export function Autocomplete<T>({
             type="button"
             onClick={handleClear}
             title="Clear selection"
-            className="p-1 mr-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md transition-colors"
+            aria-label="Clear selection"
+            className="p-1 mr-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all duration-200 cursor-pointer active:scale-95"
           >
             <X className="w-3.5 h-3.5" />
           </button>

@@ -1,6 +1,42 @@
 // src/components/config/GridConfig.tsx
+import { useState, useEffect } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { Network, Sliders } from 'lucide-react';
+import { Autocomplete, HighlightMatch } from '@/components/common/Autocomplete';
+
+interface GridVoltageOption {
+  value: number;
+  label: string;
+  phase: '1-Phase' | '3-Phase';
+  isStandard?: boolean;
+}
+
+const GRID_VOLTAGE_OPTIONS: GridVoltageOption[] = [
+  { value: 220, label: '220 V (Single Phase)', phase: '1-Phase' },
+  { value: 230, label: '230 V (Single Phase - Standard)', phase: '1-Phase', isStandard: true },
+  { value: 240, label: '240 V (Single Phase)', phase: '1-Phase' },
+  { value: 380, label: '380 V (Three Phase)', phase: '3-Phase' },
+  { value: 400, label: '400 V (Three Phase)', phase: '3-Phase' },
+];
+
+interface MainBreakerOption {
+  value: number | null;
+  label: string;
+  category: string;
+  isStandard?: boolean;
+}
+
+const MAIN_BREAKER_OPTIONS: MainBreakerOption[] = [
+  { value: null, label: 'None / ATS Bypass', category: 'ATS / Bypass' },
+  { value: 40, label: '40 A', category: 'Residential' },
+  { value: 50, label: '50 A', category: 'Residential' },
+  { value: 60, label: '60 A', category: 'Residential' },
+  { value: 63, label: '63 A (IEC Standard)', category: 'Residential' },
+  { value: 100, label: '100 A (Standard Residential)', category: 'Standard', isStandard: true },
+  { value: 125, label: '125 A', category: 'Heavy Residential' },
+  { value: 150, label: '150 A', category: 'Commercial' },
+  { value: 200, label: '200 A', category: 'Commercial' },
+];
 
 export function GridConfig() {
   const gridVoltageV = useCalculatorStore((s) => s.gridVoltageV);
@@ -17,6 +53,26 @@ export function GridConfig() {
   const maxPanels = calculationResult.pvSizing.maxPanels;
   const recPanels = calculationResult.pvSizing.recommendedPanels;
 
+  const [selectedVoltage, setSelectedVoltage] = useState<GridVoltageOption | null>(
+    () => GRID_VOLTAGE_OPTIONS.find((opt) => opt.value === gridVoltageV) ?? GRID_VOLTAGE_OPTIONS[1]
+  );
+
+  const [selectedBreaker, setSelectedBreaker] = useState<MainBreakerOption | null>(
+    () => MAIN_BREAKER_OPTIONS.find((opt) => opt.value === mainBreakerA) ?? MAIN_BREAKER_OPTIONS[5]
+  );
+
+  useEffect(() => {
+    const matched = GRID_VOLTAGE_OPTIONS.find((opt) => opt.value === gridVoltageV);
+    if (matched) {
+      setSelectedVoltage(matched);
+    }
+  }, [gridVoltageV]);
+
+  useEffect(() => {
+    const matched = MAIN_BREAKER_OPTIONS.find((opt) => opt.value === mainBreakerA);
+    setSelectedBreaker(matched ?? null);
+  }, [mainBreakerA]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -30,51 +86,76 @@ export function GridConfig() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Grid Voltage */}
+        {/* Grid Voltage Autocomplete */}
         <div>
           <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1 font-semibold">
             Grid Nominal Voltage (V)
           </label>
-          <div className="flex items-center gap-2">
-            <select
-              value={gridVoltageV}
-              onChange={(e) => setGridVoltage(Number(e.target.value))}
-              className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors font-mono shadow-sm"
-            >
-              <option value={220}>220 V (Single Phase)</option>
-              <option value={230}>230 V (Single Phase — Standard)</option>
-              <option value={240}>240 V (Single Phase)</option>
-              <option value={380}>380 V (Three Phase)</option>
-              <option value={400}>400 V (Three Phase)</option>
-            </select>
-          </div>
+          <Autocomplete<GridVoltageOption>
+            options={GRID_VOLTAGE_OPTIONS}
+            value={selectedVoltage}
+            onChange={(opt) => {
+              setSelectedVoltage(opt);
+              if (opt) setGridVoltage(opt.value);
+            }}
+            getOptionLabel={(opt) => opt.label}
+            getOptionKey={(opt) => opt.value}
+            isOptionEqualToValue={(a, b) => a.value === b.value}
+            placeholder="Search voltage (e.g. 230 V)..."
+            clearable={true}
+            renderOption={(opt, { inputValue }) => (
+              <div className="w-full py-1 flex items-center justify-between gap-2">
+                <span className="font-mono text-xs font-semibold text-slate-900 dark:text-white">
+                  <HighlightMatch text={opt.label} query={inputValue} />
+                </span>
+                <span
+                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold border shrink-0 ${
+                    opt.isStandard
+                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
+                      : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/10'
+                  }`}
+                >
+                  {opt.isStandard ? 'STD' : opt.phase}
+                </span>
+              </div>
+            )}
+          />
         </div>
 
-        {/* Main Panel Breaker */}
+        {/* Main Panel Service Breaker Autocomplete */}
         <div>
           <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1 font-semibold">
             Main Panel Service Breaker (A)
           </label>
-          <div className="flex items-center gap-2">
-            <select
-              value={mainBreakerA === null ? '' : mainBreakerA}
-              onChange={(e) => {
-                const val = e.target.value === '' ? null : Number(e.target.value);
-                setMainBreaker(val);
-              }}
-              className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors font-mono shadow-sm"
-            >
-              <option value="">-- None / ATS Bypass --</option>
-              <option value={40}>40 A</option>
-              <option value={50}>50 A</option>
-              <option value={60}>60 A</option>
-              <option value={63}>63 A</option>
-              <option value={100}>100 A (Standard Residential)</option>
-              <option value={125}>125 A</option>
-              <option value={150}>150 A</option>
-              <option value={200}>200 A</option>
-            </select>
-          </div>
+          <Autocomplete<MainBreakerOption>
+            options={MAIN_BREAKER_OPTIONS}
+            value={selectedBreaker}
+            onChange={(opt) => {
+              setSelectedBreaker(opt);
+              setMainBreaker(opt ? opt.value : null);
+            }}
+            getOptionLabel={(opt) => opt.label}
+            getOptionKey={(opt) => opt.value ?? 'none'}
+            isOptionEqualToValue={(a, b) => a.value === b.value}
+            placeholder="Search breaker (e.g. 100 A, ATS)..."
+            clearable={true}
+            renderOption={(opt, { inputValue }) => (
+              <div className="w-full py-1 flex items-center justify-between gap-2">
+                <span className="font-mono text-xs font-semibold text-slate-900 dark:text-white">
+                  <HighlightMatch text={opt.label} query={inputValue} />
+                </span>
+                <span
+                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold border shrink-0 ${
+                    opt.isStandard
+                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
+                      : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/10'
+                  }`}
+                >
+                  {opt.category}
+                </span>
+              </div>
+            )}
+          />
         </div>
       </div>
 
