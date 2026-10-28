@@ -1,5 +1,5 @@
 // src/features/financial-roi/components/ExportModeComparisonCards.tsx
-import { ShieldAlert, Zap, BatteryCharging, ArrowUpRight, Check } from 'lucide-react';
+import { ShieldAlert, Zap, BatteryCharging, Check, ArrowRight } from 'lucide-react';
 import { useFinancialRoiStore, useFinancialRoiSimulation } from '../store/useFinancialRoiStore';
 import { ExportStrategy } from '../types/financialRoi';
 
@@ -42,7 +42,7 @@ export function ExportModeComparisonCards() {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 px-1">
         <div className="space-y-1">
-          <span className="inline-flex items-center rounded-full px-3 py-0.5 text-[10px] uppercase tracking-[0.2em] font-bold bg-slate-900/[0.05] dark:bg-white/[0.06] text-slate-600 dark:text-slate-300">
+          <span className="inline-flex items-center rounded-full px-3 py-0.5 text-[10px] uppercase tracking-[0.2em] font-bold bg-slate-900/[0.05] dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-white/[0.08]">
             Topology Matrix
           </span>
           <h3 className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -50,7 +50,7 @@ export function ExportModeComparisonCards() {
           </h3>
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Select a topology to inspect its 25-year cumulative cashflow trajectory
+          Select an architecture to plot its 10-year cumulative cashflow trajectory below
         </p>
       </div>
 
@@ -63,115 +63,116 @@ export function ExportModeComparisonCards() {
             <div
               key={key}
               onClick={() => setActiveScenarioComparison(key)}
-              className={`group rounded-2xl sm:rounded-3xl cursor-pointer transition-all duration-300 p-5 sm:p-6 flex flex-col justify-between border ${
+              className={`group rounded-3xl cursor-pointer transition-all duration-300 p-6 flex flex-col justify-between border ${
                 isSelected
-                  ? 'border-amber-500 bg-amber-500/[0.04] dark:bg-[#0D131F] shadow-[0_12px_28px_-8px_rgba(245,158,11,0.2)] -translate-y-0.5'
-                  : 'border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0B0F17] hover:border-slate-300 dark:hover:border-white/20 hover:-translate-y-0.5'
+                  ? 'border-2 border-amber-500 bg-amber-500/[0.03] dark:bg-[#0E1420] shadow-lg shadow-black/[0.04] dark:shadow-black/25'
+                  : 'border border-slate-200/90 dark:border-white/[0.08] bg-white dark:bg-[#0B0F17] hover:border-slate-300 dark:hover:border-white/20'
               }`}
             >
-                <div className="space-y-5">
-                  {/* Card Header */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500 block">
-                        {tag}
-                      </span>
-                      <h4 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white">
-                        {title}
-                      </h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
-                    </div>
-
-                    <div
-                      className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105 ${
-                        isSelected
-                          ? 'bg-amber-500 text-slate-950 shadow-[0_8px_16px_-4px_rgba(245,158,11,0.45)]'
-                          : 'bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-slate-400 ring-1 ring-slate-900/[0.05] dark:ring-white/[0.08]'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                    </div>
+              <div className="space-y-5">
+                {/* Card Header */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500 block">
+                      {tag}
+                    </span>
+                    <h4 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white">
+                      {title}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
                   </div>
 
-                  {/* Hero Payback & 25-Yr Net Profit Split */}
-                  <div className="grid grid-cols-2 gap-2.5 p-3.5 rounded-2xl bg-slate-50/90 dark:bg-white/[0.02] ring-1 ring-slate-900/[0.04] dark:ring-white/[0.05]">
-                    <div>
-                      <span className="text-[10px] uppercase tracking-[0.14em] font-bold text-slate-400 block mb-0.5">
-                        Breakeven
-                      </span>
-                      <span
-                        className={`text-lg sm:text-xl font-black font-mono tabular-nums tracking-tight ${
-                          isSelected
-                            ? 'text-amber-600 dark:text-amber-400'
-                            : 'text-slate-900 dark:text-white'
-                        }`}
-                      >
-                        {sim.paybackFormatted}
-                      </span>
-                    </div>
-
-                    <div className="border-l border-slate-200/80 dark:border-white/[0.06] pl-3">
-                      <span className="text-[10px] uppercase tracking-[0.14em] font-bold text-slate-400 block mb-0.5">
-                        25-Yr Profit
-                      </span>
-                      <span className="text-lg sm:text-xl font-black font-mono tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">
-                        ₱{(sim.netProfit25YearsPhp / 1000000).toFixed(2)}M
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Precision Telemetry Ledger */}
-                  <div className="space-y-2.5 text-xs pt-1">
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-slate-500 dark:text-slate-400">Turnkey Investment</span>
-                      <span className="font-mono font-bold tabular-nums text-slate-900 dark:text-white">
-                        ₱{sim.initialCapexPhp.toLocaleString()}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-slate-500 dark:text-slate-400">Year 1 Monthly Savings</span>
-                      <span className="font-mono font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-                        +₱{sim.year1MonthlySavingsPhp.toLocaleString()}/mo
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-baseline pt-2 border-t border-slate-900/[0.05] dark:border-white/[0.05]">
-                      <span className="text-slate-500 dark:text-slate-400">Levelized Solar Cost (LCOE)</span>
-                      <span className="font-mono font-extrabold tabular-nums text-slate-900 dark:text-white">
-                        ₱{sim.lcoePhpPerKwh.toFixed(2)} / kWh
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Island Button-in-Button CTA */}
-                <div className="pt-5 mt-4">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveScenarioComparison(key);
-                    }}
-                    className={`w-full rounded-full pl-5 pr-1.5 py-1.5 text-xs font-bold flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] cursor-pointer ${
+                  <div
+                    className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
                       isSelected
-                        ? 'bg-amber-500 text-slate-950 shadow-[0_8px_20px_-4px_rgba(245,158,11,0.4)]'
-                        : 'bg-slate-100 dark:bg-white/[0.05] text-slate-700 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-white/[0.1]'
+                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                        : 'bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.06]'
                     }`}
                   >
-                    <span>{isSelected ? 'Active Simulation Curve' : 'Inspect Cashflow Curve'}</span>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                </div>
+
+                {/* Hero Payback & 10-Yr Net Profit Split (Single surface, zero double borders) */}
+                <div className="grid grid-cols-2 gap-2.5 p-3.5 rounded-2xl bg-slate-50/80 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04]">
+                  <div>
+                    <span className="text-[10px] uppercase tracking-[0.14em] font-bold text-slate-400 block mb-0.5">
+                      Breakeven
+                    </span>
                     <span
-                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:scale-105 ${
+                      className={`text-lg sm:text-xl font-black font-mono tabular-nums tracking-tight ${
                         isSelected
-                          ? 'bg-slate-950/15 text-slate-950'
-                          : 'bg-slate-900/[0.06] dark:bg-white/10 text-slate-700 dark:text-white'
+                          ? 'text-amber-600 dark:text-amber-400'
+                          : 'text-slate-900 dark:text-white'
                       }`}
                     >
-                      {isSelected ? <Check className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
+                      {sim.paybackFormatted}
                     </span>
-                  </button>
+                  </div>
+
+                  <div className="border-l border-slate-200/80 dark:border-white/[0.06] pl-3">
+                    <span className="text-[10px] uppercase tracking-[0.14em] font-bold text-slate-400 block mb-0.5">
+                      10-Yr Profit
+                    </span>
+                    <span className="text-lg sm:text-xl font-black font-mono tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">
+                      {Math.abs(sim.netProfit10YearsPhp) >= 1000000
+                        ? `₱${(sim.netProfit10YearsPhp / 1000000).toFixed(2)}M`
+                        : `₱${Math.round(sim.netProfit10YearsPhp / 1000)}k`}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Precision Telemetry Ledger */}
+                <div className="space-y-2.5 text-xs pt-1">
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-slate-500 dark:text-slate-400">Turnkey Investment</span>
+                    <span className="font-mono font-bold tabular-nums text-slate-900 dark:text-white">
+                      ₱{sim.initialCapexPhp.toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-slate-500 dark:text-slate-400">Year 1 Monthly Savings</span>
+                    <span className="font-mono font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                      +₱{sim.year1MonthlySavingsPhp.toLocaleString()}/mo
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-baseline pt-2 border-t border-slate-100 dark:border-white/[0.06]">
+                    <span className="text-slate-500 dark:text-slate-400">Levelized Solar Cost (LCOE)</span>
+                    <span className="font-mono font-extrabold tabular-nums text-slate-900 dark:text-white">
+                      ₱{sim.lcoePhpPerKwh.toFixed(2)} / kWh
+                    </span>
+                  </div>
                 </div>
               </div>
+
+              {/* Status Indicator Bar (Clean, intentional, sensible) */}
+              <div className="pt-4 mt-5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-xs">
+                {isSelected ? (
+                  <>
+                    <span className="inline-flex items-center gap-2 font-semibold text-amber-600 dark:text-amber-400">
+                      <span className="w-2 h-2 rounded-full bg-amber-500" />
+                      <span>Active on Cashflow Chart</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                      <Check className="w-3 h-3" />
+                      <span>Selected</span>
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors font-medium">
+                      Plot on cashflow chart
+                    </span>
+                    <span className="text-slate-400 group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-all duration-300 group-hover:translate-x-1 flex items-center gap-1 text-[11px] font-medium">
+                      <span>Select</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
           );
         })}
       </div>

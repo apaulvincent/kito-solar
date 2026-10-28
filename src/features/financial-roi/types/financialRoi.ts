@@ -59,7 +59,7 @@ export interface CapexBreakdown {
 }
 
 export interface YearlyCashflowPoint {
-  year: number;                         // 0 to 25
+  year: number;                         // 0 to 10
   inflatedRetailRatePhp: number;
   inflatedExportRatePhp: number;
   panelHealthFactor: number;            // 1.00 down to ~0.89
@@ -84,9 +84,12 @@ export interface ScenarioSimulationResult {
   year1MonthlyBillAfterPhp: number;
   year1MonthlySavingsPhp: number;
   year1AnnualSavingsPhp: number;
-  paybackYears: number | null;          // e.g. 4.25 (null if > 25 years)
+  paybackYears: number | null;          // e.g. 4.25 (null if > 10 years)
   paybackMonthsTotal: number | null;    // e.g. 51 months
-  paybackFormatted: string;             // e.g. "4 yrs 3 mos" or "> 25 yrs"
+  paybackFormatted: string;             // e.g. "4 yrs 3 mos" or "> 10 yrs"
+  netProfit10YearsPhp: number;
+  npv10YearsPhp: number;
+  roiPercentage10Years: number;
   netProfit25YearsPhp: number;
   npv25YearsPhp: number;
   roiPercentage25Years: number;
@@ -104,5 +107,5 @@ export interface ScenarioSimulationResult {
     gridExportedKwh: number;
     clippedWastedKwh: number;
   };
-  cashflowSeries: YearlyCashflowPoint[]; // 26 points (Year 0 to Year 25)
+  cashflowSeries: YearlyCashflowPoint[]; // 11 points (Year 0 to Year 10)
 }

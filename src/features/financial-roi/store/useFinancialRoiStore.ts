@@ -74,8 +74,8 @@ export const useFinancialRoiStore = create<FinancialRoiState>()(
   persist(
     (set, get) => ({
       config: DEFAULT_FINANCIAL_CONFIG,
-      standaloneMonthlyBillPhp: 8500,
-      useStandaloneBillOverride: false,
+      standaloneMonthlyBillPhp: 7000,
+      useStandaloneBillOverride: true,
       activeScenarioComparison: 'net_metering',
       showAllCurvesOnTimeline: true,
       highlightedTimelineYear: null,
@@ -105,7 +105,10 @@ export const useFinancialRoiStore = create<FinancialRoiState>()(
       },
 
       setStandaloneMonthlyBill: (billPhp: number) => {
-        set({ standaloneMonthlyBillPhp: Math.max(1000, Math.min(200000, billPhp)) });
+        set({
+          standaloneMonthlyBillPhp: Math.max(1000, Math.min(200000, billPhp)),
+          useStandaloneBillOverride: true,
+        });
       },
 
       setUseStandaloneBillOverride: (useOverride: boolean) => {
@@ -133,8 +136,8 @@ export const useFinancialRoiStore = create<FinancialRoiState>()(
       resetToDefaults: () => {
         set({
           config: DEFAULT_FINANCIAL_CONFIG,
-          standaloneMonthlyBillPhp: 8500,
-          useStandaloneBillOverride: false,
+          standaloneMonthlyBillPhp: 7000,
+          useStandaloneBillOverride: true,
           activeScenarioComparison: 'net_metering',
           showAllCurvesOnTimeline: true,
           highlightedTimelineYear: null,
@@ -227,7 +230,7 @@ export const useFinancialRoiStore = create<FinancialRoiState>()(
       },
     }),
     {
-      name: 'kito_financial_roi_v1',
+      name: 'kito_financial_roi_v3',
       storage: createJSONStorage(() => safeLocalStorage),
       partialize: (state): any => ({
         config: state.config,

@@ -56,7 +56,7 @@ export function generateFinancialProposalPdf({
   doc.setFontSize(8.5);
   doc.setFont('helvetica', 'normal');
   setText(COLOR_SLATE_500);
-  doc.text('FINANCIAL ROI, TARIFF & 25-YEAR CASHFLOW PROJECTION', MARGIN_X, currentY + 5.5);
+  doc.text('FINANCIAL ROI, TARIFF & 10-YEAR CASHFLOW PROJECTION', MARGIN_X, currentY + 5.5);
 
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -138,7 +138,7 @@ export function generateFinancialProposalPdf({
 
   autoTable(doc, {
     startY: currentY,
-    head: [['ARCHITECTURE', 'INITIAL CAPEX', 'YEAR 1 SAVINGS', 'BREAKEVEN', '25-YR PROFIT', 'LCOE']],
+    head: [['ARCHITECTURE', 'INITIAL CAPEX', 'YEAR 1 SAVINGS', 'BREAKEVEN', '10-YR PROFIT', 'LCOE']],
     body: comparisonRows,
     theme: 'plain',
     headStyles: { textColor: [100, 116, 139], fontSize: 8, fontStyle: 'bold' },
@@ -160,10 +160,10 @@ export function generateFinancialProposalPdf({
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   setText(COLOR_SLATE_900);
-  doc.text(`3. 25-YEAR CASHFLOW PROJECTION (${activeSim.label.toUpperCase()})`, MARGIN_X, currentY);
+  doc.text(`3. 10-YEAR CASHFLOW PROJECTION (${activeSim.label.toUpperCase()})`, MARGIN_X, currentY);
   currentY += 5;
 
-  const milestoneYears = [1, 3, 5, 10, 12, 15, 20, 25];
+  const milestoneYears = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   const milestoneRows = milestoneYears.map((yr) => {
     const pt = activeSim.cashflowSeries[yr] || activeSim.cashflowSeries[activeSim.cashflowSeries.length - 1];
     return [

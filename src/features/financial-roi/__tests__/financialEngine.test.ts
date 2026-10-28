@@ -29,7 +29,7 @@ describe('Financial ROI Calculation Engine', () => {
     const capexZero = calculateTurnkeyCapex(sampleInput, DEFAULT_FINANCIAL_CONFIG, 'zero_export');
     expect(capexZero.batteryPhp).toBe(0);
     expect(capexZero.netMeteringSetupPhp).toBe(0);
-    expect(capexZero.totalCapexPhp).toBeGreaterThan(150000);
+    expect(capexZero.totalCapexPhp).toBeGreaterThan(100000);
 
     // Net Metering (includes setup cost ₱35,000)
     const capexNet = calculateTurnkeyCapex(sampleInput, DEFAULT_FINANCIAL_CONFIG, 'net_metering');
@@ -38,12 +38,12 @@ describe('Financial ROI Calculation Engine', () => {
 
     // Hybrid (includes hybrid inverter premium and battery)
     const capexHybrid = calculateTurnkeyCapex(sampleInput, DEFAULT_FINANCIAL_CONFIG, 'hybrid_battery');
-    expect(capexHybrid.batteryPhp).toBe(Math.round(5.12 * 13500));
+    expect(capexHybrid.batteryPhp).toBe(Math.round(5.12 * 12000));
     expect(capexHybrid.netMeteringSetupPhp).toBe(0);
     expect(capexHybrid.totalCapexPhp).toBeGreaterThan(capexZero.totalCapexPhp);
   });
 
-  it('compounds utility tariff inflation accurately over 25 years', () => {
+  it('compounds utility tariff inflation accurately over 10 years', () => {
     const config = {
       ...DEFAULT_FINANCIAL_CONFIG,
       retailRatePhp: 10.0,
@@ -57,12 +57,12 @@ describe('Financial ROI Calculation Engine', () => {
     // Year 2 (index 2): rate = 10.0 * 1.05 = 10.5
     expect(result.cashflowSeries[2].inflatedRetailRatePhp).toBe(10.5);
 
-    // Year 25 (index 25): rate = 10.0 * (1.05)^24 ≈ 32.25
-    const expectedYear25Rate = Math.round(10.0 * Math.pow(1.05, 24) * 100) / 100;
-    expect(result.cashflowSeries[25].inflatedRetailRatePhp).toBe(expectedYear25Rate);
+    // Year 10 (index 10): rate = 10.0 * (1.05)^9 ≈ 15.51
+    const expectedYear10Rate = Math.round(10.0 * Math.pow(1.05, 9) * 100) / 100;
+    expect(result.cashflowSeries[10].inflatedRetailRatePhp).toBe(expectedYear10Rate);
   });
 
-  it('compounds solar panel degradation accurately over 25 years', () => {
+  it('compounds solar panel degradation accurately over 10 years', () => {
     const config = {
       ...DEFAULT_FINANCIAL_CONFIG,
       annualPanelDegradationPercent: 0.5, // 0.5% per year
@@ -72,10 +72,10 @@ describe('Financial ROI Calculation Engine', () => {
     // Year 1: health factor = 1.0
     expect(result.cashflowSeries[1].panelHealthFactor).toBe(1.0);
 
-    // Year 25: health factor = (1 - 0.005)^24 ≈ 0.886
-    const expectedYear25Health = Math.round(Math.pow(1 - 0.005, 24) * 1000) / 1000;
-    expect(result.cashflowSeries[25].panelHealthFactor).toBe(expectedYear25Health);
-    expect(result.cashflowSeries[25].annualGenerationKwh).toBeLessThan(
+    // Year 10: health factor = (1 - 0.005)^9 ≈ 0.956
+    const expectedYear10Health = Math.round(Math.pow(1 - 0.005, 9) * 1000) / 1000;
+    expect(result.cashflowSeries[10].panelHealthFactor).toBe(expectedYear10Health);
+    expect(result.cashflowSeries[10].annualGenerationKwh).toBeLessThan(
       result.cashflowSeries[1].annualGenerationKwh
     );
   });
@@ -117,7 +117,7 @@ describe('Financial ROI Calculation Engine', () => {
     expect(result.paybackFormatted).toMatch(/\d+\s*(yr|mo)/);
   });
 
-  it('handles edge case when payback exceeds 25 years without breaking', () => {
+  it('handles edge case when payback exceeds 10 years without breaking', () => {
     const highCapexConfig = {
       ...DEFAULT_FINANCIAL_CONFIG,
       useCustomCapex: true,
@@ -126,11 +126,11 @@ describe('Financial ROI Calculation Engine', () => {
     const result = computeScenarioSimulation(sampleInput, highCapexConfig, 'zero_export');
     expect(result.paybackYears).toBeNull();
     expect(result.paybackMonthsTotal).toBeNull();
-    expect(result.paybackFormatted).toBe('> 25 yrs');
+    expect(result.paybackFormatted).toBe('> 10 yrs');
   });
 
   it('formats payback durations cleanly and concisely', () => {
-    expect(formatPaybackPeriod(null)).toBe('> 25 yrs');
+    expect(formatPaybackPeriod(null)).toBe('> 10 yrs');
     expect(formatPaybackPeriod(4.25)).toBe('4 yrs 3 mos');
     expect(formatPaybackPeriod(5.0)).toBe('5 yrs');
     expect(formatPaybackPeriod(0.5)).toBe('6 mos');

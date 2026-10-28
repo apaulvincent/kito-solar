@@ -67,7 +67,7 @@ export function HomePage() {
     },
     {
       index: '04',
-      badge: '25-Yr Cashflow',
+      badge: '10-Yr Cashflow',
       title: 'Financial ROI Simulator',
       subtitle: 'ERC Net Metering vs. Zero-Export vs. Hybrid LiFePO4 payback curves',
       metricLabel: 'Tariffs',
@@ -558,7 +558,7 @@ export function HomePage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
                   <TrendingUp className="w-3 h-3" />
-                  Studio 04 • 25-Year Financial ROI &amp; Tariffs
+                  Studio 04 • 10-Year Financial ROI &amp; Tariffs
                 </span>
                 <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
                   NEW • ERC NET METERING ENGINE
@@ -608,7 +608,7 @@ export function HomePage() {
                     PDF Financial Proposal
                   </span>
                   <span className="text-[10px] font-mono text-slate-500 block mt-0.5">
-                    25-Yr Milestone Ledger
+                    10-Yr Milestone Ledger
                   </span>
                 </div>
               </div>

@@ -42,7 +42,7 @@ export function CashflowTimelineChart() {
   minCashflow = Math.min(minCashflow * 1.15, -60000);
   maxCashflow = Math.max(maxCashflow * 1.12, 500000);
 
-  const getX = (year: number) => paddingLeft + (year / 25) * chartWidth;
+  const getX = (year: number) => paddingLeft + (year / 10) * chartWidth;
   const getY = (cashflow: number) =>
     paddingTop + (1 - (cashflow - minCashflow) / (maxCashflow - minCashflow)) * chartHeight;
 
@@ -83,7 +83,7 @@ export function CashflowTimelineChart() {
   };
 
   const breakevenYear = activeSim.paybackYears;
-  const hasBreakeven = breakevenYear !== null && breakevenYear <= 25;
+  const hasBreakeven = breakevenYear !== null && breakevenYear <= 10;
   const breakevenX = hasBreakeven ? getX(breakevenYear!) : null;
 
   const activeHoverPoint =
@@ -100,8 +100,8 @@ export function CashflowTimelineChart() {
       return;
     }
 
-    const yearFraction = ((svgX - paddingLeft) / chartWidth) * 25;
-    const clampedYear = Math.max(0, Math.min(25, Math.round(yearFraction)));
+    const yearFraction = ((svgX - paddingLeft) / chartWidth) * 10;
+    const clampedYear = Math.max(0, Math.min(10, Math.round(yearFraction)));
     setHoveredYear(clampedYear);
   };
 
@@ -111,14 +111,14 @@ export function CashflowTimelineChart() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-900/[0.06] dark:border-white/[0.06]">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] uppercase tracking-[0.2em] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/20">
+              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] uppercase tracking-[0.2em] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
                 <TrendingUp className="w-3 h-3" />
                 Capital Recovery Horizon
               </span>
               <span className="text-xs font-mono text-slate-400">• {activeSim.label}</span>
             </div>
             <h3 className="text-lg sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              25-Year Cumulative Cashflow &amp; Breakeven Curve
+              10-Year Cumulative Cashflow &amp; Breakeven Curve
             </h3>
           </div>
 
@@ -149,7 +149,7 @@ export function CashflowTimelineChart() {
 
         {/* 4-Column Executive Financial Telemetry Strip */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-white/[0.02] ring-1 ring-slate-900/[0.05] dark:ring-white/[0.06]">
+          <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-white/[0.02]">
             <span className="text-[10px] uppercase font-bold tracking-[0.16em] text-slate-400 block mb-1">
               Exact Breakeven
             </span>
@@ -157,41 +157,41 @@ export function CashflowTimelineChart() {
               {activeSim.paybackFormatted}
             </div>
             <span className="text-[11px] text-slate-500 font-mono">
-              {activeSim.paybackMonthsTotal ? `Month ${activeSim.paybackMonthsTotal} crossover` : 'Beyond 25-yr horizon'}
+              {activeSim.paybackMonthsTotal ? `Month ${activeSim.paybackMonthsTotal} crossover` : 'Beyond 10-yr horizon'}
             </span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-emerald-500/[0.04] dark:bg-emerald-500/[0.05] ring-1 ring-emerald-500/20">
+          <div className="p-4 rounded-2xl bg-emerald-500/[0.04] dark:bg-emerald-500/[0.05]">
             <span className="text-[10px] uppercase font-bold tracking-[0.16em] text-emerald-700 dark:text-emerald-400 block mb-1">
-              25-Year Net Profit
+              10-Year Net Profit
             </span>
             <div className="text-xl sm:text-2xl font-black font-mono tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">
-              +₱{activeSim.netProfit25YearsPhp.toLocaleString()}
+              +₱{activeSim.netProfit10YearsPhp.toLocaleString()}
             </div>
             <span className="text-[11px] text-slate-500 font-mono">
               Net of CAPEX &amp; renewals
             </span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-white/[0.02] ring-1 ring-slate-900/[0.05] dark:ring-white/[0.06]">
+          <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-white/[0.02]">
             <span className="text-[10px] uppercase font-bold tracking-[0.16em] text-slate-400 block mb-1">
               Net Present Value (NPV)
             </span>
             <div className="text-xl sm:text-2xl font-black font-mono tabular-nums tracking-tight text-slate-900 dark:text-white">
-              ₱{activeSim.npv25YearsPhp.toLocaleString()}
+              ₱{activeSim.npv10YearsPhp.toLocaleString()}
             </div>
             <span className="text-[11px] text-slate-500 font-mono">
               Discounted cashflow valuation
             </span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-white/[0.02] ring-1 ring-slate-900/[0.05] dark:ring-white/[0.06]">
+          <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-white/[0.02]">
             <span className="text-[10px] uppercase font-bold tracking-[0.16em] text-slate-400 block mb-1">
               Lifecycle Return (ROI)
             </span>
             <div className="text-xl sm:text-2xl font-black font-mono tabular-nums tracking-tight text-slate-900 dark:text-white">
-              {activeSim.roiPercentage25Years > 0 ? '+' : ''}
-              {activeSim.roiPercentage25Years}%
+              {activeSim.roiPercentage10Years > 0 ? '+' : ''}
+              {activeSim.roiPercentage10Years}%
             </div>
             <span className="text-[11px] text-slate-500 font-mono">
               LCOE: ₱{activeSim.lcoePhpPerKwh.toFixed(2)}/kWh
@@ -202,7 +202,7 @@ export function CashflowTimelineChart() {
         {/* Recessed SVG Viewport */}
         <div
           ref={containerRef}
-          className="relative w-full rounded-3xl bg-slate-50/70 dark:bg-[#070A10] ring-1 ring-slate-900/[0.05] dark:ring-white/[0.06] p-3 sm:p-5 overflow-hidden select-none"
+          className="relative w-full rounded-3xl bg-slate-50/70 dark:bg-[#070A10] p-3 sm:p-5 overflow-hidden select-none"
         >
           <svg
             viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
@@ -233,7 +233,7 @@ export function CashflowTimelineChart() {
             />
 
             {/* Horizontal Gridlines & Y-Axis Labels */}
-            {[-500000, 0, 500000, 1000000, 2000000, 3000000].map((val) => {
+            {[-750000, -500000, -250000, 0, 250000, 500000, 750000, 1000000, 1500000, 2000000].map((val) => {
               if (val < minCashflow || val > maxCashflow) return null;
               const y = getY(val);
               const isZero = val === 0;
@@ -261,16 +261,16 @@ export function CashflowTimelineChart() {
                   >
                     {val === 0
                       ? '₱0'
-                      : val > 0
-                      ? `+₱${(val / 1000000).toFixed(val % 1000000 === 0 ? 0 : 1)}M`
-                      : `-₱${Math.abs(val / 1000).toFixed(0)}k`}
+                      : Math.abs(val) >= 1000000
+                      ? `${val > 0 ? '+' : '-'}₱${(Math.abs(val) / 1000000).toFixed(val % 1000000 === 0 ? 0 : 1)}M`
+                      : `${val > 0 ? '+' : '-'}₱${Math.abs(val / 1000).toFixed(0)}k`}
                   </text>
                 </g>
               );
             })}
 
             {/* X-Axis Milestone Years */}
-            {[0, 5, 10, 15, 20, 25].map((year) => {
+            {[0, 2, 4, 6, 8, 10].map((year) => {
               const x = getX(year);
               return (
                 <g key={year}>
@@ -426,7 +426,7 @@ export function CashflowTimelineChart() {
           {/* Floating High-Contrast Telemetry HUD on Hover */}
           {activeHoverPoint && (
             <div
-              className="absolute top-4 right-4 p-4 rounded-2xl bg-slate-950/95 text-white text-xs ring-1 ring-white/15 shadow-2xl pointer-events-none space-y-2 font-sans z-20"
+              className="absolute top-4 right-4 p-4 rounded-2xl bg-slate-950/95 text-white text-xs border border-white/10 shadow-2xl pointer-events-none space-y-2 font-sans z-20"
               style={{ minWidth: '215px' }}
             >
               <div className="flex justify-between items-center border-b border-white/10 pb-2">
@@ -496,8 +496,8 @@ export function CashflowTimelineChart() {
             )}
 
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-amber-500/20" />
-              <span className="text-slate-500">Year 11/12 Hardware Renewal Dip</span>
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span className="text-slate-500">Year 8/10 Hardware Renewal Dip</span>
             </div>
           </div>
 

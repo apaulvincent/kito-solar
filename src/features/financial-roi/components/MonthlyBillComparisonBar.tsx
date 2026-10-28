@@ -13,8 +13,8 @@ export function MonthlyBillComparisonBar() {
     cashflowSeries,
   } = activeSim;
 
-  const year20Point = cashflowSeries[20] || cashflowSeries[cashflowSeries.length - 1];
-  const year20Rate = year20Point?.inflatedRetailRatePhp || config.retailRatePhp * 2.4;
+  const year10Point = cashflowSeries[10] || cashflowSeries[cashflowSeries.length - 1];
+  const year10Rate = year10Point?.inflatedRetailRatePhp || config.retailRatePhp * 1.55;
 
   const billReductionPercent =
     year1MonthlyBillBeforePhp > 0
@@ -29,7 +29,7 @@ export function MonthlyBillComparisonBar() {
           {/* Header & LCOE Badge */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-4 border-b border-slate-900/[0.06] dark:border-white/[0.06]">
             <div className="space-y-1">
-              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] uppercase tracking-[0.2em] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/20">
+              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] uppercase tracking-[0.2em] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
                 <ArrowDownRight className="w-3 h-3" />
                 Immediate Bill Offset
               </span>
@@ -38,7 +38,7 @@ export function MonthlyBillComparisonBar() {
               </h3>
             </div>
 
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono bg-slate-100 dark:bg-white/[0.04] text-slate-800 dark:text-slate-200 ring-1 ring-slate-900/[0.06] dark:ring-white/[0.08]">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono bg-slate-100 dark:bg-white/[0.04] text-slate-800 dark:text-slate-200">
               <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               <span>
                 LCOE <strong className="text-emerald-600 dark:text-emerald-400">₱{lcoePhpPerKwh.toFixed(2)}</strong> vs{' '}
@@ -76,7 +76,7 @@ export function MonthlyBillComparisonBar() {
                   <span className="text-xs font-normal text-slate-400">/ mo</span>
                 </span>
               </div>
-              <div className="h-3.5 w-full rounded-full bg-emerald-500/15 dark:bg-emerald-500/10 p-0.5 flex items-center overflow-hidden ring-1 ring-emerald-500/25">
+              <div className="h-3.5 w-full rounded-full bg-emerald-500/15 dark:bg-emerald-500/10 p-0.5 flex items-center overflow-hidden">
                 <div
                   style={{ width: `${afterRatioPercent}%` }}
                   className="h-full rounded-full bg-amber-500 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]"
@@ -87,7 +87,7 @@ export function MonthlyBillComparisonBar() {
           </div>
 
           {/* Highlighted Monthly & Annual Savings Bento Box */}
-          <div className="p-4 rounded-2xl bg-emerald-500/[0.05] dark:bg-emerald-500/[0.06] ring-1 ring-emerald-500/20 flex items-center justify-between gap-4">
+          <div className="p-4 rounded-2xl bg-emerald-500/[0.05] dark:bg-emerald-500/[0.06] flex items-center justify-between gap-4">
             <div>
               <span className="text-[10px] uppercase font-bold tracking-[0.16em] text-emerald-700 dark:text-emerald-300 block mb-0.5">
                 Monthly Cashflow Retained
@@ -115,7 +115,7 @@ export function MonthlyBillComparisonBar() {
           <p className="leading-relaxed">
             At <strong className="text-slate-800 dark:text-slate-200 font-mono">{config.annualTariffInflationPercent}%/yr</strong> tariff inflation, grid electricity climbs from{' '}
             <strong className="text-slate-900 dark:text-white font-mono">₱{config.retailRatePhp.toFixed(2)}</strong> to{' '}
-            <strong className="text-amber-600 dark:text-amber-400 font-mono">₱{year20Rate.toFixed(2)}/kWh</strong> by Year 20.
+            <strong className="text-amber-600 dark:text-amber-400 font-mono">₱{year10Rate.toFixed(2)}/kWh</strong> by Year 10.
           </p>
         </div>
       </div>

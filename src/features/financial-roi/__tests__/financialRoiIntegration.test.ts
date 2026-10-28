@@ -96,7 +96,7 @@ describe('Financial ROI Store & Authentication Integration Suite', () => {
     // Render each UI module and confirm zero getSnapshot loop errors
     expect(renderToStaticMarkup(createElement(QuickBillSliderBanner))).toContain('System Sizing &amp; Energy Baseline');
     expect(renderToStaticMarkup(createElement(ExportModeComparisonCards))).toContain('Architecture Financial Comparison');
-    expect(renderToStaticMarkup(createElement(CashflowTimelineChart))).toContain('25-Year Cumulative Cashflow &amp; Breakeven Curve');
+    expect(renderToStaticMarkup(createElement(CashflowTimelineChart))).toContain('10-Year Cumulative Cashflow &amp; Breakeven Curve');
     expect(renderToStaticMarkup(createElement(MonthlyBillComparisonBar))).toContain('Year 1 Electric Bill Impact');
     expect(renderToStaticMarkup(createElement(EnergyFateBreakdownBar))).toContain('Daily Solar Energy Fate &amp; Utilization');
     expect(renderToStaticMarkup(createElement(TariffPresetSelector))).toContain('Electric Utility Tariff &amp; Economics');

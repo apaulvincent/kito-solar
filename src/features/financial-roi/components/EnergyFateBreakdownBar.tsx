@@ -8,7 +8,10 @@ export function EnergyFateBreakdownBar() {
 
   const { energySplitPercent, dailyKwhBreakdown, strategy } = activeSim;
   const isZeroExport = strategy === 'zero_export';
-  const hasHighClipping = isZeroExport && energySplitPercent.clippedWasted > 15;
+  const isHybridOnly = strategy === 'hybrid_battery';
+  const hasClipping = energySplitPercent.clippedWasted > 0;
+  const hasHighClipping = (isZeroExport || isHybridOnly) && energySplitPercent.clippedWasted > 10;
+  const harvestUtilizedPercent = Math.max(0, 100 - energySplitPercent.clippedWasted);
 
   const potentialRecoveredAnnualPhp = Math.round(
     dailyKwhBreakdown.clippedWastedKwh * 365 * config.exportCreditRatePhp
@@ -55,7 +58,7 @@ export function EnergyFateBreakdownBar() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-4 border-b border-slate-900/[0.06] dark:border-white/[0.06]">
             <div className="space-y-1">
-              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] uppercase tracking-[0.2em] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/20">
+              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] uppercase tracking-[0.2em] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
                 <Sun className="w-3 h-3" />
                 Energy Dispatch Fate
               </span>
@@ -64,13 +67,13 @@ export function EnergyFateBreakdownBar() {
               </h3>
             </div>
 
-            <div className="px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-slate-100 dark:bg-white/[0.04] text-slate-900 dark:text-white ring-1 ring-slate-900/[0.06] dark:ring-white/[0.08]">
+            <div className="px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-slate-100 dark:bg-white/[0.04] text-slate-900 dark:text-white">
               {dailyKwhBreakdown.generationKwh} kWh / day Yield
             </div>
           </div>
 
           {/* Machined Recessed Segmented Bar */}
-          <div className="p-2 rounded-2xl bg-slate-100/90 dark:bg-white/[0.03] ring-1 ring-slate-900/[0.05] dark:ring-white/[0.06]">
+          <div className="p-2 rounded-2xl bg-slate-100/90 dark:bg-white/[0.03]">
             <div className="h-5 w-full rounded-xl overflow-hidden flex gap-0.5 bg-slate-200/60 dark:bg-slate-800/60">
               {fateBuckets.map(
                 (bucket) =>
@@ -91,7 +94,7 @@ export function EnergyFateBreakdownBar() {
             {fateBuckets.map((bucket) => (
               <div
                 key={bucket.label}
-                className="p-3 rounded-2xl bg-slate-50/80 dark:bg-white/[0.02] ring-1 ring-slate-900/[0.05] dark:ring-white/[0.05] space-y-1"
+                className="p-3 rounded-2xl bg-slate-50/80 dark:bg-white/[0.02] space-y-1"
               >
                 <div className="flex items-center gap-1.5">
                   <span className={`w-2 h-2 rounded-full ${bucket.dotClass} shrink-0`} />
@@ -113,7 +116,7 @@ export function EnergyFateBreakdownBar() {
 
         {/* Actionable Curtailment Recovery Callout */}
         {hasHighClipping ? (
-          <div className="p-4 rounded-2xl bg-amber-500/[0.07] dark:bg-amber-500/[0.08] ring-1 ring-amber-500/30 space-y-3">
+          <div className="p-4 rounded-2xl bg-amber-500/[0.07] dark:bg-amber-500/[0.08] border border-amber-500/20 space-y-3">
             <div className="flex items-start gap-2.5">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div className="space-y-1 text-xs">
@@ -121,7 +124,9 @@ export function EnergyFateBreakdownBar() {
                   {energySplitPercent.clippedWasted}% of your midday generation ({dailyKwhBreakdown.clippedWastedKwh} kWh/day) is throttled
                 </p>
                 <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Zero-Export clips excess daytime solar. Enabling ERC Net Metering recovers{' '}
+                  {isZeroExport
+                    ? 'Zero-Export clips excess daytime solar. Enabling ERC Net Metering recovers '
+                    : 'Battery reaches full charge by midday, curtailing remainder. Enabling Net Metering recovers '}
                   <strong className="font-mono font-bold text-amber-700 dark:text-amber-300">
                     +₱{potentialRecoveredAnnualPhp.toLocaleString()}/yr
                   </strong>{' '}
@@ -133,10 +138,10 @@ export function EnergyFateBreakdownBar() {
             <div className="flex flex-wrap items-center gap-2 pl-6">
               <button
                 type="button"
-                onClick={() => setActiveScenarioComparison('net_metering')}
+                onClick={() => setActiveScenarioComparison(isHybridOnly ? 'hybrid_plus_net_metering' : 'net_metering')}
                 className="group inline-flex items-center gap-2 rounded-full pl-4 pr-1.5 py-1 text-xs font-bold bg-amber-500 text-slate-950 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer"
               >
-                <span>Switch to Net Metering</span>
+                <span>{isHybridOnly ? 'Export Surplus via Net Metering' : 'Switch to Net Metering'}</span>
                 <span className="w-5 h-5 rounded-full bg-slate-950/15 flex items-center justify-center transition-transform group-hover:translate-x-0.5">
                   <ArrowUpRight className="w-3 h-3" />
                 </span>
@@ -145,16 +150,22 @@ export function EnergyFateBreakdownBar() {
               <button
                 type="button"
                 onClick={() => setActiveScenarioComparison('hybrid_battery')}
-                className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-semibold bg-white dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 ring-1 ring-slate-900/10 dark:ring-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-semibold bg-white dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
               >
-                <span>Store in LiFePO4 Battery</span>
+                <span>{isZeroExport ? 'Store in LiFePO4 Battery' : 'Configure Custom Battery'}</span>
               </button>
             </div>
           </div>
         ) : (
           <div className="pt-4 border-t border-slate-900/[0.05] dark:border-white/[0.05] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-            <span>Zero solar curtailment detected under active topology</span>
-            <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">100% Harvest Utilized</span>
+            <span>
+              {hasClipping
+                ? `Minor curtailment: ${energySplitPercent.clippedWasted}% (${dailyKwhBreakdown.clippedWastedKwh} kWh/day)`
+                : 'Zero solar curtailment detected under active topology'}
+            </span>
+            <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+              {harvestUtilizedPercent}% Harvest Utilized
+            </span>
           </div>
         )}
       </div>

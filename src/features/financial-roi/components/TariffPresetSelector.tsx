@@ -15,7 +15,7 @@ export function TariffPresetSelector() {
         {/* Header */}
         <div className="flex items-start justify-between gap-3 pb-4 border-b border-slate-900/[0.06] dark:border-white/[0.06]">
           <div className="space-y-1">
-            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] uppercase tracking-[0.2em] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500/20">
+            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] uppercase tracking-[0.2em] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
               <Building2 className="w-3 h-3" />
               Franchise Tariff Schedule
             </span>
@@ -49,7 +49,7 @@ export function TariffPresetSelector() {
                   className={`p-3 rounded-2xl text-left transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer ${
                     isSelected
                       ? 'bg-amber-500 text-slate-950 font-bold shadow-[0_10px_20px_-6px_rgba(245,158,11,0.4)] -translate-y-0.5'
-                      : 'bg-slate-50/90 dark:bg-white/[0.03] text-slate-700 dark:text-slate-300 ring-1 ring-slate-900/[0.05] dark:ring-white/[0.06] hover:bg-slate-100 dark:hover:bg-white/[0.06]'
+                      : 'bg-slate-50/90 dark:bg-white/[0.03] text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-white/[0.04] hover:bg-slate-100 dark:hover:bg-white/[0.06]'
                   }`}
                 >
                   <div className="text-xs font-extrabold truncate">{preset.shortName}</div>
@@ -68,7 +68,7 @@ export function TariffPresetSelector() {
 
         {/* Recessed Tariff Rate Numeric Inputs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-white/[0.02] ring-1 ring-slate-900/[0.05] dark:ring-white/[0.06] space-y-1.5">
+          <div className="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-white/[0.02] space-y-1.5">
             <label
               htmlFor="retail-rate-input"
               className="block text-[10px] uppercase tracking-[0.14em] font-bold text-slate-400"
@@ -93,7 +93,7 @@ export function TariffPresetSelector() {
             </span>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-white/[0.02] ring-1 ring-slate-900/[0.05] dark:ring-white/[0.06] space-y-1.5">
+          <div className="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-white/[0.02] space-y-1.5">
             <label
               htmlFor="export-credit-input"
               className="block text-[10px] uppercase tracking-[0.14em] font-bold text-slate-400"
@@ -122,7 +122,7 @@ export function TariffPresetSelector() {
         {/* Macro Economic Sliders */}
         <div className="space-y-4 pt-2 border-t border-slate-900/[0.05] dark:border-white/[0.05]">
           {/* Tariff Inflation */}
-          <div className="p-3.5 rounded-2xl bg-slate-50/60 dark:bg-white/[0.02] ring-1 ring-slate-900/[0.04] dark:ring-white/[0.05] space-y-2">
+          <div className="p-3.5 rounded-2xl bg-slate-50/60 dark:bg-white/[0.02] space-y-2">
             <div className="flex justify-between items-center text-xs">
               <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                 <TrendingUp className="w-3.5 h-3.5 text-amber-500" />
@@ -149,7 +149,7 @@ export function TariffPresetSelector() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="p-3.5 rounded-2xl bg-slate-50/60 dark:bg-white/[0.02] ring-1 ring-slate-900/[0.04] dark:ring-white/[0.05] space-y-2">
+            <div className="p-3.5 rounded-2xl bg-slate-50/60 dark:bg-white/[0.02] space-y-2">
               <div className="flex justify-between items-center text-xs">
                 <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                   <SunDim className="w-3.5 h-3.5 text-amber-500" />
@@ -170,7 +170,7 @@ export function TariffPresetSelector() {
               />
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-slate-50/60 dark:bg-white/[0.02] ring-1 ring-slate-900/[0.04] dark:ring-white/[0.05] space-y-2">
+            <div className="p-3.5 rounded-2xl bg-slate-50/60 dark:bg-white/[0.02] space-y-2">
               <div className="flex justify-between items-center text-xs">
                 <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                   <Percent className="w-3.5 h-3.5 text-indigo-500" />

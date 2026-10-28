@@ -98,21 +98,23 @@ export const DEFAULT_FINANCIAL_CONFIG: FinancialConfig = {
   useCustomCapex: false,
   customCapexPhp: null,
   includeInverterReplacement: true,
-  inverterReplacementYear: 12,
+  inverterReplacementYear: 10,
   includeBatteryReplacement: true,
-  batteryReplacementYear: 11,
+  batteryReplacementYear: 8,
   capExportCreditsAtBill: true,
 };
 
 // Turnkey CAPEX benchmarks in the Philippine solar installer market (2025/2026)
 export const CAPEX_BENCHMARKS = {
-  pvArrayPerKwpPhp: 24000,      // Tier-1 N-Type TOPCon Panels, Aluminum Rail Mounting, DC Isolator, SPD, BOS
-  gridTieInverterPerKwPhp: 8500, // On-Grid String Inverter (e.g., Sungrow, Huawei, GoodWe, Solis)
-  hybridInverterPerKwPhp: 14500, // Hybrid Low/High Voltage Inverter (e.g., Deye, Luxpower, Megarevo)
-  batteryPerKwhPhp: 13500,      // 51.2V 100Ah LiFePO4 server-rack/wall-mount battery pack (~₱68k per 5.12kWh)
-  laborAndPermitsRatio: 0.12,   // 12% of hardware subtotal for engineering, PE-stamped drawings, LGU permits
-  inverterReplacementRatio: 0.65, // Year 12 replacement is 65% of initial inverter cost due to hardware deflation
-  batteryReplacementRatio: 0.60,  // Year 11 replacement is 60% of initial LiFePO4 cost
+  simulationHorizonYears: 10,     // 10-Year simulation horizon
+  pvArrayPerKwpPhp: 10000,       // Tier-1 N-Type TOPCon Panels (~₱5,800 per 580W module, ~₱10,000/kWp)
+  gridTieInverterPerKwPhp: 7000, // On-Grid String Inverter (e.g., Sungrow, Huawei, GoodWe, Solis) (~₱7,000/kW)
+  hybridInverterPerKwPhp: 11000, // Hybrid Low/High Voltage Inverter (e.g., Deye, Luxpower, Megarevo) (~₱11,000/kW)
+  batteryPerKwhPhp: 12000,       // 51.2V 100Ah LiFePO4 server-rack battery pack (~₱61,440 per 5.12kWh rack)
+  bosAndMountingPerKwpPhp: 3500, // Aluminum rail mounting, DC/AC breakers, SPD, solar cables, trunking
+  laborAndPermitsRatio: 0.12,   // 12% of hardware subtotal for engineering, PE-stamped drawings & commissioning
+  inverterReplacementRatio: 0.65, // Year 10 replacement is 65% of initial inverter cost due to hardware deflation
+  batteryReplacementRatio: 0.60,  // Year 8 replacement is 60% of initial LiFePO4 cost
   defaultPsh: 4.5,              // Conservative PH annual daily PSH
   defaultSystemEfficiency: 0.80,// Wire loss, soiling, thermal coefficient, mismatch
   batteryDod: 0.80,             // 80% Depth of Discharge for LiFePO4 warranty life
