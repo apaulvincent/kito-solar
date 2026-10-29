@@ -168,7 +168,31 @@ export const useSolarMapperStore = create<SolarMapperState>()(
       },
 
       setZoom: (zoom) => set({ zoom: Math.min(21, Math.max(16, zoom)) }),
-      setDesignBasis: (designBasis) => set({ designBasis }),
+      setDesignBasis: (designBasis) => {
+        set((state) => {
+          let effectivePsh = 4.5;
+          if (state.irradianceProfile) {
+            switch (designBasis) {
+              case 'worst_month':
+                effectivePsh = state.irradianceProfile.worstMonth?.effectivePsh ?? 3.8;
+                break;
+              case 'p25_conservative':
+                effectivePsh = state.irradianceProfile.p25EffectivePsh ?? 4.1;
+                break;
+              case 'annual_avg':
+              default:
+                effectivePsh = state.irradianceProfile.annualAvgEffectivePsh ?? 4.5;
+                break;
+            }
+          }
+          return {
+            designBasis,
+            roofSections: state.roofSections.map((sec) =>
+              recomputeSection(sec, effectivePsh)
+            ),
+          };
+        });
+      },
       setPanelWattage: (panelWattage) => {
         set((state) => {
           const effectivePsh = get().getSelectedPsh();
