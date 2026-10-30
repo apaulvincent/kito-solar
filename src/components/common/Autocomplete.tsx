@@ -85,6 +85,7 @@ export function Autocomplete<T>({
   ariaLabel,
 }: AutocompleteProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
+  const [hasUserTyped, setHasUserTyped] = useState(false);
   const [inputValue, setInputValue] = useState(() =>
     value ? getOptionLabel(value) : ''
   );
@@ -98,6 +99,7 @@ export function Autocomplete<T>({
   useEffect(() => {
     if (!isOpen) {
       setInputValue(value ? getOptionLabel(value) : '');
+      setHasUserTyped(false);
     }
   }, [value, getOptionLabel, isOpen]);
 
@@ -114,8 +116,12 @@ export function Autocomplete<T>({
 
   const areEqual = isOptionEqualToValue || defaultIsOptionEqualToValue;
 
-  // Filter options based on input value
+  // Filter options based on input value ONLY when user is actively typing a query.
+  // If the user just focused/clicked (hasUserTyped is false), always show ALL options.
   const filteredOptions = useMemo(() => {
+    if (!hasUserTyped) {
+      return options;
+    }
     if (filterOptions) {
       return filterOptions(options, { inputValue, getOptionLabel });
     }
@@ -126,7 +132,7 @@ export function Autocomplete<T>({
     return options.filter((opt) =>
       getOptionLabel(opt).toLowerCase().includes(q)
     );
-  }, [options, inputValue, filterOptions, getOptionLabel]);
+  }, [options, inputValue, filterOptions, getOptionLabel, hasUserTyped]);
 
   // Handle clicking outside to close
   useEffect(() => {
@@ -137,6 +143,7 @@ export function Autocomplete<T>({
       ) {
         setIsOpen(false);
         setActiveIndex(-1);
+        setHasUserTyped(false);
         setInputValue(value ? getOptionLabel(value) : '');
       }
     }
@@ -144,6 +151,16 @@ export function Autocomplete<T>({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [value, getOptionLabel]);
+
+  // Set activeIndex to the currently selected option when the menu opens without active typing
+  useEffect(() => {
+    if (isOpen && !hasUserTyped && value) {
+      const idx = options.findIndex((opt) => areEqual(opt, value));
+      if (idx >= 0) {
+        setActiveIndex(idx);
+      }
+    }
+  }, [isOpen, hasUserTyped, value, options, areEqual]);
 
   // Scroll active item into view
   useEffect(() => {
@@ -159,6 +176,7 @@ export function Autocomplete<T>({
   const handleSelect = (option: T) => {
     onChange(option);
     setInputValue(getOptionLabel(option));
+    setHasUserTyped(false);
     setIsOpen(false);
     setActiveIndex(-1);
     inputRef.current?.blur();
@@ -168,6 +186,7 @@ export function Autocomplete<T>({
     e.stopPropagation();
     onChange(null);
     setInputValue('');
+    setHasUserTyped(false);
     setActiveIndex(-1);
     setIsOpen(true);
     inputRef.current?.focus();
@@ -180,7 +199,9 @@ export function Autocomplete<T>({
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter') {
         e.preventDefault();
         setIsOpen(true);
-        setActiveIndex(0);
+        setHasUserTyped(false);
+        const idx = value ? options.findIndex((opt) => areEqual(opt, value)) : 0;
+        setActiveIndex(idx >= 0 ? idx : 0);
         return;
       }
     }
@@ -208,11 +229,13 @@ export function Autocomplete<T>({
         e.preventDefault();
         setIsOpen(false);
         setActiveIndex(-1);
+        setHasUserTyped(false);
         setInputValue(value ? getOptionLabel(value) : '');
         break;
       case 'Tab':
         setIsOpen(false);
         setActiveIndex(-1);
+        setHasUserTyped(false);
         setInputValue(value ? getOptionLabel(value) : '');
         break;
     }
@@ -229,6 +252,9 @@ export function Autocomplete<T>({
           if (!disabled) {
             setIsOpen(true);
             inputRef.current?.focus();
+            if (!hasUserTyped) {
+              inputRef.current?.select();
+            }
           }
         }}
         className={`flex items-center w-full bg-white dark:bg-slate-800 border rounded-lg transition-all shadow-xs cursor-text ${
@@ -250,11 +276,14 @@ export function Autocomplete<T>({
           value={inputValue}
           onChange={(e) => {
             setInputValue(e.target.value);
+            setHasUserTyped(true);
             if (!isOpen) setIsOpen(true);
             setActiveIndex(0);
           }}
-          onFocus={() => {
+          onFocus={(e) => {
             setIsOpen(true);
+            setHasUserTyped(false);
+            e.target.select();
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
@@ -282,11 +311,18 @@ export function Autocomplete<T>({
           onClick={(e) => {
             e.stopPropagation();
             if (!disabled) {
-              setIsOpen((prev) => !prev);
-              if (!isOpen) inputRef.current?.focus();
+              setIsOpen((prev) => {
+                const next = !prev;
+                if (next) {
+                  setHasUserTyped(false);
+                  inputRef.current?.focus();
+                  inputRef.current?.select();
+                }
+                return next;
+              });
             }
           }}
-          className="pr-2.5 pl-1 py-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-transform duration-200"
+          className="pr-2.5 pl-1 py-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-transform duration-200 cursor-pointer"
         >
           <ChevronDown
             className={`w-4 h-4 transition-transform duration-200 ${
@@ -296,7 +332,7 @@ export function Autocomplete<T>({
         </button>
       </div>
 
-      {/* Floating Dropdown Menu (Direct options list without count or sort header) */}
+      {/* Floating Dropdown Menu */}
       {isOpen && !disabled && (
         <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
           <ul
@@ -335,12 +371,12 @@ export function Autocomplete<T>({
                         renderOption(option, {
                           selected: isSelected,
                           active: isActive,
-                          inputValue,
+                          inputValue: hasUserTyped ? inputValue : '',
                         })
                       ) : (
                         <HighlightMatch
                           text={getOptionLabel(option)}
-                          query={inputValue}
+                          query={hasUserTyped ? inputValue : ''}
                         />
                       )}
                     </div>

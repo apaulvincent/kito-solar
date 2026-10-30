@@ -22,7 +22,7 @@ import { projectService } from '@/services/projectService';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export type WorkbenchTabKey = 'electrical' | 'pv_sizing' | 'mounting_bom' | 'warnings';
-export type ActiveView = 'home' | 'tool' | 'projects' | 'login' | 'register' | 'account' | 'load-calculator' | 'solar-mapper' | 'financial-roi' | 'yield-simulator';
+export type ActiveView = 'home' | 'tool' | 'projects' | 'login' | 'register' | 'account' | 'load-calculator' | 'solar-mapper' | 'financial-roi' | 'yield-simulator' | 'contact';
 export type DetailMode = 'min' | 'detailed';
 
 interface CalculatorState {
@@ -159,6 +159,7 @@ export const pathToView = (pathname: string, hash?: string): ActiveView => {
   if (cleanPath === 'login') return 'login';
   if (cleanPath === 'register') return 'register';
   if (cleanPath === 'account') return 'account';
+  if (cleanPath === 'contact' || cleanPath === 'contact-us' || cleanPath === 'inquiry' || cleanPath === 'support') return 'contact';
 
   // If at root or /home, check if a legacy hash was passed
   if (cleanPath === 'home' || cleanPath === '') {
@@ -173,6 +174,7 @@ export const pathToView = (pathname: string, hash?: string): ActiveView => {
       if (cleanHash === 'login') return 'login';
       if (cleanHash === 'register') return 'register';
       if (cleanHash === 'account') return 'account';
+      if (cleanHash === 'contact' || cleanHash === 'contact-us' || cleanHash === 'inquiry' || cleanHash === 'support') return 'contact';
     }
     return 'home';
   }

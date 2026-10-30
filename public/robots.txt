@@ -1,0 +1,38 @@
+# Kito Solar Robots Directive
+# https://kitosolar.pvdeo.com
+
+User-agent: *
+Allow: /
+Allow: /contact
+Allow: /tool
+Allow: /load-calculator
+Allow: /solar-mapper
+Allow: /financial-roi
+Allow: /yield-simulator
+
+# Disallow automated indexing of private workspaces and auth endpoints
+Disallow: /account
+Disallow: /projects/*
+Disallow: /login
+Disallow: /register
+Disallow: /api/
+
+# Protect against rapid automated scraping passes
+Crawl-delay: 5
+
+# AI & Training Web Crawlers
+User-agent: GPTBot
+Disallow: /account
+Disallow: /projects/
+
+User-agent: CCBot
+Disallow: /account
+Disallow: /projects/
+
+User-agent: anthropic-ai
+Disallow: /account
+Disallow: /projects/
+
+User-agent: Google-Extended
+Disallow: /account
+Disallow: /projects/

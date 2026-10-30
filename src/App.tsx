@@ -11,6 +11,7 @@ import { ApplianceLoadCalculatorPage } from '@/components/load-calculator/Applia
 import { SolarMapperPage } from '@/features/solar-mapper/components/SolarMapperPage';
 import { FinancialRoiPage } from '@/features/financial-roi/components/FinancialRoiPage';
 import { YieldSimulatorPage } from '@/features/yield-simulator/components/YieldSimulatorPage';
+import { ContactPage } from '@/components/contact/ContactPage';
 import { SystemSummary } from '@/components/summary/SystemSummary';
 import { SolarDiagramCanvas } from '@/components/diagram/SolarDiagramCanvas';
 import { DiagramComponentList } from '@/components/diagram/DiagramComponentList';
@@ -135,6 +136,8 @@ export function App() {
       {activeView === 'financial-roi' && <FinancialRoiPage />}
 
       {activeView === 'yield-simulator' && <YieldSimulatorPage />}
+
+      {activeView === 'contact' && <ContactPage />}
 
       {activeView === 'tool' && (
         <main className="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 space-y-6">

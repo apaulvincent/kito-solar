@@ -41,6 +41,9 @@ describe('App Navigation & Supabase Authentication Suite', () => {
 
     store.setActiveView('financial-roi');
     expect(useCalculatorStore.getState().activeView).toBe('financial-roi');
+
+    store.setActiveView('contact');
+    expect(useCalculatorStore.getState().activeView).toBe('contact');
   });
 
   it('correctly maps URL pathnames to views without requiring hashes', async () => {
@@ -61,6 +64,9 @@ describe('App Navigation & Supabase Authentication Suite', () => {
     expect(pathToView('/sizing')).toBe('load-calculator');
     expect(pathToView('/roi')).toBe('financial-roi');
     expect(pathToView('/financial-roi')).toBe('financial-roi');
+    expect(pathToView('/contact')).toBe('contact');
+    expect(pathToView('/inquiry')).toBe('contact');
+    expect(pathToView('/support')).toBe('contact');
     // Project ID extraction
     expect(extractProjectIdFromUrl('/projects/RLPwns0Uqe8cJ1xvEbZp')).toBe('RLPwns0Uqe8cJ1xvEbZp');
     expect(extractProjectIdFromUrl('/project/RLPwns0Uqe8cJ1xvEbZp')).toBe('RLPwns0Uqe8cJ1xvEbZp');

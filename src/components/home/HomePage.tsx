@@ -692,6 +692,13 @@ export function HomePage() {
             >
               Saved Projects
             </button>
+            <button
+              type="button"
+              onClick={() => setActiveView('contact')}
+              className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer text-amber-600 dark:text-amber-400 font-bold"
+            >
+              Contact Us
+            </button>
           </div>
         </div>
       </footer>
