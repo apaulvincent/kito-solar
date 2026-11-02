@@ -150,7 +150,24 @@ interface CalculatorState {
   updateWireRouteOffset: (wireId: string, routeOffset: [number, number]) => void;
   clearAllWires: () => void;
   resetLayout3D: () => void;
+  saveWorkingLayout3D: () => void;
 }
+
+const WORKING_LAYOUT_STORAGE_KEY = 'kito_working_layout_3d_v1';
+
+const getInitialLayout3D = (): Layout3DState => {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(WORKING_LAYOUT_STORAGE_KEY);
+      if (raw) {
+        return sanitizeLayout3D(JSON.parse(raw));
+      }
+    } catch {
+      // Fall back to default layout
+    }
+  }
+  return createEmptyLayout3D();
+};
 
 const getInitialStep1DetailMode = (): DetailMode => {
   if (typeof window !== 'undefined') {
@@ -336,6 +353,13 @@ function compute(
 }
 
 function syncLayoutToActiveProject(layout: Layout3DState, calc: SystemCalculationResult) {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(WORKING_LAYOUT_STORAGE_KEY, JSON.stringify(layout));
+    } catch {
+      // Ignore storage quota errors
+    }
+  }
   try {
     const st = useCalculatorStore.getState();
     if (!st.activeProjectId) return;
@@ -359,6 +383,8 @@ function syncLayoutToActiveProject(layout: Layout3DState, calc: SystemCalculatio
   }
 }
 
+const initialLayout3D = getInitialLayout3D();
+
 export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   api.getInitialState = () => get();
   return {
@@ -369,7 +395,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   isLoadingCatalog: false,
   catalogSource: 'local_seed',
   customPrices: {},
-  layout3d: createEmptyLayout3D(),
+  layout3d: initialLayout3D,
   canvasTool: 'select',
   isPaletteOpen: true,
   selectedCustomNodeId: null,
@@ -405,7 +431,10 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
     1,
     230,
     100,
-    null
+    null,
+    undefined,
+    {},
+    initialLayout3D
   ),
 
   setIsCopilotOpen: (open) => {
@@ -854,6 +883,11 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
 
     const customPrices = (project.custom_prices as Record<string, number>) || {};
     const restoredLayout3d = sanitizeLayout3D(project.layout_3d);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(WORKING_LAYOUT_STORAGE_KEY, JSON.stringify(restoredLayout3d));
+      } catch {}
+    }
 
     set({
       selectedInverter: inverter,
@@ -912,6 +946,11 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
 
   resetToDefaults: () => {
     const emptyLayout = createEmptyLayout3D();
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(WORKING_LAYOUT_STORAGE_KEY);
+      } catch {}
+    }
     set({
       activeProjectId: null,
       activeProjectName: null,
@@ -1426,6 +1465,11 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   resetLayout3D: () => {
     const state = get();
     const emptyLayout = createEmptyLayout3D();
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(WORKING_LAYOUT_STORAGE_KEY);
+      } catch {}
+    }
     const nextCalc = compute(
       state.selectedInverter,
       state.selectedModule,
@@ -1447,6 +1491,11 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       calculationResult: nextCalc,
     });
     syncLayoutToActiveProject(emptyLayout, nextCalc);
+  },
+
+  saveWorkingLayout3D: () => {
+    const state = get();
+    syncLayoutToActiveProject(state.layout3d, state.calculationResult);
   },
 };
 });

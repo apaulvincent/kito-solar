@@ -17,6 +17,8 @@ import {
   PanelRightOpen,
   AlertTriangle,
   Undo2,
+  Save,
+  Check,
 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { DEFAULT_SYSTEM_WIRE_SPECS } from '@/lib/layout3dEngine';
@@ -29,6 +31,7 @@ export function SolarDiagramCanvas() {
   const [isPaused, setIsPaused] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [resetViewCount, setResetViewCount] = useState(0);
+  const [layoutSavedFlash, setLayoutSavedFlash] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
@@ -52,6 +55,7 @@ export function SolarDiagramCanvas() {
   const updateWireRouteOffset = useCalculatorStore((s) => s.updateWireRouteOffset);
   const clearAllWires = useCalculatorStore((s) => s.clearAllWires);
   const resetLayout3D = useCalculatorStore((s) => s.resetLayout3D);
+  const saveWorkingLayout3D = useCalculatorStore((s) => s.saveWorkingLayout3D);
   const polarityAlertMessage = useCalculatorStore((s) => s.polarityAlertMessage);
   const setPolarityAlertMessage = useCalculatorStore((s) => s.setPolarityAlertMessage);
 
@@ -434,8 +438,37 @@ export function SolarDiagramCanvas() {
             )}
           </div>
 
-          {/* Right: Palette Toggle, Clear Wires, Reset Layout & Viewport Controls */}
+          {/* Right: Save Layout, Clear Wires, Reset Layout, Palette Toggle & Viewport Controls */}
           <div className="flex items-center gap-1.5 pointer-events-auto">
+            {(viewMode === '3d' || viewMode === 'split') && (
+              <button
+                type="button"
+                onClick={() => {
+                  saveWorkingLayout3D();
+                  setLayoutSavedFlash(true);
+                  setTimeout(() => setLayoutSavedFlash(false), 1800);
+                }}
+                title="Save current 3D wiring and component arrangement"
+                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold backdrop-blur-md border shadow-sm transition-colors cursor-pointer ${
+                  layoutSavedFlash
+                    ? 'bg-emerald-600 border-emerald-500 text-white'
+                    : 'bg-white/95 dark:bg-slate-900/95 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-800'
+                }`}
+              >
+                {layoutSavedFlash ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Saved</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Save Layout</span>
+                  </>
+                )}
+              </button>
+            )}
+
             {(viewMode === '3d' || viewMode === 'split') && layout3d.wires.length > 0 && (
               <button
                 type="button"
