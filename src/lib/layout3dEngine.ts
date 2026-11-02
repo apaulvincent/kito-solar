@@ -342,9 +342,6 @@ export const DEFAULT_SYSTEM_WIRE_SPECS: ReadonlyArray<{
   // DC Isolator -> DC Breaker
   { id: 'base_wire_iso_brk_pos', polarity: 'positive', fromNodeId: 'dc_isolator', fromPortId: 'out_pos', toNodeId: 'dc_breaker', toPortId: 'in_pos' },
   { id: 'base_wire_iso_brk_neg', polarity: 'negative', fromNodeId: 'dc_isolator', fromPortId: 'out_neg', toNodeId: 'dc_breaker', toPortId: 'in_neg' },
-  // DC Breaker -> DC SPD
-  { id: 'base_wire_dcbrk_spd_pos', polarity: 'positive', fromNodeId: 'dc_breaker', fromPortId: 'out_pos', toNodeId: 'dc_spd', toPortId: 'in_pos' },
-  { id: 'base_wire_dcbrk_spd_neg', polarity: 'negative', fromNodeId: 'dc_breaker', fromPortId: 'out_neg', toNodeId: 'dc_spd', toPortId: 'in_neg' },
   // DC Breaker -> Inverter PV Input
   { id: 'base_wire_dcbrk_inv_pos', polarity: 'positive', fromNodeId: 'dc_breaker', fromPortId: 'out_pos', toNodeId: 'inverter', toPortId: 'pv_pos' },
   { id: 'base_wire_dcbrk_inv_neg', polarity: 'negative', fromNodeId: 'dc_breaker', fromPortId: 'out_neg', toNodeId: 'inverter', toPortId: 'pv_neg' },
@@ -357,9 +354,6 @@ export const DEFAULT_SYSTEM_WIRE_SPECS: ReadonlyArray<{
   // Inverter AC Output -> AC Breaker
   { id: 'base_wire_inv_acbrk_pos', polarity: 'positive', fromNodeId: 'inverter', fromPortId: 'ac_pos', toNodeId: 'ac_breaker', toPortId: 'in_pos' },
   { id: 'base_wire_inv_acbrk_neg', polarity: 'negative', fromNodeId: 'inverter', fromPortId: 'ac_neg', toNodeId: 'ac_breaker', toPortId: 'in_neg' },
-  // AC Breaker -> AC SPD
-  { id: 'base_wire_acbrk_spd_pos', polarity: 'positive', fromNodeId: 'ac_breaker', fromPortId: 'out_pos', toNodeId: 'ac_spd', toPortId: 'in_pos' },
-  { id: 'base_wire_acbrk_spd_neg', polarity: 'negative', fromNodeId: 'ac_breaker', fromPortId: 'out_neg', toNodeId: 'ac_spd', toPortId: 'in_neg' },
   // AC Breaker -> AC Isolator
   { id: 'base_wire_acbrk_iso_pos', polarity: 'positive', fromNodeId: 'ac_breaker', fromPortId: 'out_pos', toNodeId: 'ac_isolator', toPortId: 'in_pos' },
   { id: 'base_wire_acbrk_iso_neg', polarity: 'negative', fromNodeId: 'ac_breaker', fromPortId: 'out_neg', toNodeId: 'ac_isolator', toPortId: 'in_neg' },
@@ -379,6 +373,11 @@ export const DEFAULT_SYSTEM_WIRE_SPECS: ReadonlyArray<{
   { id: 'base_wire_panel_gnd', polarity: 'ground', fromNodeId: 'main_panel', fromPortId: 'gnd', toNodeId: 'grounding', toPortId: 'gnd_3' },
   { id: 'base_wire_acspd_gnd', polarity: 'ground', fromNodeId: 'ac_spd', fromPortId: 'gnd', toNodeId: 'grounding', toPortId: 'gnd_2' },
   { id: 'base_wire_dcspd_gnd', polarity: 'ground', fromNodeId: 'dc_spd', fromPortId: 'gnd', toNodeId: 'grounding', toPortId: 'gnd_1' },
+  // Parallel Surge Protection (SPD) Connections
+  { id: 'base_wire_dcspd_brk_pos', polarity: 'positive', fromNodeId: 'dc_spd', fromPortId: 'in_pos', toNodeId: 'dc_breaker', toPortId: 'in_pos' },
+  { id: 'base_wire_dcspd_brk_neg', polarity: 'negative', fromNodeId: 'dc_spd', fromPortId: 'in_neg', toNodeId: 'dc_breaker', toPortId: 'in_neg' },
+  { id: 'base_wire_acspd_brk_pos', polarity: 'positive', fromNodeId: 'ac_spd', fromPortId: 'in_pos', toNodeId: 'ac_breaker', toPortId: 'in_pos' },
+  { id: 'base_wire_acspd_brk_neg', polarity: 'negative', fromNodeId: 'ac_spd', fromPortId: 'in_neg', toNodeId: 'ac_breaker', toPortId: 'in_neg' },
 ];
 
 export function createDefaultSystemWires(): WireConnection3D[] {

@@ -2,23 +2,23 @@
   "version": 1,
   "baseNodePositions": {
     "pv_array": [-7.8, 0.75, 2.2],
-    "dc_isolator": [-5.4, 2.9, 0.0],
-    "dc_breaker": [-3.6, 2.9, 0.0],
-    "dc_spd": [-3.6, 1.4, 0.0],
-    "dc_conduit": [-5.0, 2.9, 0.0],
-    "inverter": [-0.6, 3.35, 0.0],
-    "battery_breaker": [-2.0, 1.4, 0.0],
-    "battery": [-0.6, 0.8, 0.4],
+    "dc_isolator": [-5.5, 4.9, 0],
+    "dc_breaker": [-4.2, 2.9, 0],
+    "dc_spd": [-5, 2.9, 0],
+    "dc_conduit": [-5, 2.9, 0],
+    "inverter": [-1.5, 5.6, 0],
+    "battery_breaker": [-1.3, 2.9, 0],
+    "battery": [-1.2, 0.9, 0],
     "battery_wire": [-1.4, 0.4, 0.4],
-    "ac_breaker": [1.4, 2.9, 0.0],
-    "ac_spd": [1.4, 1.4, 0.0],
-    "ac_isolator": [2.9, 2.9, 0.0],
-    "main_panel": [4.6, 2.5, 0.0],
-    "ats": [5.95, 2.5, 0.0],
-    "eps_breaker": [5.95, 1.4, 0.0],
-    "grid": [10.2, 1.6, 0.0],
-    "load": [10.2, 0.8, 2.2],
-    "grounding": [4.6, 0.75, 0.0]
+    "ac_breaker": [1.4, 2.9, 0],
+    "ac_spd": [0.6, 2.9, 0],
+    "ac_isolator": [2.9, 2.9, 0],
+    "main_panel": [4.3, 2.6, 0],
+    "ats": [5.95, 2.5, 0],
+    "eps_breaker": [5.95, 1.4, 0],
+    "grid": [12, 1.6, 0.9],
+    "load": [5.8, 0.8, 3.8],
+    "grounding": [4.6, 0.75, 0]
   },
   "removedBaseNodes": [],
   "placedComponents": [],
@@ -30,7 +30,7 @@
       "fromPortId": "pv_pos",
       "toNodeId": "dc_isolator",
       "toPortId": "in_pos",
-      "lengthMeters": 8.48,
+      "lengthMeters": 11.43,
       "routeOffset": [0, 0]
     },
     {
@@ -40,8 +40,8 @@
       "fromPortId": "pv_neg",
       "toNodeId": "dc_isolator",
       "toPortId": "in_neg",
-      "lengthMeters": 8.21,
-      "routeOffset": [0, 0]
+      "lengthMeters": 11.2,
+      "routeOffset": [-0.28, -0.02]
     },
     {
       "id": "base_wire_iso_brk_pos",
@@ -50,7 +50,7 @@
       "fromPortId": "out_pos",
       "toNodeId": "dc_breaker",
       "toPortId": "in_pos",
-      "lengthMeters": 3.45,
+      "lengthMeters": 2.58,
       "routeOffset": [0, 0]
     },
     {
@@ -60,27 +60,7 @@
       "fromPortId": "out_neg",
       "toNodeId": "dc_breaker",
       "toPortId": "in_neg",
-      "lengthMeters": 3.6,
-      "routeOffset": [0, 0]
-    },
-    {
-      "id": "base_wire_dcbrk_spd_pos",
-      "polarity": "positive",
-      "fromNodeId": "dc_breaker",
-      "fromPortId": "out_pos",
-      "toNodeId": "dc_spd",
-      "toPortId": "in_pos",
-      "lengthMeters": 0.72,
-      "routeOffset": [0, 0]
-    },
-    {
-      "id": "base_wire_dcbrk_spd_neg",
-      "polarity": "negative",
-      "fromNodeId": "dc_breaker",
-      "fromPortId": "out_neg",
-      "toNodeId": "dc_spd",
-      "toPortId": "in_neg",
-      "lengthMeters": 0.66,
+      "lengthMeters": 2.46,
       "routeOffset": [0, 0]
     },
     {
@@ -90,7 +70,7 @@
       "fromPortId": "out_pos",
       "toNodeId": "inverter",
       "toPortId": "pv_pos",
-      "lengthMeters": 3.21,
+      "lengthMeters": 5.44,
       "routeOffset": [0, 0]
     },
     {
@@ -100,7 +80,7 @@
       "fromPortId": "out_neg",
       "toNodeId": "inverter",
       "toPortId": "pv_neg",
-      "lengthMeters": 3.16,
+      "lengthMeters": 5.38,
       "routeOffset": [0, 0]
     },
     {
@@ -110,8 +90,8 @@
       "fromPortId": "bat_pos",
       "toNodeId": "battery_breaker",
       "toPortId": "in_pos",
-      "lengthMeters": 2.27,
-      "routeOffset": [0, 0]
+      "lengthMeters": 1.71,
+      "routeOffset": [-0.05, -0.34]
     },
     {
       "id": "base_wire_inv_batbrk_neg",
@@ -120,8 +100,8 @@
       "fromPortId": "bat_neg",
       "toNodeId": "battery_breaker",
       "toPortId": "in_neg",
-      "lengthMeters": 2.22,
-      "routeOffset": [0, 0]
+      "lengthMeters": 1.76,
+      "routeOffset": [-0.05, -0.13]
     },
     {
       "id": "base_wire_batbrk_bat_pos",
@@ -130,7 +110,7 @@
       "fromPortId": "out_pos",
       "toNodeId": "battery",
       "toPortId": "bat_pos",
-      "lengthMeters": 2.09,
+      "lengthMeters": 0.84,
       "routeOffset": [0, 0]
     },
     {
@@ -140,7 +120,7 @@
       "fromPortId": "out_neg",
       "toNodeId": "battery",
       "toPortId": "bat_neg",
-      "lengthMeters": 2.04,
+      "lengthMeters": 1.03,
       "routeOffset": [0, 0]
     },
     {
@@ -150,7 +130,7 @@
       "fromPortId": "ac_pos",
       "toNodeId": "ac_breaker",
       "toPortId": "in_pos",
-      "lengthMeters": 2.86,
+      "lengthMeters": 4.2,
       "routeOffset": [0, 0]
     },
     {
@@ -160,28 +140,8 @@
       "fromPortId": "ac_neg",
       "toNodeId": "ac_breaker",
       "toPortId": "in_neg",
-      "lengthMeters": 3.01,
-      "routeOffset": [0, 0]
-    },
-    {
-      "id": "base_wire_acbrk_spd_pos",
-      "polarity": "positive",
-      "fromNodeId": "ac_breaker",
-      "fromPortId": "out_pos",
-      "toNodeId": "ac_spd",
-      "toPortId": "in_pos",
-      "lengthMeters": 0.72,
-      "routeOffset": [0, 0]
-    },
-    {
-      "id": "base_wire_acbrk_spd_neg",
-      "polarity": "negative",
-      "fromNodeId": "ac_breaker",
-      "fromPortId": "out_neg",
-      "toNodeId": "ac_spd",
-      "toPortId": "in_neg",
-      "lengthMeters": 0.66,
-      "routeOffset": [0, 0]
+      "lengthMeters": 4.27,
+      "routeOffset": [-0.01, 0.23]
     },
     {
       "id": "base_wire_acbrk_iso_pos",
@@ -190,8 +150,8 @@
       "fromPortId": "out_pos",
       "toNodeId": "ac_isolator",
       "toPortId": "in_pos",
-      "lengthMeters": 3.12,
-      "routeOffset": [0, 0]
+      "lengthMeters": 3.63,
+      "routeOffset": [0.39, -0.1]
     },
     {
       "id": "base_wire_acbrk_iso_neg",
@@ -200,8 +160,8 @@
       "fromPortId": "out_neg",
       "toNodeId": "ac_isolator",
       "toPortId": "in_neg",
-      "lengthMeters": 3.27,
-      "routeOffset": [0, 0]
+      "lengthMeters": 3.92,
+      "routeOffset": [-0.19, 0.06]
     },
     {
       "id": "base_wire_aciso_panel_pos",
@@ -210,8 +170,8 @@
       "fromPortId": "out_pos",
       "toNodeId": "main_panel",
       "toPortId": "in_pos",
-      "lengthMeters": 3.16,
-      "routeOffset": [0, 0]
+      "lengthMeters": 3.52,
+      "routeOffset": [0.35, -0.15]
     },
     {
       "id": "base_wire_aciso_panel_neg",
@@ -220,8 +180,8 @@
       "fromPortId": "out_neg",
       "toNodeId": "main_panel",
       "toPortId": "in_neg",
-      "lengthMeters": 3.31,
-      "routeOffset": [0, 0]
+      "lengthMeters": 3.9,
+      "routeOffset": [-0.2, 0.04]
     },
     {
       "id": "base_wire_grid_panel_pos",
@@ -230,8 +190,8 @@
       "fromPortId": "grid_pos",
       "toNodeId": "main_panel",
       "toPortId": "in_pos",
-      "lengthMeters": 8.26,
-      "routeOffset": [0, 0]
+      "lengthMeters": 16.83,
+      "routeOffset": [3.28, 0.71]
     },
     {
       "id": "base_wire_grid_panel_neg",
@@ -240,8 +200,8 @@
       "fromPortId": "grid_neg",
       "toNodeId": "main_panel",
       "toPortId": "in_neg",
-      "lengthMeters": 8.33,
-      "routeOffset": [0, 0]
+      "lengthMeters": 16.46,
+      "routeOffset": [2.5, 0.58]
     },
     {
       "id": "base_wire_panel_ats_pos",
@@ -250,7 +210,7 @@
       "fromPortId": "out_pos",
       "toNodeId": "ats",
       "toPortId": "in_pos",
-      "lengthMeters": 3.55,
+      "lengthMeters": 4.24,
       "routeOffset": [0, 0]
     },
     {
@@ -260,8 +220,8 @@
       "fromPortId": "out_neg",
       "toNodeId": "ats",
       "toPortId": "in_neg",
-      "lengthMeters": 3.7,
-      "routeOffset": [0, 0]
+      "lengthMeters": 4.4,
+      "routeOffset": [-0.11, -0.02]
     },
     {
       "id": "base_wire_ats_load_pos",
@@ -270,7 +230,7 @@
       "fromPortId": "out_pos",
       "toNodeId": "load",
       "toPortId": "load_pos",
-      "lengthMeters": 8.2,
+      "lengthMeters": 6.03,
       "routeOffset": [0, 0]
     },
     {
@@ -280,7 +240,7 @@
       "fromPortId": "out_neg",
       "toNodeId": "load",
       "toPortId": "load_neg",
-      "lengthMeters": 8.29,
+      "lengthMeters": 6.12,
       "routeOffset": [0, 0]
     },
     {
@@ -290,7 +250,7 @@
       "fromPortId": "gnd",
       "toNodeId": "grounding",
       "toPortId": "gnd_3",
-      "lengthMeters": 1.15,
+      "lengthMeters": 1.7,
       "routeOffset": [0, 0]
     },
     {
@@ -300,8 +260,28 @@
       "fromPortId": "gnd",
       "toNodeId": "grounding",
       "toPortId": "gnd_2",
-      "lengthMeters": 4.2,
+      "lengthMeters": 7.73,
+      "routeOffset": [-0.37, -1.44]
+    },
+    {
+      "id": "base_wire_dcspd_brk_pos",
+      "polarity": "positive",
+      "fromNodeId": "dc_spd",
+      "fromPortId": "in_pos",
+      "toNodeId": "dc_breaker",
+      "toPortId": "in_pos",
+      "lengthMeters": 1.3,
       "routeOffset": [0, 0]
+    },
+    {
+      "id": "base_wire_dcspd_brk_neg",
+      "polarity": "negative",
+      "fromNodeId": "dc_spd",
+      "fromPortId": "in_neg",
+      "toNodeId": "dc_breaker",
+      "toPortId": "in_neg",
+      "lengthMeters": 1.49,
+      "routeOffset": [0.02, 0.11]
     },
     {
       "id": "base_wire_dcspd_gnd",
@@ -310,8 +290,28 @@
       "fromPortId": "gnd",
       "toNodeId": "grounding",
       "toPortId": "gnd_1",
-      "lengthMeters": 9.42,
+      "lengthMeters": 13.6,
+      "routeOffset": [0.06, -1.96]
+    },
+    {
+      "id": "base_wire_acspd_brk_pos",
+      "polarity": "positive",
+      "fromNodeId": "ac_spd",
+      "fromPortId": "in_pos",
+      "toNodeId": "ac_breaker",
+      "toPortId": "in_pos",
+      "lengthMeters": 1.3,
       "routeOffset": [0, 0]
+    },
+    {
+      "id": "base_wire_acspd_brk_neg",
+      "polarity": "negative",
+      "fromNodeId": "ac_spd",
+      "fromPortId": "in_neg",
+      "toNodeId": "ac_breaker",
+      "toPortId": "in_neg",
+      "lengthMeters": 1.62,
+      "routeOffset": [0.05, 0.17]
     }
   ]
 }

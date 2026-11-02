@@ -14,11 +14,9 @@ import {
   PanelRightOpen,
   AlertTriangle,
   Undo2,
-  Download,
-  Upload,
 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { DEFAULT_SYSTEM_WIRE_SPECS, serializeLayout3DPreset } from '@/lib/layout3dEngine';
+import { DEFAULT_SYSTEM_WIRE_SPECS } from '@/lib/layout3dEngine';
 import { SolarScene } from './SolarScene';
 import { PlantComponentPalette } from './PlantComponentPalette';
 
@@ -26,7 +24,6 @@ export function SolarDiagramCanvas() {
   const [isPaused, setIsPaused] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [resetViewCount, setResetViewCount] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
@@ -50,7 +47,6 @@ export function SolarDiagramCanvas() {
   const updateWireRouteOffset = useCalculatorStore((s) => s.updateWireRouteOffset);
   const clearAllWires = useCalculatorStore((s) => s.clearAllWires);
   const resetLayout3D = useCalculatorStore((s) => s.resetLayout3D);
-  const importLayout3DJson = useCalculatorStore((s) => s.importLayout3DJson);
   const polarityAlertMessage = useCalculatorStore((s) => s.polarityAlertMessage);
   const setPolarityAlertMessage = useCalculatorStore((s) => s.setPolarityAlertMessage);
 
@@ -389,65 +385,8 @@ export function SolarDiagramCanvas() {
             )}
           </div>
 
-          {/* Right: Export/Import JSON, Clear Wires, Reset Layout, Palette Toggle & Viewport Controls */}
+          {/* Right: Clear Wires, Reset Layout, Palette Toggle & Viewport Controls */}
           <div className="flex items-center gap-1.5 pointer-events-auto">
-            <button
-              type="button"
-              onClick={() => {
-                const preset = serializeLayout3DPreset(layout3d);
-                const blob = new Blob([JSON.stringify(preset, null, 2)], {
-                  type: 'application/json',
-                });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'default_layout_3d.json';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-              }}
-              title="Export 3D wiring & component setup as JSON (for default_layout_3d.json)"
-              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-mono font-semibold bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-800 shadow-sm transition-colors cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline">Export JSON</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              title="Import a 3D wiring & component layout JSON file"
-              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-mono font-semibold bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-800 shadow-sm transition-colors cursor-pointer"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline">Import JSON</span>
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json,application/json"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = () => {
-                  try {
-                    const parsed = JSON.parse(String(reader.result));
-                    const res = importLayout3DJson(parsed);
-                    if (!res.ok && res.error) {
-                      setPolarityAlertMessage(res.error);
-                    }
-                  } catch {
-                    setPolarityAlertMessage('Could not parse JSON file.');
-                  }
-                };
-                reader.readAsText(file);
-                e.target.value = '';
-              }}
-            />
-
             {layout3d.wires.length > 0 && (
               <button
                 type="button"

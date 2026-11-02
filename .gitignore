@@ -15,6 +15,7 @@ secrets.json
 # Private documentation & resources
 _docs/
 .agents/
+AGENTS.md
 DESIGN.md
 PROJECT.md
 *.xlsx
