@@ -34,6 +34,7 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
   const panelCountOverride = useCalculatorStore((s) => s.panelCountOverride);
   const activeProjectId = useCalculatorStore((s) => s.activeProjectId);
   const activeProjectName = useCalculatorStore((s) => s.activeProjectName);
+  const layout3d = useCalculatorStore((s) => s.layout3d);
   const setActiveView = useCalculatorStore((s) => s.setActiveView);
 
   const [projectName, setProjectName] = useState('');
@@ -352,6 +353,14 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
                       {selectedBattery ? `${batteryCount}× Battery` : 'Grid-Tied'}
                     </span>
                   </div>
+                </div>
+                <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between font-mono text-[11px]">
+                  <span className="text-slate-500 dark:text-slate-400">
+                    3D Plant Layout &amp; Wiring Arrangement:
+                  </span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    {layout3d.wires.length} Wires • {layout3d.placedComponents.length} Added Nodes
+                  </span>
                 </div>
               </div>
 

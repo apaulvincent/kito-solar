@@ -140,9 +140,9 @@ describe('Solar Mapper Zustand Store & Integration Suite', () => {
     expect(state.roofSections[1].vertices[0]).toEqual(newPoint);
 
     // Add 2nd, 3rd, and 4th vertex to create a 4-corner rectangle roof
-    useSolarMapperStore.getState().addVertexToActiveSection({ lat: 14.05, lng: 121.17 });
-    useSolarMapperStore.getState().addVertexToActiveSection({ lat: 14.06, lng: 121.17 });
-    useSolarMapperStore.getState().addVertexToActiveSection({ lat: 14.06, lng: 121.16 });
+    useSolarMapperStore.getState().addVertexToActiveSection({ lat: 14.05, lng: 121.1601 });
+    useSolarMapperStore.getState().addVertexToActiveSection({ lat: 14.0501, lng: 121.1601 });
+    useSolarMapperStore.getState().addVertexToActiveSection({ lat: 14.0501, lng: 121.16 });
 
     state = useSolarMapperStore.getState();
     // Must NOT split or create extra roof sections at 3 or 4 points

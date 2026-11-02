@@ -11,6 +11,7 @@ import {
   findNearestSnapPortByRay,
   getNodeTerminalPorts,
   sanitizeLayout3D,
+  serializeLayout3DPreset,
 } from '@/lib/layout3dEngine';
 import { PLANT_ROOM_GEOMETRY, SCENE_LIMITS } from '@/types/layout3d';
 import { projectService } from '@/services/projectService';
@@ -338,5 +339,30 @@ describe('3D Interactive Plant Builder: Spatial, Wiring, BOM & Persistence Suite
     expect(restored.layout3d.removedBaseNodes).toEqual([]);
     expect(restored.layout3d.wires.length).toBe(initialWires);
     expect(restored.calculationResult.costSummary.grandTotalPhp).toBe(initialGrandTotal);
+  });
+
+  it('exports and imports organized 3D wiring setups via JSON preset', () => {
+    const store = useCalculatorStore.getState();
+    const targetWire = store.layout3d.wires[0];
+    store.updateWireRouteOffset(targetWire.id, [0.8, -0.4]);
+    store.moveBaseNode('dc_isolator', [-5.8, 2.9, 0.0]);
+
+    const exportedPreset = serializeLayout3DPreset(useCalculatorStore.getState().layout3d);
+    expect(exportedPreset.baseNodePositions.dc_isolator).toEqual([-5.8, 2.9, 0.0]);
+    expect(
+      exportedPreset.wires.find((w) => w.id === targetWire.id)?.routeOffset
+    ).toEqual([0.8, -0.4]);
+
+    // Reset then import JSON preset back
+    store.resetLayout3D();
+    const importRes = useCalculatorStore.getState().importLayout3DJson(exportedPreset);
+    expect(importRes.ok).toBe(true);
+    expect(useCalculatorStore.getState().layout3d.baseNodePositions.dc_isolator).toEqual([
+      -5.8, 2.9, 0.0,
+    ]);
+    expect(
+      useCalculatorStore.getState().layout3d.wires.find((w) => w.id === targetWire.id)
+        ?.routeOffset
+    ).toEqual([0.8, -0.4]);
   });
 });

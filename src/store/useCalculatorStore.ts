@@ -33,6 +33,7 @@ import {
 import {
   ADDABLE_CATALOG_MAP,
   DEFAULT_BASE_NODE_POSITIONS,
+  Layout3DSchema,
   buildOrthogonalWireWaypoints,
   calculateWaypointsLengthMeters,
   createEmptyLayout3D,
@@ -151,6 +152,7 @@ interface CalculatorState {
   clearAllWires: () => void;
   resetLayout3D: () => void;
   saveWorkingLayout3D: () => void;
+  importLayout3DJson: (rawJson: unknown) => { ok: boolean; error?: string };
 }
 
 const WORKING_LAYOUT_STORAGE_KEY = 'kito_working_layout_3d_v1';
@@ -1496,6 +1498,55 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   saveWorkingLayout3D: () => {
     const state = get();
     syncLayoutToActiveProject(state.layout3d, state.calculationResult);
+  },
+
+  importLayout3DJson: (rawJson) => {
+    if (!rawJson || typeof rawJson !== 'object') {
+      return { ok: false, error: 'Invalid JSON file format.' };
+    }
+    const obj = rawJson as Record<string, unknown>;
+    const candidate =
+      'layout_3d' in obj && typeof obj.layout_3d === 'object' && obj.layout_3d !== null
+        ? obj.layout_3d
+        : obj;
+
+    const parsed = Layout3DSchema.safeParse(candidate);
+    if (!parsed.success) {
+      return {
+        ok: false,
+        error: 'JSON does not match the Kito Solar 3D layout & wiring schema.',
+      };
+    }
+
+    const state = get();
+    const draftLayout = parsed.data as Layout3DState;
+    const nextLayout: Layout3DState = {
+      ...draftLayout,
+      wires: recomputeAttachedWireLengths(draftLayout),
+    };
+
+    const nextCalc = compute(
+      state.selectedInverter,
+      state.selectedModule,
+      state.selectedBattery,
+      state.batteryCount,
+      state.gridVoltageV,
+      state.mainBreakerA,
+      state.panelCountOverride,
+      state.accessories,
+      state.customPrices,
+      nextLayout
+    );
+
+    set({
+      layout3d: nextLayout,
+      selectedCustomNodeId: null,
+      selectedWireId: null,
+      polarityAlertMessage: null,
+      calculationResult: nextCalc,
+    });
+    syncLayoutToActiveProject(nextLayout, nextCalc);
+    return { ok: true };
   },
 };
 });

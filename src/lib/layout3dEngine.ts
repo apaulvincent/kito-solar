@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { DiagramNodeKey } from '@/types/diagram';
 import { NodeType, getNodeTypeFromKey } from '@/components/diagram/NodeGeometry';
+import defaultLayoutSeed from '@/data/seed/default_layout_3d.json';
 import {
   AddableComponentKey,
   AddableComponentSpec,
@@ -301,7 +302,7 @@ export const BASE_NODE_CAPABILITY: Record<DiagramNodeKey, { capability: MountCap
   grounding: { capability: 'wall', height: 0.16, floorCenterY: 0.15 },
 };
 
-export const DEFAULT_BASE_NODE_POSITIONS: Record<DiagramNodeKey, [number, number, number]> = {
+const FALLBACK_BASE_NODE_POSITIONS: Record<DiagramNodeKey, [number, number, number]> = {
   pv_array: [-7.8, 0.75, 2.2],
   dc_isolator: [-5.4, 2.9, 0.0],
   dc_breaker: [-3.6, 2.9, 0.0],
@@ -320,6 +321,11 @@ export const DEFAULT_BASE_NODE_POSITIONS: Record<DiagramNodeKey, [number, number
   grid: [10.2, 1.6, 0.0],
   load: [10.2, 0.8, 2.2],
   grounding: [4.6, 0.75, 0.0],
+};
+
+export const DEFAULT_BASE_NODE_POSITIONS: Record<DiagramNodeKey, [number, number, number]> = {
+  ...FALLBACK_BASE_NODE_POSITIONS,
+  ...((defaultLayoutSeed?.baseNodePositions as unknown as Partial<Record<DiagramNodeKey, [number, number, number]>>) || {}),
 };
 
 export const DEFAULT_SYSTEM_WIRE_SPECS: ReadonlyArray<{
@@ -376,8 +382,17 @@ export const DEFAULT_SYSTEM_WIRE_SPECS: ReadonlyArray<{
 ];
 
 export function createDefaultSystemWires(): WireConnection3D[] {
+  const seedWires = Array.isArray(defaultLayoutSeed?.wires) ? defaultLayoutSeed.wires : [];
+  const seedWireMap = new Map(seedWires.map((w) => [w.id, w]));
   const obstacles = getWallObstacles(DEFAULT_BASE_NODE_POSITIONS, [], true);
+
   return DEFAULT_SYSTEM_WIRE_SPECS.map((spec) => {
+    const seedWire = seedWireMap.get(spec.id);
+    const routeOffset: [number, number] | undefined =
+      seedWire && Array.isArray(seedWire.routeOffset) && seedWire.routeOffset.length === 2
+        ? [Number(seedWire.routeOffset[0]) || 0, Number(seedWire.routeOffset[1]) || 0]
+        : undefined;
+
     const fromNodePos = DEFAULT_BASE_NODE_POSITIONS[spec.fromNodeId];
     const toNodePos = DEFAULT_BASE_NODE_POSITIONS[spec.toNodeId];
     const fromPortObj = getNodeTerminalPorts(
@@ -400,6 +415,7 @@ export function createDefaultSystemWires(): WireConnection3D[] {
       fromDir: fromPortObj ? (fromPortObj.localOffset[1] >= 0 ? 1 : -1) : undefined,
       toDir: toPortObj ? (toPortObj.localOffset[1] >= 0 ? 1 : -1) : undefined,
       obstacles,
+      routeOffset,
     });
     return {
       id: spec.id,
@@ -409,17 +425,58 @@ export function createDefaultSystemWires(): WireConnection3D[] {
       toNodeId: spec.toNodeId,
       toPortId: spec.toPortId,
       lengthMeters: calculateWaypointsLengthMeters(waypoints),
+      ...(routeOffset && (Math.abs(routeOffset[0]) > 0.001 || Math.abs(routeOffset[1]) > 0.001)
+        ? { routeOffset }
+        : {}),
     };
   });
 }
 
 export function createEmptyLayout3D(): Layout3DState {
+  const seedRemoved = Array.isArray(defaultLayoutSeed?.removedBaseNodes)
+    ? (defaultLayoutSeed.removedBaseNodes as DiagramNodeKey[])
+    : [];
+  const seedPlaced = Array.isArray(defaultLayoutSeed?.placedComponents)
+    ? (defaultLayoutSeed.placedComponents as unknown as PlacedComponent3D[])
+    : [];
+  const extraSeedWires = (Array.isArray(defaultLayoutSeed?.wires) ? defaultLayoutSeed.wires : [])
+    .filter((w) => !DEFAULT_SYSTEM_WIRE_SPECS.some((s) => s.id === w.id))
+    .map((w) => ({
+      id: w.id,
+      polarity: w.polarity as WirePolarity,
+      fromNodeId: w.fromNodeId,
+      fromPortId: w.fromPortId,
+      toNodeId: w.toNodeId,
+      toPortId: w.toPortId,
+      lengthMeters: Number(w.lengthMeters) || 1.0,
+      ...(Array.isArray(w.routeOffset) && w.routeOffset.length === 2
+        ? { routeOffset: [Number(w.routeOffset[0]) || 0, Number(w.routeOffset[1]) || 0] as [number, number] }
+        : {}),
+    }));
+
   return {
     version: 1,
     baseNodePositions: {},
-    removedBaseNodes: [],
-    placedComponents: [],
-    wires: createDefaultSystemWires(),
+    removedBaseNodes: [...seedRemoved],
+    placedComponents: seedPlaced.map((p) => ({ ...p, position: [...p.position] as [number, number, number] })),
+    wires: [...createDefaultSystemWires(), ...extraSeedWires],
+  };
+}
+
+export function serializeLayout3DPreset(layout: Layout3DState): Layout3DState {
+  const mergedBase: Partial<Record<DiagramNodeKey, [number, number, number]>> = {
+    ...DEFAULT_BASE_NODE_POSITIONS,
+    ...layout.baseNodePositions,
+  };
+  return {
+    version: 1,
+    baseNodePositions: mergedBase,
+    removedBaseNodes: layout.removedBaseNodes || [],
+    placedComponents: layout.placedComponents,
+    wires: layout.wires.map((w) => ({
+      ...w,
+      routeOffset: w.routeOffset || [0, 0],
+    })),
   };
 }
 
@@ -478,7 +535,13 @@ export const Layout3DSchema = z.object({
 
 export function sanitizeLayout3D(raw: unknown): Layout3DState {
   if (!raw || typeof raw !== 'object') return createEmptyLayout3D();
-  const parsed = Layout3DSchema.safeParse(raw);
+  const candidate =
+    'layout_3d' in (raw as Record<string, unknown>) &&
+    typeof (raw as Record<string, unknown>).layout_3d === 'object' &&
+    (raw as Record<string, unknown>).layout_3d !== null
+      ? (raw as Record<string, unknown>).layout_3d
+      : raw;
+  const parsed = Layout3DSchema.safeParse(candidate);
   if (!parsed.success) return createEmptyLayout3D();
   return parsed.data as Layout3DState;
 }
