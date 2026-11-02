@@ -8,41 +8,27 @@ import {
   Maximize2,
   Minimize2,
   Eye,
-  Box,
-  Sliders,
-  Columns2,
   Move,
   Trash2,
   Scissors,
   PanelRightOpen,
   AlertTriangle,
   Undo2,
-  Save,
-  Check,
   Download,
   Upload,
 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { useAuthStore } from '@/store/useAuthStore';
 import { DEFAULT_SYSTEM_WIRE_SPECS, serializeLayout3DPreset } from '@/lib/layout3dEngine';
-import { SaveProjectModal } from '@/components/common/SaveProjectModal';
 import { SolarScene } from './SolarScene';
-import { Schematic2DView } from './Schematic2DView';
 import { PlantComponentPalette } from './PlantComponentPalette';
 
 export function SolarDiagramCanvas() {
-  const [viewMode, setViewMode] = useState<'3d' | 'split' | '2d'>('3d');
   const [isPaused, setIsPaused] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [resetViewCount, setResetViewCount] = useState(0);
-  const [layoutSavedFlash, setLayoutSavedFlash] = useState(false);
-  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const user = useAuthStore((s) => s.user);
-  const activeProjectId = useCalculatorStore((s) => s.activeProjectId);
-  const setActiveView = useCalculatorStore((s) => s.setActiveView);
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
@@ -64,7 +50,6 @@ export function SolarDiagramCanvas() {
   const updateWireRouteOffset = useCalculatorStore((s) => s.updateWireRouteOffset);
   const clearAllWires = useCalculatorStore((s) => s.clearAllWires);
   const resetLayout3D = useCalculatorStore((s) => s.resetLayout3D);
-  const saveWorkingLayout3D = useCalculatorStore((s) => s.saveWorkingLayout3D);
   const importLayout3DJson = useCalculatorStore((s) => s.importLayout3DJson);
   const polarityAlertMessage = useCalculatorStore((s) => s.polarityAlertMessage);
   const setPolarityAlertMessage = useCalculatorStore((s) => s.setPolarityAlertMessage);
@@ -179,156 +164,112 @@ export function SolarDiagramCanvas() {
       className={`flex w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#090D16] shadow-card dark:shadow-card-dark transition-all duration-300 ${
         isFullscreen
           ? 'h-screen fixed inset-0 z-50 rounded-none'
-          : viewMode === 'split'
-          ? 'h-[600px] lg:h-[650px] xl:h-[700px]'
           : 'h-[540px] lg:h-[620px] xl:h-[680px]'
       }`}
     >
-      {/* Left Column: 3D/2D Viewport + HUD (Pushed left when Hardware Library is open) */}
+      {/* Left Column: 3D Viewport + HUD (Pushed left when Hardware Library is open) */}
       <div className="relative flex-1 min-w-0 h-full overflow-hidden">
         {/* Top Engineering HUD Overlay */}
         <div className="absolute top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
-          {/* Left: View Selector, 3D Builder Tools & System Status */}
+          {/* Left: 3D Builder Tools & System Status */}
           <div className="flex flex-wrap items-center gap-2 pointer-events-auto">
-            {/* View Mode Toggle: 3D CAD, SPLIT, 2D SCHEMATIC */}
-            <div className="flex items-center p-0.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-sm">
+            {/* Interactive 3D Plant Builder Toolset (Move, +Red Wire, -Dark Gray Wire, +/- Twin Pair, GND, Cut Wire) */}
+            <div
+              role="group"
+              aria-label="3D Wiring and Placement Tools"
+              className="flex items-center p-0.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-sm"
+            >
               <button
                 type="button"
-                onClick={() => setViewMode('3d')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                  viewMode === '3d'
-                    ? 'bg-amber-600 text-white shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                onClick={() => setCanvasTool('select')}
+                title="Move & Select components on wall or floor"
+                className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
+                  canvasTool === 'select'
+                    ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <Box className="w-3.5 h-3.5" />
-                3D CAD
+                <Move className="w-3.5 h-3.5" />
+                <span>Move</span>
               </button>
+
               <button
                 type="button"
-                onClick={() => setViewMode('split')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                  viewMode === 'split'
-                    ? 'bg-amber-600 text-white shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                onClick={() => setCanvasTool('wire_pos')}
+                title="Drag Positive (+) Red wire between component terminals"
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
+                  canvasTool === 'wire_pos'
+                    ? 'bg-red-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400'
                 }`}
               >
-                <Columns2 className="w-3.5 h-3.5" />
-                SPLIT SYNC
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    canvasTool === 'wire_pos' ? 'bg-white' : 'bg-red-500'
+                  }`}
+                />
+                <span>+ Wire</span>
               </button>
+
               <button
                 type="button"
-                onClick={() => setViewMode('2d')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                  viewMode === '2d'
-                    ? 'bg-amber-600 text-white shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                onClick={() => setCanvasTool('wire_neg')}
+                title="Drag Negative (-) Dark Gray wire between component terminals"
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
+                  canvasTool === 'wire_neg'
+                    ? 'bg-slate-600 text-white border border-slate-400 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <Sliders className="w-3.5 h-3.5" />
-                2D SCHEMATIC
+                <span className="w-2 h-2 rounded-full bg-slate-500 border border-slate-300" />
+                <span>- Wire</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCanvasTool('wire_pair')}
+                title="Drag Twin (+/-) Red & Dark Gray cable pair simultaneously"
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
+                  canvasTool === 'wire_pair'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400'
+                }`}
+              >
+                <span className="inline-flex items-center -space-x-0.5">
+                  <span className="w-2 h-2 rounded-full bg-red-500" />
+                  <span className="w-2 h-2 rounded-full bg-slate-500 border border-slate-300" />
+                </span>
+                <span>+/- Pair</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCanvasTool('wire_gnd')}
+                title="Drag Neon Green Grounding (GND) wire between equipment and ground busbar (no particles)"
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
+                  canvasTool === 'wire_gnd'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-[#39FF14] shadow-[0_0_6px_#39FF14]" />
+                <span>GND</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCanvasTool('wire_cut')}
+                title="Remove Wirings Mode: click any wire in 3D space to remove it"
+                className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
+                  canvasTool === 'wire_cut'
+                    ? 'bg-red-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400'
+                }`}
+              >
+                <Scissors className="w-3.5 h-3.5" />
+                <span>Cut Wire</span>
               </button>
             </div>
-
-            {/* Interactive 3D Plant Builder Toolset (Move, +Red Wire, -Black Wire, +/- Twin Pair) */}
-            {(viewMode === '3d' || viewMode === 'split') && (
-              <div
-                role="group"
-                aria-label="3D Wiring and Placement Tools"
-                className="flex items-center p-0.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-sm"
-              >
-                <button
-                  type="button"
-                  onClick={() => setCanvasTool('select')}
-                  title="Move & Select components on wall or floor"
-                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                    canvasTool === 'select'
-                      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <Move className="w-3.5 h-3.5" />
-                  <span>Move</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setCanvasTool('wire_pos')}
-                  title="Drag Positive (+) Red wire between component terminals"
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                    canvasTool === 'wire_pos'
-                      ? 'bg-red-600 text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400'
-                  }`}
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      canvasTool === 'wire_pos' ? 'bg-white' : 'bg-red-500'
-                    }`}
-                  />
-                  <span>+ Wire</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setCanvasTool('wire_neg')}
-                  title="Drag Negative (-) Dark Gray wire between component terminals"
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                    canvasTool === 'wire_neg'
-                      ? 'bg-slate-600 text-white border border-slate-400 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <span className="w-2 h-2 rounded-full bg-slate-500 border border-slate-300" />
-                  <span>- Wire</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setCanvasTool('wire_pair')}
-                  title="Drag Twin (+/-) Red & Dark Gray cable pair simultaneously"
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                    canvasTool === 'wire_pair'
-                      ? 'bg-amber-600 text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400'
-                  }`}
-                >
-                  <span className="inline-flex items-center -space-x-0.5">
-                    <span className="w-2 h-2 rounded-full bg-red-500" />
-                    <span className="w-2 h-2 rounded-full bg-slate-500 border border-slate-300" />
-                  </span>
-                  <span>+/- Pair</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setCanvasTool('wire_gnd')}
-                  title="Drag Neon Green Grounding (GND) wire between equipment and ground busbar (no particles)"
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                    canvasTool === 'wire_gnd'
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400'
-                  }`}
-                >
-                  <span className="w-2 h-2 rounded-full bg-[#39FF14] shadow-[0_0_6px_#39FF14]" />
-                  <span>GND</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setCanvasTool('wire_cut')}
-                  title="Remove Wirings Mode: click any wire in 3D space to remove it"
-                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                    canvasTool === 'wire_cut'
-                      ? 'bg-red-600 text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400'
-                  }`}
-                >
-                  <Scissors className="w-3.5 h-3.5" />
-                  <span>Cut Wire</span>
-                </button>
-              </div>
-            )}
 
             {/* System Mode Pill */}
             <span className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 shadow-sm">
@@ -448,112 +389,66 @@ export function SolarDiagramCanvas() {
             )}
           </div>
 
-          {/* Right: Save Project/Layout, Export/Import JSON, Clear Wires, Reset Layout, Palette Toggle & Viewport Controls */}
+          {/* Right: Export/Import JSON, Clear Wires, Reset Layout, Palette Toggle & Viewport Controls */}
           <div className="flex items-center gap-1.5 pointer-events-auto">
-            {(viewMode === '3d' || viewMode === 'split') && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    saveWorkingLayout3D();
-                    if (activeProjectId && user) {
-                      setLayoutSavedFlash(true);
-                      setTimeout(() => setLayoutSavedFlash(false), 1800);
-                    } else if (!user) {
-                      setActiveView('login');
-                    } else {
-                      setIsSaveModalOpen(true);
+            <button
+              type="button"
+              onClick={() => {
+                const preset = serializeLayout3DPreset(layout3d);
+                const blob = new Blob([JSON.stringify(preset, null, 2)], {
+                  type: 'application/json',
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'default_layout_3d.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }}
+              title="Export 3D wiring & component setup as JSON (for default_layout_3d.json)"
+              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-mono font-semibold bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-800 shadow-sm transition-colors cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Export JSON</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              title="Import a 3D wiring & component layout JSON file"
+              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-mono font-semibold bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-800 shadow-sm transition-colors cursor-pointer"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Import JSON</span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  try {
+                    const parsed = JSON.parse(String(reader.result));
+                    const res = importLayout3DJson(parsed);
+                    if (!res.ok && res.error) {
+                      setPolarityAlertMessage(res.error);
                     }
-                  }}
-                  title={
-                    activeProjectId
-                      ? 'Save 3D wiring and layout to active project in Supabase'
-                      : 'Save project and 3D wiring arrangement to Supabase'
+                  } catch {
+                    setPolarityAlertMessage('Could not parse JSON file.');
                   }
-                  className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold backdrop-blur-md border shadow-sm transition-colors cursor-pointer ${
-                    layoutSavedFlash
-                      ? 'bg-emerald-600 border-emerald-500 text-white'
-                      : 'bg-white/95 dark:bg-slate-900/95 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-800'
-                  }`}
-                >
-                  {layoutSavedFlash ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Saved</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">
-                        {activeProjectId ? 'Save Layout' : 'Save Project'}
-                      </span>
-                    </>
-                  )}
-                </button>
+                };
+                reader.readAsText(file);
+                e.target.value = '';
+              }}
+            />
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const preset = serializeLayout3DPreset(layout3d);
-                    const blob = new Blob([JSON.stringify(preset, null, 2)], {
-                      type: 'application/json',
-                    });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'default_layout_3d.json';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                  }}
-                  title="Export 3D wiring & component setup as JSON (for default_layout_3d.json)"
-                  className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-mono font-semibold bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-800 shadow-sm transition-colors cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span className="hidden xl:inline">Export JSON</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  title="Import a 3D wiring & component layout JSON file"
-                  className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-mono font-semibold bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-800 shadow-sm transition-colors cursor-pointer"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span className="hidden xl:inline">Import JSON</span>
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".json,application/json"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                      try {
-                        const parsed = JSON.parse(String(reader.result));
-                        const res = importLayout3DJson(parsed);
-                        if (!res.ok && res.error) {
-                          setPolarityAlertMessage(res.error);
-                        } else {
-                          setLayoutSavedFlash(true);
-                          setTimeout(() => setLayoutSavedFlash(false), 1800);
-                        }
-                      } catch {
-                        setPolarityAlertMessage('Could not parse JSON file.');
-                      }
-                    };
-                    reader.readAsText(file);
-                    e.target.value = '';
-                  }}
-                />
-              </>
-            )}
-
-            {(viewMode === '3d' || viewMode === 'split') && layout3d.wires.length > 0 && (
+            {layout3d.wires.length > 0 && (
               <button
                 type="button"
                 onClick={clearAllWires}
@@ -565,7 +460,7 @@ export function SolarDiagramCanvas() {
               </button>
             )}
 
-            {(viewMode === '3d' || viewMode === 'split') && hasCustomLayoutChanges && (
+            {hasCustomLayoutChanges && (
               <button
                 type="button"
                 onClick={resetLayout3D}
@@ -577,7 +472,7 @@ export function SolarDiagramCanvas() {
               </button>
             )}
 
-            {(viewMode === '3d' || viewMode === 'split') && !isPaletteOpen && (
+            {!isPaletteOpen && (
               <button
                 type="button"
                 onClick={() => setIsPaletteOpen(true)}
@@ -590,24 +485,22 @@ export function SolarDiagramCanvas() {
             )}
 
             <div className="flex items-center gap-1 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-1 rounded-lg shadow-sm">
-              {(viewMode === '3d' || viewMode === 'split') && (
-                <button
-                  type="button"
-                  onClick={() => setIsPaused(!isPaused)}
-                  title={isPaused ? 'Resume Power Flow Animation' : 'Pause Power Flow Animation'}
-                  className={`p-1.5 rounded-md transition-colors cursor-pointer ${
-                    isPaused
-                      ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300'
-                      : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  {isPaused ? (
-                    <Play className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  ) : (
-                    <Pause className="w-4 h-4" />
-                  )}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setIsPaused(!isPaused)}
+                title={isPaused ? 'Resume Power Flow Animation' : 'Pause Power Flow Animation'}
+                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                  isPaused
+                    ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300'
+                    : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                {isPaused ? (
+                  <Play className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                ) : (
+                  <Pause className="w-4 h-4" />
+                )}
+              </button>
 
               <button
                 type="button"
@@ -653,75 +546,28 @@ export function SolarDiagramCanvas() {
               ? 'CUT WIRE MODE: Click any wire in 3D space to remove it • Press Esc to return to Move mode'
               : canvasTool !== 'select'
               ? 'WIRE MODE: Drag from any terminal lug to snap (+) Red, (-) Dark Gray, or (GND) Neon Green conductors'
-              : viewMode === '3d'
-              ? 'Drag equipment or drag any wire to organize channels • Select any component and press Del to remove'
-              : viewMode === 'split'
-              ? 'Synchronized 3D CAD & 2D Schematic • Flow: (+) Red • (-) Dark Gray • (GND) Neon Green'
-              : 'Click component to inspect derivations • Drag canvas to pan • Scroll to zoom'}
+              : 'Drag equipment or drag any wire to organize channels • Select any component and press Del to remove'}
           </span>
           <span className="bg-white/95 dark:bg-slate-900/95 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm font-semibold text-slate-800 dark:text-slate-200 backdrop-blur-sm">
             BUSBAR: {calculationResult.summary.totalArrayPowerKw} kW DC → {calculationResult.summary.inverterPowerKw} kW AC
           </span>
         </div>
 
-        {/* Viewport Render: 3D CAD, 2D Schematic, or Synchronized Split View */}
-        {viewMode === '3d' && (
-          <Canvas
-            camera={{ position: [0.6, 4.4, 18.5], fov: 42 }}
-            shadows
-            gl={{ antialias: true }}
-            onPointerMissed={handleCanvasMiss}
-          >
-            <Suspense fallback={null}>
-              <SolarScene isAnimationPaused={isPaused} resetViewCount={resetViewCount} />
-            </Suspense>
-          </Canvas>
-        )}
-
-        {viewMode === '2d' && <Schematic2DView resetViewCount={resetViewCount} />}
-
-        {viewMode === 'split' && (
-          <div className="w-full h-full grid grid-cols-1 lg:grid-cols-2 pt-14 pb-8 overflow-hidden">
-            {/* Left Column: 3D CAD Wall Studio */}
-            <div className="relative w-full h-[280px] lg:h-full border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 bg-slate-900/5 dark:bg-black/20">
-              <div className="absolute top-2 left-3 z-10 text-[10px] font-mono uppercase tracking-wider font-bold text-slate-600 dark:text-slate-300 bg-white/90 dark:bg-slate-900/90 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800 backdrop-blur-sm pointer-events-none shadow-sm">
-                3D CAD Wall Backboard
-              </div>
-              <Canvas
-                camera={{ position: [0.6, 4.2, 17.5], fov: 44 }}
-                shadows
-                gl={{ antialias: true }}
-                onPointerMissed={handleCanvasMiss}
-              >
-                <Suspense fallback={null}>
-                  <SolarScene isAnimationPaused={isPaused} resetViewCount={resetViewCount} />
-                </Suspense>
-              </Canvas>
-            </div>
-
-            {/* Right Column: 2D Single-Line Schematic */}
-            <div className="relative w-full h-[280px] lg:h-full overflow-hidden">
-              <div className="absolute top-2 left-3 z-10 text-[10px] font-mono uppercase tracking-wider font-bold text-slate-600 dark:text-slate-300 bg-white/90 dark:bg-slate-900/90 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800 backdrop-blur-sm pointer-events-none shadow-sm">
-                2D Single-Line Schematic
-              </div>
-              <Schematic2DView resetViewCount={resetViewCount} />
-            </div>
-          </div>
-        )}
+        {/* 3D CAD Viewport Render */}
+        <Canvas
+          camera={{ position: [0.6, 4.4, 18.5], fov: 42 }}
+          shadows
+          gl={{ antialias: true }}
+          onPointerMissed={handleCanvasMiss}
+        >
+          <Suspense fallback={null}>
+            <SolarScene isAnimationPaused={isPaused} resetViewCount={resetViewCount} />
+          </Suspense>
+        </Canvas>
       </div>
 
       {/* Right Column: Docked 3D Hardware Library (Pushes 3D Viewport Left When Open) */}
-      {(viewMode === '3d' || viewMode === 'split') && <PlantComponentPalette />}
-
-      {/* Save Project Modal for saving project + 3D wiring arrangement to Supabase */}
-      <SaveProjectModal
-        isOpen={isSaveModalOpen}
-        onClose={() => setIsSaveModalOpen(false)}
-        onSaved={() => {
-          setLayoutSavedFlash(true);
-          setTimeout(() => setLayoutSavedFlash(false), 1800);
-        }}
-      />
+      <PlantComponentPalette />
     </div>
   );
 }
