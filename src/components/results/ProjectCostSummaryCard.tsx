@@ -171,14 +171,14 @@ export function ProjectCostSummaryCard() {
             )}
         </div>
 
-        <div className="flex flex-col items-end gap-2.5 self-end md:self-center flex-shrink-0">
+        <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-auto flex-shrink-0">
           <button
             type="button"
             onClick={toggleOpen}
             aria-expanded={isOpen}
             title={isOpen ? 'Hide ROI and discipline breakdowns' : 'Show ROI and discipline breakdowns'}
             aria-label={isOpen ? 'Hide ROI' : 'Show ROI'}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:py-2 rounded-xl border font-mono text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95 ${
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 sm:py-2.5 rounded-xl border font-mono text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95 ${
               isOpen
                 ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700'
                 : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
