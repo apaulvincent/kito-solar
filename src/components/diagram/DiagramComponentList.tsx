@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { DiagramNodeKey } from '@/types/diagram';
+import { ADDABLE_CATALOG_MAP } from '@/lib/layout3dEngine';
 import {
   ShieldAlert,
   Shield,
@@ -14,6 +15,7 @@ import {
   EyeOff,
   ChevronDown,
   ChevronUp,
+  Trash2,
 } from 'lucide-react';
 
 interface ComponentListItem {
@@ -31,6 +33,10 @@ export function DiagramComponentList() {
   const hoveredNodeKey = useCalculatorStore((s) => s.hoveredNodeKey);
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
   const setHoveredNodeKey = useCalculatorStore((s) => s.setHoveredNodeKey);
+  const layout3d = useCalculatorStore((s) => s.layout3d);
+  const selectedCustomNodeId = useCalculatorStore((s) => s.selectedCustomNodeId);
+  const setSelectedCustomNodeId = useCalculatorStore((s) => s.setSelectedCustomNodeId);
+  const removePlacedComponent = useCalculatorStore((s) => s.removePlacedComponent);
 
   const [isOpen, setIsOpen] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -176,8 +182,13 @@ export function DiagramComponentList() {
             Single-Line Component Index
           </h4>
           <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold border border-slate-200/80 dark:border-slate-700">
-            {items.length} Nodes
+            {items.length + layout3d.placedComponents.length} Nodes
           </span>
+          {layout3d.wires.length > 0 && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 font-bold border border-red-200 dark:border-red-800/60">
+              {layout3d.wires.length} (+/-) Wires
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -264,6 +275,65 @@ export function DiagramComponentList() {
           );
         })}
       </div>
+      )}
+
+      {isOpen && layout3d.placedComponents.length > 0 && (
+        <div className="mt-4 pt-3.5 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+              Custom 3D Plant Room Hardware ({layout3d.placedComponents.length})
+            </span>
+            <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+              Included in BOM &amp; saved with project
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5">
+            {layout3d.placedComponents.map((comp) => {
+              const spec = ADDABLE_CATALOG_MAP.get(comp.catalogKey);
+              const isCustomSelected = selectedCustomNodeId === comp.id;
+              return (
+                <div
+                  key={comp.id}
+                  onClick={() => setSelectedCustomNodeId(comp.id)}
+                  className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                    isCustomSelected
+                      ? 'border-amber-600 dark:border-amber-500 bg-amber-50/80 dark:bg-amber-950/40 ring-2 ring-amber-400/20'
+                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 hover:border-slate-300 dark:hover:border-slate-700'
+                  }`}
+                >
+                  {spec && (
+                    <img
+                      src={spec.imagePath}
+                      alt={spec.title}
+                      className="w-8 h-8 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1 object-contain shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                        {comp.label}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removePlacedComponent(comp.id);
+                        }}
+                        title={`Remove ${comp.label}`}
+                        className="p-1 rounded text-slate-400 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div className="text-[10px] font-mono text-amber-700 dark:text-amber-400 font-semibold uppercase">
+                      {comp.surface} • [{comp.position[0]}m, {comp.position[1]}m]
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );

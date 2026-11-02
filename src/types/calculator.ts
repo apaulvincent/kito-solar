@@ -1,5 +1,6 @@
 // src/types/calculator.ts
 import { SolarInverterRecord, SolarModuleRecord, BatteryRecord, AccessoryRecord } from './supabase';
+import { Layout3DState } from './layout3d';
 
 export type SystemType = 'hybrid' | 'ongrid';
 
@@ -13,6 +14,7 @@ export interface CalculationInput {
   panelCountOverride?: number | null;
   accessories?: AccessoryRecord[];
   customPrices?: Record<string, number | null>;
+  layout3d?: Layout3DState | null;
 }
 
 export interface DcCalculationResult {
@@ -166,6 +168,14 @@ export interface FinancialRoiSummary {
   isBenchmarkEstimate?: boolean;
 }
 
+export interface Custom3DBomSummary {
+  totalAddedComponents: number;
+  totalWireCount: number;
+  positiveWireMeters: number;
+  negativeWireMeters: number;
+  addedSubtotalPhp: number;
+}
+
 export interface ProjectCostSummary {
   items: ProjectCostItem[];
   equipmentSubtotalPhp: number;
@@ -175,6 +185,7 @@ export interface ProjectCostSummary {
   tbdItemCount: number;
   isFullyEstimated: boolean;
   financialRoi?: FinancialRoiSummary;
+  custom3dSummary?: Custom3DBomSummary;
 }
 
 export type WarningSeverity = 'info' | 'warning' | 'error';

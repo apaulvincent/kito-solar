@@ -6,7 +6,10 @@ import * as THREE from 'three';
 import { DiagramNodeKey } from '@/types/diagram';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { SystemCalculationResult } from '@/types/calculator';
+import { BASE_NODE_CAPABILITY } from '@/lib/layout3dEngine';
+import { MountSurface } from '@/types/layout3d';
 import { NodeGeometry, NodeType } from './NodeGeometry';
+import { useSurfaceNodeDrag } from './useSurfaceNodeDrag';
 
 interface DiagramNodeMeshProps {
   nodeKey: DiagramNodeKey;
@@ -15,6 +18,8 @@ interface DiagramNodeMeshProps {
   position: [number, number, number];
   color?: string;
   nodeType?: NodeType;
+  onLockControls?: (locked: boolean) => void;
+  onWireStart?: (nodeId: string, clientX: number, clientY: number) => boolean;
 }
 
 interface NodeDimensionConfig {
@@ -193,12 +198,16 @@ export function DiagramNodeMesh({
   position,
   color = '#D97706',
   nodeType = 'breaker',
+  onLockControls,
+  onWireStart,
 }: DiagramNodeMeshProps) {
   const meshRef = useRef<THREE.Group>(null);
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
   const hoveredNodeKey = useCalculatorStore((s) => s.hoveredNodeKey);
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
   const setHoveredNodeKey = useCalculatorStore((s) => s.setHoveredNodeKey);
+  const moveBaseNode = useCalculatorStore((s) => s.moveBaseNode);
+  const canvasTool = useCalculatorStore((s) => s.canvasTool);
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
   const gridVoltageV = useCalculatorStore((s) => s.gridVoltageV);
 
@@ -215,6 +224,28 @@ export function DiagramNodeMesh({
     isWall: true,
     yOffset: 1.0,
   };
+
+  const baseCap = BASE_NODE_CAPABILITY[nodeKey] || {
+    capability: dim.isWall ? 'wall' : 'floor',
+    height: dim.height,
+    floorCenterY: dim.height / 2,
+  };
+  const currentSurface: MountSurface = position[2] > 0.55 ? 'floor' : 'wall';
+
+  const { handlePointerDown, isDraggingRef } = useSurfaceNodeDrag({
+    nodeId: nodeKey,
+    meshRef,
+    position,
+    surface: currentSurface,
+    capability: baseCap.capability,
+    componentHeight: baseCap.height,
+    floorCenterY: baseCap.floorCenterY,
+    canvasTool,
+    onLockControls,
+    onWireStart,
+    onClickSelect: () => setSelectedNodeKey(nodeKey),
+    onCommitMove: (nextPos) => moveBaseNode(nodeKey, nextPos),
+  });
 
   const haloWidth = dim.width + 0.35;
   const haloHeight = dim.height + 0.35;
@@ -235,20 +266,22 @@ export function DiagramNodeMesh({
     <group
       ref={meshRef}
       position={position}
-      onClick={(e) => {
-        e.stopPropagation();
-        setSelectedNodeKey(nodeKey);
-      }}
+      onPointerDown={handlePointerDown}
+      onClick={(e) => e.stopPropagation()}
       onPointerOver={(e) => {
         e.stopPropagation();
         setHovered(true);
         setHoveredNodeKey(nodeKey);
-        document.body.style.cursor = 'pointer';
+        if (!isDraggingRef.current) {
+          document.body.style.cursor = canvasTool === 'select' ? 'grab' : 'crosshair';
+        }
       }}
       onPointerOut={() => {
         setHovered(false);
         setHoveredNodeKey(null);
-        document.body.style.cursor = 'auto';
+        if (!isDraggingRef.current) {
+          document.body.style.cursor = 'auto';
+        }
       }}
     >
       <NodeGeometry

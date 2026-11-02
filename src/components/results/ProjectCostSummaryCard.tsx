@@ -121,6 +121,27 @@ export function ProjectCostSummaryCard() {
           <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
             Includes sized solar modules ({summary.totalPanels} panels • {summary.totalArrayPowerKw} kWp), inverter, racking hardware, and balance-of-system switchgear.
           </p>
+          {costSummary.custom3dSummary &&
+            (costSummary.custom3dSummary.totalAddedComponents > 0 ||
+              costSummary.custom3dSummary.totalWireCount > 0) && (
+              <div className="mt-2.5 inline-flex flex-wrap items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] font-mono text-amber-800 dark:text-amber-300">
+                <span className="font-bold">3D Plant Additions:</span>
+                <span>
+                  +{costSummary.custom3dSummary.totalAddedComponents} hardware{' '}
+                  {costSummary.custom3dSummary.totalAddedComponents === 1 ? 'unit' : 'units'}
+                </span>
+                {costSummary.custom3dSummary.totalWireCount > 0 && (
+                  <span>
+                    • {costSummary.custom3dSummary.totalWireCount} (+/-) wires (
+                    {costSummary.custom3dSummary.positiveWireMeters}m Red +{' '}
+                    {costSummary.custom3dSummary.negativeWireMeters}m Black)
+                  </span>
+                )}
+                <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                  (+{formatPeso(costSummary.custom3dSummary.addedSubtotalPhp)} reflected in total)
+                </span>
+              </div>
+            )}
         </div>
 
         <button

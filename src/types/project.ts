@@ -1,4 +1,5 @@
 // src/types/project.ts
+import { Layout3DState } from './layout3d';
 
 export interface SavedProject {
   id: string;
@@ -26,6 +27,7 @@ export interface SavedProject {
   ac_breaker_a: number;
   system_type: 'HYBRID' | 'ON-GRID';
   custom_prices?: Record<string, number> | null;
+  layout_3d?: Layout3DState | null;
 }
 
 export interface CreateProjectInput {
@@ -47,6 +49,7 @@ export interface CreateProjectInput {
   ac_breaker_a: number;
   system_type: 'HYBRID' | 'ON-GRID';
   custom_prices?: Record<string, number> | null;
+  layout_3d?: Layout3DState | null;
 }
 
 export const MAX_PROJECTS_PER_USER = 20;

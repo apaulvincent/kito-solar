@@ -18,8 +18,29 @@ import accessoriesSeed from '@/data/seed/calculator_accessories.json';
 import { catalogService } from '@/services/catalogService';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { SavedProject } from '@/types/project';
-import { projectService } from '@/services/projectService';
+import { projectService, generateShortId } from '@/services/projectService';
 import { useAuthStore } from '@/store/useAuthStore';
+import {
+  AddableComponentKey,
+  CanvasInteractionTool,
+  Layout3DState,
+  MountSurface,
+  PlacedComponent3D,
+  SCENE_LIMITS,
+  WireConnection3D,
+  WirePolarity,
+} from '@/types/layout3d';
+import {
+  ADDABLE_CATALOG_MAP,
+  DEFAULT_BASE_NODE_POSITIONS,
+  buildOrthogonalWireWaypoints,
+  calculateWaypointsLengthMeters,
+  createEmptyLayout3D,
+  findFreeSpawnPosition,
+  getLimitStatus,
+  recomputeAttachedWireLengths,
+  sanitizeLayout3D,
+} from '@/lib/layout3dEngine';
 
 export type WorkbenchTabKey = 'electrical' | 'pv_sizing' | 'mounting_bom' | 'warnings';
 export type ActiveView = 'home' | 'tool' | 'projects' | 'login' | 'register' | 'account' | 'load-calculator' | 'solar-mapper' | 'financial-roi' | 'yield-simulator' | 'contact';
@@ -90,6 +111,42 @@ interface CalculatorState {
   customPrices: Record<string, number>;
   setCustomPrice: (key: string, pricePhp: number | null) => void;
   resetCustomPrices: () => void;
+
+  // 3D Interactive Plant Builder State & Actions
+  layout3d: Layout3DState;
+  canvasTool: CanvasInteractionTool;
+  isPaletteOpen: boolean;
+  selectedCustomNodeId: string | null;
+  selectedWireId: string | null;
+  polarityAlertMessage: string | null;
+  setCanvasTool: (tool: CanvasInteractionTool) => void;
+  setIsPaletteOpen: (open: boolean) => void;
+  setSelectedCustomNodeId: (id: string | null) => void;
+  setSelectedWireId: (id: string | null) => void;
+  setPolarityAlertMessage: (msg: string | null) => void;
+  addPlacedComponent: (catalogKey: AddableComponentKey) => {
+    ok: boolean;
+    error?: string;
+    item?: PlacedComponent3D;
+  };
+  movePlacedComponent: (
+    id: string,
+    position: [number, number, number],
+    surface: MountSurface
+  ) => void;
+  moveBaseNode: (nodeKey: DiagramNodeKey, position: [number, number, number]) => void;
+  removePlacedComponent: (id: string) => void;
+  addWireConnection: (params: {
+    polarity: WirePolarity;
+    fromNodeId: string;
+    fromPortId: string;
+    toNodeId: string;
+    toPortId: string;
+    fromWorldPos: [number, number, number];
+    toWorldPos: [number, number, number];
+  }) => { ok: boolean; error?: string; wire?: WireConnection3D };
+  removeWireConnection: (wireId: string) => void;
+  resetLayout3D: () => void;
 }
 
 const getInitialStep1DetailMode = (): DetailMode => {
@@ -243,16 +300,21 @@ function compute(
   mainA: number | null,
   panelOverride: number | null,
   accs?: AccessoryRecord[],
-  customPrices?: Record<string, number | null>
+  customPrices?: Record<string, number | null>,
+  layout3d?: Layout3DState | null
 ): SystemCalculationResult {
   let effectiveCustomPrices = customPrices;
-  if (effectiveCustomPrices === undefined) {
+  let effectiveLayout3d = layout3d;
+  if (effectiveCustomPrices === undefined || effectiveLayout3d === undefined) {
     try {
       if (typeof useCalculatorStore !== 'undefined' && useCalculatorStore.getState) {
-        effectiveCustomPrices = useCalculatorStore.getState().customPrices;
+        const st = useCalculatorStore.getState();
+        if (effectiveCustomPrices === undefined) effectiveCustomPrices = st.customPrices;
+        if (effectiveLayout3d === undefined) effectiveLayout3d = st.layout3d;
       }
     } catch {
-      effectiveCustomPrices = {};
+      if (effectiveCustomPrices === undefined) effectiveCustomPrices = {};
+      if (effectiveLayout3d === undefined) effectiveLayout3d = createEmptyLayout3D();
     }
   }
 
@@ -266,7 +328,32 @@ function compute(
     panelCountOverride: panelOverride,
     accessories: accs || currentAccessories,
     customPrices: effectiveCustomPrices || {},
+    layout3d: effectiveLayout3d || createEmptyLayout3D(),
   });
+}
+
+function syncLayoutToActiveProject(layout: Layout3DState, calc: SystemCalculationResult) {
+  try {
+    const st = useCalculatorStore.getState();
+    if (!st.activeProjectId) return;
+    const authUser = useAuthStore.getState().user;
+    if (!authUser) return;
+    projectService
+      .updateProject(authUser.id, st.activeProjectId, {
+        layout_3d: layout,
+        total_kwp: calc.summary.totalArrayPowerKw,
+        inverter_kw: calc.summary.inverterPowerKw,
+        panel_count: calc.summary.totalPanels,
+        battery_kwh: calc.battery?.hasBattery
+          ? Number((calc.battery.totalEnergyWh / 1000).toFixed(2))
+          : null,
+      })
+      .catch((err) => {
+        console.warn('Auto-save 3D layout to active project failed:', err);
+      });
+  } catch {
+    // Ignore outside browser/auth context
+  }
 }
 
 export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
@@ -279,6 +366,12 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   isLoadingCatalog: false,
   catalogSource: 'local_seed',
   customPrices: {},
+  layout3d: createEmptyLayout3D(),
+  canvasTool: 'select',
+  isPaletteOpen: true,
+  selectedCustomNodeId: null,
+  selectedWireId: null,
+  polarityAlertMessage: null,
 
   selectedInverter: defaultInverter,
   selectedModule: defaultModule,
@@ -604,6 +697,8 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   setSelectedNodeKey: (key) => {
     set({
       selectedNodeKey: key,
+      selectedCustomNodeId: null,
+      selectedWireId: null,
       isInspectorOpen: Boolean(key),
     });
     if (key) {
@@ -755,6 +850,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       : null;
 
     const customPrices = (project.custom_prices as Record<string, number>) || {};
+    const restoredLayout3d = sanitizeLayout3D(project.layout_3d);
 
     set({
       selectedInverter: inverter,
@@ -768,10 +864,13 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       activeProjectName: project.name,
       activeView: 'tool',
       selectedNodeKey: null,
+      selectedCustomNodeId: null,
+      selectedWireId: null,
       hoveredNodeKey: null,
       isInspectorOpen: false,
       activeWorkbenchTab: 'electrical',
       customPrices,
+      layout3d: restoredLayout3d,
       calculationResult: compute(
         inverter,
         module,
@@ -781,7 +880,8 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
         project.main_breaker_a,
         project.panel_count_override,
         state.accessories,
-        customPrices
+        customPrices,
+        restoredLayout3d
       ),
     });
 
@@ -808,10 +908,16 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   },
 
   resetToDefaults: () => {
+    const emptyLayout = createEmptyLayout3D();
     set({
       activeProjectId: null,
       activeProjectName: null,
       customPrices: {},
+      layout3d: emptyLayout,
+      canvasTool: 'select',
+      selectedCustomNodeId: null,
+      selectedWireId: null,
+      polarityAlertMessage: null,
       selectedInverter: defaultInverter,
       selectedModule: defaultModule,
       selectedBattery: defaultBattery,
@@ -833,7 +939,8 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
         100,
         null,
         currentAccessories,
-        {}
+        {},
+        emptyLayout
       ),
     });
     if (typeof window !== 'undefined' && get().activeView === 'tool') {
@@ -917,6 +1024,321 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
           });
       }
     }
+  },
+
+  setCanvasTool: (tool) => {
+    set({ canvasTool: tool, polarityAlertMessage: null });
+  },
+
+  setIsPaletteOpen: (open) => {
+    set({ isPaletteOpen: open });
+  },
+
+  setSelectedCustomNodeId: (id) => {
+    set({
+      selectedCustomNodeId: id,
+      selectedNodeKey: null,
+      selectedWireId: null,
+      isInspectorOpen: false,
+    });
+  },
+
+  setSelectedWireId: (id) => {
+    set({
+      selectedWireId: id,
+      selectedCustomNodeId: null,
+      selectedNodeKey: null,
+      isInspectorOpen: false,
+    });
+  },
+
+  setPolarityAlertMessage: (msg) => {
+    set({ polarityAlertMessage: msg });
+  },
+
+  addPlacedComponent: (catalogKey) => {
+    const state = get();
+    const spec = ADDABLE_CATALOG_MAP.get(catalogKey);
+    if (!spec) {
+      return { ok: false, error: 'Unknown component key.' };
+    }
+
+    const limitCheck = getLimitStatus(state.layout3d.placedComponents, catalogKey);
+    if (!limitCheck.canAdd) {
+      return { ok: false, error: limitCheck.reason };
+    }
+
+    const occupied: [number, number, number][] = [];
+    for (const [k, defPos] of Object.entries(DEFAULT_BASE_NODE_POSITIONS)) {
+      const ov = state.layout3d.baseNodePositions[k as DiagramNodeKey];
+      occupied.push(ov || defPos);
+    }
+    for (const pc of state.layout3d.placedComponents) {
+      occupied.push(pc.position);
+    }
+
+    const spawn = findFreeSpawnPosition(spec, occupied);
+    const sameTypeCount =
+      state.layout3d.placedComponents.filter((p) => p.catalogKey === catalogKey).length + 1;
+
+    const newItem: PlacedComponent3D = {
+      id: `node_${generateShortId(10)}`,
+      catalogKey,
+      label: `${spec.shortLabel} #${sameTypeCount}`,
+      surface: spawn.surface,
+      position: spawn.position,
+    };
+
+    const nextLayout: Layout3DState = {
+      ...state.layout3d,
+      placedComponents: [...state.layout3d.placedComponents, newItem],
+    };
+
+    const nextCalc = compute(
+      state.selectedInverter,
+      state.selectedModule,
+      state.selectedBattery,
+      state.batteryCount,
+      state.gridVoltageV,
+      state.mainBreakerA,
+      state.panelCountOverride,
+      state.accessories,
+      state.customPrices,
+      nextLayout
+    );
+
+    set({
+      layout3d: nextLayout,
+      selectedCustomNodeId: newItem.id,
+      selectedNodeKey: null,
+      selectedWireId: null,
+      isInspectorOpen: false,
+      calculationResult: nextCalc,
+    });
+
+    syncLayoutToActiveProject(nextLayout, nextCalc);
+    return { ok: true, item: newItem };
+  },
+
+  movePlacedComponent: (id, position, surface) => {
+    const state = get();
+    const updatedPlaced = state.layout3d.placedComponents.map((item) =>
+      item.id === id ? { ...item, position, surface } : item
+    );
+    const draftLayout: Layout3DState = {
+      ...state.layout3d,
+      placedComponents: updatedPlaced,
+    };
+    const nextLayout: Layout3DState = {
+      ...draftLayout,
+      wires: recomputeAttachedWireLengths(draftLayout),
+    };
+
+    const nextCalc = compute(
+      state.selectedInverter,
+      state.selectedModule,
+      state.selectedBattery,
+      state.batteryCount,
+      state.gridVoltageV,
+      state.mainBreakerA,
+      state.panelCountOverride,
+      state.accessories,
+      state.customPrices,
+      nextLayout
+    );
+
+    set({ layout3d: nextLayout, calculationResult: nextCalc });
+    syncLayoutToActiveProject(nextLayout, nextCalc);
+  },
+
+  moveBaseNode: (nodeKey, position) => {
+    const state = get();
+    const draftLayout: Layout3DState = {
+      ...state.layout3d,
+      baseNodePositions: {
+        ...state.layout3d.baseNodePositions,
+        [nodeKey]: position,
+      },
+    };
+    const nextLayout: Layout3DState = {
+      ...draftLayout,
+      wires: recomputeAttachedWireLengths(draftLayout),
+    };
+
+    const nextCalc = compute(
+      state.selectedInverter,
+      state.selectedModule,
+      state.selectedBattery,
+      state.batteryCount,
+      state.gridVoltageV,
+      state.mainBreakerA,
+      state.panelCountOverride,
+      state.accessories,
+      state.customPrices,
+      nextLayout
+    );
+
+    set({ layout3d: nextLayout, calculationResult: nextCalc });
+    syncLayoutToActiveProject(nextLayout, nextCalc);
+  },
+
+  removePlacedComponent: (id) => {
+    const state = get();
+    const nextLayout: Layout3DState = {
+      ...state.layout3d,
+      placedComponents: state.layout3d.placedComponents.filter((c) => c.id !== id),
+      wires: state.layout3d.wires.filter((w) => w.fromNodeId !== id && w.toNodeId !== id),
+    };
+
+    const nextCalc = compute(
+      state.selectedInverter,
+      state.selectedModule,
+      state.selectedBattery,
+      state.batteryCount,
+      state.gridVoltageV,
+      state.mainBreakerA,
+      state.panelCountOverride,
+      state.accessories,
+      state.customPrices,
+      nextLayout
+    );
+
+    set({
+      layout3d: nextLayout,
+      selectedCustomNodeId: state.selectedCustomNodeId === id ? null : state.selectedCustomNodeId,
+      calculationResult: nextCalc,
+    });
+    syncLayoutToActiveProject(nextLayout, nextCalc);
+  },
+
+  addWireConnection: ({
+    polarity,
+    fromNodeId,
+    fromPortId,
+    toNodeId,
+    toPortId,
+    fromWorldPos,
+    toWorldPos,
+  }) => {
+    const state = get();
+    if (fromNodeId === toNodeId) {
+      return { ok: false, error: 'Cannot connect a component terminal back to itself.' };
+    }
+    if (state.layout3d.wires.length >= SCENE_LIMITS.maxTotalWires) {
+      return {
+        ok: false,
+        error: `Maximum of ${SCENE_LIMITS.maxTotalWires} custom wire runs reached.`,
+      };
+    }
+
+    const isDuplicate = state.layout3d.wires.some(
+      (w) =>
+        w.polarity === polarity &&
+        ((w.fromNodeId === fromNodeId &&
+          w.fromPortId === fromPortId &&
+          w.toNodeId === toNodeId &&
+          w.toPortId === toPortId) ||
+          (w.fromNodeId === toNodeId &&
+            w.fromPortId === toPortId &&
+            w.toNodeId === fromNodeId &&
+            w.toPortId === fromPortId))
+    );
+    if (isDuplicate) {
+      return { ok: false, error: 'These two terminals are already wired together.' };
+    }
+
+    const waypoints = buildOrthogonalWireWaypoints(fromWorldPos, toWorldPos, polarity);
+    const lengthMeters = calculateWaypointsLengthMeters(waypoints);
+
+    const newWire: WireConnection3D = {
+      id: `wire_${generateShortId(10)}`,
+      polarity,
+      fromNodeId,
+      fromPortId,
+      toNodeId,
+      toPortId,
+      lengthMeters,
+    };
+
+    const nextLayout: Layout3DState = {
+      ...state.layout3d,
+      wires: [...state.layout3d.wires, newWire],
+    };
+
+    const nextCalc = compute(
+      state.selectedInverter,
+      state.selectedModule,
+      state.selectedBattery,
+      state.batteryCount,
+      state.gridVoltageV,
+      state.mainBreakerA,
+      state.panelCountOverride,
+      state.accessories,
+      state.customPrices,
+      nextLayout
+    );
+
+    set({
+      layout3d: nextLayout,
+      polarityAlertMessage: null,
+      calculationResult: nextCalc,
+    });
+    syncLayoutToActiveProject(nextLayout, nextCalc);
+    return { ok: true, wire: newWire };
+  },
+
+  removeWireConnection: (wireId) => {
+    const state = get();
+    const nextLayout: Layout3DState = {
+      ...state.layout3d,
+      wires: state.layout3d.wires.filter((w) => w.id !== wireId),
+    };
+
+    const nextCalc = compute(
+      state.selectedInverter,
+      state.selectedModule,
+      state.selectedBattery,
+      state.batteryCount,
+      state.gridVoltageV,
+      state.mainBreakerA,
+      state.panelCountOverride,
+      state.accessories,
+      state.customPrices,
+      nextLayout
+    );
+
+    set({
+      layout3d: nextLayout,
+      selectedWireId: state.selectedWireId === wireId ? null : state.selectedWireId,
+      calculationResult: nextCalc,
+    });
+    syncLayoutToActiveProject(nextLayout, nextCalc);
+  },
+
+  resetLayout3D: () => {
+    const state = get();
+    const emptyLayout = createEmptyLayout3D();
+    const nextCalc = compute(
+      state.selectedInverter,
+      state.selectedModule,
+      state.selectedBattery,
+      state.batteryCount,
+      state.gridVoltageV,
+      state.mainBreakerA,
+      state.panelCountOverride,
+      state.accessories,
+      state.customPrices,
+      emptyLayout
+    );
+
+    set({
+      layout3d: emptyLayout,
+      selectedCustomNodeId: null,
+      selectedWireId: null,
+      polarityAlertMessage: null,
+      calculationResult: nextCalc,
+    });
+    syncLayoutToActiveProject(emptyLayout, nextCalc);
   },
 };
 });

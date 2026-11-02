@@ -371,6 +371,63 @@ export function generateSizingPdf({
 
   currentY = (doc as any).lastAutoTable.finalY + 12;
 
+  // 6B. CUSTOM 3D PLANT LAYOUT & WIRING BOM ADDITIONS (when present)
+  const custom3d = calculationResult.costSummary.custom3dSummary;
+  if (custom3d && (custom3d.totalAddedComponents > 0 || custom3d.totalWireCount > 0)) {
+    if (currentY > 210) {
+      doc.addPage();
+      currentY = 22;
+    }
+
+    renderSectionHeading('03B', 'CUSTOM 3D PLANT LAYOUT & WIRING ADDITIONS');
+
+    const customRows: string[][] = [
+      [
+        'Added 3D Plant Hardware',
+        `${custom3d.totalAddedComponents} unit(s)`,
+        'Breakers, batteries, switches, or arrays added in 3D space',
+        `PHP ${calculationResult.costSummary.grandTotalPhp.toLocaleString()} Grand Total`,
+      ],
+      [
+        'Positive (+) & Negative (-) Wiring',
+        `${custom3d.totalWireCount} run(s)`,
+        `${custom3d.positiveWireMeters}m (+) Red | ${custom3d.negativeWireMeters}m (-) Black`,
+        `Added 3D Subtotal: PHP ${custom3d.addedSubtotalPhp.toLocaleString()}`,
+      ],
+    ];
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [['3D PLANT ITEM', 'COUNT', 'SPECIFICATION', 'COST IMPACT']],
+      body: customRows,
+      theme: 'plain',
+      headStyles: {
+        textColor: [100, 116, 139],
+        fontSize: 7.5,
+        fontStyle: 'bold',
+        cellPadding: { top: 3, bottom: 3, left: 1, right: 1 },
+        lineColor: [226, 232, 240],
+        lineWidth: { bottom: 0.25 },
+      },
+      bodyStyles: {
+        textColor: [51, 65, 85],
+        fontSize: 8.5,
+        cellPadding: { top: 3.2, bottom: 3.2, left: 1, right: 1 },
+        lineColor: [241, 245, 249],
+        lineWidth: { bottom: 0.15 },
+      },
+      columnStyles: {
+        0: { fontStyle: 'bold', textColor: [15, 23, 42], cellWidth: 42 },
+        1: { fontStyle: 'bold', textColor: [217, 119, 6], cellWidth: 22 },
+        2: { textColor: [71, 85, 105], cellWidth: 62 },
+        3: { textColor: [100, 116, 139] },
+      },
+      margin: { left: MARGIN_X, right: MARGIN_X },
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 12;
+  }
+
   // 7. CODE COMPLIANCE & SAFETY ADVISORIES
   if (warnings.length > 0) {
     if (currentY > 210) {

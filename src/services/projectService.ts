@@ -179,9 +179,12 @@ export const projectService = {
           .select()
           .single();
 
-        if (error && error.message?.includes('custom_prices')) {
-          const { custom_prices: _, ...cloudPayload } = newProject;
-          const retry = await supabase.from('user_projects').insert([cloudPayload]).select().single();
+        if (error && (error.message?.includes('custom_prices') || error.message?.includes('layout_3d'))) {
+          const { custom_prices: cp, layout_3d: _l3d, ...baseCloudPayload } = newProject;
+          const retryPayload = error.message?.includes('custom_prices')
+            ? baseCloudPayload
+            : { ...baseCloudPayload, custom_prices: cp };
+          const retry = await supabase.from('user_projects').insert([retryPayload]).select().single();
           if (!retry.error && retry.data) {
             savedToCloud = true;
             newProject.id = retry.data.id;
@@ -247,11 +250,14 @@ export const projectService = {
           .eq('id', projectId)
           .eq('user_id', userId);
 
-        if (error && error.message?.includes('custom_prices')) {
-          const { custom_prices: _, ...cloudUpdates } = sanitizedUpdates;
+        if (error && (error.message?.includes('custom_prices') || error.message?.includes('layout_3d'))) {
+          const { custom_prices: cp, layout_3d: _l3d, ...baseCloudUpdates } = sanitizedUpdates;
+          const retryUpdates = error.message?.includes('custom_prices')
+            ? baseCloudUpdates
+            : { ...baseCloudUpdates, custom_prices: cp };
           await supabase
             .from('user_projects')
-            .update({ ...cloudUpdates, updated_at: now })
+            .update({ ...retryUpdates, updated_at: now })
             .eq('id', projectId)
             .eq('user_id', userId);
         }
