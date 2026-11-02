@@ -409,8 +409,8 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
     );
   }
 
-  // Custom 3D (+/-) Polarity Wire Runs
-  const customWires = layout3d?.wires || [];
+  // Custom 3D (+/-) Polarity Wire Runs (exclude baseline system port-to-port wires)
+  const customWires = (layout3d?.wires || []).filter((w) => !w.id.startsWith('base_wire_'));
   let positiveWireMeters = 0;
   let negativeWireMeters = 0;
   for (const w of customWires) {
@@ -427,7 +427,7 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
   if (customWires.length > 0 && totalCustomWireMeters > 0) {
     addSwitchgearItem(
       'custom_3d_wiring',
-      `3D Polarity Conductor Runs (+${positiveWireMeters}m Red / -${negativeWireMeters}m Black)`,
+      `3D Polarity Conductor Runs (+${positiveWireMeters}m Red / -${negativeWireMeters}m Dark Gray)`,
       'wiring',
       0,
       'm',

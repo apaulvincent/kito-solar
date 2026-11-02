@@ -3,7 +3,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import {
   ADDABLE_COMPONENT_CATALOG,
+  DEFAULT_SYSTEM_WIRE_SPECS,
   clampAndSnapPosition,
+  createEmptyLayout3D,
   findCompanionPairPort,
   findNearestSnapPort,
   findNearestSnapPortByRay,
@@ -31,6 +33,12 @@ describe('3D Interactive Plant Builder: Spatial, Wiring, BOM & Persistence Suite
     expect(SCENE_LIMITS.byGroup.batteries).toBe(16);
     expect(SCENE_LIMITS.byGroup.breakers).toBe(32);
     expect(ADDABLE_COMPONENT_CATALOG.length).toBe(14);
+
+    // Baseline layout starts with port-to-port (+/-) wires replacing the old center-to-center conduit
+    const initialLayout = createEmptyLayout3D();
+    expect(initialLayout.wires.length).toBe(DEFAULT_SYSTEM_WIRE_SPECS.length);
+    expect(initialLayout.wires.some((w) => w.polarity === 'positive')).toBe(true);
+    expect(initialLayout.wires.some((w) => w.polarity === 'negative')).toBe(true);
   });
 
   it('enforces per-category commercial component caps and prevents exceeding limits', () => {
@@ -263,7 +271,7 @@ describe('3D Interactive Plant Builder: Spatial, Wiring, BOM & Persistence Suite
     expect(saveRes.success).toBe(true);
     const saved = saveRes.project!;
     expect(saved.layout_3d?.placedComponents.length).toBe(2);
-    expect(saved.layout_3d?.wires.length).toBe(1);
+    expect(saved.layout_3d?.wires.length).toBe(DEFAULT_SYSTEM_WIRE_SPECS.length + 1);
 
     // Reset store completely, then load the saved project back
     useCalculatorStore.getState().resetToDefaults();
@@ -272,7 +280,7 @@ describe('3D Interactive Plant Builder: Spatial, Wiring, BOM & Persistence Suite
     useCalculatorStore.getState().loadProject(saved);
     const reloaded = useCalculatorStore.getState();
     expect(reloaded.layout3d.placedComponents.length).toBe(2);
-    expect(reloaded.layout3d.wires.length).toBe(1);
+    expect(reloaded.layout3d.wires.length).toBe(DEFAULT_SYSTEM_WIRE_SPECS.length + 1);
     expect(reloaded.layout3d.baseNodePositions.dc_breaker).toEqual([-4.2, 2.9, 0]);
     expect(reloaded.calculationResult.costSummary.grandTotalPhp).toBe(expectedGrandTotal);
 

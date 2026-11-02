@@ -322,12 +322,95 @@ export const DEFAULT_BASE_NODE_POSITIONS: Record<DiagramNodeKey, [number, number
   grounding: [4.6, 0.75, 0.0],
 };
 
+export const DEFAULT_SYSTEM_WIRE_SPECS: ReadonlyArray<{
+  id: string;
+  polarity: WirePolarity;
+  fromNodeId: DiagramNodeKey;
+  fromPortId: string;
+  toNodeId: DiagramNodeKey;
+  toPortId: string;
+}> = [
+  // PV Array -> DC Isolator
+  { id: 'base_wire_pv_iso_pos', polarity: 'positive', fromNodeId: 'pv_array', fromPortId: 'pv_pos', toNodeId: 'dc_isolator', toPortId: 'in_pos' },
+  { id: 'base_wire_pv_iso_neg', polarity: 'negative', fromNodeId: 'pv_array', fromPortId: 'pv_neg', toNodeId: 'dc_isolator', toPortId: 'in_neg' },
+  // DC Isolator -> DC Breaker
+  { id: 'base_wire_iso_brk_pos', polarity: 'positive', fromNodeId: 'dc_isolator', fromPortId: 'out_pos', toNodeId: 'dc_breaker', toPortId: 'in_pos' },
+  { id: 'base_wire_iso_brk_neg', polarity: 'negative', fromNodeId: 'dc_isolator', fromPortId: 'out_neg', toNodeId: 'dc_breaker', toPortId: 'in_neg' },
+  // DC Breaker -> DC SPD
+  { id: 'base_wire_dcbrk_spd_pos', polarity: 'positive', fromNodeId: 'dc_breaker', fromPortId: 'out_pos', toNodeId: 'dc_spd', toPortId: 'in_pos' },
+  { id: 'base_wire_dcbrk_spd_neg', polarity: 'negative', fromNodeId: 'dc_breaker', fromPortId: 'out_neg', toNodeId: 'dc_spd', toPortId: 'in_neg' },
+  // DC Breaker -> Inverter PV Input
+  { id: 'base_wire_dcbrk_inv_pos', polarity: 'positive', fromNodeId: 'dc_breaker', fromPortId: 'out_pos', toNodeId: 'inverter', toPortId: 'pv_pos' },
+  { id: 'base_wire_dcbrk_inv_neg', polarity: 'negative', fromNodeId: 'dc_breaker', fromPortId: 'out_neg', toNodeId: 'inverter', toPortId: 'pv_neg' },
+  // Inverter Battery Port -> Battery Breaker (Hybrid)
+  { id: 'base_wire_inv_batbrk_pos', polarity: 'positive', fromNodeId: 'inverter', fromPortId: 'bat_pos', toNodeId: 'battery_breaker', toPortId: 'in_pos' },
+  { id: 'base_wire_inv_batbrk_neg', polarity: 'negative', fromNodeId: 'inverter', fromPortId: 'bat_neg', toNodeId: 'battery_breaker', toPortId: 'in_neg' },
+  // Battery Breaker -> Battery Storage (Hybrid)
+  { id: 'base_wire_batbrk_bat_pos', polarity: 'positive', fromNodeId: 'battery_breaker', fromPortId: 'out_pos', toNodeId: 'battery', toPortId: 'bat_pos' },
+  { id: 'base_wire_batbrk_bat_neg', polarity: 'negative', fromNodeId: 'battery_breaker', fromPortId: 'out_neg', toNodeId: 'battery', toPortId: 'bat_neg' },
+  // Inverter AC Output -> AC Breaker
+  { id: 'base_wire_inv_acbrk_pos', polarity: 'positive', fromNodeId: 'inverter', fromPortId: 'ac_pos', toNodeId: 'ac_breaker', toPortId: 'in_pos' },
+  { id: 'base_wire_inv_acbrk_neg', polarity: 'negative', fromNodeId: 'inverter', fromPortId: 'ac_neg', toNodeId: 'ac_breaker', toPortId: 'in_neg' },
+  // AC Breaker -> AC SPD
+  { id: 'base_wire_acbrk_spd_pos', polarity: 'positive', fromNodeId: 'ac_breaker', fromPortId: 'out_pos', toNodeId: 'ac_spd', toPortId: 'in_pos' },
+  { id: 'base_wire_acbrk_spd_neg', polarity: 'negative', fromNodeId: 'ac_breaker', fromPortId: 'out_neg', toNodeId: 'ac_spd', toPortId: 'in_neg' },
+  // AC Breaker -> AC Isolator
+  { id: 'base_wire_acbrk_iso_pos', polarity: 'positive', fromNodeId: 'ac_breaker', fromPortId: 'out_pos', toNodeId: 'ac_isolator', toPortId: 'in_pos' },
+  { id: 'base_wire_acbrk_iso_neg', polarity: 'negative', fromNodeId: 'ac_breaker', fromPortId: 'out_neg', toNodeId: 'ac_isolator', toPortId: 'in_neg' },
+  // AC Isolator -> Main Service Panel
+  { id: 'base_wire_aciso_panel_pos', polarity: 'positive', fromNodeId: 'ac_isolator', fromPortId: 'out_pos', toNodeId: 'main_panel', toPortId: 'in_pos' },
+  { id: 'base_wire_aciso_panel_neg', polarity: 'negative', fromNodeId: 'ac_isolator', fromPortId: 'out_neg', toNodeId: 'main_panel', toPortId: 'in_neg' },
+  // Utility Grid -> Main Service Panel
+  { id: 'base_wire_grid_panel_pos', polarity: 'positive', fromNodeId: 'grid', fromPortId: 'grid_pos', toNodeId: 'main_panel', toPortId: 'in_pos' },
+  { id: 'base_wire_grid_panel_neg', polarity: 'negative', fromNodeId: 'grid', fromPortId: 'grid_neg', toNodeId: 'main_panel', toPortId: 'in_neg' },
+  // Main Service Panel -> Automatic Transfer Switch (ATS)
+  { id: 'base_wire_panel_ats_pos', polarity: 'positive', fromNodeId: 'main_panel', fromPortId: 'out_pos', toNodeId: 'ats', toPortId: 'in_pos' },
+  { id: 'base_wire_panel_ats_neg', polarity: 'negative', fromNodeId: 'main_panel', fromPortId: 'out_neg', toNodeId: 'ats', toPortId: 'in_neg' },
+  // Automatic Transfer Switch (ATS) -> Building Load
+  { id: 'base_wire_ats_load_pos', polarity: 'positive', fromNodeId: 'ats', fromPortId: 'out_pos', toNodeId: 'load', toPortId: 'load_pos' },
+  { id: 'base_wire_ats_load_neg', polarity: 'negative', fromNodeId: 'ats', fromPortId: 'out_neg', toNodeId: 'load', toPortId: 'load_neg' },
+  // Main Service Panel -> Copper Ground Busbar
+  { id: 'base_wire_panel_gnd_neg', polarity: 'negative', fromNodeId: 'main_panel', fromPortId: 'out_neg', toNodeId: 'grounding', toPortId: 'gnd_1' },
+];
+
+export function createDefaultSystemWires(): WireConnection3D[] {
+  return DEFAULT_SYSTEM_WIRE_SPECS.map((spec) => {
+    const fromNodePos = DEFAULT_BASE_NODE_POSITIONS[spec.fromNodeId];
+    const toNodePos = DEFAULT_BASE_NODE_POSITIONS[spec.toNodeId];
+    const fromPort =
+      getNodeTerminalPorts(
+        spec.fromNodeId,
+        spec.fromNodeId.toUpperCase(),
+        getNodeTypeFromKey(spec.fromNodeId),
+        fromNodePos
+      ).find((p) => p.portId === spec.fromPortId)?.worldPosition || fromNodePos;
+    const toPort =
+      getNodeTerminalPorts(
+        spec.toNodeId,
+        spec.toNodeId.toUpperCase(),
+        getNodeTypeFromKey(spec.toNodeId),
+        toNodePos
+      ).find((p) => p.portId === spec.toPortId)?.worldPosition || toNodePos;
+
+    const waypoints = buildOrthogonalWireWaypoints(fromPort, toPort, spec.polarity);
+    return {
+      id: spec.id,
+      polarity: spec.polarity,
+      fromNodeId: spec.fromNodeId,
+      fromPortId: spec.fromPortId,
+      toNodeId: spec.toNodeId,
+      toPortId: spec.toPortId,
+      lengthMeters: calculateWaypointsLengthMeters(waypoints),
+    };
+  });
+}
+
 export function createEmptyLayout3D(): Layout3DState {
   return {
     version: 1,
     baseNodePositions: {},
     placedComponents: [],
-    wires: [],
+    wires: createDefaultSystemWires(),
   };
 }
 
@@ -920,6 +1003,7 @@ export function buildOrthogonalWireWaypoints(
 ): [number, number, number][] {
   const laneOffsetZ = polarity === 'positive' ? 0.045 : 0.015;
   const laneOffsetY = polarity === 'positive' ? 0.03 : -0.03;
+  const laneOffsetX = polarity === 'positive' ? -0.045 : 0.045;
 
   const [x1, y1, z1] = fromPos;
   const [x2, y2, z2] = toPos;
@@ -928,10 +1012,11 @@ export function buildOrthogonalWireWaypoints(
   const bothOnWall = z1 < 0.65 && z2 < 0.65;
 
   if (bothOnWall) {
-    const routeZ = Math.max(z1, z2) + laneOffsetZ;
-    const midY = Number((((y1 + y2) / 2) + laneOffsetY).toFixed(3));
+    const routeZ = Number((Math.max(z1, z2) + laneOffsetZ).toFixed(3));
+    const dx = Math.abs(x2 - x1);
+    const dy = y2 - y1;
 
-    if (Math.abs(x1 - x2) < 0.04) {
+    if (dx < 0.04) {
       return [
         fromPos,
         [x1, y1, routeZ],
@@ -940,11 +1025,58 @@ export function buildOrthogonalWireWaypoints(
       ];
     }
 
+    // Case 1: Vertically stacked enclosures (e.g., Breaker bottom -> SPD top)
+    // or upper enclosure bottom port dropping to lower enclosure top port
+    if (dx < 0.65 || y1 - y2 > 0.35) {
+      const midY = Number((((y1 + y2) / 2) + laneOffsetY).toFixed(3));
+      return [
+        fromPos,
+        [x1, y1, routeZ],
+        [x1, midY, routeZ],
+        [x2, midY, routeZ],
+        [x2, y2, routeZ],
+        toPos,
+      ];
+    }
+
+    // Case 2: Both ports at similar elevation (e.g., DC Breaker bottom -> Inverter PV bottom)
+    if (Math.abs(dy) <= 0.35) {
+      const channelY = Number((Math.min(y1, y2) - (polarity === 'positive' ? 0.16 : 0.23)).toFixed(3));
+      return [
+        fromPos,
+        [x1, y1, routeZ],
+        [x1, channelY, routeZ],
+        [x2, channelY, routeZ],
+        [x2, y2, routeZ],
+        toPos,
+      ];
+    }
+
+    // Case 3: Lower bottom port rising to a higher top port (y2 - y1 > 0.35)
+    // Route through the vertical gap between adjacent enclosures so wires never cross device faces
+    if (dx <= 3.2) {
+      const departY = Number((y1 - (polarity === 'positive' ? 0.14 : 0.21)).toFixed(3));
+      const midX = Number((((x1 + x2) / 2) + laneOffsetX).toFixed(3));
+      const arriveY = Number((y2 + (polarity === 'positive' ? 0.18 : 0.11)).toFixed(3));
+      return [
+        fromPos,
+        [x1, y1, routeZ],
+        [x1, departY, routeZ],
+        [midX, departY, routeZ],
+        [midX, arriveY, routeZ],
+        [x2, arriveY, routeZ],
+        [x2, y2, routeZ],
+        toPos,
+      ];
+    }
+
+    // Case 4: Long horizontal span across multiple wall enclosures (e.g., Utility Grid -> Main Panel)
+    const overheadY = Number((Math.max(y1, y2) + (polarity === 'positive' ? 0.32 : 0.24)).toFixed(3));
     return [
       fromPos,
       [x1, y1, routeZ],
-      [x1, midY, routeZ],
-      [x2, midY, routeZ],
+      [x1, overheadY, routeZ],
+      [x2, overheadY, routeZ],
       [x2, y2, routeZ],
       toPos,
     ];
@@ -952,7 +1084,7 @@ export function buildOrthogonalWireWaypoints(
 
   // Wall-to-floor or floor-to-floor trench/tray routing
   const floorTrayY = polarity === 'positive' ? 0.11 : 0.07;
-  const wallDropZ = 0.06 + laneOffsetZ;
+  const wallDropZ = Number((0.18 + laneOffsetZ).toFixed(3));
 
   if (z1 < 0.65 && z2 >= 0.65) {
     return [
@@ -966,6 +1098,24 @@ export function buildOrthogonalWireWaypoints(
   }
 
   if (z1 >= 0.65 && z2 < 0.65) {
+    if (y2 > 2.0) {
+      const riserX = Number(
+        (x1 < x2
+          ? x2 - (polarity === 'positive' ? 0.44 : 0.36)
+          : x2 + (polarity === 'positive' ? 0.36 : 0.44)).toFixed(3)
+      );
+      const arriveY = Number((y2 + (polarity === 'positive' ? 0.18 : 0.11)).toFixed(3));
+      return [
+        fromPos,
+        [x1, floorTrayY, z1],
+        [riserX, floorTrayY, z1],
+        [riserX, floorTrayY, wallDropZ],
+        [riserX, arriveY, wallDropZ],
+        [x2, arriveY, wallDropZ],
+        [x2, y2, wallDropZ],
+        toPos,
+      ];
+    }
     return [
       fromPos,
       [x1, floorTrayY, z1],

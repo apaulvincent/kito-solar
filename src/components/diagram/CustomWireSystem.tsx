@@ -165,9 +165,7 @@ export function CustomWireSystem({
   const { camera, gl } = useThree();
   const layout3d = useCalculatorStore((s) => s.layout3d);
   const canvasTool = useCalculatorStore((s) => s.canvasTool);
-  const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
-  const hoveredNodeKey = useCalculatorStore((s) => s.hoveredNodeKey);
-  const selectedCustomNodeId = useCalculatorStore((s) => s.selectedCustomNodeId);
+  const atsSource = useCalculatorStore((s) => s.atsSource);
   const selectedWireId = useCalculatorStore((s) => s.selectedWireId);
   const setSelectedWireId = useCalculatorStore((s) => s.setSelectedWireId);
   const addWireConnection = useCalculatorStore((s) => s.addWireConnection);
@@ -454,6 +452,16 @@ export function CustomWireSystem({
   // Compute rendered wire paths + animated current flow particles
   const renderedWires = useMemo(() => {
     return layout3d.wires.map((wire) => {
+      if (
+        !isHybrid &&
+        (wire.fromNodeId === 'battery' ||
+          wire.fromNodeId === 'battery_breaker' ||
+          wire.toNodeId === 'battery' ||
+          wire.toNodeId === 'battery_breaker')
+      ) {
+        return null;
+      }
+
       const fromPort = portLookup.get(`${wire.fromNodeId}::${wire.fromPortId}`);
       const toPort = portLookup.get(`${wire.toNodeId}::${wire.toPortId}`);
 
@@ -485,9 +493,9 @@ export function CustomWireSystem({
       fromLabel: string;
       toLabel: string;
     }[];
-  }, [layout3d.wires, layout3d.placedComponents, portLookup, nodePositions]);
+  }, [layout3d.wires, layout3d.placedComponents, portLookup, nodePositions, isHybrid]);
 
-  // Animated pulse beads along custom wires
+  // Animated pulse beads along (+/-) wires
   const pulseMeshRef = useRef<THREE.InstancedMesh>(null);
   const pulseDummy = useMemo(() => new THREE.Object3D(), []);
   const wirePulses = useMemo(() => {
@@ -499,7 +507,17 @@ export function CustomWireSystem({
       totalDist: number;
     }[] = [];
 
+    const solarAcNodes = new Set(['ac_breaker', 'ac_spd', 'ac_isolator']);
+
     renderedWires.forEach((rw, wIdx) => {
+      const { fromNodeId, toNodeId } = rw.wire;
+      const isUtilityFeed = fromNodeId === 'grid' || toNodeId === 'grid';
+      const isSolarAcFeed =
+        solarAcNodes.has(fromNodeId) || solarAcNodes.has(toNodeId);
+
+      if (atsSource === 'utility' && isSolarAcFeed) return;
+      if (atsSource === 'solar' && isUtilityFeed) return;
+
       let cum = 0;
       const segs = [];
       for (let i = 0; i < rw.waypoints.length - 1; i++) {
@@ -525,7 +543,7 @@ export function CustomWireSystem({
     });
 
     return items;
-  }, [renderedWires]);
+  }, [renderedWires, atsSource]);
 
   useEffect(() => {
     if (!pulseMeshRef.current || wirePulses.length === 0) return;
@@ -599,16 +617,8 @@ export function CustomWireSystem({
     );
   }, [liveDrag, portsByNode]);
 
-  // Visible terminal ports: all ports in wire mode or during active wire pull; selected/hovered node ports in select mode
-  const visiblePorts = useMemo(() => {
-    if (isWireMode || liveDrag) return allPorts;
-    return allPorts.filter(
-      (p) =>
-        p.nodeId === selectedCustomNodeId ||
-        p.nodeId === selectedNodeKey ||
-        p.nodeId === hoveredNodeKey
-    );
-  }, [allPorts, isWireMode, liveDrag, selectedCustomNodeId, selectedNodeKey, hoveredNodeKey]);
+  // Always display all physical (+) Red and (-) Dark Gray terminal lugs on every component
+  const visiblePorts = allPorts;
 
   return (
     <group>

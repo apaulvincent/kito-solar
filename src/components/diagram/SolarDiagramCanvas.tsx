@@ -18,6 +18,7 @@ import {
   Undo2,
 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { DEFAULT_SYSTEM_WIRE_SPECS } from '@/lib/layout3dEngine';
 import { SolarScene } from './SolarScene';
 import { Schematic2DView } from './Schematic2DView';
 import { PlantComponentPalette } from './PlantComponentPalette';
@@ -52,9 +53,12 @@ export function SolarDiagramCanvas() {
 
   const selectedCustomNode = layout3d.placedComponents.find((c) => c.id === selectedCustomNodeId) || null;
   const selectedWire = layout3d.wires.find((w) => w.id === selectedWireId) || null;
+  const customWiresCount = layout3d.wires.filter((w) => !w.id.startsWith('base_wire_')).length;
+  const baseWiresCount = layout3d.wires.filter((w) => w.id.startsWith('base_wire_')).length;
   const hasCustomLayoutChanges =
     layout3d.placedComponents.length > 0 ||
-    layout3d.wires.length > 0 ||
+    customWiresCount > 0 ||
+    baseWiresCount < DEFAULT_SYSTEM_WIRE_SPECS.length ||
     Object.keys(layout3d.baseNodePositions).length > 0;
 
   // Auto-dismiss polarity alert after 5 seconds
@@ -447,7 +451,7 @@ export function SolarDiagramCanvas() {
       <div className="absolute bottom-2.5 left-3 right-3 z-20 flex items-center justify-between text-[11px] font-mono text-slate-600 dark:text-slate-400 pointer-events-none">
         <span className="hidden sm:inline bg-white/95 dark:bg-slate-900/95 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-sm">
           {canvasTool !== 'select'
-            ? 'WIRE MODE: Drag from any terminal lug to snap (+) Red or (-) Black conductors onto target terminals'
+            ? 'WIRE MODE: Drag from any terminal lug to snap (+) Red or (-) Dark Gray conductors onto target terminals'
             : viewMode === '3d'
             ? 'Drag equipment across wall or floor • Switch to +Wire / -Wire to attach conductors • Click base node for derivations'
             : viewMode === 'split'

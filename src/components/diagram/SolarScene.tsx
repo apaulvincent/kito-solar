@@ -3,17 +3,12 @@ import { useMemo, useRef, useEffect, useCallback } from 'react';
 import { OrbitControls, Grid, ContactShadows } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { DiagramNodeKey, CableConnection } from '@/types/diagram';
+import { DiagramNodeKey } from '@/types/diagram';
 import { PLANT_ROOM_GEOMETRY } from '@/types/layout3d';
-import {
-  DEFAULT_BASE_NODE_POSITIONS,
-  buildMovedConduitWaypoints,
-} from '@/lib/layout3dEngine';
+import { DEFAULT_BASE_NODE_POSITIONS } from '@/lib/layout3dEngine';
 import { DiagramNodeMesh } from './DiagramNodeMesh';
 import { PlacedComponentMesh } from './PlacedComponentMesh';
-import { PowerFlowCables } from './PowerFlowCables';
 import { CustomWireSystem } from './CustomWireSystem';
-import { CONDUIT_ROUTES } from './conduitRoutes';
 
 interface SolarSceneProps {
   isAnimationPaused?: boolean;
@@ -167,59 +162,6 @@ export function SolarScene({ isAnimationPaused = false, resetViewCount = 0 }: So
       ...(layout3d.baseNodePositions as Partial<Record<DiagramNodeKey, [number, number, number]>>),
     };
   }, [layout3d.baseNodePositions]);
-
-  // Baseline electrical conduit connections (dynamically adjusts waypoints if a baseline node was moved)
-  const cables = useMemo<CableConnection[]>(() => {
-    const baseList: CableConnection[] = [...CONDUIT_ROUTES];
-
-    if (isHybrid) {
-      baseList.push(
-        {
-          id: 'c-inv-batbrk',
-          from: 'inverter',
-          to: 'battery_breaker',
-          type: 'battery',
-          color: '#059669',
-          bidirectional: true,
-          waypoints: [
-            [-0.6, 3.35, 0.0],
-            [-0.6, 2.2, 0.0],
-            [-2.0, 2.2, 0.0],
-            [-2.0, 1.4, 0.0],
-          ],
-        },
-        {
-          id: 'c-batbrk-bat',
-          from: 'battery_breaker',
-          to: 'battery',
-          type: 'battery',
-          color: '#059669',
-          bidirectional: true,
-          waypoints: [
-            [-2.0, 1.4, 0.0],
-            [-2.0, 0.4, 0.0],
-            [-1.4, 0.4, 0.0],
-            [-1.4, 0.4, 0.4],
-            [-0.6, 0.4, 0.4],
-          ],
-        }
-      );
-    }
-
-    const movedKeys = layout3d.baseNodePositions;
-    return baseList.map((cable) => {
-      if (movedKeys[cable.from] || movedKeys[cable.to]) {
-        return {
-          ...cable,
-          waypoints: buildMovedConduitWaypoints(
-            nodePositions[cable.from],
-            nodePositions[cable.to]
-          ),
-        };
-      }
-      return cable;
-    });
-  }, [isHybrid, layout3d.baseNodePositions, nodePositions]);
 
   const theme = useCalculatorStore((s) => s.theme);
   const isDark = theme === 'dark';
@@ -457,14 +399,7 @@ export function SolarScene({ isAnimationPaused = false, resetViewCount = 0 }: So
         />
       ))}
 
-      {/* Real-time Orthogonal EMT Conduit Runs & Animated Particle Current */}
-      <PowerFlowCables
-        cables={cables}
-        nodePositions={nodePositions}
-        isAnimationPaused={isAnimationPaused}
-      />
-
-      {/* Positive (+) Red & Negative (-) Black Interactive Wiring + Magnetic Terminal Snapping */}
+      {/* Positive (+) Red & Negative (-) Dark Gray Port-to-Port Wiring + Magnetic Terminal Snapping */}
       <CustomWireSystem
         nodePositions={nodePositions}
         isHybrid={isHybrid}
