@@ -1,34 +1,53 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0F172A"/>
       <stop offset="100%" stop-color="#090D16"/>
     </linearGradient>
-    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(148, 163, 184, 0.08)" stroke-width="0.5"/>
-    </pattern>
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#020617" flood-opacity="0.65"/>
+    </filter>
   </defs>
-  <rect width="200" height="200" rx="12" fill="url(#bgGrad)"/>
-  <rect width="200" height="200" rx="12" fill="url(#grid)"/>
-  <rect x="2" y="2" width="196" height="196" rx="10" fill="none" stroke="rgba(148, 163, 184, 0.15)" stroke-width="1"/>
+  <rect width="200" height="200" rx="16" fill="url(#bg)"/>
 
-  <rect x="12" y="12" width="176" height="20" rx="4" fill="rgba(30, 41, 59, 0.7)"/>
-  <text x="20" y="26" fill="#F59E0B" font-size="8" font-weight="700" font-family="monospace" letter-spacing="1">CONVERSION</text>
-  <text x="180" y="26" text-anchor="end" fill="#94A3B8" font-size="8" font-family="monospace">MPPT DC TO AC</text>
+  <!-- Side Extruded Heatsink Fins -->
+  <rect x="28" y="28" width="144" height="136" rx="6" fill="#334155" filter="url(#shadow)"/>
+  <!-- Top Ventilation Louver -->
+  <rect x="48" y="18" width="104" height="8" rx="2" fill="#475569"/>
 
+  <!-- White Powder-Coated Aluminum Inverter Casing (Matches NodeGeometry case 'inverter') -->
+  <rect x="34" y="22" width="132" height="146" rx="9" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"/>
+
+  <!-- Recessed Obsidian Glass Display Bezel -->
+  <rect x="52" y="40" width="96" height="64" rx="5" fill="#030712" stroke="#1E293B" stroke-width="2"/>
+  <!-- Telemetry LCD Bars: Solar Amber, AC Cyan, Center Emerald Waveform, Bottom Slate -->
+  <rect x="60" y="50" width="36" height="7" rx="1.5" fill="#F59E0B"/>
+  <rect x="104" y="50" width="36" height="7" rx="1.5" fill="#38BDF8"/>
+  <rect x="64" y="64" width="72" height="9" rx="2" fill="#10B981"/>
+  <rect x="62" y="80" width="76" height="5" rx="1.5" fill="#94A3B8"/>
+
+  <!-- 4x Status Micro-LED Cluster Below Screen -->
+  <circle cx="74" cy="114" r="3" fill="#10B981"/>
+  <circle cx="91" cy="114" r="3" fill="#38BDF8"/>
+  <circle cx="109" cy="114" r="3" fill="#F59E0B"/>
+  <circle cx="126" cy="114" r="3" fill="#64748B"/>
+
+  <!-- Rotary DC Disconnect Switch (Lower Left Front) -->
+  <circle cx="62" cy="140" r="10" fill="#FBBF24" stroke="#D97706" stroke-width="1"/>
+  <rect x="59.5" y="133" width="5" height="14" rx="1.5" fill="#DC2626"/>
+
+  <!-- Brand Logo Plate (Lower Right Front) -->
+  <rect x="86" y="134" width="52" height="12" rx="2" fill="#334155"/>
+
+  <!-- Bottom Connection Hub & 7 Terminal Lugs (PV +/-, BAT +/-, AC +/-, PE GND) -->
+  <rect x="46" y="168" width="108" height="8" rx="2" fill="#1E293B"/>
   <g>
-    <rect x="44" y="36" width="112" height="126" rx="10" fill="#F8FAFC" stroke="#F59E0B" stroke-width="2"/>
-    <rect x="60" y="50" width="80" height="44" rx="6" fill="#0F172A"/>
-    <rect x="68" y="60" width="38" height="8" rx="2" fill="#F59E0B"/>
-    <rect x="68" y="74" width="64" height="8" rx="2" fill="#10B981"/>
-    <circle cx="68" cy="116" r="9" fill="#DC2626"/>
-    <rect x="92" y="110" width="46" height="12" rx="3" fill="#CBD5E1"/>
-    <circle cx="68" cy="146" r="5" fill="#EF4444"/>
-    <circle cx="86" cy="146" r="5" fill="#0F172A"/>
-    <circle cx="114" cy="146" r="5" fill="#0284C7"/>
-    <circle cx="132" cy="146" r="5" fill="#10B981"/>
+    <circle cx="54" cy="180" r="5.5" fill="#DC2626" stroke="#FCA5A5" stroke-width="1.5"/>
+    <circle cx="68" cy="180" r="5.5" fill="#64748B" stroke="#CBD5E1" stroke-width="1.5"/>
+    <circle cx="86" cy="180" r="5.5" fill="#DC2626" stroke="#FCA5A5" stroke-width="1.5"/>
+    <circle cx="100" cy="180" r="5.5" fill="#64748B" stroke="#CBD5E1" stroke-width="1.5"/>
+    <circle cx="118" cy="180" r="5.5" fill="#DC2626" stroke="#FCA5A5" stroke-width="1.5"/>
+    <circle cx="132" cy="180" r="5.5" fill="#64748B" stroke="#CBD5E1" stroke-width="1.5"/>
+    <circle cx="146" cy="180" r="5.5" fill="#39FF14" stroke="#BBF7D0" stroke-width="1.5"/>
   </g>
-
-  <rect x="12" y="172" width="176" height="18" rx="4" fill="rgba(15, 23, 42, 0.85)" stroke="rgba(148, 163, 184, 0.2)" stroke-width="1"/>
-  <text x="100" y="184" text-anchor="middle" fill="#F8FAFC" font-size="8" font-weight="600" font-family="system-ui, sans-serif" letter-spacing="0.5">SOLAR INVERTER UNIT</text>
 </svg>

@@ -642,7 +642,7 @@ export function NodeGeometry({
                 <boxGeometry args={[0.08, 0.16, 0.06]} />
                 <meshStandardMaterial
                   color={
-                    nodeKey === 'dc_breaker'
+                    nodeKey === 'dc_breaker' || nodeKey === 'pv_dc_breaker'
                       ? '#DC2626'
                       : nodeKey === 'battery_breaker'
                         ? '#059669'

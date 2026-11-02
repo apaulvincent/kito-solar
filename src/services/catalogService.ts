@@ -86,7 +86,16 @@ export class CatalogService {
           .eq('is_active', true);
 
         if (!error && data && data.length > 0) {
-          return data as AccessoryRecord[];
+          const seedMap = new Map(
+            (accessoriesSeed as AccessoryRecord[]).map((s) => [s.accessory_key, s.price_php])
+          );
+          return (data as AccessoryRecord[]).map((row) => {
+            const calibratedSeedPrice = seedMap.get(row.accessory_key);
+            if (typeof calibratedSeedPrice === 'number') {
+              return { ...row, price_php: calibratedSeedPrice };
+            }
+            return row;
+          });
         }
       } catch (err) {
         console.warn('Supabase query failed, falling back to local seed data:', err);

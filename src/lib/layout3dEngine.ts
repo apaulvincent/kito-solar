@@ -33,7 +33,7 @@ export const ADDABLE_COMPONENT_CATALOG: AddableComponentSpec[] = [
     color: '#DC2626',
     defaultRatingLabel: '1000V DC 2P MCB',
     bomAccessoryKey: 'pv_dc_breaker',
-    fallbackUnitPricePhp: 650,
+    fallbackUnitPricePhp: 280,
     dimensions: [0.78, 0.98, 0.44],
     floorCenterY: 0.49,
     preferredWallY: 2.9,
@@ -51,7 +51,7 @@ export const ADDABLE_COMPONENT_CATALOG: AddableComponentSpec[] = [
     color: '#0284C7',
     defaultRatingLabel: '230V AC 2P MCB',
     bomAccessoryKey: 'ac_grid_breaker',
-    fallbackUnitPricePhp: 750,
+    fallbackUnitPricePhp: 220,
     dimensions: [0.78, 0.98, 0.44],
     floorCenterY: 0.49,
     preferredWallY: 2.9,
@@ -69,7 +69,7 @@ export const ADDABLE_COMPONENT_CATALOG: AddableComponentSpec[] = [
     color: '#059669',
     defaultRatingLabel: '125A-250A DC MCCB',
     bomAccessoryKey: 'battery_breaker',
-    fallbackUnitPricePhp: 2850,
+    fallbackUnitPricePhp: 950,
     dimensions: [0.78, 0.98, 0.44],
     floorCenterY: 0.49,
     preferredWallY: 1.4,
@@ -87,7 +87,7 @@ export const ADDABLE_COMPONENT_CATALOG: AddableComponentSpec[] = [
     color: '#0EA5E9',
     defaultRatingLabel: 'Critical Load MCB',
     bomAccessoryKey: 'eps_breaker',
-    fallbackUnitPricePhp: 650,
+    fallbackUnitPricePhp: 220,
     dimensions: [0.78, 0.98, 0.44],
     floorCenterY: 0.49,
     preferredWallY: 1.4,
@@ -105,7 +105,7 @@ export const ADDABLE_COMPONENT_CATALOG: AddableComponentSpec[] = [
     color: '#059669',
     defaultRatingLabel: 'Type 2 1000V DC',
     bomAccessoryKey: 'pv_dc_spd',
-    fallbackUnitPricePhp: 950,
+    fallbackUnitPricePhp: 420,
     dimensions: [0.78, 0.95, 0.44],
     floorCenterY: 0.48,
     preferredWallY: 1.4,
@@ -123,7 +123,7 @@ export const ADDABLE_COMPONENT_CATALOG: AddableComponentSpec[] = [
     color: '#10B981',
     defaultRatingLabel: 'Type 2 275V AC',
     bomAccessoryKey: 'ac_spd',
-    fallbackUnitPricePhp: 1150,
+    fallbackUnitPricePhp: 380,
     dimensions: [0.78, 0.95, 0.44],
     floorCenterY: 0.48,
     preferredWallY: 1.4,
@@ -143,7 +143,7 @@ export const ADDABLE_COMPONENT_CATALOG: AddableComponentSpec[] = [
     color: '#D97706',
     defaultRatingLabel: '4P IP66 Load-Break',
     bomAccessoryKey: 'pv_dc_isolator',
-    fallbackUnitPricePhp: 1850,
+    fallbackUnitPricePhp: 850,
     dimensions: [0.85, 1.05, 0.42],
     floorCenterY: 0.53,
     preferredWallY: 2.9,
@@ -161,7 +161,7 @@ export const ADDABLE_COMPONENT_CATALOG: AddableComponentSpec[] = [
     color: '#F59E0B',
     defaultRatingLabel: 'Lockable LOTO Switch',
     bomAccessoryKey: 'ac_isolator',
-    fallbackUnitPricePhp: 1450,
+    fallbackUnitPricePhp: 650,
     dimensions: [0.85, 1.05, 0.42],
     floorCenterY: 0.53,
     preferredWallY: 2.9,
@@ -179,7 +179,7 @@ export const ADDABLE_COMPONENT_CATALOG: AddableComponentSpec[] = [
     color: '#7C3AED',
     defaultRatingLabel: 'Dual-Source Solar/Grid',
     bomAccessoryKey: 'ats',
-    fallbackUnitPricePhp: 4200,
+    fallbackUnitPricePhp: 950,
     dimensions: [0.95, 1.25, 0.46],
     floorCenterY: 0.63,
     preferredWallY: 2.9,
@@ -251,7 +251,7 @@ export const ADDABLE_COMPONENT_CATALOG: AddableComponentSpec[] = [
     imagePath: '/assets/accessories/sub-panel.svg',
     color: '#475569',
     defaultRatingLabel: 'NEMA 3R Load Center',
-    fallbackUnitPricePhp: 3800,
+    fallbackUnitPricePhp: 1450,
     dimensions: [1.15, 1.65, 0.45],
     floorCenterY: 0.83,
     preferredWallY: 2.5,
@@ -269,7 +269,7 @@ export const ADDABLE_COMPONENT_CATALOG: AddableComponentSpec[] = [
     color: '#D97706',
     defaultRatingLabel: 'UL 467 Earth Bar',
     bomAccessoryKey: 'grounding',
-    fallbackUnitPricePhp: 1250,
+    fallbackUnitPricePhp: 380,
     dimensions: [0.68, 0.16, 0.08],
     floorCenterY: 0.15,
     preferredWallY: 0.75,
@@ -417,6 +417,7 @@ export function createEmptyLayout3D(): Layout3DState {
   return {
     version: 1,
     baseNodePositions: {},
+    removedBaseNodes: [],
     placedComponents: [],
     wires: createDefaultSystemWires(),
   };
@@ -470,6 +471,7 @@ const WireConnectionSchema = z.object({
 export const Layout3DSchema = z.object({
   version: z.literal(1).default(1),
   baseNodePositions: z.record(z.string(), Coord3DSchema).default({}),
+  removedBaseNodes: z.array(z.string().min(1).max(40)).optional().default([]),
   placedComponents: z.array(PlacedComponentSchema).max(SCENE_LIMITS.maxTotalPlacedComponents).default([]),
   wires: z.array(WireConnectionSchema).max(SCENE_LIMITS.maxTotalWires).default([]),
 });
@@ -1048,12 +1050,15 @@ function getHalfSizeForNodeType(nodeType: NodeType): [number, number] {
 export function getWallObstacles(
   nodePositions: Record<string, [number, number, number]>,
   placedComponents: PlacedComponent3D[],
-  isHybrid = true
+  isHybrid = true,
+  removedBaseNodes: DiagramNodeKey[] = []
 ): WallObstacle2D[] {
   const obstacles: WallObstacle2D[] = [];
   const baseKeys = Object.keys(DEFAULT_BASE_NODE_POSITIONS) as DiagramNodeKey[];
+  const removedSet = new Set(removedBaseNodes);
 
   for (const key of baseKeys) {
+    if (removedSet.has(key)) continue;
     if (!isHybrid && (key === 'battery' || key === 'battery_breaker')) continue;
     if (key === 'eps_breaker') continue;
     const pos = nodePositions[key] || DEFAULT_BASE_NODE_POSITIONS[key];
@@ -1400,7 +1405,12 @@ export function recomputeAttachedWireLengths(layout3d: Layout3DState): WireConne
     ...DEFAULT_BASE_NODE_POSITIONS,
     ...(layout3d.baseNodePositions as Record<string, [number, number, number]>),
   };
-  const obstacles = getWallObstacles(mergedBasePositions, layout3d.placedComponents, true);
+  const obstacles = getWallObstacles(
+    mergedBasePositions,
+    layout3d.placedComponents,
+    true,
+    layout3d.removedBaseNodes || []
+  );
 
   return layout3d.wires.map((wire) => {
     const fromNodePos = resolveNodeWorldPosition(wire.fromNodeId, layout3d);

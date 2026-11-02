@@ -163,6 +163,11 @@ export function SolarScene({ isAnimationPaused = false, resetViewCount = 0 }: So
     };
   }, [layout3d.baseNodePositions]);
 
+  const removedBaseSet = useMemo(
+    () => new Set(layout3d.removedBaseNodes || []),
+    [layout3d.removedBaseNodes]
+  );
+
   const theme = useCalculatorStore((s) => s.theme);
   const isDark = theme === 'dark';
 
@@ -228,166 +233,196 @@ export function SolarScene({ isAnimationPaused = false, resetViewCount = 0 }: So
       />
 
       {/* Baseline DC Generation & Point-of-Entry Sequence */}
-      <DiagramNodeMesh
-        nodeKey="pv_array"
-        label="PV ARRAY"
-        sublabel={`${calculationResult.summary.totalPanels}x Modules`}
-        position={nodePositions.pv_array}
-        color="#0284C7"
-        nodeType="pv"
-        onLockControls={handleLockControls}
-        onWireStart={handleWireStart}
-      />
-      <DiagramNodeMesh
-        nodeKey="dc_isolator"
-        label="DC ISOLATOR"
-        sublabel={`${calculationResult.dc.isolatorRatingA}A`}
-        position={nodePositions.dc_isolator}
-        color="#D97706"
-        nodeType="isolator"
-        onLockControls={handleLockControls}
-        onWireStart={handleWireStart}
-      />
-      <DiagramNodeMesh
-        nodeKey="dc_breaker"
-        label="DC BREAKER"
-        sublabel={`${calculationResult.dc.breakerRatingA}A`}
-        position={nodePositions.dc_breaker}
-        color="#DC2626"
-        nodeType="breaker"
-        onLockControls={handleLockControls}
-        onWireStart={handleWireStart}
-      />
-      <DiagramNodeMesh
-        nodeKey="dc_spd"
-        label="DC SPD"
-        sublabel={calculationResult.dc.spdRating}
-        position={nodePositions.dc_spd}
-        color="#059669"
-        nodeType="spd"
-        onLockControls={handleLockControls}
-        onWireStart={handleWireStart}
-      />
+      {!removedBaseSet.has('pv_array') && (
+        <DiagramNodeMesh
+          nodeKey="pv_array"
+          label="PV ARRAY"
+          sublabel={`${calculationResult.summary.totalPanels}x Modules`}
+          position={nodePositions.pv_array}
+          color="#0284C7"
+          nodeType="pv"
+          onLockControls={handleLockControls}
+          onWireStart={handleWireStart}
+        />
+      )}
+      {!removedBaseSet.has('dc_isolator') && (
+        <DiagramNodeMesh
+          nodeKey="dc_isolator"
+          label="DC ISOLATOR"
+          sublabel={`${calculationResult.dc.isolatorRatingA}A`}
+          position={nodePositions.dc_isolator}
+          color="#D97706"
+          nodeType="isolator"
+          onLockControls={handleLockControls}
+          onWireStart={handleWireStart}
+        />
+      )}
+      {!removedBaseSet.has('dc_breaker') && (
+        <DiagramNodeMesh
+          nodeKey="dc_breaker"
+          label="DC BREAKER"
+          sublabel={`${calculationResult.dc.breakerRatingA}A`}
+          position={nodePositions.dc_breaker}
+          color="#DC2626"
+          nodeType="breaker"
+          onLockControls={handleLockControls}
+          onWireStart={handleWireStart}
+        />
+      )}
+      {!removedBaseSet.has('dc_spd') && (
+        <DiagramNodeMesh
+          nodeKey="dc_spd"
+          label="DC SPD"
+          sublabel={calculationResult.dc.spdRating}
+          position={nodePositions.dc_spd}
+          color="#059669"
+          nodeType="spd"
+          onLockControls={handleLockControls}
+          onWireStart={handleWireStart}
+        />
+      )}
 
       {/* Central Solar Inverter */}
-      <DiagramNodeMesh
-        nodeKey="inverter"
-        label="SOLAR INVERTER"
-        sublabel={`${calculationResult.summary.inverterPowerKw} kW ${calculationResult.systemType.toUpperCase()}`}
-        position={nodePositions.inverter}
-        color="#D97706"
-        nodeType="inverter"
-        onLockControls={handleLockControls}
-        onWireStart={handleWireStart}
-      />
+      {!removedBaseSet.has('inverter') && (
+        <DiagramNodeMesh
+          nodeKey="inverter"
+          label="SOLAR INVERTER"
+          sublabel={`${calculationResult.summary.inverterPowerKw} kW ${calculationResult.systemType.toUpperCase()}`}
+          position={nodePositions.inverter}
+          color="#D97706"
+          nodeType="inverter"
+          onLockControls={handleLockControls}
+          onWireStart={handleWireStart}
+        />
+      )}
 
       {/* Hybrid Battery Storage System */}
       {isHybrid && (
         <>
-          <DiagramNodeMesh
-            nodeKey="battery_breaker"
-            label="BATTERY MCCB"
-            sublabel={`${calculationResult.battery.recommendedBreakerA}A`}
-            position={nodePositions.battery_breaker}
-            color="#059669"
-            nodeType="breaker"
-            onLockControls={handleLockControls}
-            onWireStart={handleWireStart}
-          />
-          <DiagramNodeMesh
-            nodeKey="battery"
-            label="BATTERY STORAGE"
-            sublabel={`${(calculationResult.battery.totalEnergyWh / 1000).toFixed(1)} kWh`}
-            position={nodePositions.battery}
-            color="#059669"
-            nodeType="battery"
-            onLockControls={handleLockControls}
-            onWireStart={handleWireStart}
-          />
+          {!removedBaseSet.has('battery_breaker') && (
+            <DiagramNodeMesh
+              nodeKey="battery_breaker"
+              label="BATTERY MCCB"
+              sublabel={`${calculationResult.battery.recommendedBreakerA}A`}
+              position={nodePositions.battery_breaker}
+              color="#059669"
+              nodeType="breaker"
+              onLockControls={handleLockControls}
+              onWireStart={handleWireStart}
+            />
+          )}
+          {!removedBaseSet.has('battery') && (
+            <DiagramNodeMesh
+              nodeKey="battery"
+              label="BATTERY STORAGE"
+              sublabel={`${(calculationResult.battery.totalEnergyWh / 1000).toFixed(1)} kWh`}
+              position={nodePositions.battery}
+              color="#059669"
+              nodeType="battery"
+              onLockControls={handleLockControls}
+              onWireStart={handleWireStart}
+            />
+          )}
         </>
       )}
 
       {/* AC Distribution Nodes */}
-      <DiagramNodeMesh
-        nodeKey="ac_breaker"
-        label="AC BREAKER"
-        sublabel={`${calculationResult.ac.breakerRatingA}A`}
-        position={nodePositions.ac_breaker}
-        color="#0284C7"
-        nodeType="breaker"
-        onLockControls={handleLockControls}
-        onWireStart={handleWireStart}
-      />
-      <DiagramNodeMesh
-        nodeKey="ac_spd"
-        label="AC SPD"
-        sublabel={calculationResult.ac.spdRating}
-        position={nodePositions.ac_spd}
-        color="#059669"
-        nodeType="spd"
-        onLockControls={handleLockControls}
-        onWireStart={handleWireStart}
-      />
-      <DiagramNodeMesh
-        nodeKey="ac_isolator"
-        label="AC ISOLATOR"
-        sublabel={`${calculationResult.ac.isolatorRatingA}A`}
-        position={nodePositions.ac_isolator}
-        color="#D97706"
-        nodeType="isolator"
-        onLockControls={handleLockControls}
-        onWireStart={handleWireStart}
-      />
-      <DiagramNodeMesh
-        nodeKey="main_panel"
-        label="MAIN SERVICE PANEL"
-        sublabel="Distribution"
-        position={nodePositions.main_panel}
-        color="#475569"
-        nodeType="panel"
-        onLockControls={handleLockControls}
-        onWireStart={handleWireStart}
-      />
-      <DiagramNodeMesh
-        nodeKey="ats"
-        label="AUTOMATIC TRANSFER SWITCH"
-        sublabel={calculationResult.ac.atsConfigured ? `${calculationResult.ac.atsRatingA}A` : 'BYPASS'}
-        position={nodePositions.ats}
-        color="#7C3AED"
-        nodeType="ats"
-        onLockControls={handleLockControls}
-        onWireStart={handleWireStart}
-      />
-      <DiagramNodeMesh
-        nodeKey="grid"
-        label="UTILITY GRID"
-        sublabel={`${gridVoltageV}V AC`}
-        position={nodePositions.grid}
-        color="#64748B"
-        nodeType="grid"
-        onLockControls={handleLockControls}
-        onWireStart={handleWireStart}
-      />
-      <DiagramNodeMesh
-        nodeKey="load"
-        label="BUILDING LOAD"
-        sublabel="Consumer Circuit"
-        position={nodePositions.load}
-        color="#0284C7"
-        nodeType="load"
-        onLockControls={handleLockControls}
-        onWireStart={handleWireStart}
-      />
-      <DiagramNodeMesh
-        nodeKey="grounding"
-        label="COPPER GROUND BUSBAR"
-        sublabel="UL 467 / NEC 250"
-        position={nodePositions.grounding}
-        color="#D97706"
-        nodeType="grounding"
-        onLockControls={handleLockControls}
-        onWireStart={handleWireStart}
-      />
+      {!removedBaseSet.has('ac_breaker') && (
+        <DiagramNodeMesh
+          nodeKey="ac_breaker"
+          label="AC BREAKER"
+          sublabel={`${calculationResult.ac.breakerRatingA}A`}
+          position={nodePositions.ac_breaker}
+          color="#0284C7"
+          nodeType="breaker"
+          onLockControls={handleLockControls}
+          onWireStart={handleWireStart}
+        />
+      )}
+      {!removedBaseSet.has('ac_spd') && (
+        <DiagramNodeMesh
+          nodeKey="ac_spd"
+          label="AC SPD"
+          sublabel={calculationResult.ac.spdRating}
+          position={nodePositions.ac_spd}
+          color="#059669"
+          nodeType="spd"
+          onLockControls={handleLockControls}
+          onWireStart={handleWireStart}
+        />
+      )}
+      {!removedBaseSet.has('ac_isolator') && (
+        <DiagramNodeMesh
+          nodeKey="ac_isolator"
+          label="AC ISOLATOR"
+          sublabel={`${calculationResult.ac.isolatorRatingA}A`}
+          position={nodePositions.ac_isolator}
+          color="#D97706"
+          nodeType="isolator"
+          onLockControls={handleLockControls}
+          onWireStart={handleWireStart}
+        />
+      )}
+      {!removedBaseSet.has('main_panel') && (
+        <DiagramNodeMesh
+          nodeKey="main_panel"
+          label="MAIN SERVICE PANEL"
+          sublabel="Distribution"
+          position={nodePositions.main_panel}
+          color="#475569"
+          nodeType="panel"
+          onLockControls={handleLockControls}
+          onWireStart={handleWireStart}
+        />
+      )}
+      {!removedBaseSet.has('ats') && (
+        <DiagramNodeMesh
+          nodeKey="ats"
+          label="AUTOMATIC TRANSFER SWITCH"
+          sublabel={calculationResult.ac.atsConfigured ? `${calculationResult.ac.atsRatingA}A` : 'BYPASS'}
+          position={nodePositions.ats}
+          color="#7C3AED"
+          nodeType="ats"
+          onLockControls={handleLockControls}
+          onWireStart={handleWireStart}
+        />
+      )}
+      {!removedBaseSet.has('grid') && (
+        <DiagramNodeMesh
+          nodeKey="grid"
+          label="UTILITY GRID"
+          sublabel={`${gridVoltageV}V AC`}
+          position={nodePositions.grid}
+          color="#64748B"
+          nodeType="grid"
+          onLockControls={handleLockControls}
+          onWireStart={handleWireStart}
+        />
+      )}
+      {!removedBaseSet.has('load') && (
+        <DiagramNodeMesh
+          nodeKey="load"
+          label="BUILDING LOAD"
+          sublabel="Consumer Circuit"
+          position={nodePositions.load}
+          color="#0284C7"
+          nodeType="load"
+          onLockControls={handleLockControls}
+          onWireStart={handleWireStart}
+        />
+      )}
+      {!removedBaseSet.has('grounding') && (
+        <DiagramNodeMesh
+          nodeKey="grounding"
+          label="COPPER GROUND BUSBAR"
+          sublabel="UL 467 / NEC 250"
+          position={nodePositions.grounding}
+          color="#D97706"
+          nodeType="grounding"
+          onLockControls={handleLockControls}
+          onWireStart={handleWireStart}
+        />
+      )}
 
       {/* User-Added Custom 3D Switchgear, Batteries, Inverters, Panels & PV Arrays */}
       {layout3d.placedComponents.map((item) => (

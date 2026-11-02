@@ -197,9 +197,20 @@ export function CustomWireSystem({
     canvasTool === 'wire_gnd';
   const isCutMode = canvasTool === 'wire_cut';
 
+  const removedBaseSet = useMemo(
+    () => new Set(layout3d.removedBaseNodes || []),
+    [layout3d.removedBaseNodes]
+  );
+
   const wallObstacles = useMemo(
-    () => getWallObstacles(nodePositions, layout3d.placedComponents, isHybrid),
-    [nodePositions, layout3d.placedComponents, isHybrid]
+    () =>
+      getWallObstacles(
+        nodePositions,
+        layout3d.placedComponents,
+        isHybrid,
+        layout3d.removedBaseNodes || []
+      ),
+    [nodePositions, layout3d.placedComponents, isHybrid, layout3d.removedBaseNodes]
   );
 
   // Compute all 3D terminal ports across active baseline nodes and custom placed nodes
@@ -207,6 +218,7 @@ export function CustomWireSystem({
     const ports: TerminalPort3D[] = [];
 
     for (const meta of BASE_NODE_META) {
+      if (removedBaseSet.has(meta.key)) continue;
       if (meta.hybridOnly && !isHybrid) continue;
       const pos = nodePositions[meta.key];
       if (!pos) continue;
@@ -220,7 +232,7 @@ export function CustomWireSystem({
     }
 
     return ports;
-  }, [nodePositions, isHybrid, layout3d.placedComponents]);
+  }, [nodePositions, isHybrid, layout3d.placedComponents, removedBaseSet]);
 
   const portLookup = useMemo(() => {
     const map = new Map<string, TerminalPort3D>();
@@ -530,6 +542,12 @@ export function CustomWireSystem({
   const renderedWires = useMemo(() => {
     return layout3d.wires.map((wire) => {
       if (
+        removedBaseSet.has(wire.fromNodeId as DiagramNodeKey) ||
+        removedBaseSet.has(wire.toNodeId as DiagramNodeKey)
+      ) {
+        return null;
+      }
+      if (
         !isHybrid &&
         (wire.fromNodeId === 'battery' ||
           wire.fromNodeId === 'battery_breaker' ||
@@ -575,7 +593,7 @@ export function CustomWireSystem({
       fromLabel: string;
       toLabel: string;
     }[];
-  }, [layout3d.wires, layout3d.placedComponents, portLookup, nodePositions, isHybrid, wallObstacles]);
+  }, [layout3d.wires, layout3d.placedComponents, portLookup, nodePositions, isHybrid, wallObstacles, removedBaseSet]);
 
   // Animated pulse beads along (+/-) wires (grounding wires have zero particles)
   const pulseMeshRef = useRef<THREE.InstancedMesh>(null);

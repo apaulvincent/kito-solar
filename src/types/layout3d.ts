@@ -138,6 +138,7 @@ export interface WireConnection3D {
 export interface Layout3DState {
   version: 1;
   baseNodePositions: Partial<Record<DiagramNodeKey, [number, number, number]>>;
+  removedBaseNodes?: DiagramNodeKey[];
   placedComponents: PlacedComponent3D[];
   wires: WireConnection3D[];
 }

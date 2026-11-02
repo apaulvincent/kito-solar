@@ -310,4 +310,33 @@ describe('3D Interactive Plant Builder: Spatial, Wiring, BOM & Persistence Suite
     store.clearAllWires();
     expect(useCalculatorStore.getState().layout3d.wires.length).toBe(0);
   });
+
+  it('allows deleting default (baseline) components, removes their attached wires & BOM cost, and restores on Reset 3D', () => {
+    const store = useCalculatorStore.getState();
+    const initialWires = store.layout3d.wires.length;
+    const initialGrandTotal = store.calculationResult.costSummary.grandTotalPhp;
+
+    // Delete default PV DC Breaker ('dc_breaker')
+    store.removeBaseNode('dc_breaker');
+    const afterRemove = useCalculatorStore.getState();
+
+    expect(afterRemove.layout3d.removedBaseNodes).toContain('dc_breaker');
+    expect(afterRemove.layout3d.wires.length).toBeLessThan(initialWires);
+    expect(
+      afterRemove.layout3d.wires.some(
+        (w) => w.fromNodeId === 'dc_breaker' || w.toNodeId === 'dc_breaker'
+      )
+    ).toBe(false);
+    expect(
+      afterRemove.calculationResult.costSummary.items.find((i) => i.key === 'pv_dc_breaker')
+    ).toBeUndefined();
+    expect(afterRemove.calculationResult.costSummary.grandTotalPhp).toBe(initialGrandTotal - 280);
+
+    // Reset 3D restores deleted baseline component and its wires
+    afterRemove.resetLayout3D();
+    const restored = useCalculatorStore.getState();
+    expect(restored.layout3d.removedBaseNodes).toEqual([]);
+    expect(restored.layout3d.wires.length).toBe(initialWires);
+    expect(restored.calculationResult.costSummary.grandTotalPhp).toBe(initialGrandTotal);
+  });
 });

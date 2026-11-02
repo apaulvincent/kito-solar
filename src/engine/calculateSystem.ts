@@ -351,46 +351,48 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
     });
   };
 
-  addSwitchgearItem('pv_dc_breaker', `${dc.breakerRatingA}A PV DC Circuit Breaker`, 'protection', 1, 'pc', getAddedCount('pv_dc_breaker'));
-  addSwitchgearItem('pv_dc_isolator', `${dc.isolatorRatingA}A PV DC Rotary Disconnect`, 'protection', 1, 'pc', getAddedCount('pv_dc_isolator'));
-  addSwitchgearItem('pv_dc_spd', `DC Surge Protective Device (${dc.spdRating})`, 'protection', 1, 'pc', getAddedCount('pv_dc_spd'));
-  addSwitchgearItem('dc_conduit', `DC PVC Conduit & Fittings (${dc.conduitSpec})`, 'conduit', 1, 'lot');
-  addSwitchgearItem('grounding', `Ground Cable (${dc.groundConductorSpec}) & Rod`, 'grounding', 1, 'set', getAddedCount('grounding_busbar'));
-  addSwitchgearItem('ac_grid_breaker', `${ac.breakerRatingA}A Inverter AC Grid Breaker`, 'protection', 1, 'pc', getAddedCount('ac_grid_breaker'));
-  addSwitchgearItem('ac_isolator', `${ac.isolatorRatingA}A AC Disconnect Isolator`, 'protection', 1, 'pc', getAddedCount('ac_isolator'));
-  addSwitchgearItem('ac_spd', `AC Surge Protective Device (${ac.spdRating})`, 'protection', 1, 'pc', getAddedCount('ac_spd'));
+  const removedBaseSet = new Set(layout3d?.removedBaseNodes || []);
 
-  if (ac.atsConfigured || getAddedCount('ats') > 0) {
+  addSwitchgearItem('pv_dc_breaker', `${dc.breakerRatingA}A PV DC Circuit Breaker`, 'protection', removedBaseSet.has('dc_breaker') ? 0 : 1, 'pc', getAddedCount('pv_dc_breaker'));
+  addSwitchgearItem('pv_dc_isolator', `${dc.isolatorRatingA}A PV DC Rotary Disconnect`, 'protection', removedBaseSet.has('dc_isolator') ? 0 : 1, 'pc', getAddedCount('pv_dc_isolator'));
+  addSwitchgearItem('pv_dc_spd', `DC Surge Protective Device (${dc.spdRating})`, 'protection', removedBaseSet.has('dc_spd') ? 0 : 1, 'pc', getAddedCount('pv_dc_spd'));
+  addSwitchgearItem('dc_conduit', `DC PVC Conduit & Fittings (${dc.conduitSpec})`, 'conduit', 1, 'lot');
+  addSwitchgearItem('grounding', `Ground Cable (${dc.groundConductorSpec}) & Rod`, 'grounding', removedBaseSet.has('grounding') ? 0 : 1, 'set', getAddedCount('grounding_busbar'));
+  addSwitchgearItem('ac_grid_breaker', `${ac.breakerRatingA}A Inverter AC Grid Breaker`, 'protection', removedBaseSet.has('ac_breaker') ? 0 : 1, 'pc', getAddedCount('ac_grid_breaker'));
+  addSwitchgearItem('ac_isolator', `${ac.isolatorRatingA}A AC Disconnect Isolator`, 'protection', removedBaseSet.has('ac_isolator') ? 0 : 1, 'pc', getAddedCount('ac_isolator'));
+  addSwitchgearItem('ac_spd', `AC Surge Protective Device (${ac.spdRating})`, 'protection', removedBaseSet.has('ac_spd') ? 0 : 1, 'pc', getAddedCount('ac_spd'));
+
+  if ((ac.atsConfigured && !removedBaseSet.has('ats')) || getAddedCount('ats') > 0) {
     addSwitchgearItem(
       'ats',
       `${ac.atsRatingA ?? 63}A Automatic Transfer Switch (ATS)`,
       'transfer',
-      ac.atsConfigured ? 1 : 0,
+      ac.atsConfigured && !removedBaseSet.has('ats') ? 1 : 0,
       'pc',
       getAddedCount('ats')
     );
   }
 
   const hasBaseBatteryBoS = batteryResult.hasBattery && Boolean(battery);
-  if (hasBaseBatteryBoS || getAddedCount('battery_breaker') > 0) {
+  if ((hasBaseBatteryBoS && !removedBaseSet.has('battery_breaker')) || getAddedCount('battery_breaker') > 0) {
     addSwitchgearItem(
       'battery_breaker',
       `${batteryResult.recommendedBreakerA || 125}A Battery DC MCCB`,
       'protection',
-      hasBaseBatteryBoS ? 1 : 0,
+      hasBaseBatteryBoS && !removedBaseSet.has('battery_breaker') ? 1 : 0,
       'pc',
       getAddedCount('battery_breaker')
     );
   }
-  if (hasBaseBatteryBoS) {
+  if (hasBaseBatteryBoS && !removedBaseSet.has('battery')) {
     addSwitchgearItem('battery_wire', `Battery Conductor Pair (${batteryResult.wireSpec})`, 'wiring', 1, 'set');
   }
-  if (hasBaseBatteryBoS || getAddedCount('eps_breaker') > 0) {
+  if ((hasBaseBatteryBoS && !removedBaseSet.has('eps_breaker')) || getAddedCount('eps_breaker') > 0) {
     addSwitchgearItem(
       'eps_breaker',
       `${ac.epsBreakerRatingA}A Inverter EPS Output Breaker`,
       'protection',
-      hasBaseBatteryBoS ? 1 : 0,
+      hasBaseBatteryBoS && !removedBaseSet.has('eps_breaker') ? 1 : 0,
       'pc',
       getAddedCount('eps_breaker')
     );
@@ -405,7 +407,7 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
       0,
       'pc',
       getAddedCount('sub_panel'),
-      3800
+      1450
     );
   }
 

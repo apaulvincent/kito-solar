@@ -25,6 +25,7 @@ interface ComponentListItem {
   calculatedValue: string;
   wireOrRating: string;
   icon: typeof Zap;
+  imagePath: string;
 }
 
 export function DiagramComponentList() {
@@ -37,6 +38,7 @@ export function DiagramComponentList() {
   const selectedCustomNodeId = useCalculatorStore((s) => s.selectedCustomNodeId);
   const setSelectedCustomNodeId = useCalculatorStore((s) => s.setSelectedCustomNodeId);
   const removePlacedComponent = useCalculatorStore((s) => s.removePlacedComponent);
+  const removeBaseNode = useCalculatorStore((s) => s.removeBaseNode);
 
   const [isOpen, setIsOpen] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -63,7 +65,7 @@ export function DiagramComponentList() {
   };
 
   // Correct DC Sequence: PV Array -> DC Isolator -> DC Breaker -> DC SPD -> Inverter
-  const items: ComponentListItem[] = [
+  const allBaseItems: ComponentListItem[] = [
     {
       key: 'pv_array',
       title: 'Solar PV Array',
@@ -71,6 +73,7 @@ export function DiagramComponentList() {
       calculatedValue: `${calculationResult.summary.totalPanels} Modules (${calculationResult.summary.totalArrayPowerKw} kW)`,
       wireOrRating: `${calculationResult.stringSizing.recommendedStrings} Strings @ ${calculationResult.stringSizing.voltagePerStringVmp} Vmp`,
       icon: Zap,
+      imagePath: '/assets/accessories/pv-array.svg',
     },
     {
       key: 'dc_isolator',
@@ -79,6 +82,7 @@ export function DiagramComponentList() {
       calculatedValue: 'Load-Break Switch (NEC 690.13)',
       wireOrRating: `${calculationResult.dc.isolatorRatingA} A Rotary Switch`,
       icon: ShieldAlert,
+      imagePath: '/assets/accessories/dc-isolator.svg',
     },
     {
       key: 'dc_breaker',
@@ -87,6 +91,7 @@ export function DiagramComponentList() {
       calculatedValue: `${calculationResult.dc.computedCurrentA} A (Continuous)`,
       wireOrRating: `${calculationResult.dc.breakerRatingA} A Rating`,
       icon: ShieldAlert,
+      imagePath: '/assets/accessories/pv-dc-breaker.svg',
     },
     {
       key: 'dc_spd',
@@ -95,6 +100,7 @@ export function DiagramComponentList() {
       calculatedValue: 'Type 2 DC Arrester',
       wireOrRating: calculationResult.dc.spdRating,
       icon: ShieldAlert,
+      imagePath: '/assets/accessories/dc-spd.svg',
     },
     {
       key: 'inverter',
@@ -103,11 +109,12 @@ export function DiagramComponentList() {
       calculatedValue: `${calculationResult.summary.inverterPowerKw} kW AC (${calculationResult.systemType.toUpperCase()})`,
       wireOrRating: calculationResult.summary.inverterModel,
       icon: Cpu,
+      imagePath: '/assets/accessories/solar-inverter.svg',
     },
   ];
 
   if (calculationResult.battery.hasBattery) {
-    items.push(
+    allBaseItems.push(
       {
         key: 'battery_breaker',
         title: 'Battery DC MCCB',
@@ -115,6 +122,7 @@ export function DiagramComponentList() {
         calculatedValue: `${calculationResult.battery.dischargeCurrentA} A Discharge`,
         wireOrRating: `${calculationResult.battery.recommendedBreakerA} A Breaker`,
         icon: Battery,
+        imagePath: '/assets/accessories/battery-breaker.svg',
       },
       {
         key: 'battery',
@@ -123,11 +131,12 @@ export function DiagramComponentList() {
         calculatedValue: `${(calculationResult.battery.totalEnergyWh / 1000).toFixed(1)} kWh Usable`,
         wireOrRating: calculationResult.battery.batteryType,
         icon: Battery,
+        imagePath: '/assets/accessories/battery-unit.svg',
       }
     );
   }
 
-  items.push(
+  allBaseItems.push(
     {
       key: 'ac_breaker',
       title: 'Inverter AC Grid Breaker',
@@ -135,6 +144,7 @@ export function DiagramComponentList() {
       calculatedValue: `${calculationResult.ac.computedCurrentA} A (Continuous)`,
       wireOrRating: `${calculationResult.ac.breakerRatingA} A Rating`,
       icon: ShieldAlert,
+      imagePath: '/assets/accessories/ac-breaker.svg',
     },
     {
       key: 'ac_spd',
@@ -143,6 +153,7 @@ export function DiagramComponentList() {
       calculatedValue: 'Type 2 AC Arrester',
       wireOrRating: calculationResult.ac.spdRating,
       icon: ShieldAlert,
+      imagePath: '/assets/accessories/ac-spd.svg',
     },
     {
       key: 'ac_isolator',
@@ -151,6 +162,7 @@ export function DiagramComponentList() {
       calculatedValue: 'Manual Rotary Switch',
       wireOrRating: `${calculationResult.ac.isolatorRatingA} A Switch`,
       icon: ShieldAlert,
+      imagePath: '/assets/accessories/ac-isolator.svg',
     },
     {
       key: 'ats',
@@ -159,6 +171,7 @@ export function DiagramComponentList() {
       calculatedValue: calculationResult.ac.atsConfigured ? 'Dual Power Transfer' : 'Bypass',
       wireOrRating: calculationResult.ac.atsConfigured ? `${calculationResult.ac.atsRatingA} A ATS` : 'Not Configured',
       icon: Cable,
+      imagePath: '/assets/accessories/ats.svg',
     },
     {
       key: 'grounding',
@@ -167,8 +180,12 @@ export function DiagramComponentList() {
       calculatedValue: 'Solid Earth Bond (NEC 250 / PEC 2.50)',
       wireOrRating: `${calculationResult.dc.groundConductorSpec} Ground Bus`,
       icon: Shield,
+      imagePath: '/assets/accessories/grounding-lug.svg',
     }
   );
+
+  const removedBaseSet = new Set(layout3d.removedBaseNodes || []);
+  const items = allBaseItems.filter((i) => !removedBaseSet.has(i.key));
 
   return (
     <div
@@ -230,15 +247,14 @@ export function DiagramComponentList() {
         {items.map((item) => {
           const isSelected = selectedNodeKey === item.key;
           const isHovered = hoveredNodeKey === item.key;
-          const IconComponent = item.icon;
 
           return (
-            <button
+            <div
               key={item.key}
               onClick={() => setSelectedNodeKey(item.key)}
               onMouseEnter={() => setHoveredNodeKey(item.key)}
               onMouseLeave={() => setHoveredNodeKey(null)}
-              className={`flex items-start gap-2.5 p-3 rounded-xl border text-left transition-all ${
+              className={`flex items-start gap-2.5 p-3 rounded-xl border text-left cursor-pointer transition-all ${
                 isSelected
                   ? 'border-amber-600 dark:border-amber-500 bg-amber-50/80 dark:bg-amber-950/40 ring-2 ring-amber-400/20 shadow-sm scale-[1.02]'
                   : isHovered
@@ -246,23 +262,30 @@ export function DiagramComponentList() {
                   : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 hover:bg-white dark:hover:bg-slate-950/80 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-subtle'
               }`}
             >
-              <div
-                className={`p-2 rounded-lg flex-shrink-0 ${
-                  isSelected
-                    ? 'bg-amber-600 text-white'
-                    : isHovered
-                    ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'
-                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 shadow-subtle'
-                }`}
-              >
-                <IconComponent className="w-4 h-4" />
-              </div>
+              <img
+                src={item.imagePath}
+                alt={item.title}
+                className="w-9 h-9 rounded-lg bg-[#090D16] border border-slate-700/80 p-1 object-contain flex-shrink-0"
+              />
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-1">
                   <span className="text-xs font-bold text-slate-900 dark:text-slate-100 break-words">
                     {item.title}
                   </span>
-                  <ArrowRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 flex-shrink-0 ml-1" />
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeBaseNode(item.key);
+                      }}
+                      title={`Remove ${item.title} from 3D plant room`}
+                      className="p-1 rounded text-slate-400 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                  </div>
                 </div>
                 <div className="text-[11px] font-mono text-amber-700 dark:text-amber-400 font-bold break-words mt-0.5">
                   {item.wireOrRating}
@@ -271,7 +294,7 @@ export function DiagramComponentList() {
                   {item.calculatedValue}
                 </div>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

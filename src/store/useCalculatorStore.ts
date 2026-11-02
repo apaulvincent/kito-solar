@@ -135,6 +135,7 @@ interface CalculatorState {
     surface: MountSurface
   ) => void;
   moveBaseNode: (nodeKey: DiagramNodeKey, position: [number, number, number]) => void;
+  removeBaseNode: (nodeKey: DiagramNodeKey) => void;
   removePlacedComponent: (id: string) => void;
   addWireConnection: (params: {
     polarity: WirePolarity;
@@ -1071,7 +1072,9 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
     }
 
     const occupied: [number, number, number][] = [];
+    const removedSet = new Set(state.layout3d.removedBaseNodes || []);
     for (const [k, defPos] of Object.entries(DEFAULT_BASE_NODE_POSITIONS)) {
+      if (removedSet.has(k as DiagramNodeKey)) continue;
       const ov = state.layout3d.baseNodePositions[k as DiagramNodeKey];
       occupied.push(ov || defPos);
     }
@@ -1181,6 +1184,43 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
     );
 
     set({ layout3d: nextLayout, calculationResult: nextCalc });
+    syncLayoutToActiveProject(nextLayout, nextCalc);
+  },
+
+  removeBaseNode: (nodeKey) => {
+    const state = get();
+    const currentRemoved = state.layout3d.removedBaseNodes || [];
+    const nextRemoved = currentRemoved.includes(nodeKey)
+      ? currentRemoved
+      : [...currentRemoved, nodeKey];
+
+    const nextLayout: Layout3DState = {
+      ...state.layout3d,
+      removedBaseNodes: nextRemoved,
+      wires: state.layout3d.wires.filter(
+        (w) => w.fromNodeId !== nodeKey && w.toNodeId !== nodeKey
+      ),
+    };
+
+    const nextCalc = compute(
+      state.selectedInverter,
+      state.selectedModule,
+      state.selectedBattery,
+      state.batteryCount,
+      state.gridVoltageV,
+      state.mainBreakerA,
+      state.panelCountOverride,
+      state.accessories,
+      state.customPrices,
+      nextLayout
+    );
+
+    set({
+      layout3d: nextLayout,
+      selectedNodeKey: state.selectedNodeKey === nodeKey ? null : state.selectedNodeKey,
+      isInspectorOpen: state.selectedNodeKey === nodeKey ? false : state.isInspectorOpen,
+      calculationResult: nextCalc,
+    });
     syncLayoutToActiveProject(nextLayout, nextCalc);
   },
 

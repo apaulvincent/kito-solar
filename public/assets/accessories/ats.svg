@@ -1,35 +1,68 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0F172A"/>
       <stop offset="100%" stop-color="#090D16"/>
     </linearGradient>
-    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(148, 163, 184, 0.08)" stroke-width="0.5"/>
-    </pattern>
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#020617" flood-opacity="0.65"/>
+    </filter>
   </defs>
-  <rect width="200" height="200" rx="12" fill="url(#bgGrad)"/>
-  <rect width="200" height="200" rx="12" fill="url(#grid)"/>
-  <rect x="2" y="2" width="196" height="196" rx="10" fill="none" stroke="rgba(148, 163, 184, 0.15)" stroke-width="1"/>
-  
-  <!-- Header Bar -->
-  <rect x="12" y="12" width="176" height="20" rx="4" fill="rgba(30, 41, 59, 0.7)"/>
-  <text x="20" y="26" fill="#A855F7" font-size="8" font-weight="700" font-family="monospace" letter-spacing="1">TRANSFER</text>
-  <text x="180" y="26" text-anchor="end" fill="#94A3B8" font-size="8" font-family="monospace">DUAL POWER 2P/4P</text>
+  <rect width="200" height="200" rx="16" fill="url(#bg)"/>
+  <!-- Unistrut Rail Behind -->
+  <rect x="14" y="92" width="172" height="16" rx="2" fill="#64748B" stroke="#475569" stroke-width="1.5"/>
+  <rect x="18" y="97" width="164" height="6" fill="#334155"/>
 
-  <!-- Technical Schematic Icon -->
-  <g transform="translate(0, 0)">
-    <rect x="40" y="30" width="120" height="140" rx="10" fill="#1E293B" stroke="#A855F7" stroke-width="2"/>
-           <rect x="55" y="50" width="40" height="35" rx="4" fill="#0F172A" stroke="#475569" stroke-width="1.5"/>
-           <rect x="105" y="50" width="40" height="35" rx="4" fill="#0F172A" stroke="#475569" stroke-width="1.5"/>
-           <circle cx="75" cy="67" r="4" fill="#10B981"/>
-           <circle cx="125" cy="67" r="4" fill="#EF4444"/>
-           <rect x="85" y="100" width="30" height="25" rx="4" fill="#334155"/>
-           <text x="100" y="117" text-anchor="middle" fill="#F8FAFC" font-size="8" font-weight="bold" font-family="monospace">AUTO</text>
-           <text x="100" y="152" text-anchor="middle" fill="#94A3B8" font-size="8" font-family="monospace">< 50ms TRANSFER</text>
+  <!-- Top Terminal Lugs: SRC (+) Red & SRC (-) Dark Gray -->
+  <g>
+    <circle cx="72" cy="19" r="8" fill="#DC2626" stroke="#FCA5A5" stroke-width="2"/>
+    <circle cx="72" cy="19" r="3" fill="#CBD5E1"/>
+    <circle cx="128" cy="19" r="8" fill="#64748B" stroke="#CBD5E1" stroke-width="2"/>
+    <circle cx="128" cy="19" r="3" fill="#CBD5E1"/>
   </g>
 
-  <!-- Title Pill -->
-  <rect x="12" y="172" width="176" height="18" rx="4" fill="rgba(15, 23, 42, 0.85)" stroke="rgba(148, 163, 184, 0.2)" stroke-width="1"/>
-  <text x="100" y="184" text-anchor="middle" fill="#F8FAFC" font-size="8" font-weight="600" font-family="system-ui, sans-serif" letter-spacing="0.5">AUTO TRANSFER SWITCH</text>
+  <!-- Bottom Terminal Lugs: LOAD (+) Red, ATS GND Neon Green, LOAD (-) Dark Gray -->
+  <g>
+    <circle cx="70" cy="181" r="8" fill="#DC2626" stroke="#FCA5A5" stroke-width="2"/>
+    <circle cx="70" cy="181" r="3" fill="#CBD5E1"/>
+    <circle cx="100" cy="181" r="7.5" fill="#39FF14" stroke="#BBF7D0" stroke-width="1.8"/>
+    <circle cx="100" cy="181" r="2.8" fill="#052E16"/>
+    <circle cx="130" cy="181" r="8" fill="#64748B" stroke="#CBD5E1" stroke-width="2"/>
+    <circle cx="130" cy="181" r="3" fill="#CBD5E1"/>
+  </g>
+
+  <!-- Industrial NEMA 3R ATS Cabinet (Matches AtsNodeGeometry in NodeGeometry.tsx) -->
+  <rect x="38" y="26" width="124" height="148" rx="8" fill="#CBD5E1" stroke="#94A3B8" stroke-width="2" filter="url(#shadow)"/>
+  <!-- Door Seam Inset -->
+  <rect x="44" y="32" width="112" height="136" rx="5" fill="#94A3B8" stroke="#64748B" stroke-width="1.5"/>
+
+  <!-- Left Stainless Barrel Hinges -->
+  <rect x="35" y="46" width="7" height="18" rx="2" fill="#94A3B8"/>
+  <rect x="35" y="136" width="7" height="18" rx="2" fill="#94A3B8"/>
+
+  <!-- Right Chrome T-Handle Latch -->
+  <circle cx="146" cy="100" r="5" fill="#E2E8F0"/>
+  <rect x="144" y="90" width="4" height="20" rx="1.5" fill="#F8FAFC"/>
+
+  <!-- Top Dual Source Pilot Indicator Lights: Solar Amber (Left) & Utility Green (Right) -->
+  <circle cx="80" cy="54" r="6" fill="#F59E0B" stroke="#FEF08A" stroke-width="1.5"/>
+  <circle cx="120" cy="54" r="6" fill="#10B981" stroke="#A7F3D0" stroke-width="1.5"/>
+
+  <!-- Circular Switch Escutcheon Faceplate -->
+  <circle cx="100" cy="110" r="36" fill="#0F172A" stroke="#CBD5E1" stroke-width="2"/>
+  <!-- Top Neutral Tick -->
+  <rect x="98.5" y="79" width="3" height="6" fill="#64748B"/>
+  <!-- Left Solar Indicator Dot & Sun Icon -->
+  <circle cx="80" cy="91" r="3.5" fill="#F59E0B"/>
+  <!-- Right Utility Indicator Dot -->
+  <circle cx="120" cy="91" r="3.5" fill="#10B981"/>
+
+  <!-- Rotary Selector Hub & Angled Handle (-45 deg Solar Selected) -->
+  <circle cx="100" cy="110" r="16" fill="#475569"/>
+  <g transform="translate(100, 110) rotate(-38)">
+    <circle cx="0" cy="0" r="12" fill="#1E293B"/>
+    <rect x="-5.5" y="-28" width="11" height="32" rx="2.5" fill="#334155" stroke="#1E293B" stroke-width="1"/>
+    <rect x="-1.5" y="-24" width="3" height="20" fill="#FFFFFF"/>
+    <polygon points="0,-31 -5,-22 5,-22" fill="#FFFFFF"/>
+  </g>
 </svg>

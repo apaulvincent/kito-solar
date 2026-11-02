@@ -1,32 +1,63 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0F172A"/>
       <stop offset="100%" stop-color="#090D16"/>
     </linearGradient>
-    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(148, 163, 184, 0.08)" stroke-width="0.5"/>
-    </pattern>
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#020617" flood-opacity="0.65"/>
+    </filter>
   </defs>
-  <rect width="200" height="200" rx="12" fill="url(#bgGrad)"/>
-  <rect width="200" height="200" rx="12" fill="url(#grid)"/>
-  <rect x="2" y="2" width="196" height="196" rx="10" fill="none" stroke="rgba(148, 163, 184, 0.15)" stroke-width="1"/>
-  
-  <!-- Header Bar -->
-  <rect x="12" y="12" width="176" height="20" rx="4" fill="rgba(30, 41, 59, 0.7)"/>
-  <text x="20" y="26" fill="#F59E0B" font-size="8" font-weight="700" font-family="monospace" letter-spacing="1">ISOLATION</text>
-  <text x="180" y="26" text-anchor="end" fill="#94A3B8" font-size="8" font-family="monospace">1000V 32A-63A 4P</text>
+  <rect width="200" height="200" rx="16" fill="url(#bg)"/>
+  <!-- Unistrut Rail Behind -->
+  <rect x="14" y="92" width="172" height="16" rx="2" fill="#64748B" stroke="#475569" stroke-width="1.5"/>
+  <rect x="18" y="97" width="164" height="6" fill="#334155"/>
 
-  <!-- Technical Schematic Icon -->
-  <g transform="translate(0, 0)">
-    <rect x="50" y="30" width="100" height="140" rx="10" fill="#1E293B" stroke="#F59E0B" stroke-width="2"/>
-           <circle cx="100" cy="95" r="32" fill="#0F172A" stroke="#64748B" stroke-width="2"/>
-           <rect x="94" y="68" width="12" height="40" rx="3" fill="#EF4444"/>
-           <circle cx="100" cy="95" r="8" fill="#F59E0B"/>
-           <text x="100" y="152" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="monospace">IP66 LOCKABLE</text>
+  <!-- Top Terminal Lugs: LINE (+) Red & LINE (-) Dark Gray -->
+  <g>
+    <circle cx="76" cy="20" r="8" fill="#DC2626" stroke="#FCA5A5" stroke-width="2"/>
+    <circle cx="76" cy="20" r="3" fill="#CBD5E1"/>
+    <circle cx="124" cy="20" r="8" fill="#64748B" stroke="#CBD5E1" stroke-width="2"/>
+    <circle cx="124" cy="20" r="3" fill="#CBD5E1"/>
   </g>
 
-  <!-- Title Pill -->
-  <rect x="12" y="172" width="176" height="18" rx="4" fill="rgba(15, 23, 42, 0.85)" stroke="rgba(148, 163, 184, 0.2)" stroke-width="1"/>
-  <text x="100" y="184" text-anchor="middle" fill="#F8FAFC" font-size="8" font-weight="600" font-family="system-ui, sans-serif" letter-spacing="0.5">DC ROTARY ISOLATOR</text>
+  <!-- Bottom Terminal Lugs: LOAD (+) Red, GND Neon Green, LOAD (-) Dark Gray -->
+  <g>
+    <circle cx="74" cy="180" r="8" fill="#DC2626" stroke="#FCA5A5" stroke-width="2"/>
+    <circle cx="74" cy="180" r="3" fill="#CBD5E1"/>
+    <circle cx="100" cy="180" r="7.5" fill="#39FF14" stroke="#BBF7D0" stroke-width="1.8"/>
+    <circle cx="100" cy="180" r="2.8" fill="#052E16"/>
+    <circle cx="126" cy="180" r="8" fill="#64748B" stroke="#CBD5E1" stroke-width="2"/>
+    <circle cx="126" cy="180" r="3" fill="#CBD5E1"/>
+  </g>
+
+  <!-- IP66 Enclosure with Dark Gasket Rim (Matches NodeGeometry case 'isolator') -->
+  <rect x="42" y="28" width="116" height="144" rx="8" fill="#1E293B" stroke="#CBD5E1" stroke-width="2.5" filter="url(#shadow)"/>
+  <!-- 4 Corner Captive Screws -->
+  <circle cx="51" cy="37" r="3.5" fill="#CBD5E1"/>
+  <circle cx="149" cy="37" r="3.5" fill="#CBD5E1"/>
+  <circle cx="51" cy="163" r="3.5" fill="#CBD5E1"/>
+  <circle cx="149" cy="163" r="3.5" fill="#CBD5E1"/>
+
+  <!-- High-Visibility Safety Yellow Faceplate -->
+  <rect x="57" y="42" width="86" height="112" rx="5" fill="#F59E0B" stroke="#D97706" stroke-width="1.5"/>
+
+  <!-- Circular Dark Escutcheon Ring -->
+  <circle cx="100" cy="88" r="35" fill="#0F172A"/>
+  <!-- ON / OFF Index Marks -->
+  <rect x="97" y="57" width="6" height="3" fill="#FFFFFF"/>
+  <rect x="69" y="85" width="3" height="6" fill="#FFFFFF"/>
+
+  <!-- Yellow LOTO Hasp Ring & Red Rotary Switch Handle -->
+  <circle cx="100" cy="88" r="24" fill="#EAB308"/>
+  <circle cx="100" cy="88" r="17" fill="#DC2626" stroke="#991B1B" stroke-width="1.5"/>
+  <!-- Ribbed Red Pointer Handle (ON Position) -->
+  <rect x="93" y="58" width="14" height="44" rx="3" fill="#B91C1C" stroke="#7F1D1D" stroke-width="1"/>
+  <!-- White Pointer Triangle Tip -->
+  <polygon points="100,53 94,63 106,63" fill="#FFFFFF"/>
+
+  <!-- Bottom High-Voltage Warning Decal -->
+  <rect x="73" y="130" width="54" height="18" rx="2" fill="#0F172A"/>
+  <rect x="76" y="133" width="48" height="12" rx="1" fill="#FEF08A"/>
+  <rect x="82" y="137" width="36" height="4" fill="#DC2626"/>
 </svg>

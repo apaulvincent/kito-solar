@@ -79,7 +79,7 @@ export function PlantComponentPalette() {
     const bomKey = spec.bomAccessoryKey || spec.key;
     const custom = customPrices[bomKey];
     if (typeof custom === 'number') return custom;
-    return accessoryPriceLookup.get(bomKey) ?? spec.fallbackUnitPricePhp;
+    return spec.fallbackUnitPricePhp ?? accessoryPriceLookup.get(bomKey) ?? 0;
   };
 
   const resolveSubtitle = (spec: AddableComponentSpec): string => {
@@ -122,7 +122,7 @@ export function PlantComponentPalette() {
   return (
     <aside
       aria-label="3D Component Library"
-      className="absolute top-14 bottom-10 right-3 z-20 w-72 sm:w-80 flex flex-col rounded-xl border border-slate-200/90 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xl overflow-hidden pointer-events-auto"
+      className="w-72 sm:w-80 shrink-0 h-full z-20 flex flex-col border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden pointer-events-auto"
     >
       {/* Header */}
       <div className="px-3.5 py-2.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 bg-slate-50/80 dark:bg-slate-950/60">
@@ -225,8 +225,8 @@ export function PlantComponentPalette() {
                   : 'border-slate-200/60 dark:border-slate-800/60 bg-slate-100/60 dark:bg-slate-950/30 opacity-55 cursor-not-allowed'
               }`}
             >
-              {/* Component Illustration */}
-              <div className="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/70 p-1.5 flex items-center justify-center shrink-0">
+              {/* Component Illustration (Matches 3D View) */}
+              <div className="w-12 h-12 rounded-lg bg-[#090D16] border border-slate-700/80 p-1 flex items-center justify-center shrink-0 shadow-xs">
                 <img
                   src={spec.imagePath}
                   alt={spec.title}

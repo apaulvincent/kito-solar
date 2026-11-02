@@ -207,6 +207,7 @@ export function DiagramNodeMesh({
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
   const setHoveredNodeKey = useCalculatorStore((s) => s.setHoveredNodeKey);
   const moveBaseNode = useCalculatorStore((s) => s.moveBaseNode);
+  const removeBaseNode = useCalculatorStore((s) => s.removeBaseNode);
   const canvasTool = useCalculatorStore((s) => s.canvasTool);
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
   const gridVoltageV = useCalculatorStore((s) => s.gridVoltageV);
@@ -335,30 +336,47 @@ export function DiagramNodeMesh({
         </>
       )}
 
-      {/* Sleek Floating Hover Badge: ONLY shown when hovering in idle mode (disappears when clicked or modal is open) */}
-      {isHovered && !selectedNodeKey && (
+      {/* Sleek Floating Hover / Selection Badge with Delete Control */}
+      {(isHovered || isSelected) && (
         <Html
           position={[0, dim.yOffset + 0.35, 0]}
           center
           distanceFactor={16}
           zIndexRange={[15, 0]}
-          className="pointer-events-none select-none"
+          className="pointer-events-auto select-none"
         >
-          <div className="pointer-events-none select-none px-3 py-1.5 rounded-lg border border-slate-700/80 bg-slate-900/90 text-white shadow-xl backdrop-blur-md whitespace-nowrap animate-in fade-in duration-150">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-              <div className="flex items-baseline gap-1.5 font-mono text-[11px]">
-                <span className="font-bold text-white tracking-tight">{label}</span>
-                <span className="text-slate-500">•</span>
-                <span className="text-amber-300 font-semibold">{telemetry.rating}</span>
+          <div className="px-3 py-1.5 rounded-lg border border-slate-700/80 bg-slate-900/95 text-white shadow-xl backdrop-blur-md whitespace-nowrap animate-in fade-in duration-150">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                <div className="flex items-baseline gap-1.5 font-mono text-[11px]">
+                  <span className="font-bold text-white tracking-tight">{label}</span>
+                  <span className="text-slate-500">•</span>
+                  <span className="text-amber-300 font-semibold">{telemetry.rating}</span>
+                </div>
               </div>
+              {isSelected && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeBaseNode(nodeKey);
+                  }}
+                  title={`Remove ${label} from 3D plant room (Del)`}
+                  className="px-1.5 py-0.5 rounded bg-red-600 hover:bg-red-700 text-white font-mono text-[9px] font-bold cursor-pointer"
+                >
+                  Delete
+                </button>
+              )}
             </div>
             <div className="text-[9px] font-mono text-slate-400 mt-0.5 flex items-center justify-between gap-3">
               <span className="text-slate-400">{telemetry.category}</span>
-              <span className="text-sky-300">Click to inspect</span>
+              <span className="text-sky-300">
+                {isSelected ? 'Press Del to remove • Drag to move' : 'Click to select or delete'}
+              </span>
             </div>
             {/* Subtle Downward Pointer Indicator */}
-            <div className="w-2 h-2 mx-auto rotate-45 border-b border-r border-slate-700/80 bg-slate-900/90 -mb-2.5 mt-1" />
+            <div className="w-2 h-2 mx-auto rotate-45 border-b border-r border-slate-700/80 bg-slate-900/95 -mb-2.5 mt-1" />
           </div>
         </Html>
       )}
