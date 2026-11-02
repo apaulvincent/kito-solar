@@ -14,6 +14,8 @@ import {
   PanelRightOpen,
   AlertTriangle,
   Undo2,
+  Redo2,
+  RefreshCw,
 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { DEFAULT_SYSTEM_WIRE_SPECS } from '@/lib/layout3dEngine';
@@ -47,8 +49,15 @@ export function SolarDiagramCanvas() {
   const updateWireRouteOffset = useCalculatorStore((s) => s.updateWireRouteOffset);
   const clearAllWires = useCalculatorStore((s) => s.clearAllWires);
   const resetLayout3D = useCalculatorStore((s) => s.resetLayout3D);
+  const layout3dUndoStack = useCalculatorStore((s) => s.layout3dUndoStack);
+  const layout3dRedoStack = useCalculatorStore((s) => s.layout3dRedoStack);
+  const undoLayout3D = useCalculatorStore((s) => s.undoLayout3D);
+  const redoLayout3D = useCalculatorStore((s) => s.redoLayout3D);
   const polarityAlertMessage = useCalculatorStore((s) => s.polarityAlertMessage);
   const setPolarityAlertMessage = useCalculatorStore((s) => s.setPolarityAlertMessage);
+
+  const undoCount = layout3dUndoStack?.length || 0;
+  const redoCount = layout3dRedoStack?.length || 0;
 
   const selectedCustomNode = layout3d.placedComponents.find((c) => c.id === selectedCustomNodeId) || null;
   const selectedWire = layout3d.wires.find((w) => w.id === selectedWireId) || null;
@@ -81,6 +90,23 @@ export function SolarDiagramCanvas() {
           target.tagName === 'SELECT' ||
           target.isContentEditable)
       ) {
+        return;
+      }
+
+      // Undo: Ctrl+Z or Cmd+Z (without Shift)
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault();
+        undoLayout3D();
+        return;
+      }
+
+      // Redo: Ctrl+Y or Cmd+Y, or Ctrl+Shift+Z or Cmd+Shift+Z
+      if (
+        ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'z' || e.key === 'Z'))
+      ) {
+        e.preventDefault();
+        redoLayout3D();
         return;
       }
 
@@ -118,6 +144,8 @@ export function SolarDiagramCanvas() {
     removePlacedComponent,
     removeBaseNode,
     removeWireConnection,
+    undoLayout3D,
+    redoLayout3D,
     setCanvasTool,
     setSelectedCustomNodeId,
     setSelectedNodeKey,
@@ -385,8 +413,53 @@ export function SolarDiagramCanvas() {
             )}
           </div>
 
-          {/* Right: Clear Wires, Reset Layout, Palette Toggle & Viewport Controls */}
+          {/* Right: Undo/Redo, Clear Wires, Reset Layout, Palette Toggle & Viewport Controls */}
           <div className="flex items-center gap-1.5 pointer-events-auto">
+            {/* Undo / Redo History Controls (max 10 entries each, in-memory) */}
+            <div className="flex items-center gap-1 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-1 rounded-lg shadow-sm">
+              <button
+                type="button"
+                onClick={undoLayout3D}
+                disabled={undoCount === 0}
+                title={undoCount > 0 ? `Undo (Ctrl+Z) • ${undoCount}/10` : 'Undo (Ctrl+Z)'}
+                aria-label="Undo 3D action"
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-colors ${
+                  undoCount > 0
+                    ? 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer font-medium'
+                    : 'text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-50'
+                }`}
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+                <span className="hidden lg:inline">Undo</span>
+                {undoCount > 0 && (
+                  <span className="px-1 py-0.2 text-[10px] font-bold rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                    {undoCount}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={redoLayout3D}
+                disabled={redoCount === 0}
+                title={redoCount > 0 ? `Redo (Ctrl+Y) • ${redoCount}/10` : 'Redo (Ctrl+Y)'}
+                aria-label="Redo 3D action"
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-colors ${
+                  redoCount > 0
+                    ? 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer font-medium'
+                    : 'text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-50'
+                }`}
+              >
+                <Redo2 className="w-3.5 h-3.5" />
+                <span className="hidden lg:inline">Redo</span>
+                {redoCount > 0 && (
+                  <span className="px-1 py-0.2 text-[10px] font-bold rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                    {redoCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
             {layout3d.wires.length > 0 && (
               <button
                 type="button"
@@ -406,7 +479,7 @@ export function SolarDiagramCanvas() {
                 title="Reset custom 3D components, wires, and moved positions"
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-800 shadow-sm transition-colors cursor-pointer"
               >
-                <Undo2 className="w-3.5 h-3.5" />
+                <RefreshCw className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Reset 3D</span>
               </button>
             )}
@@ -485,7 +558,7 @@ export function SolarDiagramCanvas() {
               ? 'CUT WIRE MODE: Click any wire in 3D space to remove it • Press Esc to return to Move mode'
               : canvasTool !== 'select'
               ? 'WIRE MODE: Drag from any terminal lug to snap (+) Red, (-) Dark Gray, or (GND) Neon Green conductors'
-              : 'Drag equipment or drag any wire to organize channels • Select any component and press Del to remove'}
+              : 'Drag equipment or wires to organize • Del to remove • Ctrl+Z / Ctrl+Y to undo / redo'}
           </span>
           <span className="bg-white/95 dark:bg-slate-900/95 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm font-semibold text-slate-800 dark:text-slate-200 backdrop-blur-sm">
             BUSBAR: {calculationResult.summary.totalArrayPowerKw} kW DC → {calculationResult.summary.inverterPowerKw} kW AC

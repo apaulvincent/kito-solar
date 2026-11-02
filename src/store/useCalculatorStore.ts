@@ -115,6 +115,11 @@ interface CalculatorState {
 
   // 3D Interactive Plant Builder State & Actions
   layout3d: Layout3DState;
+  layout3dUndoStack: Layout3DState[];
+  layout3dRedoStack: Layout3DState[];
+  undoLayout3D: () => void;
+  redoLayout3D: () => void;
+  pushLayout3DUndoSnapshot: (snapshot: Layout3DState) => void;
   canvasTool: CanvasInteractionTool;
   isPaletteOpen: boolean;
   selectedCustomNodeId: string | null;
@@ -148,11 +153,37 @@ interface CalculatorState {
     toWorldPos: [number, number, number];
   }) => { ok: boolean; error?: string; wire?: WireConnection3D };
   removeWireConnection: (wireId: string) => void;
-  updateWireRouteOffset: (wireId: string, routeOffset: [number, number]) => void;
+  updateWireRouteOffset: (
+    wireId: string,
+    routeOffset: [number, number],
+    options?: { commitHistory?: boolean }
+  ) => void;
   clearAllWires: () => void;
   resetLayout3D: () => void;
   saveWorkingLayout3D: () => void;
   importLayout3DJson: (rawJson: unknown) => { ok: boolean; error?: string };
+}
+
+export const MAX_LAYOUT3D_HISTORY = 10;
+
+function cloneLayout3DSnapshot(layout: Layout3DState): Layout3DState {
+  if (typeof structuredClone === 'function') {
+    return structuredClone(layout);
+  }
+  return JSON.parse(JSON.stringify(layout));
+}
+
+function pushHistorySnapshot(
+  stack: Layout3DState[],
+  snapshot: Layout3DState,
+  limit: number = MAX_LAYOUT3D_HISTORY
+): Layout3DState[] {
+  const cloned = cloneLayout3DSnapshot(snapshot);
+  const next = [...stack, cloned];
+  if (next.length > limit) {
+    return next.slice(next.length - limit);
+  }
+  return next;
 }
 
 const WORKING_LAYOUT_STORAGE_KEY = 'kito_working_layout_3d_v1';
@@ -398,6 +429,8 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   catalogSource: 'local_seed',
   customPrices: {},
   layout3d: initialLayout3D,
+  layout3dUndoStack: [],
+  layout3dRedoStack: [],
   canvasTool: 'select',
   isPaletteOpen: true,
   selectedCustomNodeId: null,
@@ -910,6 +943,8 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       activeWorkbenchTab: 'electrical',
       customPrices,
       layout3d: restoredLayout3d,
+      layout3dUndoStack: [],
+      layout3dRedoStack: [],
       calculationResult: compute(
         inverter,
         module,
@@ -958,6 +993,8 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       activeProjectName: null,
       customPrices: {},
       layout3d: emptyLayout,
+      layout3dUndoStack: [],
+      layout3dRedoStack: [],
       canvasTool: 'select',
       selectedCustomNodeId: null,
       selectedWireId: null,
@@ -1153,8 +1190,12 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       nextLayout
     );
 
+    const nextUndo = pushHistorySnapshot(state.layout3dUndoStack, state.layout3d);
+
     set({
       layout3d: nextLayout,
+      layout3dUndoStack: nextUndo,
+      layout3dRedoStack: [],
       selectedCustomNodeId: newItem.id,
       selectedNodeKey: null,
       selectedWireId: null,
@@ -1168,6 +1209,17 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
 
   movePlacedComponent: (id, position, surface) => {
     const state = get();
+    const currentItem = state.layout3d.placedComponents.find((item) => item.id === id);
+    if (
+      currentItem &&
+      currentItem.position[0] === position[0] &&
+      currentItem.position[1] === position[1] &&
+      currentItem.position[2] === position[2] &&
+      currentItem.surface === surface
+    ) {
+      return;
+    }
+
     const updatedPlaced = state.layout3d.placedComponents.map((item) =>
       item.id === id ? { ...item, position, surface } : item
     );
@@ -1193,12 +1245,29 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       nextLayout
     );
 
-    set({ layout3d: nextLayout, calculationResult: nextCalc });
+    const nextUndo = pushHistorySnapshot(state.layout3dUndoStack, state.layout3d);
+
+    set({
+      layout3d: nextLayout,
+      layout3dUndoStack: nextUndo,
+      layout3dRedoStack: [],
+      calculationResult: nextCalc,
+    });
     syncLayoutToActiveProject(nextLayout, nextCalc);
   },
 
   moveBaseNode: (nodeKey, position) => {
     const state = get();
+    const currentExplicitPos = state.layout3d.baseNodePositions[nodeKey];
+    if (
+      currentExplicitPos &&
+      currentExplicitPos[0] === position[0] &&
+      currentExplicitPos[1] === position[1] &&
+      currentExplicitPos[2] === position[2]
+    ) {
+      return;
+    }
+
     const draftLayout: Layout3DState = {
       ...state.layout3d,
       baseNodePositions: {
@@ -1224,7 +1293,14 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       nextLayout
     );
 
-    set({ layout3d: nextLayout, calculationResult: nextCalc });
+    const nextUndo = pushHistorySnapshot(state.layout3dUndoStack, state.layout3d);
+
+    set({
+      layout3d: nextLayout,
+      layout3dUndoStack: nextUndo,
+      layout3dRedoStack: [],
+      calculationResult: nextCalc,
+    });
     syncLayoutToActiveProject(nextLayout, nextCalc);
   },
 
@@ -1256,8 +1332,12 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       nextLayout
     );
 
+    const nextUndo = pushHistorySnapshot(state.layout3dUndoStack, state.layout3d);
+
     set({
       layout3d: nextLayout,
+      layout3dUndoStack: nextUndo,
+      layout3dRedoStack: [],
       selectedNodeKey: state.selectedNodeKey === nodeKey ? null : state.selectedNodeKey,
       isInspectorOpen: state.selectedNodeKey === nodeKey ? false : state.isInspectorOpen,
       calculationResult: nextCalc,
@@ -1286,8 +1366,12 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       nextLayout
     );
 
+    const nextUndo = pushHistorySnapshot(state.layout3dUndoStack, state.layout3d);
+
     set({
       layout3d: nextLayout,
+      layout3dUndoStack: nextUndo,
+      layout3dRedoStack: [],
       selectedCustomNodeId: state.selectedCustomNodeId === id ? null : state.selectedCustomNodeId,
       calculationResult: nextCalc,
     });
@@ -1361,8 +1445,12 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       nextLayout
     );
 
+    const nextUndo = pushHistorySnapshot(state.layout3dUndoStack, state.layout3d);
+
     set({
       layout3d: nextLayout,
+      layout3dUndoStack: nextUndo,
+      layout3dRedoStack: [],
       polarityAlertMessage: null,
       calculationResult: nextCalc,
     });
@@ -1390,15 +1478,19 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       nextLayout
     );
 
+    const nextUndo = pushHistorySnapshot(state.layout3dUndoStack, state.layout3d);
+
     set({
       layout3d: nextLayout,
+      layout3dUndoStack: nextUndo,
+      layout3dRedoStack: [],
       selectedWireId: state.selectedWireId === wireId ? null : state.selectedWireId,
       calculationResult: nextCalc,
     });
     syncLayoutToActiveProject(nextLayout, nextCalc);
   },
 
-  updateWireRouteOffset: (wireId, routeOffset) => {
+  updateWireRouteOffset: (wireId, routeOffset, options) => {
     const state = get();
     const draftLayout: Layout3DState = {
       ...state.layout3d,
@@ -1432,7 +1524,18 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       nextLayout
     );
 
-    set({ layout3d: nextLayout, calculationResult: nextCalc });
+    const commitHistory = options?.commitHistory !== false;
+    const nextUndo = commitHistory
+      ? pushHistorySnapshot(state.layout3dUndoStack, state.layout3d)
+      : state.layout3dUndoStack;
+    const nextRedo = commitHistory ? [] : state.layout3dRedoStack;
+
+    set({
+      layout3d: nextLayout,
+      layout3dUndoStack: nextUndo,
+      layout3dRedoStack: nextRedo,
+      calculationResult: nextCalc,
+    });
     syncLayoutToActiveProject(nextLayout, nextCalc);
   },
 
@@ -1456,8 +1559,12 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       nextLayout
     );
 
+    const nextUndo = pushHistorySnapshot(state.layout3dUndoStack, state.layout3d);
+
     set({
       layout3d: nextLayout,
+      layout3dUndoStack: nextUndo,
+      layout3dRedoStack: [],
       selectedWireId: null,
       calculationResult: nextCalc,
     });
@@ -1485,8 +1592,12 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       emptyLayout
     );
 
+    const nextUndo = pushHistorySnapshot(state.layout3dUndoStack, state.layout3d);
+
     set({
       layout3d: emptyLayout,
+      layout3dUndoStack: nextUndo,
+      layout3dRedoStack: [],
       selectedCustomNodeId: null,
       selectedWireId: null,
       polarityAlertMessage: null,
@@ -1498,6 +1609,87 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   saveWorkingLayout3D: () => {
     const state = get();
     syncLayoutToActiveProject(state.layout3d, state.calculationResult);
+  },
+
+  pushLayout3DUndoSnapshot: (snapshot) => {
+    const state = get();
+    const nextUndo = pushHistorySnapshot(state.layout3dUndoStack, snapshot, MAX_LAYOUT3D_HISTORY);
+    set({
+      layout3dUndoStack: nextUndo,
+      layout3dRedoStack: [],
+    });
+  },
+
+  undoLayout3D: () => {
+    const state = get();
+    if (state.layout3dUndoStack.length === 0) return;
+
+    const previousLayout = state.layout3dUndoStack[state.layout3dUndoStack.length - 1];
+    const nextUndoStack = state.layout3dUndoStack.slice(0, -1);
+    const nextRedoStack = pushHistorySnapshot(
+      state.layout3dRedoStack,
+      state.layout3d,
+      MAX_LAYOUT3D_HISTORY
+    );
+
+    const nextCalc = compute(
+      state.selectedInverter,
+      state.selectedModule,
+      state.selectedBattery,
+      state.batteryCount,
+      state.gridVoltageV,
+      state.mainBreakerA,
+      state.panelCountOverride,
+      state.accessories,
+      state.customPrices,
+      previousLayout
+    );
+
+    set({
+      layout3d: previousLayout,
+      layout3dUndoStack: nextUndoStack,
+      layout3dRedoStack: nextRedoStack,
+      selectedCustomNodeId: null,
+      selectedWireId: null,
+      calculationResult: nextCalc,
+    });
+    syncLayoutToActiveProject(previousLayout, nextCalc);
+  },
+
+  redoLayout3D: () => {
+    const state = get();
+    if (state.layout3dRedoStack.length === 0) return;
+
+    const targetLayout = state.layout3dRedoStack[state.layout3dRedoStack.length - 1];
+    const nextRedoStack = state.layout3dRedoStack.slice(0, -1);
+    const nextUndoStack = pushHistorySnapshot(
+      state.layout3dUndoStack,
+      state.layout3d,
+      MAX_LAYOUT3D_HISTORY
+    );
+
+    const nextCalc = compute(
+      state.selectedInverter,
+      state.selectedModule,
+      state.selectedBattery,
+      state.batteryCount,
+      state.gridVoltageV,
+      state.mainBreakerA,
+      state.panelCountOverride,
+      state.accessories,
+      state.customPrices,
+      targetLayout
+    );
+
+    set({
+      layout3d: targetLayout,
+      layout3dUndoStack: nextUndoStack,
+      layout3dRedoStack: nextRedoStack,
+      selectedCustomNodeId: null,
+      selectedWireId: null,
+      calculationResult: nextCalc,
+    });
+    syncLayoutToActiveProject(targetLayout, nextCalc);
   },
 
   importLayout3DJson: (rawJson) => {
@@ -1538,8 +1730,12 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       nextLayout
     );
 
+    const nextUndo = pushHistorySnapshot(state.layout3dUndoStack, state.layout3d);
+
     set({
       layout3d: nextLayout,
+      layout3dUndoStack: nextUndo,
+      layout3dRedoStack: [],
       selectedCustomNodeId: null,
       selectedWireId: null,
       polarityAlertMessage: null,

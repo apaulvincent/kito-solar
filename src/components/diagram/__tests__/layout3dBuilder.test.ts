@@ -365,4 +365,67 @@ describe('3D Interactive Plant Builder: Spatial, Wiring, BOM & Persistence Suite
         ?.routeOffset
     ).toEqual([0.8, -0.4]);
   });
+
+  it('manages 3D undo and redo stacks with max of 10 entries and clears on reset/refresh', () => {
+    const store = useCalculatorStore.getState();
+
+    // 1. Initially starts with 0 undo and 0 redo entries
+    expect(store.layout3dUndoStack.length).toBe(0);
+    expect(store.layout3dRedoStack.length).toBe(0);
+
+    // 2. Perform an action (add component)
+    const addRes = store.addPlacedComponent('battery_breaker');
+    expect(addRes.ok).toBe(true);
+    expect(useCalculatorStore.getState().layout3d.placedComponents.length).toBe(1);
+    expect(useCalculatorStore.getState().layout3dUndoStack.length).toBe(1);
+    expect(useCalculatorStore.getState().layout3dRedoStack.length).toBe(0);
+
+    // 3. Perform a second action (remove a wire)
+    const firstWire = useCalculatorStore.getState().layout3d.wires[0];
+    const initialWireCount = useCalculatorStore.getState().layout3d.wires.length;
+    useCalculatorStore.getState().removeWireConnection(firstWire.id);
+    expect(useCalculatorStore.getState().layout3d.wires.length).toBe(initialWireCount - 1);
+    expect(useCalculatorStore.getState().layout3dUndoStack.length).toBe(2);
+
+    // 4. Undo the wire removal
+    useCalculatorStore.getState().undoLayout3D();
+    expect(useCalculatorStore.getState().layout3d.wires.length).toBe(initialWireCount);
+    expect(useCalculatorStore.getState().layout3dUndoStack.length).toBe(1);
+    expect(useCalculatorStore.getState().layout3dRedoStack.length).toBe(1);
+
+    // 5. Redo the wire removal
+    useCalculatorStore.getState().redoLayout3D();
+    expect(useCalculatorStore.getState().layout3d.wires.length).toBe(initialWireCount - 1);
+    expect(useCalculatorStore.getState().layout3dUndoStack.length).toBe(2);
+    expect(useCalculatorStore.getState().layout3dRedoStack.length).toBe(0);
+
+    // 6. Undo twice to get back to empty placedComponents
+    useCalculatorStore.getState().undoLayout3D(); // restores wire
+    useCalculatorStore.getState().undoLayout3D(); // removes placed component
+    expect(useCalculatorStore.getState().layout3d.placedComponents.length).toBe(0);
+    expect(useCalculatorStore.getState().layout3dUndoStack.length).toBe(0);
+    expect(useCalculatorStore.getState().layout3dRedoStack.length).toBe(2);
+
+    // 7. Verify capping at max of 10 entries (breakers cap is 32)
+    for (let i = 0; i < 15; i++) {
+      useCalculatorStore.getState().addPlacedComponent('battery_breaker');
+    }
+    // Capped at exactly 10
+    expect(useCalculatorStore.getState().layout3dUndoStack.length).toBe(10);
+    expect(useCalculatorStore.getState().layout3dRedoStack.length).toBe(0);
+
+    // 8. Undo once, then a new action clears redo stack
+    useCalculatorStore.getState().undoLayout3D();
+    expect(useCalculatorStore.getState().layout3dUndoStack.length).toBe(9);
+    expect(useCalculatorStore.getState().layout3dRedoStack.length).toBe(1);
+
+    useCalculatorStore.getState().clearAllWires();
+    expect(useCalculatorStore.getState().layout3dUndoStack.length).toBe(10);
+    expect(useCalculatorStore.getState().layout3dRedoStack.length).toBe(0); // cleared
+
+    // 9. Resetting defaults (or refreshing page) clears undo and redo stacks
+    useCalculatorStore.getState().resetToDefaults();
+    expect(useCalculatorStore.getState().layout3dUndoStack.length).toBe(0);
+    expect(useCalculatorStore.getState().layout3dRedoStack.length).toBe(0);
+  });
 });

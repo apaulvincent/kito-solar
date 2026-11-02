@@ -14,7 +14,7 @@ import {
   getNodeTerminalPorts,
   getWallObstacles,
 } from '@/lib/layout3dEngine';
-import { SnapCandidateResult, TerminalPort3D, WirePolarity } from '@/types/layout3d';
+import { SnapCandidateResult, TerminalPort3D, WirePolarity, Layout3DState } from '@/types/layout3d';
 import { NodeType } from './NodeGeometry';
 
 interface CustomWireSystemProps {
@@ -181,6 +181,7 @@ export function CustomWireSystem({
   const addWireConnection = useCalculatorStore((s) => s.addWireConnection);
   const removeWireConnection = useCalculatorStore((s) => s.removeWireConnection);
   const updateWireRouteOffset = useCalculatorStore((s) => s.updateWireRouteOffset);
+  const pushLayout3DUndoSnapshot = useCalculatorStore((s) => s.pushLayout3DUndoSnapshot);
   const setPolarityAlertMessage = useCalculatorStore((s) => s.setPolarityAlertMessage);
 
   const [hoveredPortKey, setHoveredPortKey] = useState<string | null>(null);
@@ -189,6 +190,7 @@ export function CustomWireSystem({
   const liveDragRef = useRef<LiveWireDragState | null>(null);
   const [liveRouteDrag, setLiveRouteDrag] = useState<LiveRouteDragState | null>(null);
   const liveRouteDragRef = useRef<LiveRouteDragState | null>(null);
+  const layoutBeforeRouteDragRef = useRef<Layout3DState | null>(null);
 
   const isWireMode =
     canvasTool === 'wire_pos' ||
@@ -400,13 +402,30 @@ export function CustomWireSystem({
       const deltaX = worldPt[0] - current.startWorld[0];
       const deltaY = worldPt[1] - current.startWorld[1];
 
-      updateWireRouteOffset(current.wireId, [
-        Number((current.initialOffset[0] + deltaX).toFixed(2)),
-        Number((current.initialOffset[1] + deltaY).toFixed(2)),
-      ]);
+      updateWireRouteOffset(
+        current.wireId,
+        [
+          Number((current.initialOffset[0] + deltaX).toFixed(2)),
+          Number((current.initialOffset[1] + deltaY).toFixed(2)),
+        ],
+        { commitHistory: false }
+      );
     };
 
     const handleRouteUp = () => {
+      const current = liveRouteDragRef.current;
+      if (current && layoutBeforeRouteDragRef.current) {
+        const curWire = useCalculatorStore
+          .getState()
+          .layout3d.wires.find((w) => w.id === current.wireId);
+        const curOffset = curWire?.routeOffset || [0, 0];
+        const diffX = Math.abs(curOffset[0] - current.initialOffset[0]);
+        const diffY = Math.abs(curOffset[1] - current.initialOffset[1]);
+        if (diffX > 0.001 || diffY > 0.001) {
+          pushLayout3DUndoSnapshot(layoutBeforeRouteDragRef.current);
+        }
+      }
+      layoutBeforeRouteDragRef.current = null;
       liveRouteDragRef.current = null;
       setLiveRouteDrag(null);
       onLockControls(false);
@@ -419,7 +438,15 @@ export function CustomWireSystem({
       window.removeEventListener('pointermove', handleRouteMove);
       window.removeEventListener('pointerup', handleRouteUp);
     };
-  }, [Boolean(liveRouteDrag), camera, gl, projectCursorWorld, updateWireRouteOffset, onLockControls]);
+  }, [
+    Boolean(liveRouteDrag),
+    camera,
+    gl,
+    projectCursorWorld,
+    updateWireRouteOffset,
+    pushLayout3DUndoSnapshot,
+    onLockControls,
+  ]);
 
   // Global window pointermove / pointerup listener while pulling a wire
   useEffect(() => {
@@ -755,6 +782,7 @@ export function CustomWireSystem({
         initialOffset: wire.routeOffset || [0, 0],
       };
       setSelectedWireId(wire.id);
+      layoutBeforeRouteDragRef.current = useCalculatorStore.getState().layout3d;
       liveRouteDragRef.current = initial;
       setLiveRouteDrag(initial);
       onLockControls(true);
