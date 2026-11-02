@@ -239,21 +239,21 @@ export function SolarDiagramCanvas() {
               <button
                 type="button"
                 onClick={() => setCanvasTool('wire_neg')}
-                title="Drag Negative (-) Black wire between component terminals"
+                title="Drag Negative (-) Dark Gray wire between component terminals"
                 className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
                   canvasTool === 'wire_neg'
-                    ? 'bg-slate-800 text-white border border-slate-600 shadow-xs'
+                    ? 'bg-slate-600 text-white border border-slate-400 shadow-xs'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-slate-950 border border-slate-400" />
+                <span className="w-2 h-2 rounded-full bg-slate-500 border border-slate-300" />
                 <span>- Wire</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setCanvasTool('wire_pair')}
-                title="Drag Twin (+/-) Red & Black cable pair simultaneously"
+                title="Drag Twin (+/-) Red & Dark Gray cable pair simultaneously"
                 className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
                   canvasTool === 'wire_pair'
                     ? 'bg-amber-600 text-white shadow-xs'
@@ -262,7 +262,7 @@ export function SolarDiagramCanvas() {
               >
                 <span className="inline-flex items-center -space-x-0.5">
                   <span className="w-2 h-2 rounded-full bg-red-500" />
-                  <span className="w-2 h-2 rounded-full bg-slate-950 border border-slate-400" />
+                  <span className="w-2 h-2 rounded-full bg-slate-500 border border-slate-300" />
                 </span>
                 <span>+/- Pair</span>
               </button>

@@ -531,7 +531,7 @@ export function CustomWireSystem({
     if (!pulseMeshRef.current || wirePulses.length === 0) return;
     const c = new THREE.Color();
     wirePulses.forEach((wp, idx) => {
-      c.set(wp.polarity === 'positive' ? '#EF4444' : '#38BDF8');
+      c.set(wp.polarity === 'positive' ? '#FB7185' : '#94A3B8');
       pulseMeshRef.current!.setColorAt(idx, c);
     });
     if (pulseMeshRef.current.instanceColor) {
@@ -545,7 +545,10 @@ export function CustomWireSystem({
 
     for (let i = 0; i < wirePulses.length; i++) {
       const wp = wirePulses[i];
-      const progress = (wp.phase + (t * 0.85) / wp.totalDist) % 1.0;
+      const rawProgress = (wp.phase + (t * 0.85) / wp.totalDist) % 1.0;
+      // Negative (-) wire particles flow in reverse (from destination back to source)
+      const progress =
+        wp.polarity === 'negative' ? (1.0 - rawProgress + 1.0) % 1.0 : rawProgress;
       const target = progress * wp.totalDist;
       let seg = wp.segments[0];
       for (let s = 0; s < wp.segments.length; s++) {
@@ -609,7 +612,7 @@ export function CustomWireSystem({
 
   return (
     <group>
-      {/* 1. Saved Positive (+) Red & Negative (-) Black Wire Runs */}
+      {/* 1. Saved Positive (+) Red & Negative (-) Dark Gray Wire Runs */}
       {renderedWires.map(({ wire, waypoints, lengthMeters, fromLabel, toLabel }) => {
         const isSelected = selectedWireId === wire.id;
         const isHovered = hoveredWireId === wire.id;
@@ -617,14 +620,14 @@ export function CustomWireSystem({
           wire.polarity === 'positive'
             ? '#DC2626'
             : isDark
-            ? '#1E293B'
-            : '#0F172A';
+            ? '#64748B'
+            : '#475569';
         const displayColor = isSelected
           ? '#F59E0B'
           : isHovered
           ? wire.polarity === 'positive'
             ? '#EF4444'
-            : '#475569'
+            : '#94A3B8'
           : baseColor;
         const midPoint = waypoints[Math.floor(waypoints.length / 2)] || waypoints[0];
 
@@ -638,10 +641,10 @@ export function CustomWireSystem({
                 isSelected
                   ? '#F59E0B'
                   : wire.polarity === 'positive'
-                  ? '#7F1D1D'
+                  ? '#991B1B'
                   : '#334155'
               }
-              emissiveIntensity={isSelected ? 0.55 : isHovered ? 0.35 : 0.18}
+              emissiveIntensity={isSelected ? 0.55 : isHovered ? 0.42 : 0.28}
               onClick={(e) => {
                 if (isWireMode) return;
                 e.stopPropagation();
@@ -673,7 +676,7 @@ export function CustomWireSystem({
                       wire.polarity === 'positive' ? 'text-red-400 font-bold' : 'text-slate-300 font-bold'
                     }
                   >
-                    {wire.polarity === 'positive' ? '(+) RED' : '(-) BLACK'}
+                    {wire.polarity === 'positive' ? '(+) RED' : '(-) NEGATIVE'}
                   </span>{' '}
                   • {lengthMeters}m • {fromLabel} → {toLabel}
                 </div>
@@ -706,7 +709,7 @@ export function CustomWireSystem({
                 ? '#F59E0B'
                 : liveDrag.polarity === 'positive'
                 ? '#EF4444'
-                : '#334155'
+                : '#64748B'
             }
             radius={0.03}
             emissive={
@@ -714,7 +717,7 @@ export function CustomWireSystem({
                 ? '#EF4444'
                 : liveDrag.polarity === 'positive'
                 ? '#EF4444'
-                : '#38BDF8'
+                : '#475569'
             }
             emissiveIntensity={0.6}
             opacity={0.92}
@@ -723,11 +726,11 @@ export function CustomWireSystem({
           {previewCompanionWaypoints.length >= 2 && (
             <WirePolylineSegments
               waypoints={previewCompanionWaypoints}
-              color="#1E293B"
+              color="#64748B"
               radius={0.028}
-              emissive="#38BDF8"
+              emissive="#475569"
               emissiveIntensity={0.45}
-              opacity={0.88}
+              opacity={0.9}
             />
           )}
 
@@ -812,13 +815,13 @@ export function CustomWireSystem({
               />
             </mesh>
 
-            {/* Color-Coded Insulated Terminal Stud: Red (+) / Black (-) */}
+            {/* Color-Coded Insulated Terminal Stud: Red (+) / Dark Gray (-) */}
             <mesh>
               <sphereGeometry args={[0.056, 14, 14]} />
               <meshStandardMaterial
-                color={isPos ? '#EF4444' : '#0F172A'}
-                emissive={isPos ? '#DC2626' : '#334155'}
-                emissiveIntensity={isWireMode || isPortHovered ? 0.55 : 0.25}
+                color={isPos ? '#EF4444' : '#64748B'}
+                emissive={isPos ? '#DC2626' : '#475569'}
+                emissiveIntensity={isWireMode || isPortHovered ? 0.55 : 0.3}
                 roughness={0.3}
                 metalness={0.2}
               />

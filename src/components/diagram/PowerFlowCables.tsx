@@ -1,9 +1,9 @@
 // src/components/diagram/PowerFlowCables.tsx
 import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { CableConnection, DiagramNodeKey } from '@/types/diagram';
+import { WirePolarity } from '@/types/layout3d';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 
 interface PowerFlowCablesProps {
@@ -14,8 +14,14 @@ interface PowerFlowCablesProps {
 
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
-interface RoutePathData {
+// Parallel (+/-) conductor lane offsets so Red (+) and Dark Gray (-) wires run neatly side-by-side
+const POSITIVE_LANE_OFFSET: [number, number, number] = [-0.045, 0.045, 0.025];
+const NEGATIVE_LANE_OFFSET: [number, number, number] = [0.045, -0.045, -0.005];
+
+interface ConductorPairPathData {
+  id: string;
   cableId: string;
+  polarity: WirePolarity;
   type: string;
   waypoints: [number, number, number][];
   totalDistance: number;
@@ -31,24 +37,61 @@ interface RoutePathData {
 interface ParticleInstance {
   pathIndex: number;
   phase: number;
-  type: string;
+  polarity: WirePolarity;
   isCableActive: boolean;
 }
 
 function isConduitFlowing(cableId: string, atsSource: 'solar' | 'utility'): boolean {
   if (atsSource === 'solar') {
-    // Left Switch = Solar selected to power the building loads.
-    // The utility grid feed does not supply the main panel.
     if (cableId === 'c-grid-panel') return false;
     return true;
   } else {
-    // Right Switch = Utility selected to power the building loads.
-    // Inverter AC output flow to the main panel stops:
     const inverterAcRoutes = ['c-inv-acbrk', 'c-acbrk-spd', 'c-acbrk-iso', 'c-iso-panel'];
     if (inverterAcRoutes.includes(cableId)) return false;
-    // Solar PV generation charging the battery continues:
     return true;
   }
+}
+
+function buildOffsetSegments(
+  baseWaypoints: [number, number, number][],
+  offset: [number, number, number]
+): {
+  waypoints: [number, number, number][];
+  totalDistance: number;
+  segments: ConductorPairPathData['segments'];
+} {
+  const waypoints: [number, number, number][] = baseWaypoints.map((pt) => [
+    Number((pt[0] + offset[0]).toFixed(3)),
+    Number((pt[1] + offset[1]).toFixed(3)),
+    Number((pt[2] + offset[2]).toFixed(3)),
+  ]);
+
+  let cumDist = 0;
+  const segments: ConductorPairPathData['segments'] = [];
+  for (let i = 0; i < waypoints.length - 1; i++) {
+    const p1 = waypoints[i];
+    const p2 = waypoints[i + 1];
+    const dx = p2[0] - p1[0];
+    const dy = p2[1] - p1[1];
+    const dz = p2[2] - p1[2];
+    const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (length > 0.0005) {
+      segments.push({
+        pStart: p1,
+        pEnd: p2,
+        length,
+        cumStart: cumDist,
+        cumEnd: cumDist + length,
+      });
+      cumDist += length;
+    }
+  }
+
+  return {
+    waypoints,
+    totalDistance: Math.max(cumDist, 0.0001),
+    segments,
+  };
 }
 
 export function PowerFlowCables({
@@ -64,59 +107,48 @@ export function PowerFlowCables({
   const hasInitializedRef = useRef(false);
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
-  // Compute waypoint segments and cumulative distances for each conduit route
-  const paths = useMemo<RoutePathData[]>(() => {
-    return cables.map((cable) => {
+  // Expand each route into a parallel Positive (+) Red and Negative (-) Dark Gray conductor pair
+  const pairPaths = useMemo<ConductorPairPathData[]>(() => {
+    const result: ConductorPairPathData[] = [];
+
+    for (const cable of cables) {
       const rawWaypoints =
         cable.waypoints && cable.waypoints.length >= 2
           ? cable.waypoints
           : [nodePositions[cable.from], nodePositions[cable.to]];
 
-      const waypoints = rawWaypoints.filter(Boolean) as [number, number, number][];
-      if (waypoints.length < 2) {
-        return {
+      const baseWaypoints = rawWaypoints.filter(Boolean) as [number, number, number][];
+      if (baseWaypoints.length < 2) continue;
+
+      const posData = buildOffsetSegments(baseWaypoints, POSITIVE_LANE_OFFSET);
+      const negData = buildOffsetSegments(baseWaypoints, NEGATIVE_LANE_OFFSET);
+
+      result.push(
+        {
+          id: `${cable.id}-pos`,
           cableId: cable.id,
+          polarity: 'positive',
           type: cable.type,
-          waypoints: [],
-          totalDistance: 0,
-          segments: [],
-        };
-      }
+          ...posData,
+        },
+        {
+          id: `${cable.id}-neg`,
+          cableId: cable.id,
+          polarity: 'negative',
+          type: cable.type,
+          ...negData,
+        }
+      );
+    }
 
-      let cumDist = 0;
-      const segments = [];
-      for (let i = 0; i < waypoints.length - 1; i++) {
-        const p1 = waypoints[i];
-        const p2 = waypoints[i + 1];
-        const dx = p2[0] - p1[0];
-        const dy = p2[1] - p1[1];
-        const dz = p2[2] - p1[2];
-        const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        segments.push({
-          pStart: p1,
-          pEnd: p2,
-          length,
-          cumStart: cumDist,
-          cumEnd: cumDist + length,
-        });
-        cumDist += length;
-      }
-
-      return {
-        cableId: cable.id,
-        type: cable.type,
-        waypoints,
-        totalDistance: Math.max(cumDist, 0.0001),
-        segments,
-      };
-    });
+    return result;
   }, [cables, nodePositions]);
 
-  // Generate particle slots along routes with density proportional to distance
+  // Generate particle slots along both (+) and (-) conductors
   const particles = useMemo<ParticleInstance[]>(() => {
     const list: ParticleInstance[] = [];
 
-    paths.forEach((path, r) => {
+    pairPaths.forEach((path, pathIndex) => {
       if (path.segments.length === 0 || path.totalDistance <= 0.001) return;
       if (!isConduitFlowing(path.cableId, atsSource)) return;
 
@@ -129,38 +161,29 @@ export function PowerFlowCables({
             hoveredNodeKey === cable.to)
       );
 
-      // Spacing: roughly 1 bead per 0.65m of conduit, clamped between 2 and 8 beads
-      const count = Math.max(2, Math.min(8, Math.round(path.totalDistance * 1.5)));
+      const count = Math.max(2, Math.min(7, Math.round(path.totalDistance * 1.25)));
 
       for (let p = 0; p < count; p++) {
         list.push({
-          pathIndex: r,
+          pathIndex,
           phase: p / count,
-          type: path.type,
+          polarity: path.polarity,
           isCableActive,
         });
       }
     });
 
     return list;
-  }, [paths, cables, selectedNodeKey, hoveredNodeKey, atsSource]);
+  }, [pairPaths, cables, selectedNodeKey, hoveredNodeKey, atsSource]);
 
-  // Color each instance bead according to current circuit type
+  // Color particles: bright Red/Amber on Positive (+), luminous Cool Gray/Cyan on Negative (-)
   useEffect(() => {
     if (!instancedMeshRef.current || particles.length === 0) return;
     const tempColor = new THREE.Color();
 
     for (let i = 0; i < particles.length; i++) {
       const pt = particles[i];
-      const hex =
-        pt.type === 'dc'
-          ? '#F59E0B' // Solar Amber / Gold
-          : pt.type === 'battery'
-          ? '#10B981' // Battery Emerald Green
-          : pt.type === 'ground'
-          ? '#059669' // Ground Forest Green
-          : '#0284C7'; // AC Grid / Load Electric Blue
-
+      const hex = pt.polarity === 'positive' ? '#FB7185' : '#94A3B8';
       tempColor.set(hex);
       instancedMeshRef.current.setColorAt(i, tempColor);
     }
@@ -170,7 +193,7 @@ export function PowerFlowCables({
     }
   }, [particles, atsSource]);
 
-  // Update bead positions and pulsing scale along conduit pathways
+  // Animate particles: Positive (+) flows forward (0 -> 1), Negative (-) flows in reverse (1 -> 0)
   useFrame((state) => {
     if (!instancedMeshRef.current || particles.length === 0) return;
     if (isAnimationPaused && hasInitializedRef.current) return;
@@ -179,11 +202,14 @@ export function PowerFlowCables({
 
     for (let i = 0; i < particles.length; i++) {
       const pt = particles[i];
-      const path = paths[pt.pathIndex];
+      const path = pairPaths[pt.pathIndex];
       if (!path || path.segments.length === 0 || path.totalDistance <= 0.001) continue;
 
-      const speed = 0.75;
-      const progress = (pt.phase + (t * speed) / path.totalDistance) % 1.0;
+      const speed = 0.8;
+      const rawProgress = (pt.phase + (t * speed) / path.totalDistance) % 1.0;
+      // Negative (-) particles travel in reverse from load back to source
+      const progress =
+        pt.polarity === 'negative' ? (1.0 - rawProgress + 1.0) % 1.0 : rawProgress;
       const targetDist = progress * path.totalDistance;
 
       let activeSeg = path.segments[0];
@@ -203,10 +229,9 @@ export function PowerFlowCables({
       const y = activeSeg.pStart[1] + clampedU * (activeSeg.pEnd[1] - activeSeg.pStart[1]);
       const z = activeSeg.pStart[2] + clampedU * (activeSeg.pEnd[2] - activeSeg.pStart[2]);
 
-      // Position sphere proudly on the front exterior surface of the conduit pipe
-      dummy.position.set(x, y, z + 0.055);
+      dummy.position.set(x, y, z + 0.032);
 
-      const baseScale = pt.isCableActive ? 1.3 : 1.0;
+      const baseScale = pt.isCableActive ? 1.25 : 1.0;
       const pulse = 1.0 + 0.12 * Math.sin(t * 5 + i);
       dummy.scale.setScalar(baseScale * pulse);
 
@@ -220,8 +245,8 @@ export function PowerFlowCables({
 
   return (
     <group>
-      {/* Orthogonal EMT Metallic Conduit Runs & Corner Junction Boxes */}
-      {paths.map((path) => {
+      {/* Parallel Positive (+) Red and Negative (-) Dark Gray Wire Pairs */}
+      {pairPaths.map((path) => {
         const cable = cables.find((c) => c.id === path.cableId);
         if (!cable || path.segments.length === 0) return null;
 
@@ -231,21 +256,23 @@ export function PowerFlowCables({
           hoveredNodeKey === cable.from ||
           hoveredNodeKey === cable.to;
 
-        const activeColor =
-          cable.type === 'dc'
-            ? '#D97706'
-            : cable.type === 'battery'
-            ? '#059669'
-            : cable.type === 'ground'
-            ? '#10B981'
-            : '#0284C7';
+        const isPos = path.polarity === 'positive';
+        // Positive (+) = Solar Red; Negative (-) = Visible Dark Gray (#64748B / #52525B)
+        const wireColor = isPos
+          ? isCableActive
+            ? '#EF4444'
+            : '#DC2626'
+          : isCableActive
+          ? '#94A3B8'
+          : '#64748B';
 
-        const baseEmtColor = '#94A3B8';
-        const radius = isCableActive ? 0.065 : 0.045;
+        const emissiveColor = isPos ? '#991B1B' : '#334155';
+        const emissiveIntensity = isCableActive ? 0.5 : 0.28;
+        const radius = isCableActive ? 0.035 : 0.026;
 
         return (
-          <group key={path.cableId}>
-            {/* Straight EMT Conduit Cylinders between adjacent waypoints */}
+          <group key={path.id}>
+            {/* Insulated Conductor Cylinders */}
             {path.segments.map((seg, sIdx) => {
               const start = new THREE.Vector3(...seg.pStart);
               const end = new THREE.Vector3(...seg.pEnd);
@@ -259,125 +286,54 @@ export function PowerFlowCables({
                 dir.clone().normalize()
               );
 
-              // Calculate strap positions along long conduit runs
-              const strapTValues: number[] =
-                dist >= 2.2 ? [0.3, 0.7] : dist >= 0.75 ? [0.5] : [];
-
               return (
-                <group key={`seg-${sIdx}`}>
-                  {/* Main EMT Metallic Conduit Pipe */}
-                  <group position={midpoint} quaternion={quaternion}>
-                    <mesh castShadow receiveShadow>
-                      <cylinderGeometry args={[radius, radius, dist, 20]} />
-                      <meshStandardMaterial
-                        color={isCableActive ? activeColor : baseEmtColor}
-                        metalness={0.88}
-                        roughness={0.20}
-                        emissive={isCableActive ? activeColor : '#000000'}
-                        emissiveIntensity={isCableActive ? 0.45 : 0}
-                      />
-                    </mesh>
-                  </group>
-
-                  {/* 2-Hole Galvanized Steel Conduit Straps anchoring to wall */}
-                  {strapTValues.map((tVal, stIdx) => {
-                    const strapPos = new THREE.Vector3().lerpVectors(start, end, tVal);
-                    return (
-                      <group
-                        key={`strap-${sIdx}-${stIdx}`}
-                        position={strapPos}
-                        quaternion={quaternion}
-                      >
-                        {/* Curved Strap Saddle over Pipe */}
-                        <mesh position={[0, 0, 0]}>
-                          <cylinderGeometry args={[radius + 0.012, radius + 0.012, 0.045, 16]} />
-                          <meshStandardMaterial
-                            color="#64748B"
-                            metalness={0.85}
-                            roughness={0.25}
-                          />
-                        </mesh>
-                        {/* 2-Hole Mounting Base Plate */}
-                        <mesh position={[0, 0, -0.015]}>
-                          <boxGeometry args={[radius * 2 + 0.08, 0.04, 0.012]} />
-                          <meshStandardMaterial
-                            color="#475569"
-                            metalness={0.85}
-                            roughness={0.25}
-                          />
-                        </mesh>
-                        {/* Left & Right Mounting Lag Screws */}
-                        <mesh position={[-(radius + 0.03), 0, -0.01]}>
-                          <cylinderGeometry args={[0.008, 0.008, 0.015, 8]} />
-                          <meshStandardMaterial color="#CBD5E1" metalness={0.9} />
-                        </mesh>
-                        <mesh position={[radius + 0.03, 0, -0.01]}>
-                          <cylinderGeometry args={[0.008, 0.008, 0.015, 8]} />
-                          <meshStandardMaterial color="#CBD5E1" metalness={0.9} />
-                        </mesh>
-                      </group>
-                    );
-                  })}
+                <group key={`seg-${sIdx}`} position={midpoint} quaternion={quaternion}>
+                  <mesh castShadow receiveShadow>
+                    <cylinderGeometry args={[radius, radius, dist, 14]} />
+                    <meshStandardMaterial
+                      color={wireColor}
+                      metalness={0.28}
+                      roughness={0.34}
+                      emissive={emissiveColor}
+                      emissiveIntensity={emissiveIntensity}
+                    />
+                  </mesh>
                 </group>
               );
             })}
 
-            {/* Cast Aluminum 90-Degree Conduit Bodies (LB / LL Fittings) at Intermediate Corners */}
+            {/* Molded 90-Degree Cable Bend Elbows */}
             {path.waypoints.slice(1, -1).map((wpt, cIdx) => (
-              <group key={`corner-${cIdx}`} position={wpt}>
-                {/* Cast Aluminum Rounded Enclosure Body */}
-                <RoundedBox
-                  args={[0.13, 0.13, 0.13]}
-                  radius={0.02}
-                  smoothness={4}
-                  castShadow
-                  receiveShadow
-                >
-                  <meshStandardMaterial
-                    color={isCableActive ? activeColor : '#64748B'}
-                    metalness={0.85}
-                    roughness={0.25}
-                    emissive={isCableActive ? activeColor : '#000000'}
-                    emissiveIntensity={isCableActive ? 0.35 : 0}
-                  />
-                </RoundedBox>
-                {/* Gasketed Access Cover Plate */}
-                <mesh position={[0, 0, 0.068]}>
-                  <boxGeometry args={[0.09, 0.09, 0.01]} />
-                  <meshStandardMaterial color="#334155" roughness={0.4} metalness={0.7} />
-                </mesh>
-                {/* 2x Stainless Cover Screws */}
-                <mesh position={[0, 0.032, 0.075]}>
-                  <cylinderGeometry args={[0.008, 0.008, 0.006, 8]} />
-                  <meshStandardMaterial color="#CBD5E1" metalness={0.9} />
-                </mesh>
-                <mesh position={[0, -0.032, 0.075]}>
-                  <cylinderGeometry args={[0.008, 0.008, 0.006, 8]} />
-                  <meshStandardMaterial color="#CBD5E1" metalness={0.9} />
-                </mesh>
-              </group>
+              <mesh key={`elbow-${cIdx}`} position={wpt} castShadow>
+                <sphereGeometry args={[radius * 1.12, 10, 10]} />
+                <meshStandardMaterial
+                  color={wireColor}
+                  metalness={0.28}
+                  roughness={0.34}
+                  emissive={emissiveColor}
+                  emissiveIntensity={emissiveIntensity}
+                />
+              </mesh>
             ))}
 
-            {/* Threaded Compression Connector Hubs at Conduit Terminations */}
+            {/* Metallic Crimp Lug Boots at Terminations */}
             {[path.waypoints[0], path.waypoints[path.waypoints.length - 1]].map(
               (termWpt, termIdx) => (
-                <group key={`term-${termIdx}`} position={termWpt}>
-                  <mesh rotation={[Math.PI / 2, 0, 0]}>
-                    <cylinderGeometry args={[radius + 0.02, radius + 0.02, 0.04, 6]} />
-                    <meshStandardMaterial
-                      color="#94A3B8"
-                      metalness={0.88}
-                      roughness={0.22}
-                    />
-                  </mesh>
-                </group>
+                <mesh key={`term-${termIdx}`} position={termWpt}>
+                  <cylinderGeometry args={[radius * 1.35, radius * 1.35, 0.04, 10]} />
+                  <meshStandardMaterial
+                    color={isPos ? '#FCA5A5' : '#CBD5E1'}
+                    metalness={0.85}
+                    roughness={0.22}
+                  />
+                </mesh>
               )
             )}
           </group>
         );
       })}
 
-      {/* Animated Electric Current Energy Flow Pulses (Instanced Luminous Spheres) */}
+      {/* Animated Bidirectional Current Pulses (+ Forward, - Reverse) */}
       {particles.length > 0 && (
         <instancedMesh
           key={`particles-${particles.length}-${atsSource}`}
@@ -385,7 +341,7 @@ export function PowerFlowCables({
           args={[undefined, undefined, particles.length]}
           frustumCulled={false}
         >
-          <sphereGeometry args={[0.075, 16, 16]} />
+          <sphereGeometry args={[0.048, 12, 12]} />
           <meshBasicMaterial toneMapped={false} />
         </instancedMesh>
       )}
