@@ -769,7 +769,7 @@ export function CustomWireSystem({
   return (
     <group>
       {/* 1. Saved Positive (+) Red, Negative (-) Dark Gray & Ground (GND) Neon Green Wire Runs */}
-      {renderedWires.map(({ wire, waypoints, lengthMeters, fromLabel, toLabel }) => {
+      {renderedWires.map(({ wire, waypoints }) => {
         const isSelected = selectedWireId === wire.id;
         const isHovered = hoveredWireId === wire.id;
         const isGnd = wire.polarity === 'ground';
@@ -891,50 +891,6 @@ export function CustomWireSystem({
                   metalness={0.4}
                 />
               </mesh>
-            )}
-
-            {(isSelected || isHovered) && midPoint && (
-              <Html
-                position={[midPoint[0], midPoint[1] + 0.34, midPoint[2]]}
-                center
-                distanceFactor={15}
-                zIndexRange={[18, 0]}
-                className="select-none"
-              >
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-900/95 border border-slate-700 text-white text-[10px] font-mono whitespace-nowrap shadow-lg">
-                  <span
-                    className={
-                      isPos
-                        ? 'text-red-400 font-bold'
-                        : isGnd
-                        ? 'text-emerald-400 font-bold'
-                        : 'text-slate-300 font-bold'
-                    }
-                  >
-                    {isPos ? '(+) RED' : isGnd ? '(GND) NEON GREEN' : '(-) NEGATIVE'}
-                  </span>
-                  <span>
-                    • {lengthMeters}m • {fromLabel} → {toLabel}
-                  </span>
-                  {isCutMode ? (
-                    <span className="ml-1 px-1.5 py-0.5 rounded bg-red-600 text-white font-bold">
-                      Click to Remove
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={(ev) => {
-                        ev.stopPropagation();
-                        removeWireConnection(wire.id);
-                      }}
-                      className="ml-1 px-1.5 py-0.5 rounded bg-red-600/90 hover:bg-red-500 text-white font-bold cursor-pointer pointer-events-auto"
-                      title="Remove this wire"
-                    >
-                      Cut
-                    </button>
-                  )}
-                </div>
-              </Html>
             )}
           </group>
         );
