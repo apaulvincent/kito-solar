@@ -142,6 +142,40 @@ describe('Calculator Engine Unit Test Suite', () => {
       expect(strings.panelsPerString).toBeGreaterThan(0);
       expect(strings.voltagePerStringVmp).toBeGreaterThan(0);
     });
+
+    it('dynamically optimizes string count for multi-input inverters to avoid MPPT undervoltage', () => {
+      const deye6k = (invertersSeed as SolarInverterRecord[]).find(
+        (i) => i.model === 'SUN-6K-SG05LP1-EU'
+      );
+      const aiko500 = (modulesSeed as SolarModuleRecord[]).find(
+        (m) => m.model === 'AIKO-M-500'
+      );
+      expect(deye6k).toBeDefined();
+      expect(aiko500).toBeDefined();
+      if (!deye6k || !aiko500) return;
+
+      // 12 panels on Deye 6kW (2/2+2 config with 150-425V MPPT range)
+      // Must pick 2 strings of 6 panels (244.8V Vmp), NOT 4 strings of 3 panels (122.4V)
+      const strings = calculateStringSizing(deye6k, aiko500, 12);
+      expect(strings.recommendedStrings).toBe(2);
+      expect(strings.panelsPerString).toBe(6);
+      expect(strings.voltagePerStringVmp).toBe(244.8);
+      expect(strings.voltagePerStringVoc).toBe(293.4);
+      expect(strings.withinMpptRange).toBe(true);
+
+      const system = calculateSystem({
+        inverter: deye6k,
+        module: aiko500,
+        battery: sampleBattery,
+        batteryCount: 1,
+        gridVoltageV: 230,
+        mainBreakerA: 100,
+        panelCountOverride: 12,
+      });
+
+      const mpptWarning = system.warnings.find((w) => w.id === 'mppt-voltage-out-of-range');
+      expect(mpptWarning).toBeUndefined();
+    });
   });
 
   describe('Safety & System Validation Warnings', () => {
