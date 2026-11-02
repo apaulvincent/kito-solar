@@ -5,6 +5,7 @@ import {
   SystemType,
   ProjectCostItem,
   ProjectCostSummary,
+  PvSizingResult,
 } from '@/types/calculator';
 
 import { calculateDc } from './calculateDc';
@@ -78,9 +79,27 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
   }
 
   // Sizing calculations
-  const pvSizing = calculatePvSizing(inverter, module, panelCountOverride);
-  const totalEffectivePanels = pvSizing.activePanelCount + addedPanelsFrom3D;
-  const stringSizing = calculateStringSizing(inverter, module, pvSizing.activePanelCount);
+  const basePvSizing = calculatePvSizing(inverter, module, panelCountOverride);
+  const totalEffectivePanels = basePvSizing.activePanelCount + addedPanelsFrom3D;
+  const moduleWattW = parseNumericValue(module.pv_wattage_w) || 0;
+  const totalPvPowerW = totalEffectivePanels * moduleWattW;
+  const ratedAcPower = parseNumericValue(inverter.rated_ac_power_w) || 0;
+  const dcAcRatio = ratedAcPower > 0 ? Number((totalPvPowerW / ratedAcPower).toFixed(2)) : 1.0;
+  const voc = Number(module.voc_v) || 1;
+  const vmp = Number(module.vmp_v) || 1;
+  const totalVocV = Number((totalEffectivePanels * voc).toFixed(1));
+  const totalVmpV = Number((totalEffectivePanels * vmp).toFixed(1));
+
+  const pvSizing: PvSizingResult = {
+    ...basePvSizing,
+    activePanelCount: totalEffectivePanels,
+    totalPvPowerW,
+    dcAcRatio,
+    totalVocV,
+    totalVmpV,
+  };
+
+  const stringSizing = calculateStringSizing(inverter, module, totalEffectivePanels);
   const dc = calculateDc(inverter, module);
   const ac = calculateAc(inverter, gridVoltageV, mainBreakerA);
   const fallback3DBattery =
@@ -96,7 +115,7 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
   const mounting = calculateMounting(totalEffectivePanels, stringSizing.recommendedStrings + addedPvArrays, accessoryPriceMap);
   const baseMountingCostPhp =
     addedPvArrays > 0
-      ? calculateMounting(pvSizing.activePanelCount, stringSizing.recommendedStrings, accessoryPriceMap).totalMountingCostPhp || 0
+      ? calculateMounting(basePvSizing.activePanelCount, calculateStringSizing(inverter, module, basePvSizing.activePanelCount).recommendedStrings, accessoryPriceMap).totalMountingCostPhp || 0
       : mounting.totalMountingCostPhp || 0;
   const extraMountingFrom3DPhp = Math.max(0, (mounting.totalMountingCostPhp || 0) - baseMountingCostPhp);
 
@@ -195,7 +214,6 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
   // Summary Metrics
   const singleInvKw = Number(((parseNumericValue(inverter.rated_ac_power_w) / 1000) || 0).toFixed(1));
   const totalInverterUnits = 1 + addedInverters;
-  const moduleWattW = parseNumericValue(module.pv_wattage_w) || 0;
   const effectiveArrayPowerKw = Number(((totalEffectivePanels * moduleWattW) / 1000).toFixed(2));
 
   const summary = {

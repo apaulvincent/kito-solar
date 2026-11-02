@@ -199,6 +199,10 @@ describe('3D Interactive Plant Builder: Spatial, Wiring, BOM & Persistence Suite
     const afterSummary = afterAddState.calculationResult.costSummary;
 
     expect(afterAddState.calculationResult.summary.totalPanels).toBe(baselinePanels + 3);
+    expect(afterAddState.calculationResult.pvSizing.activePanelCount).toBe(baselinePanels + 3);
+    expect(afterAddState.calculationResult.pvSizing.totalPvPowerW).toBe(
+      (baselinePanels + 3) * Number(afterAddState.selectedModule.pv_wattage_w)
+    );
     expect(afterSummary.custom3dSummary?.totalAddedComponents).toBe(4);
     expect(afterSummary.custom3dSummary?.totalWireCount).toBe(2);
     expect(afterSummary.custom3dSummary?.positiveWireMeters).toBeGreaterThan(0);

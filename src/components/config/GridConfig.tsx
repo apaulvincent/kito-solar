@@ -47,6 +47,11 @@ export function GridConfig() {
   const setGridVoltage = useCalculatorStore((s) => s.setGridVoltage);
   const setMainBreaker = useCalculatorStore((s) => s.setMainBreaker);
   const setPanelCountOverride = useCalculatorStore((s) => s.setPanelCountOverride);
+  const layout3d = useCalculatorStore((s) => s.layout3d);
+
+  const added3DPvArrays =
+    layout3d?.placedComponents?.filter((p) => p.catalogKey === 'pv_array_unit').length || 0;
+  const addedPanelsFrom3D = added3DPvArrays * 3;
 
   const activePanels = calculationResult.pvSizing.activePanelCount;
   const minPanels = calculationResult.pvSizing.minPanels;
@@ -173,11 +178,11 @@ export function GridConfig() {
                 onClick={() => setPanelCountOverride(null)}
                 className="text-[10px] font-mono text-amber-600 dark:text-amber-400 hover:underline font-semibold"
               >
-                Reset to Recommended ({recPanels})
+                Reset to Recommended ({recPanels + addedPanelsFrom3D})
               </button>
             )}
             <span className="text-xs font-mono font-black text-amber-700 dark:text-amber-300 bg-white dark:bg-slate-900 px-2.5 py-0.5 rounded border border-slate-200 dark:border-slate-800 shadow-subtle">
-              {activePanels} Panels ({(calculationResult.pvSizing.totalPvPowerW / 1000).toFixed(2)} kWp)
+              {activePanels} Panels{addedPanelsFrom3D > 0 ? ` (${activePanels - addedPanelsFrom3D} Base + ${addedPanelsFrom3D} in 3D)` : ''} ({(calculationResult.pvSizing.totalPvPowerW / 1000).toFixed(2)} kWp)
             </span>
           </div>
         </div>
@@ -186,16 +191,22 @@ export function GridConfig() {
         <div className="space-y-1">
           <input
             type="range"
-            min={Math.max(1, minPanels - 2)}
-            max={maxPanels + 4}
+            min={Math.max(1, minPanels - 2 + addedPanelsFrom3D)}
+            max={Math.max(maxPanels + 4 + addedPanelsFrom3D, activePanels + 2)}
             value={activePanels}
-            onChange={(e) => setPanelCountOverride(Number(e.target.value))}
+            onChange={(e) => {
+              const targetTotal = Number(e.target.value);
+              const baseOverride = Math.max(1, targetTotal - addedPanelsFrom3D);
+              setPanelCountOverride(baseOverride);
+            }}
             className="w-full accent-amber-600 cursor-pointer h-2 bg-slate-200 dark:bg-slate-800 rounded-lg"
           />
           <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400 font-medium">
-            <span>Min: {minPanels}</span>
-            <span className="text-amber-600 dark:text-amber-400 font-bold">Recommended: {recPanels}</span>
-            <span>Max: {maxPanels}</span>
+            <span>Min: {minPanels + addedPanelsFrom3D}</span>
+            <span className="text-amber-600 dark:text-amber-400 font-bold">
+              Recommended: {recPanels + addedPanelsFrom3D}
+            </span>
+            <span>Max: {maxPanels + addedPanelsFrom3D}</span>
           </div>
         </div>
       </div>
