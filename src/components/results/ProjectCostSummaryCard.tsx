@@ -171,12 +171,14 @@ export function ProjectCostSummaryCard() {
             )}
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap self-start md:self-auto">
+        <div className="flex flex-col items-end gap-2.5 self-end md:self-center flex-shrink-0">
           <button
             type="button"
             onClick={toggleOpen}
             aria-expanded={isOpen}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border font-mono text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95 ${
+            title={isOpen ? 'Hide ROI and discipline breakdowns' : 'Show ROI and discipline breakdowns'}
+            aria-label={isOpen ? 'Hide ROI' : 'Show ROI'}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:py-2 rounded-xl border font-mono text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95 ${
               isOpen
                 ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700'
                 : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
@@ -185,13 +187,13 @@ export function ProjectCostSummaryCard() {
             {isOpen ? (
               <>
                 <EyeOff className="w-3.5 h-3.5" />
-                <span>Hide ROI &amp; Subtotals</span>
+                <span>ROI</span>
                 <ChevronUp className="w-3.5 h-3.5 opacity-60" />
               </>
             ) : (
               <>
                 <Eye className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                <span>Show ROI &amp; Subtotals</span>
+                <span>ROI</span>
                 <ChevronDown className="w-3.5 h-3.5 opacity-60" />
               </>
             )}
@@ -200,10 +202,10 @@ export function ProjectCostSummaryCard() {
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 font-mono text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
+            className="inline-flex items-center gap-2 px-4 py-2 sm:py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 font-mono text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
           >
             <Receipt className="w-3.5 h-3.5 text-amber-500" />
-            <span>View Itemized Pricing</span>
+            <span>View Pricing</span>
           </button>
         </div>
       </div>

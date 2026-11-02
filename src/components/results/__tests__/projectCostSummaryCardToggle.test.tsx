@@ -45,9 +45,8 @@ describe('ProjectCostSummaryCard ROI & Subtotals Toggle Suite', () => {
     expect(markup).toContain('FINANCIALS &amp; BILL OF MATERIALS (BOM)');
     expect(markup).toContain('Estimated Project Investment');
     expect(markup).toContain('ESTIMATED SYSTEM TOTAL INVESTMENT');
-    expect(markup).toContain('View Itemized Pricing');
-    expect(markup).toContain('Show ROI &amp; Subtotals');
-    expect(markup).not.toContain('Hide ROI &amp; Subtotals');
+    expect(markup).toContain('View Pricing');
+    expect(markup).toContain('>ROI<');
 
     // Financial ROI and Discipline Subtotals MUST be hidden by default
     expect(markup).not.toContain('FINANCIAL SAVINGS &amp; ROI ANALYSIS');
@@ -61,7 +60,8 @@ describe('ProjectCostSummaryCard ROI & Subtotals Toggle Suite', () => {
     const markup = renderToStaticMarkup(createElement(ProjectCostSummaryCard));
 
     expect(markup).toContain('ESTIMATED SYSTEM TOTAL INVESTMENT');
-    expect(markup).toContain('Hide ROI &amp; Subtotals');
+    expect(markup).toContain('>ROI<');
+    expect(markup).toContain('View Pricing');
 
     // Expanded details are revealed
     expect(markup).toContain('FINANCIAL SAVINGS &amp; ROI ANALYSIS');
