@@ -34,11 +34,12 @@ describe('3D Interactive Plant Builder: Spatial, Wiring, BOM & Persistence Suite
     expect(SCENE_LIMITS.byGroup.breakers).toBe(32);
     expect(ADDABLE_COMPONENT_CATALOG.length).toBe(14);
 
-    // Baseline layout starts with port-to-port (+/-) wires replacing the old center-to-center conduit
+    // Baseline layout starts with port-to-port (+), (-), and (ground) wires replacing the old center-to-center conduit
     const initialLayout = createEmptyLayout3D();
     expect(initialLayout.wires.length).toBe(DEFAULT_SYSTEM_WIRE_SPECS.length);
     expect(initialLayout.wires.some((w) => w.polarity === 'positive')).toBe(true);
     expect(initialLayout.wires.some((w) => w.polarity === 'negative')).toBe(true);
+    expect(initialLayout.wires.some((w) => w.polarity === 'ground')).toBe(true);
   });
 
   it('enforces per-category commercial component caps and prevents exceeding limits', () => {
@@ -286,5 +287,27 @@ describe('3D Interactive Plant Builder: Spatial, Wiring, BOM & Persistence Suite
 
     // Verify malformed JSON degrades safely
     expect(sanitizeLayout3D({ broken: true }).placedComponents).toEqual([]);
+  });
+
+  it('supports dragging wires to organize channels, grounding wires, and removing individual or all wires', () => {
+    const store = useCalculatorStore.getState();
+    const firstWire = store.layout3d.wires[0];
+    expect(firstWire).toBeDefined();
+
+    // Drag wire channel offset to organize layout
+    store.updateWireRouteOffset(firstWire.id, [0.45, -0.35]);
+    const updatedWire = useCalculatorStore
+      .getState()
+      .layout3d.wires.find((w) => w.id === firstWire.id);
+    expect(updatedWire?.routeOffset).toEqual([0.45, -0.35]);
+
+    // Remove a single wire
+    const countBeforeRemove = useCalculatorStore.getState().layout3d.wires.length;
+    store.removeWireConnection(firstWire.id);
+    expect(useCalculatorStore.getState().layout3d.wires.length).toBe(countBeforeRemove - 1);
+
+    // Clear all wires at once
+    store.clearAllWires();
+    expect(useCalculatorStore.getState().layout3d.wires.length).toBe(0);
   });
 });

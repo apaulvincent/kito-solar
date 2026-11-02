@@ -173,6 +173,7 @@ export interface Custom3DBomSummary {
   totalWireCount: number;
   positiveWireMeters: number;
   negativeWireMeters: number;
+  groundWireMeters?: number;
   addedSubtotalPhp: number;
 }
 

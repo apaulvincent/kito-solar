@@ -13,6 +13,7 @@ import {
   Columns2,
   Move,
   Trash2,
+  Scissors,
   PanelRightOpen,
   AlertTriangle,
   Undo2,
@@ -47,6 +48,8 @@ export function SolarDiagramCanvas() {
   const setSelectedWireId = useCalculatorStore((s) => s.setSelectedWireId);
   const removePlacedComponent = useCalculatorStore((s) => s.removePlacedComponent);
   const removeWireConnection = useCalculatorStore((s) => s.removeWireConnection);
+  const updateWireRouteOffset = useCalculatorStore((s) => s.updateWireRouteOffset);
+  const clearAllWires = useCalculatorStore((s) => s.clearAllWires);
   const resetLayout3D = useCalculatorStore((s) => s.resetLayout3D);
   const polarityAlertMessage = useCalculatorStore((s) => s.polarityAlertMessage);
   const setPolarityAlertMessage = useCalculatorStore((s) => s.setPolarityAlertMessage);
@@ -270,6 +273,34 @@ export function SolarDiagramCanvas() {
                 </span>
                 <span>+/- Pair</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setCanvasTool('wire_gnd')}
+                title="Drag Neon Green Grounding (GND) wire between equipment and ground busbar (no particles)"
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
+                  canvasTool === 'wire_gnd'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-[#39FF14] shadow-[0_0_6px_#39FF14]" />
+                <span>GND</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCanvasTool('wire_cut')}
+                title="Remove Wirings Mode: click any wire in 3D space to remove it"
+                className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
+                  canvasTool === 'wire_cut'
+                    ? 'bg-red-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400'
+                }`}
+              >
+                <Scissors className="w-3.5 h-3.5" />
+                <span>Cut Wire</span>
+              </button>
             </div>
           )}
 
@@ -337,17 +368,37 @@ export function SolarDiagramCanvas() {
             </span>
           )}
 
-          {/* Contextual Custom Wire Selection Pill + Delete */}
+          {/* Contextual Custom Wire Selection Pill + Organize / Delete */}
           {selectedWire && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-slate-900/95 border border-amber-500/70 text-white shadow-sm backdrop-blur-md">
               <span
                 className={
-                  selectedWire.polarity === 'positive' ? 'text-red-400 font-bold' : 'text-sky-300 font-bold'
+                  selectedWire.polarity === 'positive'
+                    ? 'text-red-400 font-bold'
+                    : selectedWire.polarity === 'ground'
+                    ? 'text-emerald-400 font-bold'
+                    : 'text-slate-300 font-bold'
                 }
               >
-                {selectedWire.polarity === 'positive' ? '(+) RED' : '(-) BLACK'}
+                {selectedWire.polarity === 'positive'
+                  ? '(+) RED'
+                  : selectedWire.polarity === 'ground'
+                  ? '(GND) GREEN'
+                  : '(-) DARK GRAY'}
               </span>
               <span>{selectedWire.lengthMeters}m</span>
+              {selectedWire.routeOffset &&
+                (Math.abs(selectedWire.routeOffset[0]) > 0.01 ||
+                  Math.abs(selectedWire.routeOffset[1]) > 0.01) && (
+                  <button
+                    type="button"
+                    onClick={() => updateWireRouteOffset(selectedWire.id, [0, 0])}
+                    title="Reset wire route to automatic obstacle-free channel"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 text-[10px] font-bold cursor-pointer"
+                  >
+                    Auto Route
+                  </button>
+                )}
               <button
                 type="button"
                 onClick={() => removeWireConnection(selectedWire.id)}
@@ -361,14 +412,26 @@ export function SolarDiagramCanvas() {
           )}
         </div>
 
-        {/* Right: Palette Toggle, Reset Layout & Viewport Controls */}
+        {/* Right: Palette Toggle, Clear Wires, Reset Layout & Viewport Controls */}
         <div className="flex items-center gap-1.5 pointer-events-auto">
+          {(viewMode === '3d' || viewMode === 'split') && layout3d.wires.length > 0 && (
+            <button
+              type="button"
+              onClick={clearAllWires}
+              title="Remove all wirings in 3D space"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 dark:hover:border-red-800 shadow-sm transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Clear Wires</span>
+            </button>
+          )}
+
           {(viewMode === '3d' || viewMode === 'split') && hasCustomLayoutChanges && (
             <button
               type="button"
               onClick={resetLayout3D}
               title="Reset custom 3D components, wires, and moved positions"
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 dark:hover:border-red-800 shadow-sm transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-800 shadow-sm transition-colors cursor-pointer"
             >
               <Undo2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Reset 3D</span>
@@ -450,12 +513,14 @@ export function SolarDiagramCanvas() {
       {/* Bottom Telemetry Bar */}
       <div className="absolute bottom-2.5 left-3 right-3 z-20 flex items-center justify-between text-[11px] font-mono text-slate-600 dark:text-slate-400 pointer-events-none">
         <span className="hidden sm:inline bg-white/95 dark:bg-slate-900/95 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-sm">
-          {canvasTool !== 'select'
-            ? 'WIRE MODE: Drag from any terminal lug to snap (+) Red or (-) Dark Gray conductors onto target terminals'
+          {canvasTool === 'wire_cut'
+            ? 'CUT WIRE MODE: Click any wire in 3D space to remove it • Press Esc to return to Move mode'
+            : canvasTool !== 'select'
+            ? 'WIRE MODE: Drag from any terminal lug to snap (+) Red, (-) Dark Gray, or (GND) Neon Green conductors'
             : viewMode === '3d'
-            ? 'Drag equipment across wall or floor • Switch to +Wire / -Wire to attach conductors • Click base node for derivations'
+            ? 'Drag equipment or drag any wire to organize channels • Use Cut Wire / Clear Wires to remove wirings'
             : viewMode === 'split'
-            ? 'Synchronized 3D CAD & 2D Schematic • Flow: 🟡 Solar DC • 🟢 Battery • 🔵 AC'
+            ? 'Synchronized 3D CAD & 2D Schematic • Flow: (+) Red • (-) Dark Gray • (GND) Neon Green'
             : 'Click component to inspect derivations • Drag canvas to pan • Scroll to zoom'}
         </span>
         <span className="bg-white/95 dark:bg-slate-900/95 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm font-semibold text-slate-800 dark:text-slate-200 backdrop-blur-sm">

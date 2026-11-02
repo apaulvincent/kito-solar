@@ -409,25 +409,32 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
     );
   }
 
-  // Custom 3D (+/-) Polarity Wire Runs (exclude baseline system port-to-port wires)
+  // Custom 3D (+/- & GND) Polarity Wire Runs (exclude baseline system port-to-port wires)
   const customWires = (layout3d?.wires || []).filter((w) => !w.id.startsWith('base_wire_'));
   let positiveWireMeters = 0;
   let negativeWireMeters = 0;
+  let groundWireMeters = 0;
   for (const w of customWires) {
     if (w.polarity === 'positive') {
       positiveWireMeters += w.lengthMeters;
-    } else {
+    } else if (w.polarity === 'negative') {
       negativeWireMeters += w.lengthMeters;
+    } else {
+      groundWireMeters += w.lengthMeters;
     }
   }
   positiveWireMeters = Number(positiveWireMeters.toFixed(1));
   negativeWireMeters = Number(negativeWireMeters.toFixed(1));
-  const totalCustomWireMeters = Math.ceil(positiveWireMeters + negativeWireMeters);
+  groundWireMeters = Number(groundWireMeters.toFixed(1));
+  const totalCustomWireMeters = Math.ceil(
+    positiveWireMeters + negativeWireMeters + groundWireMeters
+  );
 
   if (customWires.length > 0 && totalCustomWireMeters > 0) {
+    const gndLabel = groundWireMeters > 0 ? ` / ${groundWireMeters}m GND` : '';
     addSwitchgearItem(
       'custom_3d_wiring',
-      `3D Polarity Conductor Runs (+${positiveWireMeters}m Red / -${negativeWireMeters}m Dark Gray)`,
+      `3D Polarity Conductor Runs (+${positiveWireMeters}m Red / -${negativeWireMeters}m Dark Gray${gndLabel})`,
       'wiring',
       0,
       'm',
@@ -489,6 +496,7 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
       totalWireCount: customWires.length,
       positiveWireMeters,
       negativeWireMeters,
+      groundWireMeters,
       addedSubtotalPhp: Math.round(addedSubtotalPhp),
     },
     financialRoi: {

@@ -369,30 +369,38 @@ export const DEFAULT_SYSTEM_WIRE_SPECS: ReadonlyArray<{
   // Automatic Transfer Switch (ATS) -> Building Load
   { id: 'base_wire_ats_load_pos', polarity: 'positive', fromNodeId: 'ats', fromPortId: 'out_pos', toNodeId: 'load', toPortId: 'load_pos' },
   { id: 'base_wire_ats_load_neg', polarity: 'negative', fromNodeId: 'ats', fromPortId: 'out_neg', toNodeId: 'load', toPortId: 'load_neg' },
-  // Main Service Panel -> Copper Ground Busbar
-  { id: 'base_wire_panel_gnd_neg', polarity: 'negative', fromNodeId: 'main_panel', fromPortId: 'out_neg', toNodeId: 'grounding', toPortId: 'gnd_1' },
+  // Equipment Grounding Conductors (Neon Green, No Particles) -> Copper Ground Busbar
+  { id: 'base_wire_panel_gnd', polarity: 'ground', fromNodeId: 'main_panel', fromPortId: 'gnd', toNodeId: 'grounding', toPortId: 'gnd_3' },
+  { id: 'base_wire_acspd_gnd', polarity: 'ground', fromNodeId: 'ac_spd', fromPortId: 'gnd', toNodeId: 'grounding', toPortId: 'gnd_2' },
+  { id: 'base_wire_dcspd_gnd', polarity: 'ground', fromNodeId: 'dc_spd', fromPortId: 'gnd', toNodeId: 'grounding', toPortId: 'gnd_1' },
 ];
 
 export function createDefaultSystemWires(): WireConnection3D[] {
+  const obstacles = getWallObstacles(DEFAULT_BASE_NODE_POSITIONS, [], true);
   return DEFAULT_SYSTEM_WIRE_SPECS.map((spec) => {
     const fromNodePos = DEFAULT_BASE_NODE_POSITIONS[spec.fromNodeId];
     const toNodePos = DEFAULT_BASE_NODE_POSITIONS[spec.toNodeId];
-    const fromPort =
-      getNodeTerminalPorts(
-        spec.fromNodeId,
-        spec.fromNodeId.toUpperCase(),
-        getNodeTypeFromKey(spec.fromNodeId),
-        fromNodePos
-      ).find((p) => p.portId === spec.fromPortId)?.worldPosition || fromNodePos;
-    const toPort =
-      getNodeTerminalPorts(
-        spec.toNodeId,
-        spec.toNodeId.toUpperCase(),
-        getNodeTypeFromKey(spec.toNodeId),
-        toNodePos
-      ).find((p) => p.portId === spec.toPortId)?.worldPosition || toNodePos;
+    const fromPortObj = getNodeTerminalPorts(
+      spec.fromNodeId,
+      spec.fromNodeId.toUpperCase(),
+      getNodeTypeFromKey(spec.fromNodeId),
+      fromNodePos
+    ).find((p) => p.portId === spec.fromPortId);
+    const toPortObj = getNodeTerminalPorts(
+      spec.toNodeId,
+      spec.toNodeId.toUpperCase(),
+      getNodeTypeFromKey(spec.toNodeId),
+      toNodePos
+    ).find((p) => p.portId === spec.toPortId);
 
-    const waypoints = buildOrthogonalWireWaypoints(fromPort, toPort, spec.polarity);
+    const fromPort = fromPortObj?.worldPosition || fromNodePos;
+    const toPort = toPortObj?.worldPosition || toNodePos;
+
+    const waypoints = buildOrthogonalWireWaypoints(fromPort, toPort, spec.polarity, {
+      fromDir: fromPortObj ? (fromPortObj.localOffset[1] >= 0 ? 1 : -1) : undefined,
+      toDir: toPortObj ? (toPortObj.localOffset[1] >= 0 ? 1 : -1) : undefined,
+      obstacles,
+    });
     return {
       id: spec.id,
       polarity: spec.polarity,
@@ -448,12 +456,15 @@ const PlacedComponentSchema = z.object({
 
 const WireConnectionSchema = z.object({
   id: z.string().min(1).max(64),
-  polarity: z.enum(['positive', 'negative']),
+  polarity: z.enum(['positive', 'negative', 'ground']),
   fromNodeId: z.string().min(1).max(64),
   fromPortId: z.string().min(1).max(40),
   toNodeId: z.string().min(1).max(64),
   toPortId: z.string().min(1).max(40),
   lengthMeters: z.number().finite().min(0.1).max(500),
+  routeOffset: z
+    .tuple([z.number().finite().min(-35).max(35), z.number().finite().min(-15).max(15)])
+    .optional(),
 });
 
 export const Layout3DSchema = z.object({
@@ -686,58 +697,67 @@ export function getLocalPortsForNodeType(
       return [
         { portId: 'in_pos', label: 'IN (+)', polarity: 'positive', offset: [-0.15, 0.52, 0.18] },
         { portId: 'in_neg', label: 'IN (-)', polarity: 'negative', offset: [0.15, 0.52, 0.18] },
-        { portId: 'out_pos', label: 'OUT (+)', polarity: 'positive', offset: [-0.15, -0.52, 0.18] },
-        { portId: 'out_neg', label: 'OUT (-)', polarity: 'negative', offset: [0.15, -0.52, 0.18] },
+        { portId: 'out_pos', label: 'OUT (+)', polarity: 'positive', offset: [-0.16, -0.52, 0.18] },
+        { portId: 'gnd', label: 'GND', polarity: 'ground', offset: [0.0, -0.52, 0.18] },
+        { portId: 'out_neg', label: 'OUT (-)', polarity: 'negative', offset: [0.16, -0.52, 0.18] },
       ];
     case 'isolator':
       return [
         { portId: 'in_pos', label: 'LINE (+)', polarity: 'positive', offset: [-0.18, 0.56, 0.18] },
         { portId: 'in_neg', label: 'LINE (-)', polarity: 'negative', offset: [0.18, 0.56, 0.18] },
         { portId: 'out_pos', label: 'LOAD (+)', polarity: 'positive', offset: [-0.18, -0.56, 0.18] },
+        { portId: 'gnd', label: 'GND', polarity: 'ground', offset: [0.0, -0.56, 0.18] },
         { portId: 'out_neg', label: 'LOAD (-)', polarity: 'negative', offset: [0.18, -0.56, 0.18] },
       ];
     case 'spd':
       return [
         { portId: 'in_pos', label: 'SPD (+)', polarity: 'positive', offset: [-0.18, 0.50, 0.18] },
         { portId: 'in_neg', label: 'SPD (-)', polarity: 'negative', offset: [0.18, 0.50, 0.18] },
+        { portId: 'gnd', label: 'SPD GND', polarity: 'ground', offset: [0.0, -0.50, 0.18] },
       ];
     case 'ats':
       return [
         { portId: 'in_pos', label: 'SRC (+)', polarity: 'positive', offset: [-0.22, 0.65, 0.20] },
         { portId: 'in_neg', label: 'SRC (-)', polarity: 'negative', offset: [0.22, 0.65, 0.20] },
-        { portId: 'out_pos', label: 'LOAD (+)', polarity: 'positive', offset: [-0.22, -0.65, 0.20] },
-        { portId: 'out_neg', label: 'LOAD (-)', polarity: 'negative', offset: [0.22, -0.65, 0.20] },
+        { portId: 'out_pos', label: 'LOAD (+)', polarity: 'positive', offset: [-0.24, -0.65, 0.20] },
+        { portId: 'gnd', label: 'ATS GND', polarity: 'ground', offset: [0.0, -0.65, 0.20] },
+        { portId: 'out_neg', label: 'LOAD (-)', polarity: 'negative', offset: [0.24, -0.65, 0.20] },
       ];
     case 'inverter':
       return [
-        { portId: 'pv_pos', label: 'PV (+)', polarity: 'positive', offset: [-0.55, -0.91, 0.18] },
-        { portId: 'pv_neg', label: 'PV (-)', polarity: 'negative', offset: [-0.36, -0.91, 0.18] },
-        { portId: 'bat_pos', label: 'BAT (+)', polarity: 'positive', offset: [-0.10, -0.91, 0.18] },
-        { portId: 'bat_neg', label: 'BAT (-)', polarity: 'negative', offset: [0.10, -0.91, 0.18] },
-        { portId: 'ac_pos', label: 'AC L (+)', polarity: 'positive', offset: [0.36, -0.91, 0.18] },
-        { portId: 'ac_neg', label: 'AC N (-)', polarity: 'negative', offset: [0.55, -0.91, 0.18] },
+        { portId: 'pv_pos', label: 'PV (+)', polarity: 'positive', offset: [-0.56, -0.91, 0.18] },
+        { portId: 'pv_neg', label: 'PV (-)', polarity: 'negative', offset: [-0.38, -0.91, 0.18] },
+        { portId: 'bat_pos', label: 'BAT (+)', polarity: 'positive', offset: [-0.14, -0.91, 0.18] },
+        { portId: 'bat_neg', label: 'BAT (-)', polarity: 'negative', offset: [0.06, -0.91, 0.18] },
+        { portId: 'ac_pos', label: 'AC L (+)', polarity: 'positive', offset: [0.30, -0.91, 0.18] },
+        { portId: 'ac_neg', label: 'AC N (-)', polarity: 'negative', offset: [0.48, -0.91, 0.18] },
+        { portId: 'gnd', label: 'PE GND', polarity: 'ground', offset: [0.64, -0.91, 0.18] },
       ];
     case 'battery':
       return [
         { portId: 'bat_pos', label: 'BAT (+)', polarity: 'positive', offset: [-0.28, 0.81, 0.18] },
+        { portId: 'gnd', label: 'PE GND', polarity: 'ground', offset: [0.0, 0.81, 0.18] },
         { portId: 'bat_neg', label: 'BAT (-)', polarity: 'negative', offset: [0.28, 0.81, 0.18] },
       ];
     case 'panel':
       return [
         { portId: 'in_pos', label: 'BUS L (+)', polarity: 'positive', offset: [-0.24, 0.86, 0.18] },
         { portId: 'in_neg', label: 'BUS N (-)', polarity: 'negative', offset: [0.24, 0.86, 0.18] },
-        { portId: 'out_pos', label: 'FEED (+)', polarity: 'positive', offset: [-0.24, -0.86, 0.18] },
-        { portId: 'out_neg', label: 'FEED (-)', polarity: 'negative', offset: [0.24, -0.86, 0.18] },
+        { portId: 'out_pos', label: 'FEED (+)', polarity: 'positive', offset: [-0.26, -0.86, 0.18] },
+        { portId: 'gnd', label: 'PE GND', polarity: 'ground', offset: [0.0, -0.86, 0.18] },
+        { portId: 'out_neg', label: 'FEED (-)', polarity: 'negative', offset: [0.26, -0.86, 0.18] },
       ];
     case 'pv':
       return [
-        { portId: 'pv_pos', label: 'STRING (+)', polarity: 'positive', offset: [-0.22, 0.24, -0.56] },
-        { portId: 'pv_neg', label: 'STRING (-)', polarity: 'negative', offset: [0.22, 0.24, -0.56] },
+        { portId: 'pv_pos', label: 'STRING (+)', polarity: 'positive', offset: [-0.24, 0.24, -0.56] },
+        { portId: 'gnd', label: 'FRAME GND', polarity: 'ground', offset: [0.0, 0.24, -0.56] },
+        { portId: 'pv_neg', label: 'STRING (-)', polarity: 'negative', offset: [0.24, 0.24, -0.56] },
       ];
     case 'grounding':
       return [
-        { portId: 'gnd_1', label: 'EARTH (-)', polarity: 'negative', offset: [-0.20, 0.12, 0.08] },
-        { portId: 'gnd_2', label: 'BOND (-)', polarity: 'negative', offset: [0.20, 0.12, 0.08] },
+        { portId: 'gnd_1', label: 'EARTH GND', polarity: 'ground', offset: [-0.26, 0.12, 0.08] },
+        { portId: 'gnd_2', label: 'EQUIP GND', polarity: 'ground', offset: [0.0, 0.12, 0.08] },
+        { portId: 'gnd_3', label: 'BOND GND', polarity: 'ground', offset: [0.26, 0.12, 0.08] },
       ];
     case 'grid':
       return [
@@ -752,6 +772,7 @@ export function getLocalPortsForNodeType(
     default:
       return [
         { portId: 'pos', label: '(+)', polarity: 'positive', offset: [-0.15, -0.45, 0.18] },
+        { portId: 'gnd', label: 'GND', polarity: 'ground', offset: [0.0, -0.45, 0.18] },
         { portId: 'neg', label: '(-)', polarity: 'negative', offset: [0.15, -0.45, 0.18] },
       ];
   }
@@ -991,22 +1012,157 @@ export function buildMovedConduitWaypoints(
   ];
 }
 
+export interface WallObstacle2D {
+  id: string;
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+}
+
+function getHalfSizeForNodeType(nodeType: NodeType): [number, number] {
+  switch (nodeType) {
+    case 'inverter':
+      return [0.76, 0.90];
+    case 'panel':
+      return [0.60, 0.85];
+    case 'ats':
+      return [0.52, 0.64];
+    case 'isolator':
+      return [0.44, 0.54];
+    case 'breaker':
+      return [0.38, 0.50];
+    case 'spd':
+      return [0.38, 0.48];
+    case 'battery':
+      return [0.62, 0.78];
+    case 'grounding':
+      return [0.38, 0.14];
+    case 'grid':
+      return [0.40, 0.85];
+    default:
+      return [0.40, 0.50];
+  }
+}
+
+export function getWallObstacles(
+  nodePositions: Record<string, [number, number, number]>,
+  placedComponents: PlacedComponent3D[],
+  isHybrid = true
+): WallObstacle2D[] {
+  const obstacles: WallObstacle2D[] = [];
+  const baseKeys = Object.keys(DEFAULT_BASE_NODE_POSITIONS) as DiagramNodeKey[];
+
+  for (const key of baseKeys) {
+    if (!isHybrid && (key === 'battery' || key === 'battery_breaker')) continue;
+    if (key === 'eps_breaker') continue;
+    const pos = nodePositions[key] || DEFAULT_BASE_NODE_POSITIONS[key];
+    if (!pos || pos[2] >= 0.65) continue;
+    const [hw, hh] = getHalfSizeForNodeType(getNodeTypeFromKey(key));
+    obstacles.push({
+      id: key,
+      minX: Number((pos[0] - hw).toFixed(3)),
+      maxX: Number((pos[0] + hw).toFixed(3)),
+      minY: Number((pos[1] - hh).toFixed(3)),
+      maxY: Number((pos[1] + hh).toFixed(3)),
+    });
+  }
+
+  for (const placed of placedComponents) {
+    if (placed.position[2] >= 0.65) continue;
+    const spec = ADDABLE_CATALOG_MAP.get(placed.catalogKey);
+    const [hw, hh] = getHalfSizeForNodeType(spec?.nodeType || 'breaker');
+    obstacles.push({
+      id: placed.id,
+      minX: Number((placed.position[0] - hw).toFixed(3)),
+      maxX: Number((placed.position[0] + hw).toFixed(3)),
+      minY: Number((placed.position[1] - hh).toFixed(3)),
+      maxY: Number((placed.position[1] + hh).toFixed(3)),
+    });
+  }
+
+  return obstacles;
+}
+
+function segmentHitsObstacle(
+  xa: number,
+  ya: number,
+  xb: number,
+  yb: number,
+  obs: WallObstacle2D
+): boolean {
+  const minSegX = Math.min(xa, xb);
+  const maxSegX = Math.max(xa, xb);
+  const minSegY = Math.min(ya, yb);
+  const maxSegY = Math.max(ya, yb);
+  const eps = 0.03;
+
+  // Horizontal segment
+  if (Math.abs(ya - yb) < 0.01) {
+    if (ya <= obs.minY + eps || ya >= obs.maxY - eps) return false;
+    return maxSegX > obs.minX + eps && minSegX < obs.maxX - eps;
+  }
+
+  // Vertical segment
+  if (Math.abs(xa - xb) < 0.01) {
+    if (xa <= obs.minX + eps || xa >= obs.maxX - eps) return false;
+    return maxSegY > obs.minY + eps && minSegY < obs.maxY - eps;
+  }
+
+  return false;
+}
+
+function countRouteHits(pts: [number, number][], obstacles: WallObstacle2D[]): number {
+  let hits = 0;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [xa, ya] = pts[i];
+    const [xb, yb] = pts[i + 1];
+    if (Math.hypot(xb - xa, yb - ya) < 0.01) continue;
+    for (const obs of obstacles) {
+      if (segmentHitsObstacle(xa, ya, xb, yb, obs)) {
+        hits++;
+      }
+    }
+  }
+  return hits;
+}
+
+function compute2DRouteLength(pts: [number, number][]): number {
+  let len = 0;
+  for (let i = 0; i < pts.length - 1; i++) {
+    len += Math.abs(pts[i + 1][0] - pts[i][0]) + Math.abs(pts[i + 1][1] - pts[i][1]);
+  }
+  return len;
+}
+
+export interface WireRouteOptions {
+  fromDir?: 1 | -1;
+  toDir?: 1 | -1;
+  obstacles?: WallObstacle2D[];
+  routeOffset?: [number, number];
+}
+
 /**
  * Generates clean 3D Manhattan orthogonal cable segments between two 3D terminal lugs,
- * offsetting Positive (+) and Negative (-) conductors slightly in Z/Y so parallel pairs
- * sit neatly side-by-side without overlapping.
+ * respecting component bounding-box obstacles, terminal exit directions (top vs bottom),
+ * and user-dragged route offsets ([offsetX, offsetY]) so wires never cross over components.
  */
 export function buildOrthogonalWireWaypoints(
   fromPos: [number, number, number],
   toPos: [number, number, number],
-  polarity: WirePolarity
+  polarity: WirePolarity,
+  options?: WireRouteOptions
 ): [number, number, number][] {
-  const laneOffsetZ = polarity === 'positive' ? 0.045 : 0.015;
-  const laneOffsetY = polarity === 'positive' ? 0.03 : -0.03;
-  const laneOffsetX = polarity === 'positive' ? -0.045 : 0.045;
+  const laneOffsetZ =
+    polarity === 'positive' ? 0.048 : polarity === 'negative' ? 0.022 : 0.008;
+  const laneOffsetY =
+    polarity === 'positive' ? 0.035 : polarity === 'negative' ? -0.035 : -0.085;
+  const laneOffsetX =
+    polarity === 'positive' ? -0.048 : polarity === 'negative' ? 0.048 : 0.0;
 
   const [x1, y1, z1] = fromPos;
   const [x2, y2, z2] = toPos;
+  const [userOffsetX, userOffsetY] = options?.routeOffset || [0, 0];
 
   // Both endpoints near wall plane
   const bothOnWall = z1 < 0.65 && z2 < 0.65;
@@ -1014,9 +1170,18 @@ export function buildOrthogonalWireWaypoints(
   if (bothOnWall) {
     const routeZ = Number((Math.max(z1, z2) + laneOffsetZ).toFixed(3));
     const dx = Math.abs(x2 - x1);
-    const dy = y2 - y1;
 
-    if (dx < 0.04) {
+    const stubClearance =
+      polarity === 'positive' ? 0.16 : polarity === 'negative' ? 0.23 : 0.29;
+    const fromDir: 1 | -1 = options?.fromDir ?? (y1 >= y2 ? -1 : 1);
+    const toDir: 1 | -1 = options?.toDir ?? (y2 > y1 ? -1 : 1);
+
+    const stubY1 = Number((y1 + fromDir * stubClearance).toFixed(3));
+    const stubY2 = Number((y2 + toDir * stubClearance).toFixed(3));
+    const obstacles = options?.obstacles || [];
+
+    // Direct vertical connection when aligned in X and stubs face each other without obstacles
+    if (dx < 0.04 && countRouteHits([[x1, y1], [x2, y2]], obstacles) === 0) {
       return [
         fromPos,
         [x1, y1, routeZ],
@@ -1025,73 +1190,133 @@ export function buildOrthogonalWireWaypoints(
       ];
     }
 
-    // Case 1: Vertically stacked enclosures (e.g., Breaker bottom -> SPD top)
-    // or upper enclosure bottom port dropping to lower enclosure top port
-    if (dx < 0.65 || y1 - y2 > 0.35) {
-      const midY = Number((((y1 + y2) / 2) + laneOffsetY).toFixed(3));
-      return [
-        fromPos,
-        [x1, y1, routeZ],
-        [x1, midY, routeZ],
-        [x2, midY, routeZ],
-        [x2, y2, routeZ],
-        toPos,
-      ];
+    // Build candidate 2D orthogonal inner paths from (x1, stubY1) to (x2, stubY2)
+    const candidates: { pts: [number, number][]; kind: 'h-channel' | 'v-riser' | 'u-loop' }[] = [];
+
+    // 1. Horizontal channel candidates: [x1, stubY1] -> [x1, chanY] -> [x2, chanY] -> [x2, stubY2]
+    const rawChanYs: number[] = [
+      (stubY1 + stubY2) / 2 + laneOffsetY,
+      Math.min(stubY1, stubY2) + (polarity === 'positive' ? 0.0 : polarity === 'negative' ? -0.06 : -0.12),
+      Math.max(stubY1, stubY2) + (polarity === 'positive' ? 0.10 : polarity === 'negative' ? 0.04 : -0.02),
+      0.36 + laneOffsetY,
+    ];
+    for (const obs of obstacles) {
+      rawChanYs.push(obs.minY - stubClearance);
+      rawChanYs.push(obs.maxY + stubClearance);
     }
 
-    // Case 2: Both ports at similar elevation (e.g., DC Breaker bottom -> Inverter PV bottom)
-    if (Math.abs(dy) <= 0.35) {
-      const channelY = Number((Math.min(y1, y2) - (polarity === 'positive' ? 0.16 : 0.23)).toFixed(3));
-      return [
-        fromPos,
-        [x1, y1, routeZ],
-        [x1, channelY, routeZ],
-        [x2, channelY, routeZ],
-        [x2, y2, routeZ],
-        toPos,
-      ];
+    for (const rawY of rawChanYs) {
+      const chanY = Number(Math.max(0.22, Math.min(6.5, rawY)).toFixed(3));
+      // Ensure leaving (x1, y1) -> (x1, chanY) doesn't reverse through source or target enclosure
+      const validStart = (chanY - y1) * fromDir >= 0.08;
+      const validEnd = (chanY - y2) * toDir >= 0.08;
+      if (validStart && validEnd) {
+        candidates.push({
+          kind: 'h-channel',
+          pts: [
+            [x1, y1],
+            [x1, chanY],
+            [x2, chanY],
+            [x2, y2],
+          ],
+        });
+      }
     }
 
-    // Case 3: Lower bottom port rising to a higher top port (y2 - y1 > 0.35)
-    // Route through the vertical gap between adjacent enclosures so wires never cross device faces
-    if (dx <= 3.2) {
-      const departY = Number((y1 - (polarity === 'positive' ? 0.14 : 0.21)).toFixed(3));
-      const midX = Number((((x1 + x2) / 2) + laneOffsetX).toFixed(3));
-      const arriveY = Number((y2 + (polarity === 'positive' ? 0.18 : 0.11)).toFixed(3));
-      return [
-        fromPos,
-        [x1, y1, routeZ],
-        [x1, departY, routeZ],
-        [midX, departY, routeZ],
-        [midX, arriveY, routeZ],
-        [x2, arriveY, routeZ],
-        [x2, y2, routeZ],
-        toPos,
-      ];
+    // 2. Vertical riser candidates: [x1, y1] -> [x1, stubY1] -> [midX, stubY1] -> [midX, stubY2] -> [x2, stubY2] -> [x2, y2]
+    const rawMidXs: number[] = [
+      (x1 + x2) / 2 + laneOffsetX,
+      x1 - 0.56 + laneOffsetX,
+      x1 + 0.56 + laneOffsetX,
+      x2 - 0.56 + laneOffsetX,
+      x2 + 0.56 + laneOffsetX,
+    ];
+    for (const obs of obstacles) {
+      rawMidXs.push(obs.minX - 0.18 + laneOffsetX);
+      rawMidXs.push(obs.maxX + 0.18 + laneOffsetX);
     }
 
-    // Case 4: Long horizontal span across multiple wall enclosures (e.g., Utility Grid -> Main Panel)
-    const overheadY = Number((Math.max(y1, y2) + (polarity === 'positive' ? 0.32 : 0.24)).toFixed(3));
+    for (const rawX of rawMidXs) {
+      const midX = Number(rawX.toFixed(3));
+      candidates.push({
+        kind: 'v-riser',
+        pts: [
+          [x1, y1],
+          [x1, stubY1],
+          [midX, stubY1],
+          [midX, stubY2],
+          [x2, stubY2],
+          [x2, y2],
+        ],
+      });
+    }
+
+    // Pick candidate with minimum obstacle hits and minimum Manhattan length
+    let best = candidates[0] || {
+      kind: 'v-riser' as const,
+      pts: [
+        [x1, y1],
+        [x1, stubY1],
+        [Number((((x1 + x2) / 2) + laneOffsetX).toFixed(3)), stubY1],
+        [Number((((x1 + x2) / 2) + laneOffsetX).toFixed(3)), stubY2],
+        [x2, stubY2],
+        [x2, y2],
+      ],
+    };
+    let bestScore = Infinity;
+
+    for (const cand of candidates) {
+      const hits = countRouteHits(cand.pts, obstacles);
+      const len = compute2DRouteLength(cand.pts);
+      const bendPenalty = cand.pts.length * 0.12;
+      const score = hits * 1000 + len + bendPenalty;
+      if (score < bestScore) {
+        bestScore = score;
+        best = cand;
+      }
+    }
+
+    // Apply user-dragged routeOffset ([userOffsetX, userOffsetY]) to movable middle segments
+    const final2D = best.pts.map((pt) => [pt[0], pt[1]] as [number, number]);
+    if (Math.abs(userOffsetX) > 0.001 || Math.abs(userOffsetY) > 0.001) {
+      if (best.kind === 'h-channel' && final2D.length === 4) {
+        const shiftedY = Number(Math.max(0.18, Math.min(6.5, final2D[1][1] + userOffsetY)).toFixed(3));
+        final2D[1][1] = shiftedY;
+        final2D[2][1] = shiftedY;
+      } else if (final2D.length >= 6) {
+        const shiftedX = Number((final2D[2][0] + userOffsetX).toFixed(3));
+        const shiftedY1 = Number(Math.max(0.18, Math.min(6.5, final2D[1][1] + userOffsetY)).toFixed(3));
+        const shiftedY2 = Number(Math.max(0.18, Math.min(6.5, final2D[4][1] + userOffsetY)).toFixed(3));
+        final2D[1][1] = shiftedY1;
+        final2D[2][0] = shiftedX;
+        final2D[2][1] = shiftedY1;
+        final2D[3][0] = shiftedX;
+        final2D[3][1] = shiftedY2;
+        final2D[4][1] = shiftedY2;
+      }
+    }
+
     return [
       fromPos,
-      [x1, y1, routeZ],
-      [x1, overheadY, routeZ],
-      [x2, overheadY, routeZ],
-      [x2, y2, routeZ],
+      ...final2D.map(([px, py]) => [px, py, routeZ] as [number, number, number]),
       toPos,
     ];
   }
 
   // Wall-to-floor or floor-to-floor trench/tray routing
-  const floorTrayY = polarity === 'positive' ? 0.11 : 0.07;
+  const baseFloorTrayY =
+    polarity === 'positive' ? 0.12 : polarity === 'negative' ? 0.08 : 0.04;
+  const floorTrayY = Number(Math.max(0.04, baseFloorTrayY + userOffsetY * 0.25).toFixed(3));
   const wallDropZ = Number((0.18 + laneOffsetZ).toFixed(3));
 
   if (z1 < 0.65 && z2 >= 0.65) {
+    const riserX = Number((x1 + userOffsetX).toFixed(3));
     return [
       fromPos,
       [x1, y1, wallDropZ],
-      [x1, floorTrayY, wallDropZ],
-      [x1, floorTrayY, z2],
+      [riserX, y1, wallDropZ],
+      [riserX, floorTrayY, wallDropZ],
+      [riserX, floorTrayY, z2],
       [x2, floorTrayY, z2],
       toPos,
     ];
@@ -1099,12 +1324,14 @@ export function buildOrthogonalWireWaypoints(
 
   if (z1 >= 0.65 && z2 < 0.65) {
     if (y2 > 2.0) {
-      const riserX = Number(
-        (x1 < x2
-          ? x2 - (polarity === 'positive' ? 0.44 : 0.36)
-          : x2 + (polarity === 'positive' ? 0.36 : 0.44)).toFixed(3)
+      const baseRiserX =
+        x1 < x2
+          ? x2 - (polarity === 'positive' ? 0.56 : polarity === 'negative' ? 0.48 : 0.64)
+          : x2 + (polarity === 'positive' ? 0.48 : polarity === 'negative' ? 0.56 : 0.64);
+      const riserX = Number((baseRiserX + userOffsetX).toFixed(3));
+      const arriveY = Number(
+        (y2 + (polarity === 'positive' ? 0.18 : polarity === 'negative' ? 0.11 : 0.25) + userOffsetY).toFixed(3)
       );
-      const arriveY = Number((y2 + (polarity === 'positive' ? 0.18 : 0.11)).toFixed(3));
       return [
         fromPos,
         [x1, floorTrayY, z1],
@@ -1116,11 +1343,12 @@ export function buildOrthogonalWireWaypoints(
         toPos,
       ];
     }
+    const riserX = Number((x2 + userOffsetX).toFixed(3));
     return [
       fromPos,
       [x1, floorTrayY, z1],
-      [x2, floorTrayY, z1],
-      [x2, floorTrayY, wallDropZ],
+      [riserX, floorTrayY, z1],
+      [riserX, floorTrayY, wallDropZ],
       [x2, y2, wallDropZ],
       toPos,
     ];
@@ -1168,6 +1396,12 @@ export function resolveNodeWorldPosition(
 }
 
 export function recomputeAttachedWireLengths(layout3d: Layout3DState): WireConnection3D[] {
+  const mergedBasePositions: Record<string, [number, number, number]> = {
+    ...DEFAULT_BASE_NODE_POSITIONS,
+    ...(layout3d.baseNodePositions as Record<string, [number, number, number]>),
+  };
+  const obstacles = getWallObstacles(mergedBasePositions, layout3d.placedComponents, true);
+
   return layout3d.wires.map((wire) => {
     const fromNodePos = resolveNodeWorldPosition(wire.fromNodeId, layout3d);
     const toNodePos = resolveNodeWorldPosition(wire.toNodeId, layout3d);
@@ -1175,16 +1409,28 @@ export function recomputeAttachedWireLengths(layout3d: Layout3DState): WireConne
 
     const fromMeta = resolveNodeTypeAndLabel(wire.fromNodeId, layout3d.placedComponents);
     const toMeta = resolveNodeTypeAndLabel(wire.toNodeId, layout3d.placedComponents);
-    const fromPort =
-      getNodeTerminalPorts(wire.fromNodeId, fromMeta.label, fromMeta.nodeType, fromNodePos).find(
-        (p) => p.portId === wire.fromPortId
-      )?.worldPosition || fromNodePos;
-    const toPort =
-      getNodeTerminalPorts(wire.toNodeId, toMeta.label, toMeta.nodeType, toNodePos).find(
-        (p) => p.portId === wire.toPortId
-      )?.worldPosition || toNodePos;
+    const fromPortObj = getNodeTerminalPorts(
+      wire.fromNodeId,
+      fromMeta.label,
+      fromMeta.nodeType,
+      fromNodePos
+    ).find((p) => p.portId === wire.fromPortId);
+    const toPortObj = getNodeTerminalPorts(
+      wire.toNodeId,
+      toMeta.label,
+      toMeta.nodeType,
+      toNodePos
+    ).find((p) => p.portId === wire.toPortId);
 
-    const waypoints = buildOrthogonalWireWaypoints(fromPort, toPort, wire.polarity);
+    const fromPort = fromPortObj?.worldPosition || fromNodePos;
+    const toPort = toPortObj?.worldPosition || toNodePos;
+
+    const waypoints = buildOrthogonalWireWaypoints(fromPort, toPort, wire.polarity, {
+      fromDir: fromPortObj ? (fromPortObj.localOffset[1] >= 0 ? 1 : -1) : undefined,
+      toDir: toPortObj ? (toPortObj.localOffset[1] >= 0 ? 1 : -1) : undefined,
+      obstacles,
+      routeOffset: wire.routeOffset,
+    });
     return {
       ...wire,
       lengthMeters: calculateWaypointsLengthMeters(waypoints),

@@ -2,10 +2,16 @@
 import { DiagramNodeKey } from './diagram';
 import { NodeType } from '@/components/diagram/NodeGeometry';
 
-export type WirePolarity = 'positive' | 'negative';
+export type WirePolarity = 'positive' | 'negative' | 'ground';
 export type MountSurface = 'wall' | 'floor';
 export type MountCapability = 'wall' | 'floor' | 'both';
-export type CanvasInteractionTool = 'select' | 'wire_pos' | 'wire_neg' | 'wire_pair';
+export type CanvasInteractionTool =
+  | 'select'
+  | 'wire_pos'
+  | 'wire_neg'
+  | 'wire_pair'
+  | 'wire_gnd'
+  | 'wire_cut';
 
 export type ComponentLimitGroup =
   | 'inverters'
@@ -125,6 +131,8 @@ export interface WireConnection3D {
   toNodeId: string;
   toPortId: string;
   lengthMeters: number;
+  /** User-dragged [offsetX, offsetY] adjustment in meters to organize wire channels */
+  routeOffset?: [number, number];
 }
 
 export interface Layout3DState {

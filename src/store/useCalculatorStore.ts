@@ -146,6 +146,8 @@ interface CalculatorState {
     toWorldPos: [number, number, number];
   }) => { ok: boolean; error?: string; wire?: WireConnection3D };
   removeWireConnection: (wireId: string) => void;
+  updateWireRouteOffset: (wireId: string, routeOffset: [number, number]) => void;
+  clearAllWires: () => void;
   resetLayout3D: () => void;
 }
 
@@ -1310,6 +1312,72 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
     set({
       layout3d: nextLayout,
       selectedWireId: state.selectedWireId === wireId ? null : state.selectedWireId,
+      calculationResult: nextCalc,
+    });
+    syncLayoutToActiveProject(nextLayout, nextCalc);
+  },
+
+  updateWireRouteOffset: (wireId, routeOffset) => {
+    const state = get();
+    const draftLayout: Layout3DState = {
+      ...state.layout3d,
+      wires: state.layout3d.wires.map((w) =>
+        w.id === wireId
+          ? {
+              ...w,
+              routeOffset: [
+                Number(routeOffset[0].toFixed(2)),
+                Number(routeOffset[1].toFixed(2)),
+              ],
+            }
+          : w
+      ),
+    };
+    const nextLayout: Layout3DState = {
+      ...draftLayout,
+      wires: recomputeAttachedWireLengths(draftLayout),
+    };
+
+    const nextCalc = compute(
+      state.selectedInverter,
+      state.selectedModule,
+      state.selectedBattery,
+      state.batteryCount,
+      state.gridVoltageV,
+      state.mainBreakerA,
+      state.panelCountOverride,
+      state.accessories,
+      state.customPrices,
+      nextLayout
+    );
+
+    set({ layout3d: nextLayout, calculationResult: nextCalc });
+    syncLayoutToActiveProject(nextLayout, nextCalc);
+  },
+
+  clearAllWires: () => {
+    const state = get();
+    const nextLayout: Layout3DState = {
+      ...state.layout3d,
+      wires: [],
+    };
+
+    const nextCalc = compute(
+      state.selectedInverter,
+      state.selectedModule,
+      state.selectedBattery,
+      state.batteryCount,
+      state.gridVoltageV,
+      state.mainBreakerA,
+      state.panelCountOverride,
+      state.accessories,
+      state.customPrices,
+      nextLayout
+    );
+
+    set({
+      layout3d: nextLayout,
+      selectedWireId: null,
       calculationResult: nextCalc,
     });
     syncLayoutToActiveProject(nextLayout, nextCalc);
