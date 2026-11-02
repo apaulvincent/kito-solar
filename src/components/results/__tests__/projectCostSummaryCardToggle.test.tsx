@@ -4,7 +4,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ProjectCostSummaryCard } from '../ProjectCostSummaryCard';
 
-describe('ProjectCostSummaryCard Show/Hide Toggle & Default Hidden Suite', () => {
+describe('ProjectCostSummaryCard ROI & Subtotals Toggle Suite', () => {
   const storeMap: Record<string, string> = {};
 
   beforeAll(() => {
@@ -38,45 +38,43 @@ describe('ProjectCostSummaryCard Show/Hide Toggle & Default Hidden Suite', () =>
     localStorage.clear();
   });
 
-  it('renders with details collapsed/hidden by default to prevent screen clutter', () => {
+  it('keeps Estimated System Total Investment permanently visible while hiding ROI and Subtotals by default', () => {
     const markup = renderToStaticMarkup(createElement(ProjectCostSummaryCard));
 
-    // Header and high-level summary remain accessible
+    // Header and high-level investment total MUST remain visible
     expect(markup).toContain('FINANCIALS &amp; BILL OF MATERIALS (BOM)');
     expect(markup).toContain('Estimated Project Investment');
-    expect(markup).toContain('Show');
-    expect(markup).not.toContain('>Hide<');
+    expect(markup).toContain('ESTIMATED SYSTEM TOTAL INVESTMENT');
+    expect(markup).toContain('View Itemized Pricing');
+    expect(markup).toContain('Show ROI &amp; Subtotals');
+    expect(markup).not.toContain('Hide ROI &amp; Subtotals');
 
-    // Dense body sections must be hidden by default
-    expect(markup).not.toContain('ESTIMATED SYSTEM TOTAL INVESTMENT');
+    // Financial ROI and Discipline Subtotals MUST be hidden by default
     expect(markup).not.toContain('FINANCIAL SAVINGS &amp; ROI ANALYSIS');
     expect(markup).not.toContain('Major Equipment');
     expect(markup).not.toContain('Roof Racking Hardware');
     expect(markup).not.toContain('Switchgear &amp; Protection');
   });
 
-  it('renders full financial details when localStorage indicates expanded', () => {
-    localStorage.setItem('kito_show_cost_summary', 'true');
+  it('renders ROI and subtotals when localStorage indicates expanded', () => {
+    localStorage.setItem('kito_show_financial_roi_details', 'true');
     const markup = renderToStaticMarkup(createElement(ProjectCostSummaryCard));
 
-    expect(markup).toContain('FINANCIALS &amp; BILL OF MATERIALS (BOM)');
-    expect(markup).toContain('Estimated Project Investment');
-    expect(markup).toContain('Hide');
-
-    // Expanded details are rendered
     expect(markup).toContain('ESTIMATED SYSTEM TOTAL INVESTMENT');
+    expect(markup).toContain('Hide ROI &amp; Subtotals');
+
+    // Expanded details are revealed
     expect(markup).toContain('FINANCIAL SAVINGS &amp; ROI ANALYSIS');
     expect(markup).toContain('Major Equipment');
     expect(markup).toContain('Roof Racking Hardware');
     expect(markup).toContain('Switchgear &amp; Protection');
-    expect(markup).toContain('View Itemized Pricing');
   });
 
-  it('has proper accessibility aria-expanded attribute on toggle elements', () => {
+  it('maintains proper accessibility aria-expanded attribute on toggle element', () => {
     const collapsedMarkup = renderToStaticMarkup(createElement(ProjectCostSummaryCard));
     expect(collapsedMarkup).toContain('aria-expanded="false"');
 
-    localStorage.setItem('kito_show_cost_summary', 'true');
+    localStorage.setItem('kito_show_financial_roi_details', 'true');
     const expandedMarkup = renderToStaticMarkup(createElement(ProjectCostSummaryCard));
     expect(expandedMarkup).toContain('aria-expanded="true"');
   });

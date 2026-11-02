@@ -30,13 +30,13 @@ export function ProjectCostSummaryCard() {
   const [isOpen, setIsOpen] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('kito_show_cost_summary');
+        const saved = localStorage.getItem('kito_show_financial_roi_details');
         if (saved !== null) {
           return saved === 'true';
         }
       } catch (e) {}
     }
-    return false; // Hidden / collapsed by default
+    return false; // ROI and Subtotals hidden by default
   });
 
   const toggleOpen = () => {
@@ -44,7 +44,7 @@ export function ProjectCostSummaryCard() {
       const next = !prev;
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem('kito_show_cost_summary', String(next));
+          localStorage.setItem('kito_show_financial_roi_details', String(next));
         } catch (e) {}
       }
       return next;
@@ -96,34 +96,22 @@ export function ProjectCostSummaryCard() {
   }, [isModalOpen]);
 
   return (
-    <div className={`rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-card dark:shadow-card-dark transition-all duration-200 ${isOpen ? 'p-5 sm:p-6 space-y-6' : 'p-4 sm:p-5'}`}>
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-card dark:shadow-card-dark space-y-6 transition-colors duration-200">
       {/* Pinned Card Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={toggleOpen}
-          aria-expanded={isOpen}
-          className="flex items-center gap-3 text-left cursor-pointer group focus:outline-none"
-        >
-          <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 shadow-sm flex-shrink-0">
             <Receipt className="w-5 h-5" />
           </div>
           <div>
             <span className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 font-bold block">
               FINANCIALS &amp; BILL OF MATERIALS (BOM)
             </span>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                Estimated Project Investment
-              </h3>
-              {!isOpen && (
-                <span className="text-xs font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-md border border-slate-200/80 dark:border-slate-700 shadow-xs">
-                  {formatPeso(costSummary.grandTotalPhp)}
-                </span>
-              )}
-            </div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              Estimated Project Investment
+            </h3>
           </div>
-        </button>
+        </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-mono px-3 py-1 rounded-full border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 text-slate-700 dark:text-slate-300 font-semibold">
@@ -140,37 +128,10 @@ export function ProjectCostSummaryCard() {
               {costSummary.tbdItemCount} {costSummary.tbdItemCount === 1 ? 'ITEM' : 'ITEMS'} TBD
             </span>
           )}
-
-          <button
-            type="button"
-            onClick={toggleOpen}
-            aria-expanded={isOpen}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all cursor-pointer border shadow-xs ml-1 ${
-              isOpen
-                ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-slate-700'
-                : 'bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60'
-            }`}
-          >
-            {isOpen ? (
-              <>
-                <EyeOff className="w-3.5 h-3.5" />
-                <span>Hide</span>
-                <ChevronUp className="w-3.5 h-3.5 opacity-60" />
-              </>
-            ) : (
-              <>
-                <Eye className="w-3.5 h-3.5" />
-                <span>Show</span>
-                <ChevronDown className="w-3.5 h-3.5 opacity-60" />
-              </>
-            )}
-          </button>
         </div>
       </div>
 
-      {isOpen && (
-        <>
-{/* Main Grand Total Banner */}
+      {/* Main Grand Total Banner */}
       <div className="p-5 sm:p-6 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-gradient-to-br from-amber-50/70 via-white to-amber-50/30 dark:from-amber-950/30 dark:via-slate-900 dark:to-slate-950 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <span className="text-xs font-mono text-amber-700 dark:text-amber-400 uppercase font-bold tracking-wider block">
@@ -210,15 +171,46 @@ export function ProjectCostSummaryCard() {
             )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 font-mono text-xs font-semibold shadow-sm transition-all self-start md:self-auto cursor-pointer active:scale-95"
-        >
-          <Receipt className="w-3.5 h-3.5 text-amber-500" />
-          <span>View Itemized Pricing</span>
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap self-start md:self-auto">
+          <button
+            type="button"
+            onClick={toggleOpen}
+            aria-expanded={isOpen}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border font-mono text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95 ${
+              isOpen
+                ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700'
+                : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
+            }`}
+          >
+            {isOpen ? (
+              <>
+                <EyeOff className="w-3.5 h-3.5" />
+                <span>Hide ROI &amp; Subtotals</span>
+                <ChevronUp className="w-3.5 h-3.5 opacity-60" />
+              </>
+            ) : (
+              <>
+                <Eye className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                <span>Show ROI &amp; Subtotals</span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 font-mono text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
+          >
+            <Receipt className="w-3.5 h-3.5 text-amber-500" />
+            <span>View Itemized Pricing</span>
+          </button>
+        </div>
       </div>
+
+      {/* Conditionally reveal Financial ROI and Discipline Sub-Totals */}
+      {isOpen && (
+        <>
 
       {/* Financial ROI & Payback Section */}
       {costSummary.financialRoi && (
