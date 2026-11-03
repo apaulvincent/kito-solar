@@ -1,10 +1,10 @@
 // src/components/inspector/Component3DPreview.tsx
-import { Suspense, useState, useEffect, useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
 import { Center, OrbitControls } from '@react-three/drei';
+import { Canvas } from '@react-three/fiber';
+import { Box, RotateCw } from 'lucide-react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { NodeGeometry, getNodeTypeFromKey, NodeType } from '../diagram/NodeGeometry';
-import { RotateCw, Box } from 'lucide-react';
+import { getNodeTypeFromKey, NodeGeometry, NodeType } from '../diagram/NodeGeometry';
 
 interface Component3DPreviewProps {
   nodeKey: string;

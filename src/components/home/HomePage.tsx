@@ -1,18 +1,17 @@
 // src/components/home/HomePage.tsx
+import { BillQuickStartBanner } from '@/components/ai/BillQuickStartBanner';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { BillQuickStartBanner } from '@/components/ai/BillQuickStartBanner';
 import {
   ArrowUpRight,
   Box,
   Calculator,
   Compass,
-  Layers,
   Lock,
   MapPin,
   Sparkles,
   TrendingUp,
-  Zap,
+  Zap
 } from 'lucide-react';
 
 export function HomePage() {

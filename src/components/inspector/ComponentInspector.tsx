@@ -1,8 +1,8 @@
 // src/components/inspector/ComponentInspector.tsx
-import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { X, ShieldCheck, Info, Cable, BookOpen } from 'lucide-react';
-import { Component3DPreview } from './Component3DPreview';
 import { formatPeso } from '@/lib/utils';
+import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { BookOpen, Cable, Info, ShieldCheck, X } from 'lucide-react';
+import { Component3DPreview } from './Component3DPreview';
 
 export function ComponentInspector() {
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);

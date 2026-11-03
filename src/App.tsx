@@ -1,29 +1,29 @@
-import { useEffect } from 'react';
-import { useCalculatorStore, pathToView, isOAuthHash, extractProjectIdFromUrl } from '@/store/useCalculatorStore';
-import { useAuthStore } from '@/store/useAuthStore';
-import { projectService } from '@/services/projectService';
+import { AccountPage } from '@/components/account/AccountPage';
+import { SolarCopilotButton } from '@/components/ai/SolarCopilotButton';
+import { SolarCopilotDrawer } from '@/components/ai/SolarCopilotDrawer';
+import { AuthPage } from '@/components/auth/AuthPage';
+import { DownloadSizingButton } from '@/components/common/DownloadSizingButton';
+import { EngineeringDisclaimer } from '@/components/common/EngineeringDisclaimer';
+import { ConfigurationPanel } from '@/components/config/ConfigurationPanel';
+import { ContactPage } from '@/components/contact/ContactPage';
+import { DiagramComponentList } from '@/components/diagram/DiagramComponentList';
+import { SolarDiagramCanvas } from '@/components/diagram/SolarDiagramCanvas';
 import { Header } from '@/components/header/Header';
 import { HomePage } from '@/components/home/HomePage';
-import { AuthPage } from '@/components/auth/AuthPage';
-import { AccountPage } from '@/components/account/AccountPage';
-import { ProjectsPage } from '@/components/projects/ProjectsPage';
-import { ApplianceLoadCalculatorPage } from '@/components/load-calculator/ApplianceLoadCalculatorPage';
-import { SolarMapperPage } from '@/features/solar-mapper/components/SolarMapperPage';
-import { FinancialRoiPage } from '@/features/financial-roi/components/FinancialRoiPage';
-import { YieldSimulatorPage } from '@/features/yield-simulator/components/YieldSimulatorPage';
-import { ContactPage } from '@/components/contact/ContactPage';
-import { SystemSummary } from '@/components/summary/SystemSummary';
-import { SolarDiagramCanvas } from '@/components/diagram/SolarDiagramCanvas';
-import { DiagramComponentList } from '@/components/diagram/DiagramComponentList';
-import { ConfigurationPanel } from '@/components/config/ConfigurationPanel';
-import { CalculationWorkbench } from '@/components/results/CalculationWorkbench';
 import { ComponentInspector } from '@/components/inspector/ComponentInspector';
-import { EngineeringDisclaimer } from '@/components/common/EngineeringDisclaimer';
-import { DownloadSizingButton } from '@/components/common/DownloadSizingButton';
-import { SolarCopilotDrawer } from '@/components/ai/SolarCopilotDrawer';
-import { SolarCopilotButton } from '@/components/ai/SolarCopilotButton';
-import { ArrowLeft, Box } from 'lucide-react';
+import { ApplianceLoadCalculatorPage } from '@/components/load-calculator/ApplianceLoadCalculatorPage';
+import { ProjectsPage } from '@/components/projects/ProjectsPage';
+import { CalculationWorkbench } from '@/components/results/CalculationWorkbench';
+import { SystemSummary } from '@/components/summary/SystemSummary';
+import { FinancialRoiPage } from '@/features/financial-roi/components/FinancialRoiPage';
+import { SolarMapperPage } from '@/features/solar-mapper/components/SolarMapperPage';
+import { YieldSimulatorPage } from '@/features/yield-simulator/components/YieldSimulatorPage';
+import { projectService } from '@/services/projectService';
+import { useAuthStore } from '@/store/useAuthStore';
+import { extractProjectIdFromUrl, isOAuthHash, pathToView, useCalculatorStore } from '@/store/useCalculatorStore';
 import { Analytics } from '@vercel/analytics/react';
+import { ArrowLeft } from 'lucide-react';
+import { useEffect } from 'react';
 
 export function App() {
   const initializeCatalog = useCalculatorStore((state) => state.initializeCatalog);
@@ -153,11 +153,6 @@ export function App() {
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
-                <Box className="w-3.5 h-3.5 text-amber-500" />
-                <span className="font-bold text-slate-700 dark:text-slate-300">Solar Engineering Tool</span>
-              </div>
-
               <DownloadSizingButton />
             </div>
           </div>
