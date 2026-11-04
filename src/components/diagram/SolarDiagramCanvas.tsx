@@ -484,18 +484,6 @@ export function SolarDiagramCanvas() {
               </button>
             )}
 
-            {!isPaletteOpen && (
-              <button
-                type="button"
-                onClick={() => setIsPaletteOpen(true)}
-                title="Open 3D Hardware Library"
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-sm transition-colors cursor-pointer"
-              >
-                <PanelRightOpen className="w-3.5 h-3.5" />
-                <span>+ Hardware ({layout3d.placedComponents.length})</span>
-              </button>
-            )}
-
             <div className="flex items-center gap-1 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-1 rounded-lg shadow-sm">
               <button
                 type="button"
@@ -532,6 +520,18 @@ export function SolarDiagramCanvas() {
                 {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </button>
             </div>
+
+            {!isPaletteOpen && (
+              <button
+                type="button"
+                onClick={() => setIsPaletteOpen(true)}
+                title="Open 3D Hardware Library"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-sm transition-colors cursor-pointer"
+              >
+                <PanelRightOpen className="w-3.5 h-3.5" />
+                <span>+ Hardware ({layout3d.placedComponents.length})</span>
+              </button>
+            )}
           </div>
         </div>
 
