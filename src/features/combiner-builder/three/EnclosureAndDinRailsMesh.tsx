@@ -4,68 +4,79 @@ import { Text } from '@react-three/drei';
 export function EnclosureAndDinRailsMesh() {
   return (
     <group position={[0, 0, 0]}>
-      {/* --- Main Enclosure Housing --- */}
-      {/* Outer Enclosure Box (Dark slate powder-coated metal, IP65 waterproof look) */}
-      <mesh position={[0, 0, -0.06]}>
-        <boxGeometry args={[2.8, 2.3, 0.22]} />
+      {/* --- Enclosure Tub Cabinet --- */}
+      {/* Galvanized Steel Interior Mounting Backplate */}
+      <mesh position={[0, 0, -0.015]}>
+        <boxGeometry args={[2.64, 2.42, 0.02]} />
         <meshStandardMaterial
-          color="#0f172a"
-          metalness={0.7}
+          color="#1e293b"
+          metalness={0.65}
           roughness={0.35}
         />
       </mesh>
 
-      {/* Interior Backplate (Galvanized Steel Backing Plate) */}
-      <mesh position={[0, 0, -0.01]}>
-        <boxGeometry args={[2.62, 2.12, 0.02]} />
-        <meshStandardMaterial
-          color="#334155"
-          metalness={0.85}
-          roughness={0.25}
-        />
+      {/* Outer Metal Enclosure Rim Walls (Open-front cabinet look) */}
+      {/* Top Wall */}
+      <mesh position={[0, 1.21, 0.09]}>
+        <boxGeometry args={[2.66, 0.04, 0.22]} />
+        <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.25} />
+      </mesh>
+      {/* Bottom Wall */}
+      <mesh position={[0, -1.21, 0.09]}>
+        <boxGeometry args={[2.66, 0.04, 0.22]} />
+        <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.25} />
+      </mesh>
+      {/* Left Wall */}
+      <mesh position={[-1.33, 0, 0.09]}>
+        <boxGeometry args={[0.04, 2.46, 0.22]} />
+        <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.25} />
+      </mesh>
+      {/* Right Wall */}
+      <mesh position={[1.33, 0, 0.09]}>
+        <boxGeometry args={[0.04, 2.46, 0.22]} />
+        <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.25} />
       </mesh>
 
-      {/* Backplate Corner Mounting Screws */}
+      {/* Backplate Corner Hex Bolts */}
       {[
-        [-1.25, 0.98],
-        [1.25, 0.98],
-        [-1.25, -0.98],
-        [1.25, -0.98],
+        [-1.24, 1.12],
+        [1.24, 1.12],
+        [-1.24, -1.12],
+        [1.24, -1.12],
       ].map(([x, y], idx) => (
         <mesh key={idx} position={[x, y, 0.005]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.025, 0.025, 0.015, 12]} />
-          <meshStandardMaterial color="#cbd5e1" metalness={0.9} roughness={0.2} />
+          <cylinderGeometry args={[0.022, 0.022, 0.015, 12]} />
+          <meshStandardMaterial color="#94a3b8" metalness={0.9} roughness={0.2} />
         </mesh>
       ))}
 
-      {/* --- Top 35mm Aluminum DIN Rail (AC & ATS Section) --- */}
-      <group position={[-0.1, 0.75, 0.01]}>
-        {/* Main DIN Rail Spine */}
+      {/* --- Top 35mm Slotted Aluminum DIN Rail (AC & ATS Section) --- */}
+      <group position={[-0.1, 0.62, 0.01]}>
+        {/* Main Rail Spine */}
         <mesh>
-          <boxGeometry args={[2.1, 0.14, 0.025]} />
-          <meshStandardMaterial color="#94a3b8" metalness={0.88} roughness={0.28} />
-        </mesh>
-        {/* DIN Rail Top Lip */}
-        <mesh position={[0, 0.065, 0.01]}>
-          <boxGeometry args={[2.1, 0.02, 0.015]} />
+          <boxGeometry args={[2.08, 0.12, 0.02]} />
           <meshStandardMaterial color="#cbd5e1" metalness={0.9} roughness={0.2} />
         </mesh>
-        {/* DIN Rail Bottom Lip */}
-        <mesh position={[0, -0.065, 0.01]}>
-          <boxGeometry args={[2.1, 0.02, 0.015]} />
-          <meshStandardMaterial color="#cbd5e1" metalness={0.9} roughness={0.2} />
+        {/* Top & Bottom Lips */}
+        <mesh position={[0, 0.055, 0.008]}>
+          <boxGeometry args={[2.08, 0.015, 0.01]} />
+          <meshStandardMaterial color="#f1f5f9" metalness={0.95} roughness={0.15} />
         </mesh>
-        {/* DIN Rail Slots */}
+        <mesh position={[0, -0.055, 0.008]}>
+          <boxGeometry args={[2.08, 0.015, 0.01]} />
+          <meshStandardMaterial color="#f1f5f9" metalness={0.95} roughness={0.15} />
+        </mesh>
+        {/* Rail Slots */}
         {Array.from({ length: 18 }).map((_, i) => (
-          <mesh key={i} position={[-0.95 + i * 0.11, 0, 0.013]}>
-            <boxGeometry args={[0.04, 0.06, 0.005]} />
-            <meshStandardMaterial color="#1e293b" metalness={0.4} roughness={0.6} />
+          <mesh key={i} position={[-0.94 + i * 0.11, 0, 0.011]}>
+            <boxGeometry args={[0.035, 0.05, 0.005]} />
+            <meshStandardMaterial color="#0f172a" roughness={0.6} />
           </mesh>
         ))}
-        {/* Rail Section Header Label */}
+        {/* Rail Title Header */}
         <Text
-          position={[-1.0, 0.16, 0.01]}
-          fontSize={0.045}
+          position={[-0.98, 0.13, 0.01]}
+          fontSize={0.038}
           color="#38bdf8"
           anchorX="left"
           anchorY="middle"
@@ -74,29 +85,29 @@ export function EnclosureAndDinRailsMesh() {
         </Text>
       </group>
 
-      {/* --- Middle 35mm Aluminum DIN Rail (PV DC Strings & Sub-Loads) --- */}
-      <group position={[-0.1, 0.05, 0.01]}>
+      {/* --- Middle 35mm Slotted Aluminum DIN Rail (PV Strings & Sub-Loads) --- */}
+      <group position={[-0.1, -0.05, 0.01]}>
         <mesh>
-          <boxGeometry args={[2.1, 0.14, 0.025]} />
-          <meshStandardMaterial color="#94a3b8" metalness={0.88} roughness={0.28} />
-        </mesh>
-        <mesh position={[0, 0.065, 0.01]}>
-          <boxGeometry args={[2.1, 0.02, 0.015]} />
+          <boxGeometry args={[2.08, 0.12, 0.02]} />
           <meshStandardMaterial color="#cbd5e1" metalness={0.9} roughness={0.2} />
         </mesh>
-        <mesh position={[0, -0.065, 0.01]}>
-          <boxGeometry args={[2.1, 0.02, 0.015]} />
-          <meshStandardMaterial color="#cbd5e1" metalness={0.9} roughness={0.2} />
+        <mesh position={[0, 0.055, 0.008]}>
+          <boxGeometry args={[2.08, 0.015, 0.01]} />
+          <meshStandardMaterial color="#f1f5f9" metalness={0.95} roughness={0.15} />
+        </mesh>
+        <mesh position={[0, -0.055, 0.008]}>
+          <boxGeometry args={[2.08, 0.015, 0.01]} />
+          <meshStandardMaterial color="#f1f5f9" metalness={0.95} roughness={0.15} />
         </mesh>
         {Array.from({ length: 18 }).map((_, i) => (
-          <mesh key={i} position={[-0.95 + i * 0.11, 0, 0.013]}>
-            <boxGeometry args={[0.04, 0.06, 0.005]} />
-            <meshStandardMaterial color="#1e293b" metalness={0.4} roughness={0.6} />
+          <mesh key={i} position={[-0.94 + i * 0.11, 0, 0.011]}>
+            <boxGeometry args={[0.035, 0.05, 0.005]} />
+            <meshStandardMaterial color="#0f172a" roughness={0.6} />
           </mesh>
         ))}
         <Text
-          position={[-1.0, 0.16, 0.01]}
-          fontSize={0.045}
+          position={[-0.98, 0.13, 0.01]}
+          fontSize={0.038}
           color="#f59e0b"
           anchorX="left"
           anchorY="middle"
@@ -107,14 +118,13 @@ export function EnclosureAndDinRailsMesh() {
 
       {/* --- Bottom Heavy Mounting Zone (Battery MCCB) --- */}
       <group position={[0, -0.72, 0.005]}>
-        {/* Heavy Mounting Standoff Brackets */}
         <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[1.2, 0.38, 0.015]} />
-          <meshStandardMaterial color="#1e293b" metalness={0.6} roughness={0.4} />
+          <boxGeometry args={[1.1, 0.32, 0.012]} />
+          <meshStandardMaterial color="#0f172a" metalness={0.7} roughness={0.3} />
         </mesh>
         <Text
-          position={[-0.55, 0.24, 0.01]}
-          fontSize={0.042}
+          position={[-0.5, 0.20, 0.01]}
+          fontSize={0.035}
           color="#ef4444"
           anchorX="left"
           anchorY="middle"
@@ -124,20 +134,18 @@ export function EnclosureAndDinRailsMesh() {
       </group>
 
       {/* --- Right-Side Brass Ground Busbar Mount --- */}
-      <group position={[1.18, 0.1, 0.01]}>
-        {/* Blue Insulating Standoff Pillars */}
-        <mesh position={[0, 0.35, 0.03]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.03, 0.03, 0.06, 12]} />
+      <group position={[1.08, 0.0, 0.01]}>
+        <mesh position={[0, 0.28, 0.03]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.025, 0.025, 0.05, 12]} />
           <meshStandardMaterial color="#1d4ed8" roughness={0.3} />
         </mesh>
-        <mesh position={[0, -0.35, 0.03]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.03, 0.03, 0.06, 12]} />
+        <mesh position={[0, -0.28, 0.03]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.025, 0.025, 0.05, 12]} />
           <meshStandardMaterial color="#1d4ed8" roughness={0.3} />
         </mesh>
-
         <Text
-          position={[0, 0.52, 0.02]}
-          fontSize={0.038}
+          position={[0, 0.42, 0.02]}
+          fontSize={0.034}
           color="#22c55e"
           anchorX="center"
           anchorY="middle"
@@ -147,22 +155,21 @@ export function EnclosureAndDinRailsMesh() {
       </group>
 
       {/* --- Cable Gland Entry Knockouts (Top & Bottom) --- */}
-      {/* Top Knockouts */}
       {[
-        { label: 'PV1 DC', x: -0.9 },
-        { label: 'PV2 DC', x: -0.5 },
+        { label: 'PV1 DC', x: -0.85 },
+        { label: 'PV2 DC', x: -0.45 },
         { label: 'GRID IN', x: 0.1 },
         { label: 'INVERTER', x: 0.5 },
-        { label: 'LOAD OUT', x: 0.9 },
+        { label: 'LOAD OUT', x: 0.85 },
       ].map((k, i) => (
-        <group key={`top_k_${i}`} position={[k.x, 1.1, 0.02]}>
+        <group key={`top_k_${i}`} position={[k.x, 1.2, 0.08]}>
           <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.05, 0.05, 0.04, 16]} />
+            <cylinderGeometry args={[0.045, 0.045, 0.05, 16]} />
             <meshStandardMaterial color="#020617" metalness={0.9} roughness={0.2} />
           </mesh>
           <Text
             position={[0, 0.08, 0]}
-            fontSize={0.032}
+            fontSize={0.028}
             color="#94a3b8"
             anchorX="center"
             anchorY="middle"
@@ -172,19 +179,18 @@ export function EnclosureAndDinRailsMesh() {
         </group>
       ))}
 
-      {/* Bottom Knockouts (Heavy Battery Cable + Ground Rod) */}
       {[
         { label: 'BATTERY + / -', x: -0.2 },
-        { label: 'EARTH ROD', x: 1.18 },
+        { label: 'EARTH ROD', x: 1.08 },
       ].map((k, i) => (
-        <group key={`bot_k_${i}`} position={[k.x, -1.1, 0.02]}>
+        <group key={`bot_k_${i}`} position={[k.x, -1.2, 0.08]}>
           <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.06, 0.06, 0.04, 16]} />
+            <cylinderGeometry args={[0.055, 0.055, 0.05, 16]} />
             <meshStandardMaterial color="#020617" metalness={0.9} roughness={0.2} />
           </mesh>
           <Text
             position={[0, -0.08, 0]}
-            fontSize={0.032}
+            fontSize={0.028}
             color="#94a3b8"
             anchorX="center"
             anchorY="middle"

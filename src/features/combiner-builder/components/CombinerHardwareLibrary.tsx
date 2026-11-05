@@ -70,7 +70,7 @@ export function CombinerHardwareLibrary() {
   };
 
   return (
-    <aside className="absolute right-0 top-0 bottom-0 w-80 md:w-96 bg-slate-900/95 border-l border-slate-800 shadow-2xl backdrop-blur-xl z-30 flex flex-col transition-all duration-200 select-none">
+    <aside className="w-80 lg:w-96 bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col transition-all duration-200 select-none flex-shrink-0 h-full z-20">
       {/* Header */}
       <div className="p-4 border-b border-slate-800 flex items-center justify-between">
         <div>
@@ -84,7 +84,7 @@ export function CombinerHardwareLibrary() {
         <button
           type="button"
           onClick={() => setIsPaletteOpen(false)}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
           title="Close drawer"
         >
           <X className="w-4 h-4" />
@@ -118,7 +118,7 @@ export function CombinerHardwareLibrary() {
             key={tab.id}
             type="button"
             onClick={() => setActiveCategory(tab.id as CategoryFilter)}
-            className={`px-2.5 py-1 rounded-md whitespace-nowrap transition-colors ${
+            className={`px-2.5 py-1 rounded-md whitespace-nowrap transition-colors cursor-pointer ${
               activeCategory === tab.id
                 ? 'bg-amber-500 text-slate-950 font-bold'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800'
@@ -165,7 +165,7 @@ export function CombinerHardwareLibrary() {
               <button
                 type="button"
                 onClick={() => addComponent(item.id)}
-                className="p-1.5 rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 font-bold transition-transform active:scale-95 flex-shrink-0"
+                className="p-1.5 rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 font-bold transition-transform active:scale-95 flex-shrink-0 cursor-pointer"
                 title={`Spawn ${item.name} onto DIN rail`}
               >
                 <Plus className="w-4 h-4" />

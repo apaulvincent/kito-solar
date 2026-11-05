@@ -3,13 +3,12 @@ import { CombinerComponentInstance, CombinerWireConnection } from '../types';
 import { CATALOG_MAP } from './combinerHardwareCatalog';
 import { computeWireWaypoints } from '../utils/wireRouting3D';
 
-// 35mm DIN Rail slot pitch in Three.js world units: 1P (18mm) = 0.08 units
-const SLOT_PITCH_X = 0.085;
-const RAIL_TOP_Y = 0.75;
-const RAIL_MIDDLE_Y = 0.05;
+const SLOT_PITCH_X = 0.082;
+const RAIL_TOP_Y = 0.62;
+const RAIL_MIDDLE_Y = -0.05;
 const BOTTOM_PLATE_Y = -0.72;
-const SIDE_BUSBAR_X = 1.18;
-const SIDE_BUSBAR_Y = 0.1;
+const SIDE_BUSBAR_X = 1.08;
+const SIDE_BUSBAR_Y = 0.0;
 
 export interface PrebuiltTemplateData {
   id: string;
@@ -30,7 +29,7 @@ function createInstance(
   const item = CATALOG_MAP.get(catalogId);
   if (!item) throw new Error(`Unknown catalog ID: ${catalogId}`);
 
-  let posX = -1.0 + railSlotIndex * SLOT_PITCH_X;
+  let posX = -0.98 + railSlotIndex * SLOT_PITCH_X;
   let posY =
     mountZone === 'rail_top'
       ? RAIL_TOP_Y

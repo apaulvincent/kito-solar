@@ -60,20 +60,15 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
     toggleBreakerSwitch(component.id);
   };
 
-  // Dimensional parameters based on width
-  const bodyWidth = (component.widthMm / 1000) * 4.2; // Scaled to Three.js units
-  const bodyHeight =
-    component.mountZone === 'bottom_plate'
-      ? 1.15
-      : component.mountZone === 'side_busbar'
-      ? 0.8
-      : 0.86;
-  const bodyDepth = component.mountZone === 'bottom_plate' ? 0.18 : 0.14;
-
   const isATS = component.category === 'ats_cb' || component.category === 'ats_solenoid';
   const isSPD = component.category === 'dc_spd' || component.category === 'ac_spd';
   const isMCCB = component.category === 'battery_mccb';
   const isBusbar = component.category === 'pe_busbar';
+
+  // Dimensional parameters based on width
+  const bodyWidth = (component.widthMm / 1000) * 4.2;
+  const bodyHeight = isMCCB ? 0.65 : isBusbar ? 0.60 : 0.52;
+  const bodyDepth = isMCCB ? 0.16 : 0.12;
 
   // Toggle switch lever color
   const leverColor =
@@ -101,7 +96,7 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
       {/* Selection / Hover Glow Frame */}
       {(isSelected || isHovered) && !isBusbar && (
         <mesh position={[0, 0, bodyDepth / 2 + 0.005]}>
-          <planeGeometry args={[bodyWidth + 0.04, bodyHeight + 0.04]} />
+          <planeGeometry args={[bodyWidth + 0.03, bodyHeight + 0.03]} />
           <meshBasicMaterial
             color={isSelected ? '#f59e0b' : '#38bdf8'}
             wireframe
@@ -114,18 +109,18 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
       {/* --- Case 1: Ground Busbar --- */}
       {isBusbar ? (
         <group>
-          {/* Brass Bar Solid */}
-          <mesh position={[0, 0, 0.04]}>
-            <boxGeometry args={[0.07, 0.72, 0.02]} />
+          {/* Electrolytic Brass Bar Solid */}
+          <mesh position={[0, 0, 0.03]}>
+            <boxGeometry args={[0.065, 0.56, 0.018]} />
             <meshStandardMaterial color="#eab308" metalness={0.9} roughness={0.25} />
           </mesh>
-          {/* Standoff Mounting Feet */}
-          <mesh position={[0, 0.35, 0.02]}>
-            <boxGeometry args={[0.1, 0.06, 0.03]} />
+          {/* Blue Insulator Standoff Feet */}
+          <mesh position={[0, 0.26, 0.015]}>
+            <boxGeometry args={[0.09, 0.05, 0.025]} />
             <meshStandardMaterial color="#1d4ed8" roughness={0.4} />
           </mesh>
-          <mesh position={[0, -0.35, 0.02]}>
-            <boxGeometry args={[0.1, 0.06, 0.03]} />
+          <mesh position={[0, -0.26, 0.015]}>
+            <boxGeometry args={[0.09, 0.05, 0.025]} />
             <meshStandardMaterial color="#1d4ed8" roughness={0.4} />
           </mesh>
         </group>
@@ -149,8 +144,8 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
           </mesh>
 
           {/* Stepped Front Bezel / DIN Escutcheon Face */}
-          <mesh position={[0, 0, bodyDepth + 0.015]}>
-            <boxGeometry args={[bodyWidth * 0.94, bodyHeight * 0.52, 0.03]} />
+          <mesh position={[0, 0, bodyDepth + 0.012]}>
+            <boxGeometry args={[bodyWidth * 0.94, bodyHeight * 0.56, 0.024]} />
             <meshStandardMaterial
               color={
                 isMCCB
@@ -166,8 +161,8 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
 
           {/* Breaker / Switch Name & Specs Label Plate */}
           <Text
-            position={[0, 0.18, bodyDepth + 0.035]}
-            fontSize={0.034}
+            position={[0, 0.09, bodyDepth + 0.028]}
+            fontSize={0.028}
             color={isMCCB || component.category === 'ats_solenoid' ? '#f8fafc' : '#0f172a'}
             maxWidth={bodyWidth * 0.88}
             anchorX="center"
@@ -176,8 +171,8 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
             {component.brand}
           </Text>
           <Text
-            position={[0, 0.12, bodyDepth + 0.035]}
-            fontSize={0.028}
+            position={[0, 0.045, bodyDepth + 0.028]}
+            fontSize={0.024}
             color={
               component.category === 'dc_mcb'
                 ? '#ef4444'
@@ -195,8 +190,8 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
           </Text>
           {component.ratedAmps > 0 && (
             <Text
-              position={[0, 0.06, bodyDepth + 0.035]}
-              fontSize={0.032}
+              position={[0, 0.0, bodyDepth + 0.028]}
+              fontSize={0.026}
               color={isMCCB ? '#f8fafc' : '#020617'}
               anchorX="center"
               anchorY="middle"
@@ -209,17 +204,17 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
           {!isSPD && !isATS && component.category !== 'terminal_block' && component.category !== 'din_meter' && (
             <group
               ref={toggleLeverRef}
-              position={[0, -0.06, bodyDepth + 0.03]}
+              position={[0, -0.065, bodyDepth + 0.026]}
               onClick={handleToggleClick}
             >
               {/* Lever Handle Pivot */}
               <mesh rotation={[0, 0, Math.PI / 2]}>
-                <cylinderGeometry args={[0.025, 0.025, bodyWidth * 0.65, 16]} />
+                <cylinderGeometry args={[0.02, 0.02, bodyWidth * 0.65, 16]} />
                 <meshStandardMaterial color="#020617" roughness={0.3} />
               </mesh>
               {/* Toggle Handle Grip */}
-              <mesh position={[0, 0.04, 0.03]}>
-                <boxGeometry args={[bodyWidth * 0.6, 0.08, 0.05]} />
+              <mesh position={[0, 0.03, 0.024]}>
+                <boxGeometry args={[bodyWidth * 0.6, 0.06, 0.04]} />
                 <meshStandardMaterial
                   color={leverColor}
                   roughness={0.25}
@@ -228,8 +223,8 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
               </mesh>
               {/* ON/OFF status text */}
               <Text
-                position={[0, 0.04, 0.06]}
-                fontSize={0.025}
+                position={[0, 0.03, 0.048]}
+                fontSize={0.02}
                 color="#ffffff"
                 anchorX="center"
                 anchorY="middle"
@@ -241,12 +236,12 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
 
           {/* --- RCBO Test Button --- */}
           {component.category === 'ac_rcbo' && (
-            <group position={[bodyWidth * 0.32, -0.06, bodyDepth + 0.035]}>
+            <group position={[bodyWidth * 0.32, -0.065, bodyDepth + 0.028]}>
               <mesh rotation={[Math.PI / 2, 0, 0]}>
-                <cylinderGeometry args={[0.025, 0.025, 0.015, 16]} />
+                <cylinderGeometry args={[0.02, 0.02, 0.012, 16]} />
                 <meshStandardMaterial color="#eab308" roughness={0.3} />
               </mesh>
-              <Text position={[0, 0, 0.012]} fontSize={0.022} color="#000000" anchorX="center" anchorY="middle">
+              <Text position={[0, 0, 0.01]} fontSize={0.018} color="#000000" anchorX="center" anchorY="middle">
                 T
               </Text>
             </group>
@@ -254,23 +249,22 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
 
           {/* --- Surge Protector (SPD) Replaceable Cartridges --- */}
           {isSPD && (
-            <group position={[0, -0.06, bodyDepth + 0.025]}>
-              {/* Twin cartridge plug-in blocks */}
-              {[-0.045, 0.045].map((xOffset, idx) => (
+            <group position={[0, -0.05, bodyDepth + 0.02]}>
+              {[-0.042, 0.042].map((xOffset, idx) => (
                 <group key={idx} position={[xOffset, 0, 0]}>
                   <mesh>
-                    <boxGeometry args={[bodyWidth * 0.42, 0.22, 0.04]} />
+                    <boxGeometry args={[bodyWidth * 0.44, 0.16, 0.03]} />
                     <meshStandardMaterial
                       color={component.name.includes('Yellow') ? '#eab308' : '#cbd5e1'}
                       roughness={0.3}
                     />
                   </mesh>
-                  {/* Status Indicator Window (Green = Healthy, Red = Blown) */}
-                  <mesh position={[0, 0.04, 0.023]}>
-                    <planeGeometry args={[0.035, 0.025]} />
+                  {/* Status Indicator Window (Green = Healthy) */}
+                  <mesh position={[0, 0.03, 0.018]}>
+                    <planeGeometry args={[0.028, 0.02]} />
                     <meshBasicMaterial color="#22c55e" />
                   </mesh>
-                  <Text position={[0, -0.04, 0.024]} fontSize={0.02} color="#0f172a" anchorX="center" anchorY="middle">
+                  <Text position={[0, -0.03, 0.018]} fontSize={0.016} color="#0f172a" anchorX="center" anchorY="middle">
                     {component.category === 'dc_spd' ? '1000V' : '385V'}
                   </Text>
                 </group>
@@ -278,56 +272,55 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
             </group>
           )}
 
-          {/* --- Dual-Power ATS Features (Rotary Knob, Slide Switch & LEDs) --- */}
+          {/* --- Dual-Power ATS Features (Rotary Knob & LEDs) --- */}
           {isATS && (
-            <group position={[0, -0.06, bodyDepth + 0.035]}>
+            <group position={[0, -0.05, bodyDepth + 0.028]}>
               {/* ATS Central Rotary Selector Dial */}
               <group ref={atsDialRef} position={[0, 0, 0.01]}>
                 <mesh rotation={[Math.PI / 2, 0, 0]}>
-                  <cylinderGeometry args={[0.07, 0.07, 0.04, 24]} />
+                  <cylinderGeometry args={[0.055, 0.055, 0.03, 24]} />
                   <meshStandardMaterial color="#0f172a" metalness={0.7} roughness={0.3} />
                 </mesh>
-                {/* Pointer indicator notch */}
-                <mesh position={[0, 0.05, 0.025]}>
-                  <boxGeometry args={[0.012, 0.035, 0.015]} />
+                <mesh position={[0, 0.035, 0.018]}>
+                  <boxGeometry args={[0.01, 0.028, 0.012]} />
                   <meshStandardMaterial color="#ef4444" />
                 </mesh>
               </group>
 
               {/* Source A Status LED (UN) */}
-              <group position={[-bodyWidth * 0.32, 0.04, 0.01]}>
+              <group position={[-bodyWidth * 0.32, 0.03, 0.01]}>
                 <mesh rotation={[Math.PI / 2, 0, 0]}>
-                  <cylinderGeometry args={[0.018, 0.018, 0.01, 16]} />
+                  <cylinderGeometry args={[0.015, 0.015, 0.01, 16]} />
                   <meshBasicMaterial
                     color={atsSourceState === 'source_a' ? '#22c55e' : '#14532d'}
                   />
                 </mesh>
-                <Text position={[0, -0.03, 0]} fontSize={0.022} color="#ffffff" anchorX="center" anchorY="middle">
+                <Text position={[0, -0.025, 0]} fontSize={0.018} color="#ffffff" anchorX="center" anchorY="middle">
                   UN
                 </Text>
               </group>
 
               {/* Source B Status LED (UR) */}
-              <group position={[bodyWidth * 0.32, 0.04, 0.01]}>
+              <group position={[bodyWidth * 0.32, 0.03, 0.01]}>
                 <mesh rotation={[Math.PI / 2, 0, 0]}>
-                  <cylinderGeometry args={[0.018, 0.018, 0.01, 16]} />
+                  <cylinderGeometry args={[0.015, 0.015, 0.01, 16]} />
                   <meshBasicMaterial
                     color={atsSourceState === 'source_b' ? '#f59e0b' : '#78350f'}
                   />
                 </mesh>
-                <Text position={[0, -0.03, 0]} fontSize={0.022} color="#ffffff" anchorX="center" anchorY="middle">
+                <Text position={[0, -0.025, 0]} fontSize={0.018} color="#ffffff" anchorX="center" anchorY="middle">
                   UR
                 </Text>
               </group>
 
               {/* Solenoid Green 6-Pin Plug Header */}
               {component.category === 'ats_solenoid' && (
-                <group position={[0, -0.22, 0.05]}>
+                <group position={[0, -0.15, 0.04]}>
                   <mesh>
-                    <boxGeometry args={[bodyWidth * 0.5, 0.06, 0.04]} />
+                    <boxGeometry args={[bodyWidth * 0.5, 0.05, 0.03]} />
                     <meshStandardMaterial color="#15803d" roughness={0.3} />
                   </mesh>
-                  <Text position={[0, 0, 0.022]} fontSize={0.022} color="#ffffff" anchorX="center" anchorY="middle">
+                  <Text position={[0, 0, 0.018]} fontSize={0.018} color="#ffffff" anchorX="center" anchorY="middle">
                     SENSE & CONTROL
                   </Text>
                 </group>
@@ -337,24 +330,22 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
 
           {/* --- Smart Digital LCD VA/kWh Meter Display --- */}
           {component.category === 'din_meter' && (
-            <group position={[0, -0.04, bodyDepth + 0.03]}>
-              {/* Blue outer bezel */}
+            <group position={[0, -0.035, bodyDepth + 0.024]}>
               <mesh>
-                <boxGeometry args={[bodyWidth * 0.88, 0.28, 0.02]} />
+                <boxGeometry args={[bodyWidth * 0.88, 0.22, 0.018]} />
                 <meshStandardMaterial color="#0284c7" roughness={0.3} />
               </mesh>
-              {/* Backlit LCD Screen */}
-              <mesh position={[0, 0, 0.012]}>
-                <planeGeometry args={[bodyWidth * 0.8, 0.24]} />
+              <mesh position={[0, 0, 0.01]}>
+                <planeGeometry args={[bodyWidth * 0.8, 0.18]} />
                 <meshBasicMaterial color="#0c4a6e" />
               </mesh>
-              <Text position={[0, 0.06, 0.02]} fontSize={0.028} color="#38bdf8" anchorX="center" anchorY="middle">
+              <Text position={[0, 0.05, 0.015]} fontSize={0.024} color="#38bdf8" anchorX="center" anchorY="middle">
                 231.4 V
               </Text>
-              <Text position={[0, 0.0, 0.02]} fontSize={0.028} color="#4ade80" anchorX="center" anchorY="middle">
+              <Text position={[0, 0.0, 0.015]} fontSize={0.024} color="#4ade80" anchorX="center" anchorY="middle">
                 18.6 A
               </Text>
-              <Text position={[0, -0.06, 0.02]} fontSize={0.024} color="#facc15" anchorX="center" anchorY="middle">
+              <Text position={[0, -0.05, 0.015]} fontSize={0.02} color="#facc15" anchorX="center" anchorY="middle">
                 4.30 kW
               </Text>
             </group>
