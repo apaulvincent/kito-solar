@@ -34,9 +34,12 @@ export function CombinerCanvasToolbar({
   const toggleEnergized = useCombinerBoxStore((s) => s.toggleEnergized);
   const atsSourceState = useCombinerBoxStore((s) => s.atsSourceState);
   const setAtsSourceState = useCombinerBoxStore((s) => s.setAtsSourceState);
-  const loadTemplate = useCombinerBoxStore((s) => s.loadTemplate);
-  const activeTemplateId = useCombinerBoxStore((s) => s.activeTemplateId);
   const clearWires = useCombinerBoxStore((s) => s.clearWires);
+  const removeComponent = useCombinerBoxStore((s) => s.removeComponent);
+  const removeWire = useCombinerBoxStore((s) => s.removeWire);
+  const selectedComponentId = useCombinerBoxStore((s) => s.selectedComponentId);
+  const selectedWireId = useCombinerBoxStore((s) => s.selectedWireId);
+  const components = useCombinerBoxStore((s) => s.components);
   const undo = useCombinerBoxStore((s) => s.undo);
   const redo = useCombinerBoxStore((s) => s.redo);
   const undoStack = useCombinerBoxStore((s) => s.undoStack);
@@ -44,32 +47,38 @@ export function CombinerCanvasToolbar({
   const setIsPaletteOpen = useCombinerBoxStore((s) => s.setIsPaletteOpen);
   const isPaletteOpen = useCombinerBoxStore((s) => s.isPaletteOpen);
   const setIsExportModalOpen = useCombinerBoxStore((s) => s.setIsExportModalOpen);
-  const componentsCount = useCombinerBoxStore((s) => s.components.length);
+  const componentsCount = components.length;
 
-  const tools: { id: ActiveCanvasTool; label: string; icon: React.ReactNode }[] = [
-    { id: 'move', label: 'Move / Select', icon: <Move className="w-3.5 h-3.5" /> },
+  const selectedComponent = components.find((c) => c.id === selectedComponentId);
+
+  const tools: { id: ActiveCanvasTool; label: string; icon: React.ReactNode; tooltip: string }[] = [
+    { id: 'move', label: 'Move / Select', icon: <Move className="w-3.5 h-3.5" />, tooltip: 'Select, inspect, or move equipment' },
     {
       id: 'wire_pos',
       label: 'L / DC+ Wire',
       icon: <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />,
+      tooltip: 'Connect Line (AC) or Positive (DC) wire between terminals',
     },
     {
       id: 'wire_neg',
       label: 'N / DC- Wire',
       icon: <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />,
+      tooltip: 'Connect Neutral (AC) or Negative (DC) wire between terminals',
     },
     {
       id: 'wire_sense',
       label: 'Sense Wire',
       icon: <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />,
+      tooltip: 'Connect low-voltage sensing wire for ATS control',
     },
     {
       id: 'wire_pe',
       label: 'PE Earth',
       icon: <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />,
+      tooltip: 'Connect Protective Earth ground wire to busbar',
     },
-    { id: 'jumper', label: 'Jumper U-Loop', icon: <Link className="w-3.5 h-3.5" /> },
-    { id: 'cut', label: 'Cut Wire', icon: <Scissors className="w-3.5 h-3.5 text-rose-400" /> },
+    { id: 'jumper', label: 'Jumper U-Loop', icon: <Link className="w-3.5 h-3.5" />, tooltip: 'Create arched jumper loop between adjacent breakers' },
+    { id: 'cut', label: 'Cut / Delete', icon: <Scissors className="w-3.5 h-3.5 text-rose-400" />, tooltip: 'Click any wire or component to delete it' },
   ];
 
   return (
@@ -86,7 +95,7 @@ export function CombinerCanvasToolbar({
                 ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
             }`}
-            title={t.label}
+            title={t.tooltip}
           >
             {t.icon}
             <span className="hidden sm:inline">{t.label}</span>
@@ -104,9 +113,9 @@ export function CombinerCanvasToolbar({
               ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
               : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
           }`}
-          title="Toggle live electric current particle animation"
+          title="Toggle circuit energization"
         >
-          <Zap className={`w-3.5 h-3.5 ${isEnergized ? 'text-amber-400 fill-amber-400 animate-pulse' : ''}`} />
+          <Zap className={`w-3.5 h-3.5 ${isEnergized ? 'text-amber-400 fill-amber-400' : ''}`} />
           <span>{isEnergized ? 'Live Energized' : 'Offline'}</span>
         </button>
 
@@ -135,34 +144,30 @@ export function CombinerCanvasToolbar({
         </button>
       </div>
 
-      {/* 3. Reference Template Selectors */}
-      <div className="flex items-center gap-1 bg-slate-950/70 p-1 rounded-lg border border-slate-800">
-        <span className="text-[10px] font-mono text-slate-400 px-1 hidden md:inline">TEMPLATES:</span>
+      {/* 3. Selected Item Delete Action */}
+      {selectedComponent && (
         <button
           type="button"
-          onClick={() => loadTemplate('template_jesolar_hybrid')}
-          className={`px-2 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
-            activeTemplateId === 'template_jesolar_hybrid'
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-              : 'text-slate-400 hover:text-white'
-          }`}
-          title="Video Replica: 2-Rail Hybrid Combiner + Dual ATS + 160A Battery MCCB"
+          onClick={() => removeComponent(selectedComponent.id)}
+          className="px-2.5 py-1.5 rounded-lg bg-rose-500/20 border border-rose-500/50 hover:bg-rose-500/30 text-rose-300 font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+          title={`Delete selected ${selectedComponent.name}`}
         >
-          1. JEsolar Video
+          <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+          <span>Delete {selectedComponent.name.split(' ')[0]}</span>
         </button>
+      )}
+
+      {selectedWireId && !selectedComponent && (
         <button
           type="button"
-          onClick={() => loadTemplate('template_mt_solarcell')}
-          className={`px-2 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
-            activeTemplateId === 'template_mt_solarcell'
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-              : 'text-slate-400 hover:text-white'
-          }`}
-          title="Photo Replica: MT SolarCell Solenoid ATS + LCD Smart Meter Box"
+          onClick={() => removeWire(selectedWireId)}
+          className="px-2.5 py-1.5 rounded-lg bg-rose-500/20 border border-rose-500/50 hover:bg-rose-500/30 text-rose-300 font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+          title="Delete selected wire"
         >
-          2. MT SolarCell Photo
+          <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+          <span>Delete Wire</span>
         </button>
-      </div>
+      )}
 
       {/* 4. History, Viewport & Drawer Actions */}
       <div className="flex items-center gap-1.5">

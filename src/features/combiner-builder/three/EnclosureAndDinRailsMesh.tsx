@@ -4,37 +4,37 @@ import { Text } from '@react-three/drei';
 export function EnclosureAndDinRailsMesh() {
   return (
     <group position={[0, 0, 0]}>
-      {/* --- Enclosure Tub Cabinet --- */}
-      {/* Galvanized Steel Interior Mounting Backplate */}
+      {/* --- Enclosure Tub Cabinet (Industrial Powder-Coated Dark Gray Steel) --- */}
+      {/* Dark Gray Interior Mounting Backplate */}
       <mesh position={[0, 0, -0.015]}>
         <boxGeometry args={[2.64, 2.42, 0.02]} />
         <meshStandardMaterial
-          color="#1e293b"
-          metalness={0.65}
-          roughness={0.35}
+          color="#23272f"
+          metalness={0.55}
+          roughness={0.4}
         />
       </mesh>
 
-      {/* Outer Metal Enclosure Rim Walls (Open-front cabinet look) */}
+      {/* Outer Metal Enclosure Rim Walls (Dark Gray open-front conduit cabinet) */}
       {/* Top Wall */}
       <mesh position={[0, 1.21, 0.09]}>
         <boxGeometry args={[2.66, 0.04, 0.22]} />
-        <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.25} />
+        <meshStandardMaterial color="#323842" metalness={0.75} roughness={0.3} />
       </mesh>
       {/* Bottom Wall */}
       <mesh position={[0, -1.21, 0.09]}>
         <boxGeometry args={[2.66, 0.04, 0.22]} />
-        <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.25} />
+        <meshStandardMaterial color="#323842" metalness={0.75} roughness={0.3} />
       </mesh>
       {/* Left Wall */}
       <mesh position={[-1.33, 0, 0.09]}>
         <boxGeometry args={[0.04, 2.46, 0.22]} />
-        <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.25} />
+        <meshStandardMaterial color="#323842" metalness={0.75} roughness={0.3} />
       </mesh>
       {/* Right Wall */}
       <mesh position={[1.33, 0, 0.09]}>
         <boxGeometry args={[0.04, 2.46, 0.22]} />
-        <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.25} />
+        <meshStandardMaterial color="#323842" metalness={0.75} roughness={0.3} />
       </mesh>
 
       {/* Backplate Corner Hex Bolts */}
@@ -46,7 +46,7 @@ export function EnclosureAndDinRailsMesh() {
       ].map(([x, y], idx) => (
         <mesh key={idx} position={[x, y, 0.005]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.022, 0.022, 0.015, 12]} />
-          <meshStandardMaterial color="#94a3b8" metalness={0.9} roughness={0.2} />
+          <meshStandardMaterial color="#9ca3af" metalness={0.9} roughness={0.2} />
         </mesh>
       ))}
 
@@ -70,7 +70,7 @@ export function EnclosureAndDinRailsMesh() {
         {Array.from({ length: 18 }).map((_, i) => (
           <mesh key={i} position={[-0.94 + i * 0.11, 0, 0.011]}>
             <boxGeometry args={[0.035, 0.05, 0.005]} />
-            <meshStandardMaterial color="#0f172a" roughness={0.6} />
+            <meshStandardMaterial color="#14171c" roughness={0.6} />
           </mesh>
         ))}
         {/* Rail Title Header */}
@@ -102,7 +102,7 @@ export function EnclosureAndDinRailsMesh() {
         {Array.from({ length: 18 }).map((_, i) => (
           <mesh key={i} position={[-0.94 + i * 0.11, 0, 0.011]}>
             <boxGeometry args={[0.035, 0.05, 0.005]} />
-            <meshStandardMaterial color="#0f172a" roughness={0.6} />
+            <meshStandardMaterial color="#14171c" roughness={0.6} />
           </mesh>
         ))}
         <Text
@@ -120,7 +120,7 @@ export function EnclosureAndDinRailsMesh() {
       <group position={[0, -0.72, 0.005]}>
         <mesh position={[0, 0, 0]}>
           <boxGeometry args={[1.1, 0.32, 0.012]} />
-          <meshStandardMaterial color="#0f172a" metalness={0.7} roughness={0.3} />
+          <meshStandardMaterial color="#1a1d22" metalness={0.7} roughness={0.35} />
         </mesh>
         <Text
           position={[-0.5, 0.20, 0.01]}
@@ -165,12 +165,12 @@ export function EnclosureAndDinRailsMesh() {
         <group key={`top_k_${i}`} position={[k.x, 1.2, 0.08]}>
           <mesh rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[0.045, 0.045, 0.05, 16]} />
-            <meshStandardMaterial color="#020617" metalness={0.9} roughness={0.2} />
+            <meshStandardMaterial color="#181b20" metalness={0.8} roughness={0.3} />
           </mesh>
           <Text
             position={[0, 0.08, 0]}
             fontSize={0.028}
-            color="#94a3b8"
+            color="#9ca3af"
             anchorX="center"
             anchorY="middle"
           >
@@ -186,12 +186,12 @@ export function EnclosureAndDinRailsMesh() {
         <group key={`bot_k_${i}`} position={[k.x, -1.2, 0.08]}>
           <mesh rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[0.055, 0.055, 0.05, 16]} />
-            <meshStandardMaterial color="#020617" metalness={0.9} roughness={0.2} />
+            <meshStandardMaterial color="#181b20" metalness={0.8} roughness={0.3} />
           </mesh>
           <Text
             position={[0, -0.08, 0]}
             fontSize={0.028}
-            color="#94a3b8"
+            color="#9ca3af"
             anchorX="center"
             anchorY="middle"
           >

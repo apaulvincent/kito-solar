@@ -151,27 +151,28 @@ export function getRecommendedWireSpec(polarity: PolarityRole, ratedAmps: number
 
 /**
  * Maps wire gauge mm² to 3D Three.js Tube radius.
+ * Calibrated for realistic, slim wiring proportions inside the combiner cabinet.
  */
 export function getTubeRadiusForGauge(gaugeMm2: WireGaugeMm2): number {
   switch (gaugeMm2) {
     case 1.5:
-      return 0.012; // Thin control wire
+      return 0.004; // Slim control / sense wire
     case 2.5:
-      return 0.015;
+      return 0.0055;
     case 4:
-      return 0.02;
+      return 0.007;
     case 6:
-      return 0.024;
+      return 0.0085; // Standard 6mm² PV & AC wire
     case 10:
-      return 0.032;
+      return 0.011;
     case 16:
-      return 0.04;
+      return 0.014;
     case 25:
-      return 0.048;
+      return 0.018;
     case 35:
     case 50:
-      return 0.065; // Heavy battery cable
+      return 0.022; // 35mm² battery storage cable
     default:
-      return 0.024;
+      return 0.0085;
   }
 }

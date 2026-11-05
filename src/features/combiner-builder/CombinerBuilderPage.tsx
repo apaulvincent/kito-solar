@@ -14,6 +14,10 @@ import { useCombinerBoxStore } from './store/useCombinerBoxStore';
 export function CombinerBuilderPage() {
   const setActiveView = useCalculatorStore((s) => s.setActiveView);
   const setIsExportModalOpen = useCombinerBoxStore((s) => s.setIsExportModalOpen);
+  const selectedComponentId = useCombinerBoxStore((s) => s.selectedComponentId);
+  const selectedWireId = useCombinerBoxStore((s) => s.selectedWireId);
+  const removeComponent = useCombinerBoxStore((s) => s.removeComponent);
+  const removeWire = useCombinerBoxStore((s) => s.removeWire);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [resetViewCount, setResetViewCount] = useState(0);
@@ -27,6 +31,31 @@ export function CombinerBuilderPage() {
     document.addEventListener('fullscreenchange', onFsChange);
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
+
+  // Keyboard shortcut: Delete or Backspace to delete selected component or wire
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA'
+      ) {
+        return;
+      }
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedComponentId) {
+          e.preventDefault();
+          removeComponent(selectedComponentId);
+        } else if (selectedWireId) {
+          e.preventDefault();
+          removeWire(selectedWireId);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedComponentId, selectedWireId, removeComponent, removeWire]);
 
   const handleToggleFullscreen = () => {
     if (!containerRef.current) return;

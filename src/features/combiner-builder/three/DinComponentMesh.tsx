@@ -1,7 +1,8 @@
 // src/features/combiner-builder/three/DinComponentMesh.tsx
 import { useState, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Text } from '@react-three/drei';
+import { Text, Html } from '@react-three/drei';
+import { Trash2 } from 'lucide-react';
 import * as THREE from 'three';
 import { CombinerComponentInstance } from '../types';
 import { useCombinerBoxStore } from '../store/useCombinerBoxStore';
@@ -18,6 +19,7 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
 
   const selectedComponentId = useCombinerBoxStore((s) => s.selectedComponentId);
   const setSelectedComponent = useCombinerBoxStore((s) => s.setSelectedComponent);
+  const removeComponent = useCombinerBoxStore((s) => s.removeComponent);
   const toggleBreakerSwitch = useCombinerBoxStore((s) => s.toggleBreakerSwitch);
   const atsSourceState = useCombinerBoxStore((s) => s.atsSourceState);
   const canvasTool = useCombinerBoxStore((s) => s.canvasTool);
@@ -50,7 +52,9 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
 
   const handleComponentClick = (e: { stopPropagation: () => void }) => {
     e.stopPropagation();
-    if (canvasTool === 'move') {
+    if (canvasTool === 'cut') {
+      removeComponent(component.id);
+    } else {
       setSelectedComponent(component.id);
     }
   };
@@ -94,16 +98,46 @@ export function DinComponentMesh({ component }: DinComponentMeshProps) {
       }}
     >
       {/* Selection / Hover Glow Frame */}
-      {(isSelected || isHovered) && !isBusbar && (
+      {(isSelected || isHovered) && (
         <mesh position={[0, 0, bodyDepth / 2 + 0.005]}>
           <planeGeometry args={[bodyWidth + 0.03, bodyHeight + 0.03]} />
           <meshBasicMaterial
-            color={isSelected ? '#f59e0b' : '#38bdf8'}
+            color={
+              canvasTool === 'cut' && isHovered
+                ? '#ef4444'
+                : isSelected
+                ? '#f59e0b'
+                : '#38bdf8'
+            }
             wireframe
             transparent
             opacity={0.8}
           />
         </mesh>
+      )}
+
+      {/* Floating 3D Delete Action Badge when component is selected */}
+      {isSelected && (
+        <Html
+          position={[0, bodyHeight / 2 + 0.09, bodyDepth / 2 + 0.04]}
+          center
+          distanceFactor={5.5}
+        >
+          <div className="flex items-center gap-1 bg-slate-950/95 border border-rose-500/60 rounded-md p-0.5 shadow-2xl backdrop-blur-md select-none pointer-events-auto">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                removeComponent(component.id);
+              }}
+              className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] flex items-center gap-1 shadow-xs transition-transform active:scale-95 cursor-pointer whitespace-nowrap"
+              title={`Delete ${component.name}`}
+            >
+              <Trash2 className="w-3 h-3 text-white" />
+              <span>Delete</span>
+            </button>
+          </div>
+        </Html>
       )}
 
       {/* --- Case 1: Ground Busbar --- */}

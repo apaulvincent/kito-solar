@@ -54,7 +54,7 @@ export function CombinerSceneCanvas({ resetViewCount }: CombinerSceneCanvasProps
         {/* High-Contrast Studio Lighting Rig */}
         <ambientLight intensity={1.0} />
         <directionalLight position={[4, 6, 5]} intensity={1.5} castShadow />
-        <directionalLight position={[-4, 4, 3]} intensity={0.7} color="#38bdf8" />
+        <directionalLight position={[-4, 4, 3]} intensity={0.7} color="#94a3b8" />
         <pointLight position={[0, -2, 3]} intensity={0.6} color="#f59e0b" />
 
         <CameraResetController resetViewCount={resetViewCount} />

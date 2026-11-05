@@ -1,6 +1,5 @@
 // src/features/combiner-builder/three/InsulatedWireTubeMesh.tsx
-import { useMemo, useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useMemo, useState } from 'react';
 import * as THREE from 'three';
 import { CombinerWireConnection, FerruleColor } from '../types';
 import { useCombinerBoxStore } from '../store/useCombinerBoxStore';
@@ -12,8 +11,6 @@ interface InsulatedWireTubeMeshProps {
 
 export function InsulatedWireTubeMesh({ wire }: InsulatedWireTubeMeshProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const pulseSphereRef = useRef<THREE.Mesh>(null);
-  const pulseT = useRef(Math.random());
 
   const selectedWireId = useCombinerBoxStore((s) => s.selectedWireId);
   const setSelectedWire = useCombinerBoxStore((s) => s.setSelectedWire);
@@ -42,20 +39,9 @@ export function InsulatedWireTubeMesh({ wire }: InsulatedWireTubeMeshProps) {
   const ferrules = useMemo(() => {
     if (!curve) return null;
     const startPoint = curve.getPointAt(0);
-    const startTangent = curve.getTangentAt(0);
     const endPoint = curve.getPointAt(1);
-    const endTangent = curve.getTangentAt(1);
-    return { startPoint, startTangent, endPoint, endTangent };
+    return { startPoint, endPoint };
   }, [curve]);
-
-  // Animate live electric current pulse along active energized wire
-  useFrame((_, delta) => {
-    if (isEnergized && curve && pulseSphereRef.current) {
-      pulseT.current = (pulseT.current + delta * 0.45) % 1.0;
-      const point = curve.getPointAt(pulseT.current);
-      pulseSphereRef.current.position.copy(point);
-    }
-  });
 
   if (!tubeGeo || !curve) return null;
 
@@ -82,7 +68,7 @@ export function InsulatedWireTubeMesh({ wire }: InsulatedWireTubeMeshProps) {
         setIsHovered(false);
       }}
     >
-      {/* Main Insulated Wire Tube Geometry */}
+      {/* Main Insulated Wire Tube Geometry (Slimmer gauge with subtle energization glow) */}
       <mesh geometry={tubeGeo}>
         <meshStandardMaterial
           color={
@@ -92,6 +78,8 @@ export function InsulatedWireTubeMesh({ wire }: InsulatedWireTubeMeshProps) {
               ? '#f59e0b'
               : wire.wireColor
           }
+          emissive={isEnergized ? wire.wireColor : '#000000'}
+          emissiveIntensity={isEnergized ? 0.2 : 0}
           metalness={0.15}
           roughness={0.4}
         />
@@ -113,25 +101,14 @@ export function InsulatedWireTubeMesh({ wire }: InsulatedWireTubeMeshProps) {
       {ferrules && (
         <>
           <mesh position={ferrules.startPoint}>
-            <cylinderGeometry args={[tubeRadius * 1.35, tubeRadius * 1.35, 0.035, 12]} />
+            <cylinderGeometry args={[tubeRadius * 1.35, tubeRadius * 1.35, 0.018, 12]} />
             <meshStandardMaterial color={ferruleHex} metalness={0.4} roughness={0.3} />
           </mesh>
           <mesh position={ferrules.endPoint}>
-            <cylinderGeometry args={[tubeRadius * 1.35, tubeRadius * 1.35, 0.035, 12]} />
+            <cylinderGeometry args={[tubeRadius * 1.35, tubeRadius * 1.35, 0.018, 12]} />
             <meshStandardMaterial color={ferruleHex} metalness={0.4} roughness={0.3} />
           </mesh>
         </>
-      )}
-
-      {/* Glowing Current Pulse Particles (Active Energized State) */}
-      {isEnergized && (
-        <mesh ref={pulseSphereRef}>
-          <sphereGeometry args={[tubeRadius * 1.6, 12, 12]} />
-          <meshBasicMaterial
-            color={wire.wireColor === '#ef4444' ? '#fca5a5' : '#93c5fd'}
-            toneMapped={false}
-          />
-        </mesh>
       )}
     </group>
   );
