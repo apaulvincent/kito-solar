@@ -18,6 +18,7 @@ import { SystemSummary } from '@/components/summary/SystemSummary';
 import { FinancialRoiPage } from '@/features/financial-roi/components/FinancialRoiPage';
 import { SolarMapperPage } from '@/features/solar-mapper/components/SolarMapperPage';
 import { YieldSimulatorPage } from '@/features/yield-simulator/components/YieldSimulatorPage';
+import { CombinerBuilderPage } from '@/features/combiner-builder/CombinerBuilderPage';
 import { projectService } from '@/services/projectService';
 import { useAuthStore } from '@/store/useAuthStore';
 import { extractProjectIdFromUrl, isOAuthHash, pathToView, useCalculatorStore } from '@/store/useCalculatorStore';
@@ -136,6 +137,8 @@ export function App() {
       {activeView === 'financial-roi' && <FinancialRoiPage />}
 
       {activeView === 'yield-simulator' && <YieldSimulatorPage />}
+
+      {activeView === 'combiner-builder' && <CombinerBuilderPage />}
 
       {activeView === 'contact' && <ContactPage />}
 
