@@ -193,9 +193,6 @@ export function HomePage() {
                       Workspace Command Dock
                     </span>
                   </div>
-                  <span className="text-[11px] font-mono text-slate-400">
-                    Select any studio to launch
-                  </span>
                 </div>
 
                 {/* 2x2 Interactive Studio Navigator Grid */}
