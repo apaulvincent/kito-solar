@@ -91,13 +91,7 @@ export function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
             {/* Left Editorial Column (6 cols) */}
             <div className="lg:col-span-6 space-y-8 text-left">
-              {/* Microscopic Pill Eyebrow Badge */}
-              <div className="inline-flex items-center gap-2.5 rounded-full px-3.5 py-1.5 text-[10px] uppercase tracking-[0.22em] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/25">
-                <Zap className="w-3 h-3 fill-current text-amber-500" />
-                <span>Built for Solar Installers & Electricians</span>
-              </div>
-
-              {/* High-Contrast Bold Headline */}
+                          {/* High-Contrast Bold Headline */}
               <h1 className="text-4xl sm:text-6xl lg:text-[4.15rem] font-black text-slate-900 dark:text-white tracking-[-0.035em] leading-[1.04]">
                 Size your solar system,{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 dark:from-amber-400 dark:via-amber-300 dark:to-orange-400">
@@ -185,16 +179,6 @@ export function HomePage() {
             {/* Right Interactive Column (6 cols): 4-Studio Machined Command Deck */}
             <div className="lg:col-span-6">
               <div className="rounded-3xl bg-white dark:bg-[#0E1420] border border-slate-200/80 dark:border-white/[0.08] p-5 sm:p-7 shadow-[0_24px_50px_-15px_rgba(0,0,0,0.5)] space-y-5">
-                {/* Command Deck Header Bar */}
-                <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-white/[0.06]">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="text-[11px] font-mono uppercase tracking-[0.18em] font-bold text-slate-800 dark:text-slate-200">
-                      Workspace Command Dock
-                    </span>
-                  </div>
-                </div>
-
                 {/* 2x2 Interactive Studio Navigator Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {studioWorkspaces.map((studio) => {

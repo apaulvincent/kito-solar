@@ -116,7 +116,7 @@ describe('App Navigation & Supabase Authentication Suite', () => {
     const content = fs.readFileSync(homePagePath, 'utf-8');
 
     expect(content).toContain('Launch 3D Electrical Studio');
-    expect(content).toContain('Workspace Command Dock');
+    expect(content).toContain('Appliance Load Studio');
     expect(content).toContain('3D Electrical Workbench');
     expect(content).toContain('Financial ROI Simulator');
 
