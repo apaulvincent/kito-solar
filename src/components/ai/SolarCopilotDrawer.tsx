@@ -88,6 +88,34 @@ export const SolarCopilotDrawer: React.FC = () => {
   );
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
+
+  // Click outside to close drawer & Escape key listener
+  useEffect(() => {
+    if (!isCopilotOpen) return;
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (drawerRef.current && !drawerRef.current.contains(event.target as Node)) {
+        setIsCopilotOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsCopilotOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isCopilotOpen, setIsCopilotOpen]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -174,8 +202,17 @@ export const SolarCopilotDrawer: React.FC = () => {
   };
 
   return (
-    <aside
-      aria-label="Ask Jenny Solar Assistant"
+    <>
+      {/* Click-outside backdrop overlay */}
+      <div
+        aria-hidden="true"
+        onClick={() => setIsCopilotOpen(false)}
+        className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-[2px] transition-opacity animate-in fade-in duration-200"
+      />
+
+      <aside
+        ref={drawerRef}
+        aria-label="Ask Jenny Solar Assistant"
       className="fixed inset-y-0 right-0 z-50 w-full sm:w-[500px] md:w-[560px] lg:w-[600px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col shadow-2xl transition-all duration-300"
     >
       <header className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 flex items-center justify-between gap-4">
@@ -368,5 +405,6 @@ export const SolarCopilotDrawer: React.FC = () => {
         </div>
       </footer>
     </aside>
+    </>
   );
 };
