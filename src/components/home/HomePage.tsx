@@ -243,26 +243,6 @@ export function HomePage() {
                     );
                   })}
                 </div>
-
-                {/* Bottom Conduit Sequence Status Bar */}
-                <div className="p-3.5 rounded-2xl bg-slate-900 dark:bg-[#06090F] text-white border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] font-mono">
-                  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                    <span className="text-amber-400 font-bold shrink-0">PV Array</span>
-                    <span className="text-slate-600">→</span>
-                    <span className="text-amber-300 shrink-0">DC Isolator ({calculationResult.dc.isolatorRatingA}A)</span>
-                    <span className="text-slate-600">→</span>
-                    <span className="text-rose-300 shrink-0">DC Breaker ({calculationResult.dc.breakerRatingA}A)</span>
-                    <span className="text-slate-600">→</span>
-                    <span className="text-sky-300 shrink-0">{calculationResult.summary.inverterModel}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveView('tool')}
-                    className="text-amber-400 hover:text-amber-300 font-bold shrink-0 text-left sm:text-right cursor-pointer"
-                  >
-                    Inspect 3D Wall →
-                  </button>
-                </div>
               </div>
             </div>
           </div>

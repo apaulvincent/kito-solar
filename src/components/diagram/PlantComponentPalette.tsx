@@ -1,6 +1,6 @@
 // src/components/diagram/PlantComponentPalette.tsx
 import { useState, useMemo } from 'react';
-import { Plus, PanelRightClose, Layers, Cable, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Plus, PanelRightClose, Layers, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { ADDABLE_COMPONENT_CATALOG, getLimitStatus } from '@/lib/layout3dEngine';
 import { AddableComponentSpec, SCENE_LIMITS } from '@/types/layout3d';
@@ -95,11 +95,6 @@ export function PlantComponentPalette() {
     return spec.defaultRatingLabel;
   };
 
-  const resolveSurfaceBadge = (spec: AddableComponentSpec): string => {
-    if (spec.mountCapability === 'both') return 'Wall / Floor';
-    return spec.mountCapability === 'floor' ? 'Floor' : 'Wall';
-  };
-
   const visibleCatalog = ADDABLE_COMPONENT_CATALOG.filter(
     (item) => activeCategory === 'All' || item.categoryLabel === activeCategory
   );
@@ -132,16 +127,6 @@ export function PlantComponentPalette() {
             <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-white truncate">
               3D Hardware Library
             </h3>
-          </div>
-          <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono text-slate-500 dark:text-slate-400">
-            <span>
-              Nodes: <strong className="text-slate-800 dark:text-slate-200">{layout3d.placedComponents.length}</strong>/{SCENE_LIMITS.maxTotalPlacedComponents}
-            </span>
-            <span>•</span>
-            <span className="inline-flex items-center gap-0.5">
-              <Cable className="w-2.5 h-2.5 text-red-500" />
-              <strong className="text-slate-800 dark:text-slate-200">{layout3d.wires.length}</strong>/{SCENE_LIMITS.maxTotalWires}
-            </span>
           </div>
         </div>
 
@@ -253,15 +238,6 @@ export function PlantComponentPalette() {
                 </div>
 
                 <div className="flex items-center justify-between gap-1.5 mt-1">
-                  <div className="flex items-center gap-1">
-                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                      {resolveSurfaceBadge(spec)}
-                    </span>
-                    <span className="text-[9px] font-mono text-slate-400 dark:text-slate-500">
-                      {limit.currentGroupCount}/{limit.maxGroupCount}
-                    </span>
-                  </div>
-
                   <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-400">
                     {formatPeso(unitPrice)}
                     {limit.canAdd && (
