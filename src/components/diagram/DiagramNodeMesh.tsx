@@ -369,12 +369,6 @@ export function DiagramNodeMesh({
                 </button>
               )}
             </div>
-            <div className="text-[9px] font-mono text-slate-400 mt-0.5 flex items-center justify-between gap-3">
-              <span className="text-slate-400">{telemetry.category}</span>
-              <span className="text-sky-300">
-                {isSelected ? 'Press Del to remove • Drag to move' : 'Click to select or delete'}
-              </span>
-            </div>
             {/* Subtle Downward Pointer Indicator */}
             <div className="w-2 h-2 mx-auto rotate-45 border-b border-r border-slate-700/80 bg-slate-900/95 -mb-2.5 mt-1" />
           </div>
