@@ -6,7 +6,6 @@ import { DownloadSizingButton } from '@/components/common/DownloadSizingButton';
 import { EngineeringDisclaimer } from '@/components/common/EngineeringDisclaimer';
 import { ConfigurationPanel } from '@/components/config/ConfigurationPanel';
 import { ContactPage } from '@/components/contact/ContactPage';
-import { DiagramComponentList } from '@/components/diagram/DiagramComponentList';
 import { SolarDiagramCanvas } from '@/components/diagram/SolarDiagramCanvas';
 import { Header } from '@/components/header/Header';
 import { HomePage } from '@/components/home/HomePage';
@@ -163,9 +162,8 @@ export function App() {
           </section>
 
           {/* Step 2: First-Class Interactive 3D Solar Diagram */}
-          <section aria-label="Interactive 3D Solar Diagram" className="space-y-4">
+          <section aria-label="Interactive 3D Solar Diagram">
             <SolarDiagramCanvas />
-            <DiagramComponentList />
           </section>
 
           {/* Step 3: Equipment Configurator & Segmented Calculation Workbench (2-Column Studio with Independent Scrolling) */}
