@@ -26,7 +26,7 @@ export function TerminalPortNode({ port, componentWorldPos }: TerminalPortNodePr
       case 'L':
         return '#ef4444'; // Red
       case 'DC_NEG':
-        return '#020617'; // Dark Slate
+        return '#475569'; // High-contrast slate instead of near-black #020617
       case 'N':
         return '#3b82f6'; // Blue
       case 'PE':
@@ -88,6 +88,12 @@ export function TerminalPortNode({ port, componentWorldPos }: TerminalPortNodePr
           roughness={0.3}
           metalness={0.6}
         />
+      </mesh>
+
+      {/* Bright Terminal Screw Center Dot */}
+      <mesh position={[0, 0, radius * 0.9]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[radius * 0.35, radius * 0.35, 0.004, 12]} />
+        <meshStandardMaterial color="#f1f5f9" metalness={0.8} roughness={0.2} />
       </mesh>
 
       {/* Active Selection / Wire-Start Pulsing Ring */}

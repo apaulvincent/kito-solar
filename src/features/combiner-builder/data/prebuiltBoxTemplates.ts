@@ -4,10 +4,10 @@ import { CATALOG_MAP } from './combinerHardwareCatalog';
 import { computeWireWaypoints } from '../utils/wireRouting3D';
 
 const SLOT_PITCH_X = 0.082;
-const RAIL_TOP_Y = 0.62;
+const RAIL_TOP_Y = 0.70;
 const RAIL_MIDDLE_Y = -0.05;
-const BOTTOM_PLATE_Y = -0.72;
-const SIDE_BUSBAR_X = 1.08;
+const BOTTOM_PLATE_Y = -0.78;
+const SIDE_BUSBAR_X = 1.18;
 const SIDE_BUSBAR_Y = 0.0;
 
 export interface PrebuiltTemplateData {
@@ -29,7 +29,7 @@ function createInstance(
   const item = CATALOG_MAP.get(catalogId);
   if (!item) throw new Error(`Unknown catalog ID: ${catalogId}`);
 
-  let posX = -0.98 + railSlotIndex * SLOT_PITCH_X;
+  let posX = -1.06 + railSlotIndex * SLOT_PITCH_X;
   let posY =
     mountZone === 'rail_top'
       ? RAIL_TOP_Y
@@ -123,23 +123,23 @@ function createWire(
 }
 
 /**
- * Builds Template 1: JEsolar Hybrid 2-String + ATS + 160A MCCB (Video Replica)
+ * Builds Template 1: JEsolar Hybrid 2-String + 100A ATS + 160A MCCB (Enhanced Reference)
  */
 export function buildTemplate1JEsolar(): PrebuiltTemplateData {
-  // Top Rail: AC & ATS Section
+  // Top Rail: AC & ATS Section (non-overlapping slots)
   const acSpd1 = createInstance('taxnele-txsa-40', 'top_ac_spd_1', 'rail_top', 0);
-  const rcbo = createInstance('taxnele-tx63le-50a', 'top_rcbo', 'rail_top', 3);
-  const ats = createInstance('gcdqcn-gq02-63-2p', 'top_ats', 'rail_top', 6);
-  const acMcb1 = createInstance('taxnele-txba1-63-c50', 'top_ac_mcb_1', 'rail_top', 13);
-  const acSpd2 = createInstance('taxnele-txsa-40', 'top_ac_spd_2', 'rail_top', 16);
+  const rcbo = createInstance('taxnele-tx63le-50a', 'top_rcbo', 'rail_top', 2.4);
+  const ats = createInstance('ats-100a-2p', 'top_ats', 'rail_top', 6.8);
+  const acMcb1 = createInstance('taxnele-txba1-63-c50', 'top_ac_mcb_1', 'rail_top', 11.2);
+  const acSpd2 = createInstance('taxnele-txsa-40', 'top_ac_spd_2', 'rail_top', 13.6);
 
   // Middle Rail: 2 PV Strings + Sub-Load Breakers
-  const pvMcb1 = createInstance('taxnele-txbd1-63-32a', 'mid_pv_mcb_1', 'rail_middle', 0);
-  const pvSpd1 = createInstance('taxnele-txsd-60ka', 'mid_pv_spd_1', 'rail_middle', 3);
-  const pvMcb2 = createInstance('taxnele-txbd1-63-32a', 'mid_pv_mcb_2', 'rail_middle', 6);
-  const pvSpd2 = createInstance('taxnele-txsd-60ka', 'mid_pv_spd_2', 'rail_middle', 9);
-  const loadMcb1 = createInstance('taxnele-txba1-63-c50', 'mid_load_mcb_1', 'rail_middle', 13);
-  const loadMcb2 = createInstance('taxnele-txba1-63-c32', 'mid_load_mcb_2', 'rail_middle', 16);
+  const pvMcb1 = createInstance('dc-mcb-nonpolar-25a', 'mid_pv_mcb_1', 'rail_middle', 0);
+  const pvSpd1 = createInstance('dc-spd-1000v-dark', 'mid_pv_spd_1', 'rail_middle', 2.5);
+  const pvMcb2 = createInstance('dc-mcb-nonpolar-25a', 'mid_pv_mcb_2', 'rail_middle', 5.2);
+  const pvSpd2 = createInstance('dc-spd-1000v-dark', 'mid_pv_spd_2', 'rail_middle', 7.7);
+  const loadMcb1 = createInstance('chnt-2p-ac-mcb-40a', 'mid_load_mcb_1', 'rail_middle', 11.2);
+  const loadMcb2 = createInstance('chnt-2p-ac-mcb-30a', 'mid_load_mcb_2', 'rail_middle', 13.6);
 
   // Bottom Enclosure Mount: Heavy Battery MCCB
   const batteryMccb = createInstance('matsic-160a-mccb', 'bottom_battery_mccb', 'bottom_plate', 0);
@@ -208,9 +208,9 @@ export function buildTemplate1JEsolar(): PrebuiltTemplateData {
 
   return {
     id: 'template_jesolar_hybrid',
-    name: 'JEsolar Hybrid 2-String + ATS + 160A MCCB',
+    name: 'JEsolar Hybrid 2-String + 100A ATS + 160A MCCB',
     subtitle: 'Reference Build A (Video Replica)',
-    description: 'Complete 2-rail hybrid combiner box with twin PV string DC SPDs, dual-power ATS, AC RCBO, battery MCCB, and PE grounding busbar.',
+    description: 'Complete 2-rail hybrid combiner box with 100A ATS (green rotary handle), 25A non-polarity DC MCBs, dark DC SPDs, battery MCCB, and PE grounding busbar.',
     components,
     wires,
   };
@@ -228,9 +228,9 @@ export function buildTemplate2MTC(): PrebuiltTemplateData {
   // Lower Rail: Grid RCBO, Inverter MCB, Smart LCD Meter, Sub MCB, CSQ Yellow SPD
   const gridRcbo = createInstance('mtc-2p-rcbo-32a', 'bot_grid_rcbo', 'rail_middle', 0);
   const inverterMcb = createInstance('abb-2p-ac-mcb-c32', 'bot_inverter_mcb', 'rail_middle', 3);
-  const lcdMeter = createInstance('taxnele-din-meter', 'bot_lcd_meter', 'rail_middle', 6);
-  const branchMcb = createInstance('abb-2p-ac-mcb-c32', 'bot_branch_mcb', 'rail_middle', 9);
-  const yellowSpd = createInstance('csq-myc1-c-40ka', 'bot_yellow_spd', 'rail_middle', 12);
+  const lcdMeter = createInstance('digital-watt-meter-100a', 'bot_lcd_meter', 'rail_middle', 6);
+  const branchMcb = createInstance('abb-2p-ac-mcb-c32', 'bot_branch_mcb', 'rail_middle', 10);
+  const yellowSpd = createInstance('csq-myc1-c-40ka', 'bot_yellow_spd', 'rail_middle', 13);
 
   // Side Chassis: Brass PE Busbar
   const peBusbar = createInstance('pe-ground-busbar-5h', 'side_pe_busbar_2', 'side_busbar', 0);
@@ -256,7 +256,7 @@ export function buildTemplate2MTC(): PrebuiltTemplateData {
     createWire('w2_inv_to_ats_l', inverterMcb, 2, solenoidAts, 0, '#ef4444', 'white', 10),
     createWire('w2_inv_to_ats_n', inverterMcb, 3, solenoidAts, 1, '#3b82f6', 'blue', 10),
 
-    // 3. Green 6-Pin low-voltage sensing plug to Normal & Reserve lines (Yellow control wires with yellow ferrules)
+    // 3. Green 6-Pin low-voltage sensing plug to Normal & Reserve lines
     createWire('w2_sense_nl', solenoidAts, 0, solenoidAts, 6, '#eab308', 'yellow', 1.5, true),
     createWire('w2_sense_nn', solenoidAts, 1, solenoidAts, 7, '#eab308', 'yellow', 1.5, true),
     createWire('w2_sense_rl', solenoidAts, 2, solenoidAts, 8, '#eab308', 'yellow', 1.5, true),
@@ -270,7 +270,7 @@ export function buildTemplate2MTC(): PrebuiltTemplateData {
     createWire('w2_dist_to_backup_l', distBlock, 4, backupMcb, 0, '#ef4444', 'white', 6),
     createWire('w2_dist_to_backup_n', distBlock, 6, backupMcb, 1, '#3b82f6', 'blue', 6),
 
-    // 6. Distribution Block to LCD Smart Meter
+    // 6. Distribution Block to Multi-tier Color LCD Meter
     createWire('w2_dist_to_meter_l', distBlock, 5, lcdMeter, 0, '#ef4444', 'white', 10),
     createWire('w2_dist_to_meter_n', distBlock, 7, lcdMeter, 1, '#3b82f6', 'blue', 10),
 
@@ -296,7 +296,106 @@ export function buildTemplate2MTC(): PrebuiltTemplateData {
   };
 }
 
+/**
+ * Builds Template 3: Reference Single-Line Diagram Build (Combiner Box Only, Excludes Battery)
+ */
+export function buildTemplate3ReferenceSLD(): PrebuiltTemplateData {
+  // Top Rail: Grid Input, Surge, AC Isolator, Grid VA Protector, 100A ATS, Inverter MCB & Surge
+  const acMcb80 = createInstance('chnt-2p-ac-mcb-80a', 'ref_grid_mcb80', 'rail_top', 0);
+  const acSpd1 = createInstance('taxnele-txsa-40', 'ref_ac_spd1', 'rail_top', 2.4);
+  const acIsolator = createInstance('ac-isolator-63a', 'ref_ac_iso', 'rail_top', 4.8);
+  const digiProtector1 = createInstance('digital-protector-63a', 'ref_digi_prot_1', 'rail_top', 7.2);
+  const ats100 = createInstance('ats-100a-2p', 'ref_ats_100', 'rail_top', 11.6);
+  const invMcb63 = createInstance('chnt-2p-ac-mcb-63a', 'ref_inv_mcb63', 'rail_top', 16.0);
+  const acSpd2 = createInstance('taxnele-txsa-40', 'ref_ac_spd2', 'rail_top', 18.4);
+
+  // Middle Rail: PV DC String Protection, Load Protector, Watt Meter & Load Sub-Breakers
+  const dcSpd = createInstance('dc-spd-1000v-dark', 'ref_dc_spd', 'rail_middle', 0);
+  const dcIsolator = createInstance('dc-rotary-isolator-32a', 'ref_dc_iso', 'rail_middle', 3.0);
+  const dcMcb = createInstance('dc-mcb-nonpolar-25a', 'ref_dc_mcb', 'rail_middle', 6.0);
+  const digiProtector2 = createInstance('digital-protector-63a', 'ref_digi_prot_2', 'rail_middle', 8.7);
+  const wattMeter = createInstance('digital-watt-meter-100a', 'ref_watt_meter', 'rail_middle', 11.8);
+  const loadMcb1 = createInstance('chnt-2p-ac-mcb-40a', 'ref_load_mcb1', 'rail_middle', 14.9);
+  const loadMcb2 = createInstance('chnt-2p-ac-mcb-30a', 'ref_load_mcb2', 'rail_middle', 17.3);
+
+  // Side Chassis: 5-Hole Brass PE Ground Busbar
+  const peBusbar = createInstance('pe-ground-busbar-5h', 'ref_pe_busbar', 'side_busbar', 0);
+
+  const components = [
+    acMcb80,
+    acSpd1,
+    acIsolator,
+    digiProtector1,
+    ats100,
+    invMcb63,
+    acSpd2,
+    dcSpd,
+    dcIsolator,
+    dcMcb,
+    digiProtector2,
+    wattMeter,
+    loadMcb1,
+    loadMcb2,
+    peBusbar,
+  ];
+
+  const wires: CombinerWireConnection[] = [
+    // 1. PV String DC Path: DC SPD parallel jumper -> DC Rotary Isolator -> 25A Non-Polarity DC MCB
+    createWire('w3_dc_spd_to_iso_pos', dcSpd, 0, dcIsolator, 0, '#ef4444', 'red', 6, true),
+    createWire('w3_dc_spd_to_iso_neg', dcSpd, 1, dcIsolator, 1, '#334155', 'black', 6, true),
+    createWire('w3_dc_iso_to_mcb_pos', dcIsolator, 2, dcMcb, 0, '#ef4444', 'red', 6),
+    createWire('w3_dc_iso_to_mcb_neg', dcIsolator, 3, dcMcb, 1, '#334155', 'black', 6),
+    createWire('w3_dc_spd_pe', dcSpd, 2, peBusbar, 0, '#22c55e', 'green_yellow', 6),
+
+    // 2. Grid AC Infeed: 80A Grid MCB -> AC SPD 1 (parallel) -> AC Isolator -> VA Protector 1
+    createWire('w3_grid80_to_spd1_l', acMcb80, 0, acSpd1, 0, '#f97316', 'red', 16, true),
+    createWire('w3_grid80_to_spd1_n', acMcb80, 1, acSpd1, 1, '#3b82f6', 'blue', 16, true),
+    createWire('w3_ac_spd1_pe', acSpd1, 2, peBusbar, 1, '#22c55e', 'green_yellow', 6),
+    createWire('w3_grid80_to_iso_l', acMcb80, 2, acIsolator, 0, '#f97316', 'red', 16),
+    createWire('w3_grid80_to_iso_n', acMcb80, 3, acIsolator, 1, '#3b82f6', 'blue', 16),
+    createWire('w3_iso_to_prot_l', acIsolator, 2, digiProtector1, 0, '#f97316', 'red', 16),
+    createWire('w3_iso_to_prot_n', acIsolator, 3, digiProtector1, 1, '#3b82f6', 'blue', 16),
+
+    // 3. Grid Protected Feed: VA Protector 1 -> 100A ATS Source B (Utility Grid)
+    createWire('w3_prot_to_ats_l', digiProtector1, 2, ats100, 2, '#f97316', 'white', 25),
+    createWire('w3_prot_to_ats_n', digiProtector1, 3, ats100, 3, '#3b82f6', 'blue', 25),
+
+    // 4. Inverter Feed: 63A Inverter MCB -> AC SPD 2 (parallel) -> 100A ATS Source A (Inverter)
+    createWire('w3_inv_to_spd2_l', invMcb63, 0, acSpd2, 0, '#ef4444', 'red', 16, true),
+    createWire('w3_inv_to_spd2_n', invMcb63, 1, acSpd2, 1, '#3b82f6', 'blue', 16, true),
+    createWire('w3_ac_spd2_pe', acSpd2, 2, peBusbar, 2, '#22c55e', 'green_yellow', 6),
+    createWire('w3_inv_to_ats_l', invMcb63, 2, ats100, 0, '#ef4444', 'red', 25),
+    createWire('w3_inv_to_ats_n', invMcb63, 3, ats100, 1, '#3b82f6', 'blue', 25),
+
+    // 5. 100A ATS Voltage Sensing Jumpers
+    createWire('w3_ats_sense_al', ats100, 0, ats100, 4, '#eab308', 'yellow', 1.5, true),
+    createWire('w3_ats_sense_an', ats100, 1, ats100, 5, '#eab308', 'yellow', 1.5, true),
+    createWire('w3_ats_sense_bl', ats100, 2, ats100, 6, '#eab308', 'yellow', 1.5, true),
+    createWire('w3_ats_sense_bn', ats100, 3, ats100, 7, '#eab308', 'yellow', 1.5, true),
+
+    // 6. ATS Common Load Output -> VA Protector 2 -> Watt Meter -> 40A & 30A Sub-Load MCBs
+    createWire('w3_ats_to_prot2_l', ats100, 8, digiProtector2, 0, '#ef4444', 'red', 25),
+    createWire('w3_ats_to_prot2_n', ats100, 9, digiProtector2, 1, '#3b82f6', 'blue', 25),
+    createWire('w3_prot2_to_meter_l', digiProtector2, 2, wattMeter, 0, '#ef4444', 'red', 25),
+    createWire('w3_prot2_to_meter_n', digiProtector2, 3, wattMeter, 1, '#3b82f6', 'blue', 25),
+    createWire('w3_meter_to_load1_l', wattMeter, 2, loadMcb1, 0, '#ef4444', 'white', 25),
+    createWire('w3_meter_to_load1_n', wattMeter, 3, loadMcb1, 1, '#3b82f6', 'blue', 25),
+    createWire('w3_load1_to_load2_l', loadMcb1, 0, loadMcb2, 0, '#ef4444', 'white', 10, true),
+    createWire('w3_load1_to_load2_n', loadMcb1, 1, loadMcb2, 1, '#3b82f6', 'blue', 10, true),
+  ];
+
+  return {
+    id: 'template_reference_diagram',
+    name: 'Reference SLD Combiner Box (100A ATS, No Battery)',
+    subtitle: 'Reference Diagram Replica (Photo-Matched)',
+    description: 'Pure solar & AC combiner box matching the single-line reference diagram: 100A ATS, 80A/63A/40A/30A CHNT MCBs, 25A non-polarity DC MCB, DC rotary isolator, AC isolator, VA protectors, watt meter, and DC/AC SPDs.',
+    components,
+    wires,
+  };
+}
+
 export const PREBUILT_TEMPLATES: PrebuiltTemplateData[] = [
   buildTemplate1JEsolar(),
   buildTemplate2MTC(),
+  buildTemplate3ReferenceSLD(),
 ];

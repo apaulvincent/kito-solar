@@ -9,8 +9,8 @@ const GAUGE_OPTIONS: { gauge: WireGaugeMm2; label: string; desc: string }[] = [
   { gauge: 6, label: '6.0 mm²', desc: 'Standard PV & AC' },
   { gauge: 10, label: '10.0 mm²', desc: 'Main AC & Inverter' },
   { gauge: 16, label: '16.0 mm²', desc: 'Heavy AC Feeder' },
-  { gauge: 25, label: '25.0 mm²', desc: 'Main Panel Feed' },
-  { gauge: 35, label: '35.0 mm²', desc: '160A Battery MCCB' },
+  { gauge: 25, label: '25.0 mm²', desc: '100A ATS Feeder' },
+  { gauge: 35, label: '35.0 mm²', desc: 'Heavy Main Bus' },
 ];
 
 const FERRULE_OPTIONS: { color: FerruleColor; hex: string; label: string }[] = [
@@ -29,20 +29,20 @@ export function WireGaugeAndFerruleSelector() {
   const setSelectedFerrule = useCombinerBoxStore((s) => s.setSelectedFerrule);
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex flex-wrap items-center gap-3 px-3 py-2 bg-slate-950/90 border border-slate-800 rounded-xl shadow-2xl backdrop-blur-md select-none text-xs">
+    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 max-w-[calc(100%-1rem)] flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-3 py-1.5 bg-white/95 dark:bg-slate-950/90 border border-slate-300 dark:border-slate-800 rounded-xl shadow-xl backdrop-blur-md select-none text-xs">
       {/* Gauge Selector */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-[10px] font-mono text-slate-400 font-semibold uppercase">Gauge:</span>
-        <div className="flex items-center gap-1 bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+      <div className="flex flex-wrap items-center justify-center gap-1.5 max-w-full">
+        <span className="text-[10px] font-mono text-slate-600 dark:text-slate-400 font-semibold uppercase">Gauge:</span>
+        <div className="flex flex-wrap items-center gap-1 bg-slate-100 dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200 dark:border-slate-800">
           {GAUGE_OPTIONS.map((opt) => (
             <button
               key={opt.gauge}
               type="button"
               onClick={() => setSelectedGauge(opt.gauge)}
-              className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
+              className={`px-2 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer ${
                 selectedGaugeMm2 === opt.gauge
                   ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800'
               }`}
               title={opt.desc}
             >
@@ -52,21 +52,21 @@ export function WireGaugeAndFerruleSelector() {
         </div>
       </div>
 
-      <div className="w-[1px] h-4 bg-slate-800 hidden sm:block" />
+      <div className="w-[1px] h-4 bg-slate-300 dark:bg-slate-800 hidden sm:block" />
 
       {/* Ferrule Sleeve Color Selector */}
       <div className="flex items-center gap-1.5">
-        <span className="text-[10px] font-mono text-slate-400 font-semibold uppercase">Ferrule:</span>
+        <span className="text-[10px] font-mono text-slate-600 dark:text-slate-400 font-semibold uppercase">Ferrule:</span>
         <div className="flex items-center gap-1">
           {FERRULE_OPTIONS.map((f) => (
             <button
               key={f.color}
               type="button"
               onClick={() => setSelectedFerrule(f.color)}
-              className={`w-5 h-5 rounded-full border transition-transform flex items-center justify-center ${
+              className={`w-5 h-5 rounded-full border transition-transform flex items-center justify-center cursor-pointer ${
                 selectedFerruleColor === f.color
-                  ? 'border-amber-400 scale-110 shadow-md ring-2 ring-amber-400/30'
-                  : 'border-slate-700 hover:scale-105'
+                  ? 'border-amber-500 scale-110 shadow-md ring-2 ring-amber-400/40'
+                  : 'border-slate-400 dark:border-slate-700 hover:scale-105'
               }`}
               style={{ backgroundColor: f.hex }}
               title={`Ferrule color: ${f.label}`}

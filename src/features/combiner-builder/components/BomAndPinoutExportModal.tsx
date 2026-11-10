@@ -72,7 +72,9 @@ export function BomAndPinoutExportModal() {
         components,
         wires,
         projectName:
-          activeTemplateId === 'template_mt_solarcell'
+          activeTemplateId === 'template_reference_diagram'
+            ? 'Reference SLD 100A ATS & PV Combiner Box'
+            : activeTemplateId === 'template_mt_solarcell'
             ? 'MT SolarCell Solenoid ATS & Smart Meter Box'
             : 'JEsolar Hybrid 2-String + ATS Combiner Box',
       });

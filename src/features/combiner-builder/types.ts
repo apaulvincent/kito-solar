@@ -8,13 +8,16 @@ export type WireGaugeMm2 = 1.5 | 2.5 | 4 | 6 | 10 | 16 | 25 | 35 | 50;
 export type ComponentCategory =
   | 'dc_mcb'
   | 'dc_spd'
+  | 'dc_isolator'
   | 'ac_mcb'
   | 'ac_rcbo'
   | 'ac_spd'
+  | 'ac_isolator'
   | 'ats_cb'
   | 'ats_solenoid'
   | 'battery_mccb'
   | 'din_meter'
+  | 'digital_protector'
   | 'terminal_block'
   | 'pe_busbar';
 

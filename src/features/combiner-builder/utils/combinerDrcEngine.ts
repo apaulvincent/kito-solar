@@ -63,9 +63,10 @@ export function evaluateCombinerWiringDRC(
       (p1.polarity === 'DC_POS' && p2.polarity === 'DC_NEG') ||
       (p1.polarity === 'DC_NEG' && p2.polarity === 'DC_POS')
     ) {
-      // Don't flag if connecting to an internal sensing or meter coil that has both L and N inputs
+      // Don't flag if connecting to an internal sensing, protector, or meter coil that has both L and N inputs
       const isAcceptableInput =
         (c1.category === 'din_meter' && c2.category === 'din_meter') ||
+        (c1.category === 'digital_protector' && c2.category === 'digital_protector') ||
         (p1.domain === 'CONTROL_SENSE' && p2.domain === 'CONTROL_SENSE');
 
       if (!isAcceptableInput) {

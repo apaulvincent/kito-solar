@@ -13,7 +13,7 @@ import { CATALOG_MAP } from '../data/combinerHardwareCatalog';
 import {
   buildTemplate1JEsolar,
   buildTemplate2MTC,
-  PREBUILT_TEMPLATES,
+  buildTemplate3ReferenceSLD,
 } from '../data/prebuiltBoxTemplates';
 import {
   computeWireWaypoints,
@@ -66,19 +66,19 @@ interface CombinerBoxState {
   removeWire: (id: string) => void;
   clearWires: () => void;
   clearBox: () => void;
-  loadTemplate: (templateId: string) => void;
+  loadTemplate: (templateId: string | { id: string }) => void;
 
   undo: () => void;
   redo: () => void;
 }
 
-const defaultT1 = buildTemplate1JEsolar();
+const defaultTemplate = buildTemplate3ReferenceSLD();
 
 export const useCombinerBoxStore = create<CombinerBoxState>()(
   persist(
     (set, get) => ({
-      components: defaultT1.components,
-      wires: defaultT1.wires,
+      components: defaultTemplate.components,
+      wires: defaultTemplate.wires,
       selectedComponentId: null,
       selectedWireId: null,
       selectedPortId: null,
@@ -90,7 +90,7 @@ export const useCombinerBoxStore = create<CombinerBoxState>()(
       isPaletteOpen: true,
       isDrcModalOpen: false,
       isExportModalOpen: false,
-      activeTemplateId: 'template_jesolar_hybrid',
+      activeTemplateId: 'template_reference_diagram',
       undoStack: [],
       redoStack: [],
 
@@ -133,16 +133,16 @@ export const useCombinerBoxStore = create<CombinerBoxState>()(
         const nextSlot = maxSlot + 1;
 
         const instanceId = `comp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-        const slotPitch = 0.085;
-        const posX = -1.0 + nextSlot * slotPitch;
+        const slotPitch = 0.082;
+        const posX = -1.06 + nextSlot * slotPitch;
         const posY =
           zone === 'rail_top'
-            ? 0.75
+            ? 0.70
             : zone === 'rail_middle'
-            ? 0.05
+            ? -0.05
             : zone === 'bottom_plate'
-            ? -0.72
-            : 0.1;
+            ? -0.78
+            : 0.0;
         const posZ = zone === 'bottom_plate' ? 0.08 : 0.05;
 
         const ports = item.ports.map((p, idx) => ({
@@ -208,8 +208,8 @@ export const useCombinerBoxStore = create<CombinerBoxState>()(
         if (!comp || comp.mountZone === 'bottom_plate' || comp.mountZone === 'side_busbar') return;
 
         const clampedSlot = Math.max(0, Math.min(22, newSlot));
-        const slotPitch = 0.085;
-        const newX = -1.0 + clampedSlot * slotPitch;
+        const slotPitch = 0.082;
+        const newX = -1.06 + clampedSlot * slotPitch;
 
         const updatedComponents = current.components.map((c) =>
           c.id === id
@@ -270,7 +270,7 @@ export const useCombinerBoxStore = create<CombinerBoxState>()(
           let newAtsSource = state.atsSourceState;
 
           // ATS simulation reaction:
-          // If the flipped component is the Inverter AC MCB and turns OFF, transfer ATS to Grid (Source B)
+          // If the flipped component is an AC MCB and turns OFF, transfer ATS to Grid (Source B)
           if (comp.name.includes('AC MCB') || comp.category === 'ac_mcb') {
             if (!newSwitchState && state.atsSourceState === 'source_a') {
               newAtsSource = 'source_b'; // Auto transfer to grid!
@@ -436,8 +436,11 @@ export const useCombinerBoxStore = create<CombinerBoxState>()(
       },
 
       loadTemplate: (templateId) => {
+        const id = typeof templateId === 'string' ? templateId : templateId?.id;
         const template =
-          templateId === 'template_mt_solarcell'
+          id === 'template_reference_diagram'
+            ? buildTemplate3ReferenceSLD()
+            : id === 'template_mt_solarcell'
             ? buildTemplate2MTC()
             : buildTemplate1JEsolar();
 
@@ -500,7 +503,7 @@ export const useCombinerBoxStore = create<CombinerBoxState>()(
       },
     }),
     {
-      name: 'kito_combiner_builder_store_v1',
+      name: 'kito_combiner_builder_store_v2',
       partialize: (state) => ({
         components: state.components,
         wires: state.wires,
