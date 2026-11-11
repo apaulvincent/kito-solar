@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { generateSizingPdf } from '../pdfExportService';
 import { calculateSystem } from '@/engine/calculateSystem';
+import { DailySimulationSummary } from '@/features/yield-simulator/types/yieldSimulator';
 import invertersSeed from '@/data/seed/solar_inverters.json';
 import modulesSeed from '@/data/seed/solar_modules.json';
 import batteriesSeed from '@/data/seed/batteries.json';
@@ -21,6 +22,33 @@ describe('pdfExportService', () => {
       mainBreakerA: 63,
     });
 
+    const sampleYield: DailySimulationSummary = {
+      totalPotentialPvKwh: 23.0,
+      totalHarvestedPvKwh: 22.4,
+      totalClippedPvKwh: 0.6,
+      inverterClippedKwh: 0.4,
+      zeroExportCurtailedKwh: 0.2,
+      curtailmentStartTime: null,
+      totalLoadConsumedKwh: 18.2,
+      totalUnmetLoadKwh: 0,
+      directSolarToLoadKwh: 10.5,
+      batteryChargedKwh: 8.0,
+      batteryDischargedKwh: 6.8,
+      gridImportedKwh: 0.9,
+      gridExportedKwh: 3.1,
+      selfSufficiencyPercent: 95.1,
+      solarSelfConsumptionPercent: 86.2,
+      minBatterySocPercent: 25,
+      maxBatterySocPercent: 98,
+      brownoutSurvived: true,
+      blackoutUnmetMinutes: 0,
+      batteryDepletedTimeLabel: null,
+      overloadFaultDetected: false,
+      antiIslandingDetected: false,
+      diagnostics: [],
+      steps: [],
+    };
+
     const doc = generateSizingPdf({
       calculationResult,
       selectedInverter: inverter,
@@ -31,6 +59,7 @@ describe('pdfExportService', () => {
       mainBreakerA: 63,
       userEmail: 'engineer@kitosolar.com',
       userName: 'Lead Solar Engineer',
+      yieldSummary: sampleYield,
     });
 
     expect(doc).toBeDefined();

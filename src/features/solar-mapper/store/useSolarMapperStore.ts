@@ -1,6 +1,6 @@
-// src/features/solar-mapper/store/useSolarMapperStore.ts
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { STORAGE_KEYS, safeStorage } from '@/lib/storage';
 import {
   GeoPoint,
   LocationIrradianceProfile,
@@ -569,7 +569,8 @@ export const useSolarMapperStore = create<SolarMapperState>()(
       },
     }),
     {
-      name: 'kito_solar_mapper_v4',
+      name: STORAGE_KEYS.solarMapper,
+      storage: createJSONStorage(() => safeStorage),
       partialize: (state) => ({
         coordinates: state.coordinates,
         zoom: state.zoom,

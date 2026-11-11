@@ -18,8 +18,9 @@ import { FinancialRoiPage } from '@/features/financial-roi/components/FinancialR
 import { SolarMapperPage } from '@/features/solar-mapper/components/SolarMapperPage';
 import { YieldSimulatorPage } from '@/features/yield-simulator/components/YieldSimulatorPage';
 import { projectService } from '@/services/projectService';
+import { extractProjectIdFromUrl, isOAuthHash, pathToView, syncUrlForView } from '@/lib/urlSync';
 import { useAuthStore } from '@/store/useAuthStore';
-import { extractProjectIdFromUrl, isOAuthHash, pathToView, useCalculatorStore } from '@/store/useCalculatorStore';
+import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { Analytics } from '@vercel/analytics/react';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect } from 'react';
@@ -60,9 +61,8 @@ export function App() {
       const hash = window.location.hash;
       const view = pathToView(window.location.pathname, hash);
       const projectId = extractProjectIdFromUrl(window.location.pathname, window.location.search);
-      if (hash && !isOAuthHash(hash) && window.history?.replaceState) {
-        const targetPath = projectId ? `/projects/${projectId}` : view === 'home' ? '/' : `/${view}`;
-        window.history.replaceState({ view, projectId }, '', targetPath);
+      if (hash && !isOAuthHash(hash)) {
+        syncUrlForView(view, projectId, 'replace');
       }
       setActiveView(view, projectId);
 
@@ -80,12 +80,10 @@ export function App() {
       }
     };
 
-    // If an initial load arrived with a legacy hash (not an OAuth callback), cleanly remove it
-    if (typeof window !== 'undefined' && window.location.hash && !isOAuthHash(window.location.hash) && window.history?.replaceState) {
+    if (typeof window !== 'undefined' && window.location.hash && !isOAuthHash(window.location.hash)) {
       const view = pathToView(window.location.pathname, window.location.hash);
       const projectId = extractProjectIdFromUrl(window.location.pathname, window.location.search);
-      const targetPath = projectId ? `/projects/${projectId}` : view === 'home' ? '/' : `/${view}`;
-      window.history.replaceState({ view, projectId }, '', targetPath);
+      syncUrlForView(view, projectId, 'replace');
       setActiveView(view, projectId);
     }
 

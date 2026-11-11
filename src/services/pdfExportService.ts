@@ -1,13 +1,9 @@
-// src/services/pdfExportService.ts
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { SystemCalculationResult } from '@/types/calculator';
 import { SolarInverterRecord, SolarModuleRecord, BatteryRecord } from '@/types/supabase';
 import { DailySimulationSummary } from '@/features/yield-simulator/types/yieldSimulator';
-import { useYieldSimulatorStore } from '@/features/yield-simulator/store/useYieldSimulatorStore';
-import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
-import { useSolarMapperStore } from '@/features/solar-mapper/store/useSolarMapperStore';
-import { runYieldSimulation } from '@/features/yield-simulator/utils/yieldSimulationEngine';
+import { isGridTieTopology } from '@/lib/systemType';
 
 export interface ExportPdfParams {
   calculationResult: SystemCalculationResult;
@@ -476,42 +472,8 @@ export function generateSizingPdf({
     currentY = (doc as any).lastAutoTable.finalY + 12;
   }
 
-  // 7B. 24-HOUR SYSTEM DISPATCH & SELF-SUFFICIENCY SUMMARY (Digital Twin Telemetry)
-  let effectiveYieldSummary = yieldSummary;
-  if (!effectiveYieldSummary) {
-    try {
-      const simState = useYieldSimulatorStore.getState();
-      const loadState = useApplianceLoadStore.getState();
-      const mapperState = useSolarMapperStore.getState();
-      effectiveYieldSummary = runYieldSimulation({
-        pvArrayKwp: summary.totalArrayPowerKw || simState.pvArrayKwp,
-        inverterKw: summary.inverterPowerKw || simState.inverterKw,
-        batteryCapacityKwh: isHybrid ? Number((battery.totalEnergyWh / 1000).toFixed(2)) : 0,
-        initialBatterySocPercent: simState.initialBatterySocPercent,
-        minReserveSocPercent: simState.minReserveSocPercent,
-        roundTripEfficiency: 0.92,
-        maxBatteryCRate: 0.5,
-        systemTopology: isHybrid ? 'hybrid' : 'grid_tie',
-        isZeroExport: simState.isZeroExport,
-        weatherScenario: simState.weatherScenario === 'live_open_meteo' ? 'clear_sky' : simState.weatherScenario,
-        emsMode: simState.emsMode,
-        peakSunHours: mapperState.getSelectedPsh(),
-        latitude: mapperState.coordinates.lat,
-        tariffPhpPerKwh: simState.tariffPhpPerKwh,
-        brownout: simState.brownout,
-        instantBlackoutActive: false,
-        currentStepIndex: simState.currentStepIndex,
-        appliances: loadState.items,
-        disabledApplianceIds: simState.disabledApplianceIds,
-        forcedOnApplianceIds: simState.forcedOnApplianceIds,
-        shiftedToMiddayIds: simState.shiftedToMiddayIds,
-      });
-    } catch {
-      effectiveYieldSummary = undefined;
-    }
-  }
-
-  if (effectiveYieldSummary) {
+  if (yieldSummary) {
+    const effectiveYieldSummary = yieldSummary;
     if (currentY > 205) {
       doc.addPage();
       currentY = 22;
@@ -604,7 +566,7 @@ export function generateSizingPdf({
 export function downloadSizingPdf(params: ExportPdfParams): void {
   const doc = generateSizingPdf(params);
   const dateSlug = new Date().toISOString().split('T')[0];
-  const systemSlug = params.calculationResult.systemType === 'hybrid' ? 'Hybrid' : 'OnGrid';
+  const systemSlug = isGridTieTopology(params.calculationResult.systemType) ? 'OnGrid' : 'Hybrid';
   const filename = `KitoSolar-Sizing-${systemSlug}-${dateSlug}.pdf`;
   doc.save(filename);
 }

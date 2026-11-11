@@ -20,6 +20,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { formatPeso } from '@/lib/utils';
+import { STORAGE_KEYS, safeStorage } from '@/lib/storage';
 
 export function ProjectCostSummaryCard() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
@@ -27,26 +28,12 @@ export function ProjectCostSummaryCard() {
   const customPrices = useCalculatorStore((s) => s.customPrices);
   const { costSummary, summary } = calculationResult;
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isOpen, setIsOpen] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('kito_show_financial_roi_details');
-        if (saved !== null) {
-          return saved === 'true';
-        }
-      } catch (e) {}
-    }
-    return false; // ROI and Subtotals hidden by default
-  });
+  const [isOpen, setIsOpen] = useState(() => safeStorage.getItem(STORAGE_KEYS.showFinancialRoiDetails) === 'true');
 
   const toggleOpen = () => {
     setIsOpen((prev) => {
       const next = !prev;
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('kito_show_financial_roi_details', String(next));
-        } catch (e) {}
-      }
+      safeStorage.setItem(STORAGE_KEYS.showFinancialRoiDetails, String(next));
       return next;
     });
   };

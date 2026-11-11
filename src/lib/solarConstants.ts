@@ -25,6 +25,8 @@ export const MODULES_PER_3D_PV_ARRAY = 3;
 
 export const DAYS_PER_MONTH = 30;
 
+export const STANDARD_INVERTER_TIERS_KW = [1.0, 2.0, 3.0, 3.6, 5.0, 6.0, 8.0, 10.0, 12.0, 15.0, 20.0] as const;
+
 export function roundUpToBatteryModules(requiredKwh: number, moduleKwh: number = LIFEPO4_MODULE_KWH): number {
   if (requiredKwh <= 0) return 0;
   return Math.ceil(requiredKwh / moduleKwh);

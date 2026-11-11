@@ -1,6 +1,3 @@
-// src/features/financial-roi/store/useFinancialRoiStore.ts
-// Zustand store managing user financial parameters, utility tariffs, CAPEX overrides, and simulation results.
-
 import { useMemo } from 'react';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -16,12 +13,13 @@ import {
 } from '../utils/utilityTariffPresets';
 import {
   computeScenarioSimulation,
-  estimateSizingFromMonthlyBill,
   simulateAllScenarios,
 } from '../utils/financialEngine';
-import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
-import { useSolarMapperStore } from '@/features/solar-mapper/store/useSolarMapperStore';
-import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { STORAGE_KEYS, safeStorage } from '@/lib/storage';
+import {
+  readCrossStoreFinancialSizingInput,
+  useCrossFeatureFinancialSizingInput,
+} from '@/store/systemSizingSelector';
 
 export interface FinancialRoiState {
   config: FinancialConfig;
@@ -31,7 +29,6 @@ export interface FinancialRoiState {
   showAllCurvesOnTimeline: boolean;
   highlightedTimelineYear: number | null;
 
-  // Actions
   setUtilityPreset: (presetId: string) => void;
   updateConfig: (updates: Partial<FinancialConfig>) => void;
   setStandaloneMonthlyBill: (billPhp: number) => void;
@@ -41,34 +38,10 @@ export interface FinancialRoiState {
   setHighlightedTimelineYear: (year: number | null) => void;
   resetToDefaults: () => void;
 
-  // Imperative helpers (for store.getState() calls & tests)
   getSystemSizingInput: () => SystemSizingInput;
   getActiveSimulation: () => ScenarioSimulationResult;
   getAllScenarioSimulations: () => Record<ExportStrategy, ScenarioSimulationResult>;
 }
-
-const safeLocalStorage = {
-  getItem: (name: string): string | null => {
-    if (typeof window === 'undefined') return null;
-    try {
-      return window.localStorage.getItem(name);
-    } catch {
-      return null;
-    }
-  },
-  setItem: (name: string, value: string): void => {
-    if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.setItem(name, value);
-    } catch {}
-  },
-  removeItem: (name: string): void => {
-    if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.removeItem(name);
-    } catch {}
-  },
-};
 
 export const useFinancialRoiStore = create<FinancialRoiState>()(
   persist(
@@ -146,75 +119,11 @@ export const useFinancialRoiStore = create<FinancialRoiState>()(
 
       getSystemSizingInput: (): SystemSizingInput => {
         const state = get();
-        const retailRate = state.config.retailRatePhp;
-
-        // 1. Get PSH from Solar Mapper if available
-        let effectivePsh = 4.5;
-        try {
-          const mapperProfile = useSolarMapperStore.getState().irradianceProfile;
-          if (mapperProfile?.annualAvgEffectivePsh && mapperProfile.annualAvgEffectivePsh > 0) {
-            effectivePsh = mapperProfile.annualAvgEffectivePsh;
-          }
-        } catch {}
-
-        // 2. Check if user explicitly wants the quick standalone slider
-        if (state.useStandaloneBillOverride) {
-          return estimateSizingFromMonthlyBill(state.standaloneMonthlyBillPhp, retailRate, effectivePsh);
-        }
-
-        // 3. Try pulling from Appliance Load Calculator
-        try {
-          const loadState = useApplianceLoadStore.getState();
-          if (loadState.items && loadState.items.length > 0) {
-            const sizing = loadState.getSizingResult();
-            if (sizing.totalDailyKwh > 0) {
-              return {
-                pvKwp: Math.max(1.0, sizing.recommendedPvKwp),
-                inverterKw: Math.max(1.0, sizing.recommendedInverterKw),
-                batteryKwh: sizing.recommendedBatteryKwh || 5.12,
-                dailyTotalKwh: sizing.totalDailyKwh,
-                dailyDaytimeKwh: sizing.daytimeKwh,
-                dailyNighttimeKwh: sizing.nighttimeKwh,
-                effectivePsh,
-                systemEfficiency: 0.80,
-                batteryDod: 0.80,
-                batteryRoundTripEfficiency: 0.90,
-                sourceLabel: `Synced from Appliance Load (${loadState.items.length} appliances, ${sizing.totalDailyKwh.toFixed(1)} kWh/day)`,
-              };
-            }
-          }
-        } catch {}
-
-        // 4. Try pulling from Solar Engineering Tool calculation result
-        try {
-          const calcState = useCalculatorStore.getState();
-          const calcResult = calcState.calculationResult;
-          if (calcResult && calcResult.summary.totalArrayPowerKw > 0) {
-            const pvKwp = calcResult.summary.totalArrayPowerKw;
-            const inverterKw = calcResult.summary.inverterPowerKw;
-            const batteryKwh = calcResult.battery?.hasBattery
-              ? calcResult.battery.totalEnergyWh / 1000
-              : 5.12;
-            const dailyGen = pvKwp * effectivePsh * 0.80;
-
-            return {
-              pvKwp,
-              inverterKw,
-              batteryKwh,
-              dailyTotalKwh: dailyGen,
-              dailyDaytimeKwh: Math.round(dailyGen * 0.45 * 10) / 10,
-              dailyNighttimeKwh: Math.round(dailyGen * 0.55 * 10) / 10,
-              effectivePsh,
-              systemEfficiency: 0.80,
-              batteryDod: 0.80,
-              batteryRoundTripEfficiency: 0.90,
-              sourceLabel: `Synced from Solar Engineering Workbench (${pvKwp.toFixed(2)} kWp Array)`,
-            };
-          }
-        } catch {}
-
-        // 5. Fallback to Standalone Monthly Bill estimation
-        return estimateSizingFromMonthlyBill(state.standaloneMonthlyBillPhp, retailRate, effectivePsh);
+        return readCrossStoreFinancialSizingInput({
+          retailRatePhp: state.config.retailRatePhp,
+          standaloneMonthlyBillPhp: state.standaloneMonthlyBillPhp,
+          useStandaloneBillOverride: state.useStandaloneBillOverride,
+        });
       },
 
       getActiveSimulation: (): ScenarioSimulationResult => {
@@ -230,9 +139,9 @@ export const useFinancialRoiStore = create<FinancialRoiState>()(
       },
     }),
     {
-      name: 'kito_financial_roi_v3',
-      storage: createJSONStorage(() => safeLocalStorage),
-      partialize: (state): any => ({
+      name: STORAGE_KEYS.financialRoi,
+      storage: createJSONStorage(() => safeStorage),
+      partialize: (state) => ({
         config: state.config,
         standaloneMonthlyBillPhp: state.standaloneMonthlyBillPhp,
         useStandaloneBillOverride: state.useStandaloneBillOverride,
@@ -243,34 +152,16 @@ export const useFinancialRoiStore = create<FinancialRoiState>()(
   )
 );
 
-/**
- * React 19 safe memoized hook that subscribes to stable state primitives/references
- * and computes `sizingInput`, `activeSim`, and `allScenarios` without triggering
- * `useSyncExternalStore` infinite snapshot loops.
- */
 export function useFinancialRoiSimulation() {
   const config = useFinancialRoiStore((s) => s.config);
   const standaloneMonthlyBillPhp = useFinancialRoiStore((s) => s.standaloneMonthlyBillPhp);
   const useStandaloneBillOverride = useFinancialRoiStore((s) => s.useStandaloneBillOverride);
-  const getSystemSizingInput = useFinancialRoiStore((s) => s.getSystemSizingInput);
 
-  // Subscribe to relevant external store state so changes re-compute memoized simulation
-  const loadItems = useApplianceLoadStore((s) => s.items);
-  const loadConfig = useApplianceLoadStore((s) => s.config);
-  const effectivePsh = useSolarMapperStore((s) => s.irradianceProfile?.annualAvgEffectivePsh);
-
-  const sizingInput = useMemo(
-    () => getSystemSizingInput(),
-    [
-      getSystemSizingInput,
-      config.retailRatePhp,
-      standaloneMonthlyBillPhp,
-      useStandaloneBillOverride,
-      loadItems,
-      loadConfig,
-      effectivePsh,
-    ]
-  );
+  const sizingInput = useCrossFeatureFinancialSizingInput({
+    retailRatePhp: config.retailRatePhp,
+    standaloneMonthlyBillPhp,
+    useStandaloneBillOverride,
+  });
 
   const activeSim = useMemo(
     () => computeScenarioSimulation(sizingInput, config, config.exportStrategy),

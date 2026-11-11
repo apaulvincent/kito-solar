@@ -1,30 +1,15 @@
-// src/services/projectService.ts
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { SavedProject, CreateProjectInput, MAX_PROJECTS_PER_USER } from '@/types/project';
 import { sanitizeProjectTitle, sanitizeProjectNotes } from '@/lib/sanitization';
-
-const getLocalStorageKey = (userId: string) => `kito_saved_projects_${userId}`;
+import { readJson, safeStorage, savedProjectsKey, STORAGE_KEYS, writeJson } from '@/lib/storage';
 
 function readFromLocalStorage(userId: string): SavedProject[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(getLocalStorageKey(userId));
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (err) {
-    console.warn('Failed to read projects from localStorage:', err);
-    return [];
-  }
+  const parsed = readJson<SavedProject[]>(savedProjectsKey(userId));
+  return Array.isArray(parsed) ? parsed : [];
 }
 
 function writeToLocalStorage(userId: string, projects: SavedProject[]): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(getLocalStorageKey(userId), JSON.stringify(projects));
-  } catch (err) {
-    console.warn('Failed to write projects to localStorage:', err);
-  }
+  writeJson(savedProjectsKey(userId), projects);
 }
 
 const SHORT_ID_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -113,23 +98,14 @@ export const projectService = {
       }
     }
 
-    // Fallback: search localStorage across all keys
-    if (typeof window !== 'undefined') {
-      try {
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('kito_saved_projects_')) {
-            const raw = localStorage.getItem(key);
-            if (raw) {
-              const list = JSON.parse(raw);
-              if (Array.isArray(list)) {
-                const hit = list.find((p: SavedProject) => p.id === projectId);
-                if (hit) return hit;
-              }
-            }
-          }
+    for (const key of safeStorage.keys()) {
+      if (key.startsWith(STORAGE_KEYS.savedProjectsPrefix)) {
+        const list = readJson<SavedProject[]>(key);
+        if (Array.isArray(list)) {
+          const hit = list.find((p: SavedProject) => p.id === projectId);
+          if (hit) return hit;
         }
-      } catch (e) {}
+      }
     }
 
     return null;

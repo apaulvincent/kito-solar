@@ -1,5 +1,6 @@
 // src/features/financial-roi/__tests__/financialRoiIntegration.test.ts
-import { createElement } from 'react';
+import { act, createElement } from 'react';
+import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as fs from 'fs';
@@ -7,6 +8,7 @@ import * as path from 'path';
 import { useFinancialRoiStore } from '../store/useFinancialRoiStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
 import { QuickBillSliderBanner } from '../components/QuickBillSliderBanner';
 import { ExportModeComparisonCards } from '../components/ExportModeComparisonCards';
 import { CashflowTimelineChart } from '../components/CashflowTimelineChart';
@@ -101,5 +103,41 @@ describe('Financial ROI Store & Authentication Integration Suite', () => {
     expect(renderToStaticMarkup(createElement(EnergyFateBreakdownBar))).toContain('Daily Solar Energy Fate &amp; Utilization');
     expect(renderToStaticMarkup(createElement(TariffPresetSelector))).toContain('Electric Utility Tariff &amp; Economics');
     expect(renderToStaticMarkup(createElement(CapexBreakdownCard))).toContain('System Turnkey CAPEX &amp; Replacements');
+  });
+
+  it('recomputes ROI sizing from Studio calculationResult without stale memoization', () => {
+    const g = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+    const prevActEnv = g.IS_REACT_ACT_ENVIRONMENT;
+    g.IS_REACT_ACT_ENVIRONMENT = true;
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    try {
+      act(() => {
+        useApplianceLoadStore.getState().clearAll();
+        useFinancialRoiStore.getState().setUseStandaloneBillOverride(false);
+        useCalculatorStore.getState().setPanelCountOverride(6);
+        root.render(createElement(QuickBillSliderBanner));
+      });
+
+      const smallInput = useFinancialRoiStore.getState().getSystemSizingInput();
+      expect(container.textContent).toContain(`${smallInput.pvKwp} kWp PV`);
+      expect(container.textContent).toContain('Solar Engineering Workbench');
+
+      act(() => {
+        useCalculatorStore.getState().setPanelCountOverride(16);
+      });
+
+      const largeInput = useFinancialRoiStore.getState().getSystemSizingInput();
+      expect(smallInput.pvKwp).not.toBe(largeInput.pvKwp);
+      expect(container.textContent).toContain(`${largeInput.pvKwp} kWp PV`);
+    } finally {
+      act(() => {
+        root.unmount();
+      });
+      container.remove();
+      g.IS_REACT_ACT_ENVIRONMENT = prevActEnv;
+    }
   });
 });

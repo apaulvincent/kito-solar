@@ -7,16 +7,13 @@ import {
   Calculator,
 } from 'lucide-react';
 import { useSolarMapperStore } from '../store/useSolarMapperStore';
-import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
-import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { useRoofVsLoadContext } from '@/store/systemSizingSelector';
 
 export const RoofVsLoadComparisonCard: React.FC = () => {
   const { getSummary, panelWattage } = useSolarMapperStore();
   const summary = getSummary();
 
-  const getLoadSizingResult = useApplianceLoadStore((s) => s.getSizingResult);
-  const loadResult = getLoadSizingResult();
-  const setActiveView = useCalculatorStore((s) => s.setActiveView);
+  const { loadResult, setActiveView } = useRoofVsLoadContext();
 
   const requiredPanels = loadResult.recommendedPanelCount;
   const roofMaxPanels = summary.totalMaxPanels;

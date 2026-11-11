@@ -1,8 +1,6 @@
-// src/store/useApplianceLoadStore.ts
-// Local-first persistent state management for household appliance load analysis & solar PV sizing.
-
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { STORAGE_KEYS, safeStorage } from '@/lib/storage';
 import {
   ApplianceCategory,
   ApplianceItem,
@@ -41,29 +39,6 @@ const initialStarterItems: ApplianceItem[] = STARTER_PROFILES.small_home_wfh.ite
   ...item,
   id: `initial_${idx}_${Date.now()}`,
 }));
-
-const safeLocalStorage = {
-  getItem: (name: string): string | null => {
-    if (typeof window === 'undefined') return null;
-    try {
-      return window.localStorage.getItem(name);
-    } catch {
-      return null;
-    }
-  },
-  setItem: (name: string, value: string): void => {
-    if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.setItem(name, value);
-    } catch {}
-  },
-  removeItem: (name: string): void => {
-    if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.removeItem(name);
-    } catch {}
-  },
-};
 
 export const useApplianceLoadStore = create<ApplianceLoadStoreState>()(
   persist(
@@ -206,8 +181,8 @@ export const useApplianceLoadStore = create<ApplianceLoadStoreState>()(
       },
     }),
     {
-      name: 'kito_solar_load_v1',
-      storage: createJSONStorage(() => safeLocalStorage),
+      name: STORAGE_KEYS.applianceLoad,
+      storage: createJSONStorage(() => safeStorage),
       partialize: (state) => ({
         items: state.items,
         config: state.config,

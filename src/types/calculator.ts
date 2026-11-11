@@ -219,3 +219,20 @@ export interface SystemCalculationResult {
     batteryBankSummary: string;
   };
 }
+
+export type WorkbenchTabKey = 'electrical' | 'pv_sizing' | 'mounting_bom' | 'warnings';
+
+export type ActiveView =
+  | 'home'
+  | 'tool'
+  | 'projects'
+  | 'login'
+  | 'register'
+  | 'account'
+  | 'load-calculator'
+  | 'solar-mapper'
+  | 'financial-roi'
+  | 'yield-simulator'
+  | 'contact';
+
+export type DetailMode = 'min' | 'detailed';

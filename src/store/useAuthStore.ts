@@ -1,9 +1,9 @@
-// src/store/useAuthStore.ts
 import { create } from 'zustand';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { generateRandomSolarName } from '@/lib/solarNames';
 import { sanitizeProjectTitle } from '@/lib/sanitization';
+import { cleanOAuthHashFromUrl } from '@/lib/urlSync';
 
 interface AuthState {
   user: User | null;
@@ -193,13 +193,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       set({ session, user: session?.user ?? null, isLoading: false });
-      // Clean OAuth token fragment from URL once parsed and signed in
       if (typeof window !== 'undefined' && (event === 'SIGNED_IN' || session)) {
         if (window.location.hash.includes('access_token')) {
-          try {
-            const cleanPath = window.location.pathname || '/';
-            window.history.replaceState({}, document.title, cleanPath);
-          } catch (e) {}
+          cleanOAuthHashFromUrl();
         }
       }
     });

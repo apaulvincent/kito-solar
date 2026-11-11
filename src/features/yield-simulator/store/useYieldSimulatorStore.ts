@@ -1,4 +1,3 @@
-// src/features/yield-simulator/store/useYieldSimulatorStore.ts
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import {
@@ -8,9 +7,10 @@ import {
   SystemTopologyMode,
   WeatherScenario,
 } from '../types/yieldSimulator';
-import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
 import { useSolarMapperStore } from '@/features/solar-mapper/store/useSolarMapperStore';
+import { readLoadSizingSnapshot, readStudioHardwareSnapshot } from '@/store/systemSizingSelector';
+import { DEFAULT_RETAIL_TARIFF_PHP_PER_KWH } from '@/lib/solarConstants';
+import { STORAGE_KEYS, safeStorage } from '@/lib/storage';
 
 export interface YieldSimulatorStoreState {
   weatherScenario: WeatherScenario;
@@ -65,35 +65,7 @@ export interface YieldSimulatorStoreState {
   setSyncSunHourWith3D: (sync: boolean) => void;
 }
 
-function getInitialStudioSpecs() {
-  try {
-    const calcState = useCalculatorStore.getState();
-    const res = calcState.calculationResult;
-    if (res) {
-      const pvKwp = res.summary.totalArrayPowerKw || 6.0;
-      const invKw = res.summary.inverterPowerKw || 6.0;
-      const battKwh =
-        res.battery.hasBattery && res.battery.totalEnergyWh > 0
-          ? Number((res.battery.totalEnergyWh / 1000).toFixed(2))
-          : 10.24;
-      const topology: SystemTopologyMode =
-        res.systemType === 'hybrid' && res.battery.hasBattery
-          ? 'hybrid'
-          : 'grid_tie';
-      return { pvKwp, invKw, battKwh, topology };
-    }
-  } catch {
-    // Fallback to standard 6kW hybrid configuration
-  }
-  return {
-    pvKwp: 6.0,
-    invKw: 6.0,
-    battKwh: 10.24,
-    topology: 'hybrid' as SystemTopologyMode,
-  };
-}
-
-const initialSpecs = getInitialStudioSpecs();
+const initialSpecs = readStudioHardwareSnapshot(10.24);
 
 export const useYieldSimulatorStore = create<YieldSimulatorStoreState>()(
   persist(
@@ -102,12 +74,12 @@ export const useYieldSimulatorStore = create<YieldSimulatorStoreState>()(
       emsMode: 'self_consumption',
       systemTopology: initialSpecs.topology,
       isZeroExport: false,
-      pvArrayKwp: initialSpecs.pvKwp,
-      inverterKw: initialSpecs.invKw,
-      batteryCapacityKwh: initialSpecs.battKwh,
+      pvArrayKwp: initialSpecs.pvArrayKwp,
+      inverterKw: initialSpecs.inverterKw,
+      batteryCapacityKwh: initialSpecs.batteryCapacityKwh,
       initialBatterySocPercent: 35,
       minReserveSocPercent: 20,
-      tariffPhpPerKwh: 11.85,
+      tariffPhpPerKwh: DEFAULT_RETAIL_TARIFF_PHP_PER_KWH,
       brownout: {
         enabled: false,
         startHour: 18.0,
@@ -170,30 +142,22 @@ export const useYieldSimulatorStore = create<YieldSimulatorStoreState>()(
         })),
 
       syncFromSolarStudio: () => {
-        const calcState = useCalculatorStore.getState();
-        const res = calcState.calculationResult;
-        if (!res) return;
-        const hasBatt = res.battery.hasBattery && res.battery.totalEnergyWh > 0;
+        const snap = readStudioHardwareSnapshot(0);
         set({
-          pvArrayKwp: Number((res.summary.totalArrayPowerKw || 6.0).toFixed(2)),
-          inverterKw: Number((res.summary.inverterPowerKw || 6.0).toFixed(2)),
-          batteryCapacityKwh: hasBatt
-            ? Number((res.battery.totalEnergyWh / 1000).toFixed(2))
-            : 0,
-          systemTopology: hasBatt ? 'hybrid' : 'grid_tie',
+          pvArrayKwp: snap.pvArrayKwp,
+          inverterKw: snap.inverterKw,
+          batteryCapacityKwh: snap.batteryCapacityKwh,
+          systemTopology: snap.topology,
           hasSyncedInitialHardware: true,
         });
       },
 
       syncFromLoadCalculator: () => {
-        const loadState = useApplianceLoadStore.getState();
-        const sizing = loadState.getSizingResult();
+        const sizing = readLoadSizingSnapshot();
         set({
           pvArrayKwp: Number((sizing.recommendedPvKwp || 6.0).toFixed(2)),
           inverterKw: Number((sizing.recommendedInverterKw || 5.0).toFixed(2)),
-          batteryCapacityKwh: Number(
-            (sizing.recommendedBatteryKwh || 0).toFixed(2)
-          ),
+          batteryCapacityKwh: Number((sizing.recommendedBatteryKwh || 0).toFixed(2)),
           systemTopology: sizing.recommendedTopology,
           hasSyncedInitialHardware: true,
         });
@@ -296,29 +260,8 @@ export const useYieldSimulatorStore = create<YieldSimulatorStoreState>()(
       setSyncSunHourWith3D: (syncSunHourWith3D) => set({ syncSunHourWith3D }),
     }),
     {
-      name: 'kito_solar_yield_simulator_v1',
-      storage: createJSONStorage(() => ({
-        getItem: (name: string) => {
-          if (typeof window === 'undefined') return null;
-          try {
-            return window.localStorage.getItem(name);
-          } catch {
-            return null;
-          }
-        },
-        setItem: (name: string, value: string) => {
-          if (typeof window === 'undefined') return;
-          try {
-            window.localStorage.setItem(name, value);
-          } catch {}
-        },
-        removeItem: (name: string) => {
-          if (typeof window === 'undefined') return;
-          try {
-            window.localStorage.removeItem(name);
-          } catch {}
-        },
-      })),
+      name: STORAGE_KEYS.yieldSimulator,
+      storage: createJSONStorage(() => safeStorage),
       partialize: (state) => ({
         weatherScenario: state.weatherScenario,
         emsMode: state.emsMode,

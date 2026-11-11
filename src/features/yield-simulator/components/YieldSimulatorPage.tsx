@@ -15,10 +15,12 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
-import { useSolarMapperStore } from '@/features/solar-mapper/store/useSolarMapperStore';
+import { useCrossFeatureYieldContext } from '@/store/systemSizingSelector';
 import { DownloadSizingButton } from '@/components/common/DownloadSizingButton';
+import {
+  DEFAULT_PEAK_SUN_HOURS,
+  LIFEPO4_ROUND_TRIP_EFFICIENCY,
+} from '@/lib/solarConstants';
 import { useYieldSimulatorStore } from '../store/useYieldSimulatorStore';
 import { useOpenMeteoSolarQuery } from '../hooks/useOpenMeteoSolarQuery';
 import { usePlaybackTicker } from '../hooks/usePlaybackTicker';
@@ -53,13 +55,8 @@ interface GuidedScenario {
 const YieldSimulatorWorkspace: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const isAuthLoading = useAuthStore((s) => s.isLoading);
-  const setActiveView = useCalculatorStore((s) => s.setActiveView);
-
-  const appliances = useApplianceLoadStore((s) => s.items);
-  const addPreset = useApplianceLoadStore((s) => s.addPreset);
-
-  const coordinates = useSolarMapperStore((s) => s.coordinates);
-  const selectedPsh = useSolarMapperStore((s) => s.getSelectedPsh());
+  const { appliances, addPreset, coordinates, selectedPsh, setActiveView } =
+    useCrossFeatureYieldContext();
 
   const {
     weatherScenario,
@@ -109,7 +106,7 @@ const YieldSimulatorWorkspace: React.FC = () => {
     weatherScenario === 'live_open_meteo'
   );
 
-  const effectivePsh = selectedPsh || 4.8;
+  const effectivePsh = selectedPsh || DEFAULT_PEAK_SUN_HOURS;
 
   const simulationSummary = useMemo(() => {
     return runYieldSimulation({
@@ -118,7 +115,7 @@ const YieldSimulatorWorkspace: React.FC = () => {
       batteryCapacityKwh,
       initialBatterySocPercent,
       minReserveSocPercent,
-      roundTripEfficiency: 0.92,
+      roundTripEfficiency: LIFEPO4_ROUND_TRIP_EFFICIENCY,
       maxBatteryCRate: 0.5,
       systemTopology,
       isZeroExport,

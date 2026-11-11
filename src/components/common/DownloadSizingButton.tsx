@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { downloadSizingPdf } from '@/services/pdfExportService';
+import { computeYieldSummarySnapshot } from '@/features/yield-simulator/store/yieldSnapshot';
 import { FileDown, CheckCircle2, Loader2, Lock, X, LogIn, UserPlus } from 'lucide-react';
 
 interface DownloadSizingButtonProps {
@@ -58,6 +59,7 @@ export function DownloadSizingButton({
         mainBreakerA,
         userEmail: user?.email,
         userName: user?.user_metadata?.full_name,
+        yieldSummary: computeYieldSummarySnapshot(),
       });
 
       setDownloadSuccess(true);

@@ -15,6 +15,7 @@ import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { projectService } from '@/services/projectService';
 import { CreateProjectInput, MAX_PROJECTS_PER_USER, SavedProject } from '@/types/project';
 import { sanitizeProjectTitle, sanitizeProjectNotes } from '@/lib/sanitization';
+import { toProjectSystemType } from '@/lib/systemType';
 
 interface SaveProjectModalProps {
   isOpen: boolean;
@@ -120,7 +121,7 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
         : null,
       dc_breaker_a: calculationResult.dc.breakerRatingA,
       ac_breaker_a: calculationResult.ac.breakerRatingA,
-      system_type: calculationResult.systemType === 'hybrid' ? 'HYBRID' : 'ON-GRID',
+      system_type: toProjectSystemType(calculationResult.systemType),
       custom_prices: useCalculatorStore.getState().customPrices,
       layout_3d: useCalculatorStore.getState().layout3d,
     };
