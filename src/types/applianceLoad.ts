@@ -2,12 +2,19 @@ export type ApplianceCategory = 'cooling' | 'kitchen' | 'work_tech' | 'lighting_
 
 export type LoadType = 'resistive' | 'inductive_motor' | 'inverter_motor' | 'electronic';
 
+export type ApplianceScheduleProfile =
+  | 'always_on'
+  | 'kitchen_burst'
+  | 'overnight_cooling'
+  | 'standard';
+
 export interface ApplianceItem {
   id: string;
   presetId?: string;
   name: string;
   category: ApplianceCategory;
   loadType: LoadType;
+  scheduleProfile?: ApplianceScheduleProfile;
   quantity: number;
   runningWatts: number;
   surgeMultiplier: number;
@@ -22,6 +29,7 @@ export interface PresetAppliance {
   name: string;
   category: ApplianceCategory;
   loadType: LoadType;
+  scheduleProfile: ApplianceScheduleProfile;
   defaultRunningWatts: number;
   surgeMultiplier: number;
   dutyCycle: number;

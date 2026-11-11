@@ -1,5 +1,4 @@
-// src/features/financial-roi/components/ExportModeComparisonCards.tsx
-import { ShieldAlert, Zap, BatteryCharging, Check, ArrowRight } from 'lucide-react';
+import { ArrowRight, BatteryCharging, Check, LucideIcon, ShieldAlert, Zap } from 'lucide-react';
 import { useFinancialRoiStore, useFinancialRoiSimulation } from '../store/useFinancialRoiStore';
 import { ExportStrategy } from '../types/financialRoi';
 
@@ -10,7 +9,7 @@ export function ExportModeComparisonCards() {
 
   const strategies: {
     key: ExportStrategy;
-    icon: any;
+    icon: LucideIcon;
     tag: string;
     title: string;
     subtitle: string;

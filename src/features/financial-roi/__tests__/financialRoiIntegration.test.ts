@@ -1,14 +1,12 @@
-// src/features/financial-roi/__tests__/financialRoiIntegration.test.ts
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect, beforeEach } from 'vitest';
-import * as fs from 'fs';
-import * as path from 'path';
 import { useFinancialRoiStore } from '../store/useFinancialRoiStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
+import { FinancialRoiPage } from '../components/FinancialRoiPage';
 import { QuickBillSliderBanner } from '../components/QuickBillSliderBanner';
 import { ExportModeComparisonCards } from '../components/ExportModeComparisonCards';
 import { CashflowTimelineChart } from '../components/CashflowTimelineChart';
@@ -80,18 +78,28 @@ describe('Financial ROI Store & Authentication Integration Suite', () => {
     expect(input.pvKwp).toBeGreaterThan(4);
   });
 
-  it('verifies auth protection requirement for financial-roi view', () => {
-    const authState = useAuthStore.getState();
-    expect(authState.user).toBeNull();
-
-    const calcStore = useCalculatorStore.getState();
-    calcStore.setActiveView('financial-roi');
-    expect(useCalculatorStore.getState().activeView).toBe('financial-roi');
-
-    const pagePath = path.resolve(process.cwd(), 'src/features/financial-roi/components/FinancialRoiPage.tsx');
-    const content = fs.readFileSync(pagePath, 'utf-8');
-    expect(content).toContain("setActiveView('login')");
-    expect(content).toContain('LOGIN REQUIRED');
+  it('redirects unauthenticated users and renders login prompt for financial-roi view', () => {
+    const g = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+    const prevActEnv = g.IS_REACT_ACT_ENVIRONMENT;
+    g.IS_REACT_ACT_ENVIRONMENT = true;
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    try {
+      useCalculatorStore.getState().setActiveView('financial-roi');
+      act(() => {
+        root.render(createElement(FinancialRoiPage));
+      });
+      expect(container.textContent).toContain('LOGIN REQUIRED');
+      expect(container.textContent).toContain('Log In to Account');
+      expect(useCalculatorStore.getState().activeView).toBe('login');
+    } finally {
+      act(() => {
+        root.unmount();
+      });
+      container.remove();
+      g.IS_REACT_ACT_ENVIRONMENT = prevActEnv;
+    }
   });
 
   it('renders all Financial ROI components cleanly without uncached Zustand selector calls', () => {

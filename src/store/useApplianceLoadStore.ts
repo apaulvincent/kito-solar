@@ -87,6 +87,7 @@ export const useApplianceLoadStore = create<ApplianceLoadStoreState>()(
           name: preset.name,
           category: preset.category,
           loadType: preset.loadType,
+          scheduleProfile: preset.scheduleProfile,
           quantity: 1,
           runningWatts: preset.defaultRunningWatts,
           surgeMultiplier: preset.surgeMultiplier,

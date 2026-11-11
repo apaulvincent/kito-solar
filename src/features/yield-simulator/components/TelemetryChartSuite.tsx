@@ -12,6 +12,7 @@ interface TelemetryChartSuiteProps {
   steps: TelemetryTimeStep[];
   currentStepIndex: number;
   inverterKw: number;
+  minReserveSocPercent?: number;
   systemTopology: SystemTopologyMode;
   brownoutSchedule: BrownoutSchedule;
   onSelectStep: (stepIndex: number) => void;
@@ -21,6 +22,7 @@ export const TelemetryChartSuite: React.FC<TelemetryChartSuiteProps> = ({
   steps,
   currentStepIndex,
   inverterKw,
+  minReserveSocPercent = 20,
   systemTopology,
   brownoutSchedule,
   onSelectStep,
@@ -96,7 +98,7 @@ export const TelemetryChartSuite: React.FC<TelemetryChartSuiteProps> = ({
   const baselineY = PAD_T + plotH;
   const cursorX = stepToX(currentStepIndex);
   const inverterLimitY = kwToY(inverterKw);
-  const reserveSocY = socToY(20);
+  const reserveSocY = socToY(minReserveSocPercent);
 
   return (
     <section

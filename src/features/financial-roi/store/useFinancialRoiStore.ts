@@ -27,7 +27,6 @@ export interface FinancialRoiState {
   useStandaloneBillOverride: boolean;
   activeScenarioComparison: ExportStrategy;
   showAllCurvesOnTimeline: boolean;
-  highlightedTimelineYear: number | null;
 
   setUtilityPreset: (presetId: string) => void;
   updateConfig: (updates: Partial<FinancialConfig>) => void;
@@ -35,7 +34,6 @@ export interface FinancialRoiState {
   setUseStandaloneBillOverride: (useOverride: boolean) => void;
   setActiveScenarioComparison: (strategy: ExportStrategy) => void;
   setShowAllCurvesOnTimeline: (showAll: boolean) => void;
-  setHighlightedTimelineYear: (year: number | null) => void;
   resetToDefaults: () => void;
 
   getSystemSizingInput: () => SystemSizingInput;
@@ -51,7 +49,6 @@ export const useFinancialRoiStore = create<FinancialRoiState>()(
       useStandaloneBillOverride: true,
       activeScenarioComparison: 'net_metering',
       showAllCurvesOnTimeline: true,
-      highlightedTimelineYear: null,
 
       setUtilityPreset: (presetId: string) => {
         const preset = UTILITY_PRESETS.find((p) => p.id === presetId);
@@ -102,10 +99,6 @@ export const useFinancialRoiStore = create<FinancialRoiState>()(
         set({ showAllCurvesOnTimeline: showAll });
       },
 
-      setHighlightedTimelineYear: (year: number | null) => {
-        set({ highlightedTimelineYear: year });
-      },
-
       resetToDefaults: () => {
         set({
           config: DEFAULT_FINANCIAL_CONFIG,
@@ -113,7 +106,6 @@ export const useFinancialRoiStore = create<FinancialRoiState>()(
           useStandaloneBillOverride: true,
           activeScenarioComparison: 'net_metering',
           showAllCurvesOnTimeline: true,
-          highlightedTimelineYear: null,
         });
       },
 

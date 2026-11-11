@@ -329,7 +329,7 @@ export function CashflowTimelineChart() {
               strokeLinejoin="round"
             />
 
-            {/* Hardware Renewal Markers (Year 11 / Year 12) */}
+            {/* Hardware Renewal Markers */}
             {activeSim.cashflowSeries.map((pt) => {
               if (pt.replacementCostPhp <= 0) return null;
               const x = getX(pt.year);

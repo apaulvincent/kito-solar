@@ -1,6 +1,10 @@
-// src/features/financial-roi/utils/financialEngine.ts
-// Pure TypeScript calculation engine for 25-year financial cashflow, ERC Net Metering, and ROI analysis.
-
+import {
+  DEFAULT_PEAK_SUN_HOURS,
+  DEFAULT_SYSTEM_EFFICIENCY,
+  LIFEPO4_BATTERY_DOD,
+  LIFEPO4_MODULE_KWH,
+  LIFEPO4_ROUND_TRIP_EFFICIENCY,
+} from '@/lib/solarConstants';
 import {
   CapexBreakdown,
   ExportStrategy,
@@ -11,9 +15,6 @@ import {
 } from '../types/financialRoi';
 import { CAPEX_BENCHMARKS } from './utilityTariffPresets';
 
-/**
- * Calculates itemized turnkey CAPEX based on system components, strategy, and Philippine installer benchmarks.
- */
 export function calculateTurnkeyCapex(
   input: SystemSizingInput,
   config: FinancialConfig,
@@ -23,7 +24,6 @@ export function calculateTurnkeyCapex(
   const hasNetMetering = strategy === 'net_metering' || strategy === 'hybrid_plus_net_metering';
   const hasBattery = isHybrid && input.batteryKwh > 0;
 
-  // Turnkey benchmark calculations
   const pvArrayPhp = Math.round(input.pvKwp * CAPEX_BENCHMARKS.pvArrayPerKwpPhp);
   const inverterRate = isHybrid
     ? CAPEX_BENCHMARKS.hybridInverterPerKwPhp
@@ -32,20 +32,22 @@ export function calculateTurnkeyCapex(
   const batteryPhp = hasBattery ? Math.round(input.batteryKwh * CAPEX_BENCHMARKS.batteryPerKwhPhp) : 0;
 
   const hardwareSubtotal = pvArrayPhp + inverterPhp + batteryPhp;
-  const bosAndMountingPhp = Math.round(input.pvKwp * (CAPEX_BENCHMARKS.bosAndMountingPerKwpPhp || 3500)); // Railing, L-feet, mid/end clamps, DC wiring, grounding
+  const bosAndMountingPhp = Math.round(
+    input.pvKwp * (CAPEX_BENCHMARKS.bosAndMountingPerKwpPhp || 3500)
+  );
   const laborAndPermitsPhp = Math.round(hardwareSubtotal * CAPEX_BENCHMARKS.laborAndPermitsRatio);
   const netMeteringSetupPhp = hasNetMetering ? Math.round(config.netMeteringSetupCostPhp) : 0;
 
-  const autoTurnkeyPhp = hardwareSubtotal + bosAndMountingPhp + laborAndPermitsPhp + netMeteringSetupPhp;
+  const autoTurnkeyPhp =
+    hardwareSubtotal + bosAndMountingPhp + laborAndPermitsPhp + netMeteringSetupPhp;
 
-  // If user provided custom turnkey quote, override total
   if (config.useCustomCapex && config.customCapexPhp && config.customCapexPhp > 0) {
     const baseOverride = config.customCapexPhp;
-    const effectiveTotal = hasNetMetering && !config.exportStrategy.includes('net_metering')
-      ? baseOverride + config.netMeteringSetupCostPhp
-      : baseOverride;
+    const effectiveTotal =
+      hasNetMetering && !config.exportStrategy.includes('net_metering')
+        ? baseOverride + config.netMeteringSetupCostPhp
+        : baseOverride;
 
-    // Apportion inverter and battery for replacement calculations
     const ratio = effectiveTotal / Math.max(1, autoTurnkeyPhp);
     return {
       pvArrayPhp: Math.round(pvArrayPhp * ratio),
@@ -73,12 +75,12 @@ export function calculateTurnkeyCapex(
   };
 }
 
-/**
- * Formats fractional payback years into human-readable text e.g. "4 yrs 3 mos"
- */
-export function formatPaybackPeriod(paybackYears: number | null): string {
-  if (paybackYears === null || !Number.isFinite(paybackYears) || paybackYears > 10) {
-    return '> 10 yrs';
+export function formatPaybackPeriod(
+  paybackYears: number | null,
+  horizonYears = CAPEX_BENCHMARKS.simulationHorizonYears
+): string {
+  if (paybackYears === null || !Number.isFinite(paybackYears) || paybackYears > horizonYears) {
+    return `> ${horizonYears} yrs`;
   }
   const totalMonths = Math.round(paybackYears * 12);
   const years = Math.floor(totalMonths / 12);
@@ -93,25 +95,23 @@ export function formatPaybackPeriod(paybackYears: number | null): string {
   return `${years} yr${years === 1 ? '' : 's'} ${months} mo${months === 1 ? '' : 's'}`;
 }
 
-/**
- * Simulates financial performance, cashflow, and energy balance over 25 years for a single strategy.
- */
 export function computeScenarioSimulation(
   input: SystemSizingInput,
   config: FinancialConfig,
   strategy: ExportStrategy
 ): ScenarioSimulationResult {
+  const horizonYears = CAPEX_BENCHMARKS.simulationHorizonYears;
   const capex = calculateTurnkeyCapex(input, config, strategy);
   const initialCapex = capex.totalCapexPhp;
 
   const isHybrid = strategy === 'hybrid_battery' || strategy === 'hybrid_plus_net_metering';
   const hasNetMetering = strategy === 'net_metering' || strategy === 'hybrid_plus_net_metering';
   const batteryCapacityKwh = isHybrid ? input.batteryKwh : 0;
-  const batteryUsableKwh = batteryCapacityKwh * (input.batteryDod || CAPEX_BENCHMARKS.batteryDod);
-  const roundTripEff = input.batteryRoundTripEfficiency || CAPEX_BENCHMARKS.batteryRoundTripEfficiency;
+  const batteryUsableKwh = batteryCapacityKwh * (input.batteryDod || LIFEPO4_BATTERY_DOD);
+  const roundTripEff = input.batteryRoundTripEfficiency || LIFEPO4_ROUND_TRIP_EFFICIENCY;
 
-  const psh = input.effectivePsh || CAPEX_BENCHMARKS.defaultPsh;
-  const sysEff = input.systemEfficiency || CAPEX_BENCHMARKS.defaultSystemEfficiency;
+  const psh = input.effectivePsh || DEFAULT_PEAK_SUN_HOURS;
+  const sysEff = input.systemEfficiency || DEFAULT_SYSTEM_EFFICIENCY;
   const baseYear1GenKwhPerDay = input.pvKwp * psh * sysEff;
 
   const degradationRate = config.annualPanelDegradationPercent / 100;
@@ -120,11 +120,13 @@ export function computeScenarioSimulation(
 
   const dailyDaytimeLoad = Math.max(0, input.dailyDaytimeKwh);
   const dailyNighttimeLoad = Math.max(0, input.dailyNighttimeKwh);
-  const dailyTotalLoad = Math.max(0.1, input.dailyTotalKwh || (dailyDaytimeLoad + dailyNighttimeLoad));
+  const dailyTotalLoad = Math.max(
+    0.1,
+    input.dailyTotalKwh || dailyDaytimeLoad + dailyNighttimeLoad
+  );
 
   const cashflowSeries: YearlyCashflowPoint[] = [];
 
-  // Year 0 is initial turnkey outlay
   cashflowSeries.push({
     year: 0,
     inflatedRetailRatePhp: config.retailRatePhp,
@@ -144,10 +146,9 @@ export function computeScenarioSimulation(
 
   let cumulativeCashflow = -initialCapex;
   let discountedCumulativeNpv = -initialCapex;
-  let totalUsefulEnergy10Years = 0;
-  let totalReplacementCosts10Years = 0;
+  let totalUsefulEnergy = 0;
+  let totalReplacementCosts = 0;
 
-  // Day 1 / Year 1 metrics for telemetry
   let year1DailyDirectSelfUse = 0;
   let year1DailyBatteryStored = 0;
   let year1DailyBatteryCharged = 0;
@@ -155,15 +156,12 @@ export function computeScenarioSimulation(
   let year1DailyClipped = 0;
   let year1AnnualSavings = 0;
 
-  for (let year = 1; year <= 10; year++) {
-    // Compounded degradation and tariff inflation (Year 1 has exponent 0)
+  for (let year = 1; year <= horizonYears; year++) {
     const healthFactor = Math.pow(1 - degradationRate, year - 1);
     const inflatedRetailRate = config.retailRatePhp * Math.pow(1 + inflationRate, year - 1);
     const inflatedExportRate = config.exportCreditRatePhp * Math.pow(1 + inflationRate, year - 1);
 
     const dailyGenKwh = baseYear1GenKwhPerDay * healthFactor;
-
-    // Direct daytime consumption (saves full retail rate)
     const directSelfUseKwh = Math.min(dailyGenKwh, dailyDaytimeLoad);
     const middaySurplusKwh = Math.max(0, dailyGenKwh - dailyDaytimeLoad);
 
@@ -176,9 +174,8 @@ export function computeScenarioSimulation(
       clippedKwh = middaySurplusKwh;
     } else if (strategy === 'net_metering') {
       exportedKwh = middaySurplusKwh;
-    } else if (strategy === 'hybrid_battery') {
+    } else if (strategy === 'hybrid_battery' || strategy === 'hybrid_plus_net_metering') {
       if (batteryUsableKwh > 0 && middaySurplusKwh > 0) {
-        // Battery charges from surplus with round-trip efficiency
         const maxStoredUsable = Math.min(
           middaySurplusKwh * roundTripEff,
           batteryUsableKwh,
@@ -186,22 +183,16 @@ export function computeScenarioSimulation(
         );
         batteryStoredKwh = maxStoredUsable;
         batteryChargedKwh = maxStoredUsable / roundTripEff;
-        clippedKwh = Math.max(0, middaySurplusKwh - batteryChargedKwh);
+        const remainder = Math.max(0, middaySurplusKwh - batteryChargedKwh);
+        if (strategy === 'hybrid_plus_net_metering') {
+          exportedKwh = remainder;
+        } else {
+          clippedKwh = remainder;
+        }
+      } else if (strategy === 'hybrid_plus_net_metering') {
+        exportedKwh = middaySurplusKwh;
       } else {
         clippedKwh = middaySurplusKwh;
-      }
-    } else if (strategy === 'hybrid_plus_net_metering') {
-      if (batteryUsableKwh > 0 && middaySurplusKwh > 0) {
-        const maxStoredUsable = Math.min(
-          middaySurplusKwh * roundTripEff,
-          batteryUsableKwh,
-          dailyNighttimeLoad
-        );
-        batteryStoredKwh = maxStoredUsable;
-        batteryChargedKwh = maxStoredUsable / roundTripEff;
-        exportedKwh = Math.max(0, middaySurplusKwh - batteryChargedKwh);
-      } else {
-        exportedKwh = middaySurplusKwh;
       }
     }
 
@@ -213,22 +204,21 @@ export function computeScenarioSimulation(
       year1DailyClipped = clippedKwh;
     }
 
-    // Annual energy quantities
     const annualGenKwh = dailyGenKwh * 365;
     const annualDirectKwh = directSelfUseKwh * 365;
     const annualBatteryKwh = batteryStoredKwh * 365;
     const annualExportKwh = exportedKwh * 365;
     const annualClippedKwh = clippedKwh * 365;
 
-    // Monetary savings
     const directSavingsPhp = (annualDirectKwh + annualBatteryKwh) * inflatedRetailRate;
     const exportCreditSavingsPhp = annualExportKwh * inflatedExportRate;
     let grossAnnualSavings = directSavingsPhp + exportCreditSavingsPhp;
 
-    // ERC Net Metering rule: credits cannot exceed total annual bill minus fixed charges (capped at 95%)
+    // ERC Net Metering rule: credits cannot exceed total annual bill minus fixed charges (95% cap)
     if (hasNetMetering && config.capExportCreditsAtBill) {
       const annualBillWithoutSolar = dailyTotalLoad * 365 * inflatedRetailRate;
-      const maxAllowedAnnualSavings = annualBillWithoutSolar * CAPEX_BENCHMARKS.netMeteringBillCapRatio;
+      const maxAllowedAnnualSavings =
+        annualBillWithoutSolar * CAPEX_BENCHMARKS.netMeteringBillCapRatio;
       if (grossAnnualSavings > maxAllowedAnnualSavings) {
         grossAnnualSavings = maxAllowedAnnualSavings;
       }
@@ -238,7 +228,6 @@ export function computeScenarioSimulation(
       year1AnnualSavings = grossAnnualSavings;
     }
 
-    // Equipment scheduled replacement events
     let replacementCostPhp = 0;
     if (
       config.includeInverterReplacement &&
@@ -257,8 +246,8 @@ export function computeScenarioSimulation(
       replacementCostPhp += capex.batteryInitialCostPhp * CAPEX_BENCHMARKS.batteryReplacementRatio;
     }
 
-    totalReplacementCosts10Years += replacementCostPhp;
-    totalUsefulEnergy10Years += annualDirectKwh + annualBatteryKwh + annualExportKwh;
+    totalReplacementCosts += replacementCostPhp;
+    totalUsefulEnergy += annualDirectKwh + annualBatteryKwh + annualExportKwh;
 
     const netAnnualCashflow = grossAnnualSavings - replacementCostPhp;
     cumulativeCashflow += netAnnualCashflow;
@@ -284,7 +273,6 @@ export function computeScenarioSimulation(
     });
   }
 
-  // Exact Linear Interpolation of Breakeven Month
   let paybackYears: number | null = null;
   for (let i = 1; i < cashflowSeries.length; i++) {
     const prev = cashflowSeries[i - 1];
@@ -299,27 +287,26 @@ export function computeScenarioSimulation(
   }
 
   const paybackMonthsTotal = paybackYears !== null ? Math.round(paybackYears * 12) : null;
-  const paybackFormatted = formatPaybackPeriod(paybackYears);
+  const paybackFormatted = formatPaybackPeriod(paybackYears, horizonYears);
 
-  // 10-Year KPIs
   const netProfit10YearsPhp = Math.round(cumulativeCashflow);
   const npv10YearsPhp = Math.round(discountedCumulativeNpv);
-  const totalLifecycleInvestment = initialCapex + totalReplacementCosts10Years;
-  const roiPercentage10Years = totalLifecycleInvestment > 0
-    ? Math.round((netProfit10YearsPhp / totalLifecycleInvestment) * 1000) / 10
-    : 0;
+  const totalLifecycleInvestment = initialCapex + totalReplacementCosts;
+  const roiPercentage10Years =
+    totalLifecycleInvestment > 0
+      ? Math.round((netProfit10YearsPhp / totalLifecycleInvestment) * 1000) / 10
+      : 0;
 
-  const lcoePhpPerKwh = totalUsefulEnergy10Years > 0
-    ? Math.round((totalLifecycleInvestment / totalUsefulEnergy10Years) * 100) / 100
-    : 0;
+  const lcoePhpPerKwh =
+    totalUsefulEnergy > 0
+      ? Math.round((totalLifecycleInvestment / totalUsefulEnergy) * 100) / 100
+      : 0;
 
-  // Monthly Bill comparisons in Year 1
   const monthlyConsumptionKwh = (dailyTotalLoad * 365) / 12;
   const year1MonthlyBillBeforePhp = Math.round(monthlyConsumptionKwh * config.retailRatePhp);
   const year1MonthlySavingsPhp = Math.round(year1AnnualSavings / 12);
   const year1MonthlyBillAfterPhp = Math.max(0, year1MonthlyBillBeforePhp - year1MonthlySavingsPhp);
 
-  // Daily energy fate percentages (Year 1)
   const totalGenDay1 = Math.max(0.001, baseYear1GenKwhPerDay);
   const energySplitPercent = {
     directDaytime: Math.round((year1DailyDirectSelfUse / totalGenDay1) * 100),
@@ -351,6 +338,7 @@ export function computeScenarioSimulation(
     strategy,
     label: labels[strategy].title,
     summaryNote: labels[strategy].note,
+    capex,
     initialCapexPhp: initialCapex,
     year1MonthlyBillBeforePhp,
     year1MonthlyBillAfterPhp,
@@ -362,9 +350,6 @@ export function computeScenarioSimulation(
     netProfit10YearsPhp,
     npv10YearsPhp,
     roiPercentage10Years,
-    netProfit25YearsPhp: netProfit10YearsPhp,
-    npv25YearsPhp: npv10YearsPhp,
-    roiPercentage25Years: roiPercentage10Years,
     lcoePhpPerKwh,
     energySplitPercent,
     dailyKwhBreakdown: {
@@ -378,9 +363,6 @@ export function computeScenarioSimulation(
   };
 }
 
-/**
- * Simulates all 3 core strategies (plus optional Hybrid+Net Metering) for side-by-side comparison.
- */
 export function simulateAllScenarios(
   input: SystemSizingInput,
   config: FinancialConfig
@@ -393,14 +375,10 @@ export function simulateAllScenarios(
   };
 }
 
-/**
- * Derives realistic system sizing inputs from a quick monthly electric bill (₱/month)
- * when the user has not configured the full appliance inventory yet.
- */
 export function estimateSizingFromMonthlyBill(
   monthlyBillPhp: number,
   retailRatePhp: number,
-  psh: number = 4.5
+  psh: number = DEFAULT_PEAK_SUN_HOURS
 ): SystemSizingInput {
   const safeBill = Math.max(1000, monthlyBillPhp);
   const safeRate = Math.max(5.0, retailRatePhp);
@@ -408,17 +386,14 @@ export function estimateSizingFromMonthlyBill(
   const daysPerMonth = 365 / 12;
   const dailyTotalKwh = Math.round((monthlyKwh / daysPerMonth) * 100) / 100;
 
-  // Standard Philippine household load profile: ~40% daytime, ~60% evening/night
-  const dailyDaytimeKwh = Math.round(dailyTotalKwh * 0.40 * 10) / 10;
+  // Typical residential daytime/evening split (~40% daytime, ~60% evening)
+  const dailyDaytimeKwh = Math.round(dailyTotalKwh * 0.4 * 10) / 10;
   const dailyNighttimeKwh = Math.round((dailyTotalKwh - dailyDaytimeKwh) * 10) / 10;
 
-  // PV Array sizing to cover ~100% of daytime generation + partial night
   const effectivePsh = Math.max(3.0, psh);
-  const rawKwp = dailyTotalKwh / (effectivePsh * CAPEX_BENCHMARKS.defaultSystemEfficiency);
+  const rawKwp = dailyTotalKwh / (effectivePsh * DEFAULT_SYSTEM_EFFICIENCY);
   const pvKwp = Math.max(1.0, Math.round(rawKwp * 10) / 10);
 
-
-  // Inverter sized to closest standard commercial capacity (DC/AC ratio ~1.10 to 1.25)
   const targetAcKw = pvKwp / 1.18;
   const standardInverterSizes = [3, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50];
   let inverterKw = standardInverterSizes[0];
@@ -429,10 +404,9 @@ export function estimateSizingFromMonthlyBill(
     }
   }
 
-  // Battery sized for 50-80% nighttime critical backup in 5.12 kWh rack increments
-  const neededBattKwh = dailyNighttimeKwh * 0.70;
-  const rackUnits = Math.max(1, Math.ceil(neededBattKwh / 5.12));
-  const batteryKwh = Math.round(rackUnits * 5.12 * 100) / 100;
+  const neededBattKwh = dailyNighttimeKwh * 0.7;
+  const rackUnits = Math.max(1, Math.ceil(neededBattKwh / LIFEPO4_MODULE_KWH));
+  const batteryKwh = Math.round(rackUnits * LIFEPO4_MODULE_KWH * 100) / 100;
 
   return {
     pvKwp,
@@ -442,9 +416,9 @@ export function estimateSizingFromMonthlyBill(
     dailyDaytimeKwh,
     dailyNighttimeKwh,
     effectivePsh,
-    systemEfficiency: CAPEX_BENCHMARKS.defaultSystemEfficiency,
-    batteryDod: CAPEX_BENCHMARKS.batteryDod,
-    batteryRoundTripEfficiency: CAPEX_BENCHMARKS.batteryRoundTripEfficiency,
+    systemEfficiency: DEFAULT_SYSTEM_EFFICIENCY,
+    batteryDod: LIFEPO4_BATTERY_DOD,
+    batteryRoundTripEfficiency: LIFEPO4_ROUND_TRIP_EFFICIENCY,
     sourceLabel: `Estimated from ₱${safeBill.toLocaleString()}/mo bill`,
   };
 }

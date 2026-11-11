@@ -1,8 +1,9 @@
-// src/features/yield-simulator/__tests__/yieldSimulationEngine.test.ts
 import { describe, expect, it } from 'vitest';
 import { runYieldSimulation } from '../utils/yieldSimulationEngine';
+import { getApplianceWeightAtHour } from '../utils/loadProfileDistributor';
 import { YieldSimulationInput } from '../types/yieldSimulator';
-import { STARTER_PROFILES } from '@/lib/applianceSizingEngine';
+import { PRESET_APPLIANCES, STARTER_PROFILES } from '@/lib/applianceSizingEngine';
+import { QUICK_ADD_BREAKER_PRESETS } from '../components/LiveApplianceBreakerPanel';
 import { pathToView, useCalculatorStore } from '@/store/useCalculatorStore';
 import { useYieldSimulatorStore } from '../store/useYieldSimulatorStore';
 import { generateSizingPdf } from '@/services/pdfExportService';
@@ -232,5 +233,37 @@ describe('yieldSimulationEngine (96-step Digital Twin Physics Solver)', () => {
     });
 
     expect(doc.getNumberOfPages()).toBeGreaterThanOrEqual(1);
+  });
+
+  it('maps every preset appliance schedule deterministically and exposes valid quick-add IDs', () => {
+    const presetIds = new Set(PRESET_APPLIANCES.map((p) => p.id));
+    for (const quick of QUICK_ADD_BREAKER_PRESETS) {
+      expect(presetIds.has(quick.presetId)).toBe(true);
+    }
+
+    for (const preset of PRESET_APPLIANCES) {
+      const weights = Array.from({ length: 96 }, (_, step) =>
+        getApplianceWeightAtHour(
+          {
+            id: `preset_${preset.id}`,
+            presetId: preset.id,
+            name: preset.name,
+            category: preset.category,
+            loadType: preset.loadType,
+            scheduleProfile: preset.scheduleProfile,
+            quantity: 1,
+            runningWatts: preset.defaultRunningWatts,
+            surgeMultiplier: preset.surgeMultiplier,
+            dutyCycle: preset.dutyCycle,
+            hoursPerDay: preset.defaultHoursPerDay,
+            daytimeRatio: preset.defaultDaytimeRatio,
+            isCriticalBackup: true,
+          },
+          step * 0.25,
+          false
+        )
+      );
+      expect(weights.some((w) => w > 0)).toBe(true);
+    }
   });
 });

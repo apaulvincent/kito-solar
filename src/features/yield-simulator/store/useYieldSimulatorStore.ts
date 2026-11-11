@@ -57,10 +57,10 @@ export interface YieldSimulatorStoreState {
   setPlaybackSpeed: (speed: SimulationSpeed) => void;
   setCurrentStepIndex: (stepIndex: number) => void;
   stepForward: () => void;
-  stepBackward: () => void;
   toggleApplianceBreaker: (applianceId: string) => void;
   toggleApplianceForceOn: (applianceId: string) => void;
   shiftFlexibleLoadsToMidday: (applianceIds: string[]) => void;
+  toggleApplianceMiddayShift: (applianceId: string) => void;
   resetBreakerOverrides: () => void;
   setSyncSunHourWith3D: (sync: boolean) => void;
 }
@@ -201,11 +201,6 @@ export const useYieldSimulatorStore = create<YieldSimulatorStoreState>()(
         get().setCurrentStepIndex(next);
       },
 
-      stepBackward: () => {
-        const prev = (get().currentStepIndex - 1 + 96) % 96;
-        get().setCurrentStepIndex(prev);
-      },
-
       toggleApplianceBreaker: (applianceId) =>
         set((state) => {
           const isCurrentlyDisabled =
@@ -248,6 +243,13 @@ export const useYieldSimulatorStore = create<YieldSimulatorStoreState>()(
           shiftedToMiddayIds: Array.from(
             new Set([...state.shiftedToMiddayIds, ...applianceIds])
           ),
+        })),
+
+      toggleApplianceMiddayShift: (applianceId) =>
+        set((state) => ({
+          shiftedToMiddayIds: state.shiftedToMiddayIds.includes(applianceId)
+            ? state.shiftedToMiddayIds.filter((id) => id !== applianceId)
+            : [...state.shiftedToMiddayIds, applianceId],
         })),
 
       resetBreakerOverrides: () =>

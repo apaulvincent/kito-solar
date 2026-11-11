@@ -13,8 +13,10 @@ export function MonthlyBillComparisonBar() {
     cashflowSeries,
   } = activeSim;
 
-  const year10Point = cashflowSeries[10] || cashflowSeries[cashflowSeries.length - 1];
-  const year10Rate = year10Point?.inflatedRetailRatePhp || config.retailRatePhp * 1.55;
+  const finalPoint = cashflowSeries[cashflowSeries.length - 1];
+  const year10Rate =
+    finalPoint?.inflatedRetailRatePhp ??
+    config.retailRatePhp * Math.pow(1 + config.annualTariffInflationPercent / 100, 9);
 
   const billReductionPercent =
     year1MonthlyBillBeforePhp > 0

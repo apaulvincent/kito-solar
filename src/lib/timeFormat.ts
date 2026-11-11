@@ -1,11 +1,21 @@
-export function formatHourDecimal12h(hourDecimal: number): string {
+export function formatHourParts12h(hourDecimal: number): {
+  time12: string;
+  period: 'AM' | 'PM';
+} {
   const normalized = ((hourDecimal % 24) + 24) % 24;
-  const wholeHours = Math.floor(normalized);
-  const roundedMinutes = Math.round((normalized - wholeHours) * 60);
-  const adjustedHours = roundedMinutes === 60 ? (wholeHours + 1) % 24 : wholeHours;
-  const adjustedMinutes = roundedMinutes === 60 ? 0 : roundedMinutes;
-  const period = adjustedHours >= 12 ? 'PM' : 'AM';
-  const displayHour = adjustedHours % 12 === 0 ? 12 : adjustedHours % 12;
-  const displayMinute = String(adjustedMinutes).padStart(2, '0');
-  return `${displayHour}:${displayMinute} ${period}`;
+  const totalMinutes = Math.round(normalized * 60);
+  const hours24 = Math.floor(totalMinutes / 60) % 24;
+  const minutes = totalMinutes % 60;
+  const period = hours24 >= 12 ? 'PM' : 'AM';
+  const displayHour = hours24 % 12 === 0 ? 12 : hours24 % 12;
+  const displayMinute = String(minutes).padStart(2, '0');
+  return {
+    time12: `${displayHour}:${displayMinute}`,
+    period,
+  };
+}
+
+export function formatHourDecimal12h(hourDecimal: number): string {
+  const { time12, period } = formatHourParts12h(hourDecimal);
+  return `${time12} ${period}`;
 }

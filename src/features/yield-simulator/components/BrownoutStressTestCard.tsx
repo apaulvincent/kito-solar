@@ -1,12 +1,13 @@
 // src/features/yield-simulator/components/BrownoutStressTestCard.tsx
 import React from 'react';
 import {
-  ZapOff,
-  CheckCircle2,
   AlertTriangle,
+  CheckCircle2,
   Sparkles,
   ArrowUpRight,
+  ZapOff,
 } from 'lucide-react';
+import { formatHourDecimal12h } from '@/lib/timeFormat';
 import {
   BrownoutSchedule,
   DailySimulationSummary,
@@ -35,18 +36,7 @@ export const BrownoutStressTestCard: React.FC<BrownoutStressTestCardProps> = ({
   onBrownoutChange,
   onApplyRecommendation,
 }) => {
-  const formatHour = (h: number) => {
-    const wrapped = ((Math.floor(h) % 24) + 24) % 24;
-    const mins = h % 1 >= 0.5 ? '30' : '00';
-    const period = wrapped >= 12 ? 'PM' : 'AM';
-    const h12 = wrapped % 12 === 0 ? 12 : wrapped % 12;
-    return `${h12}:${mins} ${period}`;
-  };
-
-  const durationHours = Math.max(
-    0.5,
-    brownoutSchedule.endHour - brownoutSchedule.startHour
-  );
+  const durationHours = Math.max(0.5, brownoutSchedule.endHour - brownoutSchedule.startHour);
 
   return (
     <section
@@ -119,7 +109,7 @@ export const BrownoutStressTestCard: React.FC<BrownoutStressTestCardProps> = ({
                     Blackout Starts At
                   </span>
                   <span className="font-mono font-bold tabular-nums text-rose-500">
-                    {formatHour(brownoutSchedule.startHour)}
+                    {formatHourDecimal12h(brownoutSchedule.startHour)}
                   </span>
                 </div>
                 <input
@@ -145,7 +135,7 @@ export const BrownoutStressTestCard: React.FC<BrownoutStressTestCardProps> = ({
                     Blackout Ends At ({durationHours.toFixed(1)}h)
                   </span>
                   <span className="font-mono font-bold tabular-nums text-rose-500">
-                    {formatHour(brownoutSchedule.endHour)}
+                    {formatHourDecimal12h(brownoutSchedule.endHour)}
                   </span>
                 </div>
                 <input
@@ -194,7 +184,7 @@ export const BrownoutStressTestCard: React.FC<BrownoutStressTestCardProps> = ({
               {!brownoutSchedule.enabled
                 ? 'Select one of the blackout buttons above to test how long your battery lasts when the street power goes out.'
                 : summary.brownoutSurvived
-                  ? `Your solar and battery kept active appliances running from ${formatHour(brownoutSchedule.startHour)} to ${formatHour(brownoutSchedule.endHour)} with ${summary.minBatterySocPercent.toFixed(0)}% minimum battery remaining.`
+                  ? `Your solar and battery kept active appliances running from ${formatHourDecimal12h(brownoutSchedule.startHour)} to ${formatHourDecimal12h(brownoutSchedule.endHour)} with ${summary.minBatterySocPercent.toFixed(0)}% minimum battery remaining.`
                   : `Your backup ran out of capacity (${summary.totalUnmetLoadKwh.toFixed(2)} kWh unserved${summary.batteryDepletedTimeLabel ? `, depleted at ${summary.batteryDepletedTimeLabel}` : ''}). Turn off heavy appliances or add a battery module below.`}
             </p>
           </div>

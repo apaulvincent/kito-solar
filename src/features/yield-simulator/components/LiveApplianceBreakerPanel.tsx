@@ -1,9 +1,7 @@
-// src/features/yield-simulator/components/LiveApplianceBreakerPanel.tsx
-import React, { useMemo } from 'react';
-import { Power, Zap, RotateCcw, Plus, Clock } from 'lucide-react';
+import React from 'react';
+import { Clock, Plus, Power, RotateCcw, Zap } from 'lucide-react';
 import { ApplianceItem } from '@/lib/applianceSizingEngine';
 import { TelemetryTimeStep } from '../types/yieldSimulator';
-import { distributeHouseholdLoadProfile } from '../utils/loadProfileDistributor';
 
 interface LiveApplianceBreakerPanelProps {
   appliances: ApplianceItem[];
@@ -18,6 +16,12 @@ interface LiveApplianceBreakerPanelProps {
   onResetOverrides: () => void;
   onAddQuickPreset: (presetId: string) => void;
 }
+
+export const QUICK_ADD_BREAKER_PRESETS: readonly { presetId: string; label: string }[] = [
+  { presetId: 'ac_split_1hp_inverter', label: '+1HP Aircon' },
+  { presetId: 'water_pump_submersible_1hp', label: '+1HP Pump' },
+  { presetId: 'induction_cooker_1burner', label: '+2kW Cooker' },
+];
 
 export const LiveApplianceBreakerPanel: React.FC<LiveApplianceBreakerPanelProps> = ({
   appliances,
@@ -37,26 +41,8 @@ export const LiveApplianceBreakerPanel: React.FC<LiveApplianceBreakerPanelProps>
     forcedOnApplianceIds.length > 0 ||
     shiftedToMiddayIds.length > 0;
 
-  const stepLoadPoint = useMemo(() => {
-    const profile = distributeHouseholdLoadProfile({
-      appliances,
-      disabledApplianceIds,
-      forcedOnApplianceIds,
-      shiftedToMiddayIds,
-    });
-    return profile[currentStep.stepIndex];
-  }, [
-    appliances,
-    disabledApplianceIds,
-    forcedOnApplianceIds,
-    shiftedToMiddayIds,
-    currentStep.stepIndex,
-  ]);
-
   const loadPct =
-    inverterKw > 0
-      ? Math.min(100, (currentStep.totalHomeLoadKw / inverterKw) * 100)
-      : 0;
+    inverterKw > 0 ? Math.min(100, (currentStep.totalHomeLoadKw / inverterKw) * 100) : 0;
 
   return (
     <div className="rounded-2xl bg-white dark:bg-[#0E1420] border border-slate-200/80 dark:border-white/[0.07] p-5 sm:p-6 flex flex-col justify-between gap-5 shadow-[0_16px_40px_-15px_rgba(15,23,42,0.06)] dark:shadow-[0_24px_50px_-15px_rgba(0,0,0,0.5)] h-full">
@@ -114,7 +100,7 @@ export const LiveApplianceBreakerPanel: React.FC<LiveApplianceBreakerPanelProps>
             const isDisabled = disabledApplianceIds.includes(item.id);
             const isForcedOn = forcedOnApplianceIds.includes(item.id);
             const isShifted = shiftedToMiddayIds.includes(item.id);
-            const liveWatts = stepLoadPoint?.applianceWatts[item.id] ?? 0;
+            const liveWatts = currentStep.applianceWatts[item.id] ?? 0;
             const liveKw = liveWatts / 1000;
             const isRunningNow = liveKw > 0.005 && !isDisabled;
             const totalNominalWatts = item.runningWatts * item.quantity;
@@ -211,32 +197,17 @@ export const LiveApplianceBreakerPanel: React.FC<LiveApplianceBreakerPanelProps>
           Quickly add a heavy appliance to test capacity:
         </span>
         <div className="grid grid-cols-3 gap-2">
-          <button
-            type="button"
-            onClick={() => onAddQuickPreset('ac_1hp_inverter')}
-            className="inline-flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl bg-slate-100/90 dark:bg-white/[0.04] hover:bg-amber-500/15 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-300 transition-colors cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 text-amber-500 shrink-0" strokeWidth={1.75} />
-            <span className="truncate">+1HP Aircon</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onAddQuickPreset('water_pump_1hp')}
-            className="inline-flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl bg-slate-100/90 dark:bg-white/[0.04] hover:bg-amber-500/15 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-300 transition-colors cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 text-amber-500 shrink-0" strokeWidth={1.75} />
-            <span className="truncate">+1HP Pump</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onAddQuickPreset('induction_cooker')}
-            className="inline-flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl bg-slate-100/90 dark:bg-white/[0.04] hover:bg-amber-500/15 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-300 transition-colors cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 text-amber-500 shrink-0" strokeWidth={1.75} />
-            <span className="truncate">+2kW Cooker</span>
-          </button>
+          {QUICK_ADD_BREAKER_PRESETS.map((preset) => (
+            <button
+              key={preset.presetId}
+              type="button"
+              onClick={() => onAddQuickPreset(preset.presetId)}
+              className="inline-flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl bg-slate-100/90 dark:bg-white/[0.04] hover:bg-amber-500/15 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-300 transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 text-amber-500 shrink-0" strokeWidth={1.75} />
+              <span className="truncate">{preset.label}</span>
+            </button>
+          ))}
         </div>
       </div>
     </div>

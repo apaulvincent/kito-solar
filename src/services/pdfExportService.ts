@@ -4,6 +4,19 @@ import { SystemCalculationResult } from '@/types/calculator';
 import { SolarInverterRecord, SolarModuleRecord, BatteryRecord } from '@/types/supabase';
 import { DailySimulationSummary } from '@/features/yield-simulator/types/yieldSimulator';
 import { isGridTieTopology } from '@/lib/systemType';
+import {
+  PDF_COLORS,
+  PDF_CONTENT_WIDTH,
+  PDF_MARGIN_X,
+  PDF_PAGE_WIDTH,
+  PLAIN_TABLE_BODY_STYLES,
+  PLAIN_TABLE_HEAD_STYLES,
+  addPdfPageFooters,
+  getLastAutoTableFinalY,
+  renderPdfSectionHeading,
+  setPdfDrawColor,
+  setPdfTextColor,
+} from '@/lib/pdfLayoutUtils';
 
 export interface ExportPdfParams {
   calculationResult: SystemCalculationResult;
@@ -39,32 +52,13 @@ export function generateSizingPdf({
   const { summary, dc, ac, battery, stringSizing, mounting, warnings } = calculationResult;
   const isHybrid = calculationResult.systemType === 'hybrid' && battery.hasBattery;
 
-  // Modern Minimal Design Tokens (KitoSolar Palette: Slate, Solar Amber & Clean Whitespace)
-  const COLOR_SLATE_900 = [15, 23, 42] as const; // #0F172A - Dominant high-contrast text
-  const COLOR_SLATE_700 = [51, 65, 85] as const; // #334155 - Mid-tone technical spec text
-  const COLOR_SLATE_500 = [100, 116, 139] as const; // #64748B - Quiet labels & secondary text
-  const COLOR_SLATE_400 = [148, 163, 184] as const; // #94A3B8 - De-emphasized metadata
-  const COLOR_AMBER = [217, 119, 6] as const; // #D97706 - Signature Solar Amber accent
-  const COLOR_LINE = [226, 232, 240] as const; // #E2E8F0 - Delicate divider rule
-  const COLOR_LINE_LIGHT = [241, 245, 249] as const; // #F1F5F9 - Row separator hairline
-
-  const setDraw = (rgb: readonly [number, number, number]) => doc.setDrawColor(rgb[0], rgb[1], rgb[2]);
-  const setText = (rgb: readonly [number, number, number]) => doc.setTextColor(rgb[0], rgb[1], rgb[2]);
-
-  const PAGE_WIDTH = 210;
-  const MARGIN_X = 18; // Generous 18mm margin for breathing room
-  const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_X * 2; // 174mm
-
   let currentY = 22;
 
-  // 1. MINIMAL HEADER
-  // Brand logotype
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(22);
-  setText(COLOR_SLATE_900);
-  doc.text('KitoSolar', MARGIN_X, currentY);
+  setPdfTextColor(doc, PDF_COLORS.slate900);
+  doc.text('KitoSolar', PDF_MARGIN_X, currentY);
 
-  // Document status & timestamp (Right Aligned, Quiet & Crisp)
   const timestampStr = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -72,52 +66,57 @@ export function generateSizingPdf({
   });
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  setText(COLOR_SLATE_500);
-  doc.text('SIZING & SPECIFICATION REPORT', PAGE_WIDTH - MARGIN_X, currentY - 2, { align: 'right' });
+  setPdfTextColor(doc, PDF_COLORS.slate500);
+  doc.text('SIZING & SPECIFICATION REPORT', PDF_PAGE_WIDTH - PDF_MARGIN_X, currentY - 2, {
+    align: 'right',
+  });
   doc.setFont('helvetica', 'normal');
-  setText(COLOR_SLATE_400);
-  doc.text(`Issued ${timestampStr}`, PAGE_WIDTH - MARGIN_X, currentY + 3, { align: 'right' });
+  setPdfTextColor(doc, PDF_COLORS.slate400);
+  doc.text(`Issued ${timestampStr}`, PDF_PAGE_WIDTH - PDF_MARGIN_X, currentY + 3, {
+    align: 'right',
+  });
 
   currentY += 5;
 
-  // Subtitle
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
-  setText(COLOR_SLATE_500);
-  doc.text('Engineering calculation schedules, electrical protection & hardware bill of materials', MARGIN_X, currentY);
+  setPdfTextColor(doc, PDF_COLORS.slate500);
+  doc.text(
+    'Engineering calculation schedules, electrical protection & hardware bill of materials',
+    PDF_MARGIN_X,
+    currentY
+  );
   currentY += 6;
 
-  // Single razor-thin hairline divider
-  setDraw(COLOR_LINE);
+  setPdfDrawColor(doc, PDF_COLORS.line);
   doc.setLineWidth(0.2);
-  doc.line(MARGIN_X, currentY, PAGE_WIDTH - MARGIN_X, currentY);
+  doc.line(PDF_MARGIN_X, currentY, PDF_PAGE_WIDTH - PDF_MARGIN_X, currentY);
   currentY += 8;
 
-  // 2. PROJECT METADATA (Clean Inline Text, No Heavy Box Cage)
   const userDisplay = userName || userEmail || 'Registered Engineer';
   const systemDisplay = isHybrid ? 'Hybrid Solar + Battery Storage (BESS)' : 'Grid-Tied Photovoltaic';
-  const serviceDisplay = mainBreakerA ? `${gridVoltageV}V AC (${mainBreakerA}A Main)` : `${gridVoltageV}V AC`;
+  const serviceDisplay = mainBreakerA
+    ? `${gridVoltageV}V AC (${mainBreakerA}A Main)`
+    : `${gridVoltageV}V AC`;
 
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  setText(COLOR_SLATE_400);
-  doc.text('PREPARED FOR', MARGIN_X, currentY);
-  doc.text('SYSTEM TOPOLOGY', MARGIN_X + 60, currentY);
-  doc.text('GRID SERVICE', MARGIN_X + 130, currentY);
+  setPdfTextColor(doc, PDF_COLORS.slate400);
+  doc.text('PREPARED FOR', PDF_MARGIN_X, currentY);
+  doc.text('SYSTEM TOPOLOGY', PDF_MARGIN_X + 60, currentY);
+  doc.text('GRID SERVICE', PDF_MARGIN_X + 130, currentY);
 
   currentY += 4.5;
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  setText(COLOR_SLATE_900);
-  doc.text(userDisplay, MARGIN_X, currentY);
-  doc.text(systemDisplay, MARGIN_X + 60, currentY);
-  doc.text(serviceDisplay, MARGIN_X + 130, currentY);
+  setPdfTextColor(doc, PDF_COLORS.slate900);
+  doc.text(userDisplay, PDF_MARGIN_X, currentY);
+  doc.text(systemDisplay, PDF_MARGIN_X + 60, currentY);
+  doc.text(serviceDisplay, PDF_MARGIN_X + 130, currentY);
 
   currentY += 12;
 
-  // 3. STAT COUNTERS (Open Minimalist Typography, Zero Heavy Box Cards)
-  // 5 elegant columns with big numbers and quiet labels
-  const statColWidth = CONTENT_WIDTH / 5;
+  const statColWidth = PDF_CONTENT_WIDTH / 5;
   const stats = [
     {
       value: `${summary.totalArrayPowerKw}`,
@@ -152,59 +151,40 @@ export function generateSizingPdf({
   ];
 
   stats.forEach((st, idx) => {
-    const x = MARGIN_X + idx * statColWidth;
+    const x = PDF_MARGIN_X + idx * statColWidth;
 
-    // Metric Value + Unit
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(18);
-    setText(COLOR_SLATE_900);
+    setPdfTextColor(doc, PDF_COLORS.slate900);
     doc.text(st.value, x, currentY);
 
     if (st.unit) {
       const valWidth = doc.getTextWidth(st.value);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      setText(COLOR_AMBER);
+      setPdfTextColor(doc, PDF_COLORS.amber);
       doc.text(` ${st.unit}`, x + valWidth, currentY - 0.5);
     }
 
-    // Label
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
-    setText(COLOR_SLATE_500);
+    setPdfTextColor(doc, PDF_COLORS.slate500);
     doc.text(st.label, x, currentY + 4.8);
 
-    // Subtext
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
-    setText(COLOR_SLATE_400);
+    setPdfTextColor(doc, PDF_COLORS.slate400);
     doc.text(st.sub, x, currentY + 8.8);
   });
 
   currentY += 16;
 
-  // Thin separator under stats
-  setDraw(COLOR_LINE);
+  setPdfDrawColor(doc, PDF_COLORS.line);
   doc.setLineWidth(0.2);
-  doc.line(MARGIN_X, currentY, PAGE_WIDTH - MARGIN_X, currentY);
+  doc.line(PDF_MARGIN_X, currentY, PDF_PAGE_WIDTH - PDF_MARGIN_X, currentY);
   currentY += 10;
 
-  // Section Header Helper (Clean Uppercase, No Yellow Rectangles)
-  const renderSectionHeading = (num: string, title: string) => {
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'bold');
-    setText(COLOR_AMBER);
-    doc.text(num, MARGIN_X, currentY);
-
-    doc.setFontSize(9.5);
-    doc.setFont('helvetica', 'bold');
-    setText(COLOR_SLATE_900);
-    doc.text(title, MARGIN_X + 8, currentY);
-    currentY += 4;
-  };
-
-  // 4. MAJOR EQUIPMENT SPECIFICATIONS
-  renderSectionHeading('01', 'MAJOR EQUIPMENT SPECIFICATIONS');
+  currentY = renderPdfSectionHeading(doc, currentY, '01', 'MAJOR EQUIPMENT SPECIFICATIONS');
 
   const equipmentRows = [
     [
@@ -235,20 +215,10 @@ export function generateSizingPdf({
     head: [['EQUIPMENT', 'MODEL', 'RATING', 'OPERATING PARAMETERS']],
     body: equipmentRows,
     theme: 'plain',
-    headStyles: {
-      textColor: [100, 116, 139],
-      fontSize: 7.5,
-      fontStyle: 'bold',
-      cellPadding: { top: 3, bottom: 3, left: 1, right: 1 },
-      lineColor: [226, 232, 240],
-      lineWidth: { bottom: 0.25 },
-    },
+    headStyles: PLAIN_TABLE_HEAD_STYLES,
     bodyStyles: {
-      textColor: [51, 65, 85],
-      fontSize: 8.5,
+      ...PLAIN_TABLE_BODY_STYLES,
       cellPadding: { top: 3.5, bottom: 3.5, left: 1, right: 1 },
-      lineColor: [241, 245, 249],
-      lineWidth: { bottom: 0.15 },
     },
     columnStyles: {
       0: { fontStyle: 'bold', textColor: [15, 23, 42], cellWidth: 32 },
@@ -256,18 +226,22 @@ export function generateSizingPdf({
       2: { textColor: [217, 119, 6], fontStyle: 'bold', cellWidth: 38 },
       3: { textColor: [100, 116, 139] },
     },
-    margin: { left: MARGIN_X, right: MARGIN_X },
+    margin: { left: PDF_MARGIN_X, right: PDF_MARGIN_X },
   });
 
-  currentY = (doc as any).lastAutoTable.finalY + 12;
+  currentY = getLastAutoTableFinalY(doc) + 12;
 
-  // 5. ELECTRICAL PROTECTION & CONDUIT SCHEDULE
   if (currentY > 190) {
     doc.addPage();
     currentY = 22;
   }
 
-  renderSectionHeading('02', 'ELECTRICAL PROTECTION & INTERCONNECTION SCHEDULE');
+  currentY = renderPdfSectionHeading(
+    doc,
+    currentY,
+    '02',
+    'ELECTRICAL PROTECTION & INTERCONNECTION SCHEDULE'
+  );
 
   const electricalScheduleRows = [
     ['DC Circuit Breaker', `${dc.breakerRatingA} A`, 'NEC 690.8 continuous 1.25x design factor', dc.explanation.breaker],
@@ -295,39 +269,25 @@ export function generateSizingPdf({
     head: [['CIRCUIT', 'SPECIFIED RATING', 'STANDARDS BASIS', 'SIZING RATIONALE & NOTES']],
     body: electricalScheduleRows,
     theme: 'plain',
-    headStyles: {
-      textColor: [100, 116, 139],
-      fontSize: 7.5,
-      fontStyle: 'bold',
-      cellPadding: { top: 3, bottom: 3, left: 1, right: 1 },
-      lineColor: [226, 232, 240],
-      lineWidth: { bottom: 0.25 },
-    },
-    bodyStyles: {
-      textColor: [51, 65, 85],
-      fontSize: 8.5,
-      cellPadding: { top: 3.2, bottom: 3.2, left: 1, right: 1 },
-      lineColor: [241, 245, 249],
-      lineWidth: { bottom: 0.15 },
-    },
+    headStyles: PLAIN_TABLE_HEAD_STYLES,
+    bodyStyles: PLAIN_TABLE_BODY_STYLES,
     columnStyles: {
       0: { fontStyle: 'bold', textColor: [15, 23, 42], cellWidth: 38 },
       1: { fontStyle: 'bold', textColor: [217, 119, 6], cellWidth: 26 },
       2: { textColor: [71, 85, 105], cellWidth: 44 },
       3: { textColor: [100, 116, 139] },
     },
-    margin: { left: MARGIN_X, right: MARGIN_X },
+    margin: { left: PDF_MARGIN_X, right: PDF_MARGIN_X },
   });
 
-  currentY = (doc as any).lastAutoTable.finalY + 12;
+  currentY = getLastAutoTableFinalY(doc) + 12;
 
-  // 6. MECHANICAL MOUNTING HARDWARE BILL OF MATERIALS (BOM)
   if (currentY > 210) {
     doc.addPage();
     currentY = 22;
   }
 
-  renderSectionHeading('03', 'MECHANICAL MOUNTING HARDWARE (BOM)');
+  currentY = renderPdfSectionHeading(doc, currentY, '03', 'MECHANICAL MOUNTING HARDWARE (BOM)');
 
   const bomRows = mounting.items.map((item) => [
     item.name,
@@ -341,33 +301,19 @@ export function generateSizingPdf({
     head: [['HARDWARE COMPONENT', 'QTY', 'SPECIFICATION', 'ENGINEERING BASIS']],
     body: bomRows,
     theme: 'plain',
-    headStyles: {
-      textColor: [100, 116, 139],
-      fontSize: 7.5,
-      fontStyle: 'bold',
-      cellPadding: { top: 3, bottom: 3, left: 1, right: 1 },
-      lineColor: [226, 232, 240],
-      lineWidth: { bottom: 0.25 },
-    },
-    bodyStyles: {
-      textColor: [51, 65, 85],
-      fontSize: 8.5,
-      cellPadding: { top: 3.2, bottom: 3.2, left: 1, right: 1 },
-      lineColor: [241, 245, 249],
-      lineWidth: { bottom: 0.15 },
-    },
+    headStyles: PLAIN_TABLE_HEAD_STYLES,
+    bodyStyles: PLAIN_TABLE_BODY_STYLES,
     columnStyles: {
       0: { fontStyle: 'bold', textColor: [15, 23, 42], cellWidth: 42 },
       1: { fontStyle: 'bold', textColor: [217, 119, 6], cellWidth: 22 },
       2: { textColor: [71, 85, 105], cellWidth: 42 },
       3: { textColor: [100, 116, 139] },
     },
-    margin: { left: MARGIN_X, right: MARGIN_X },
+    margin: { left: PDF_MARGIN_X, right: PDF_MARGIN_X },
   });
 
-  currentY = (doc as any).lastAutoTable.finalY + 12;
+  currentY = getLastAutoTableFinalY(doc) + 12;
 
-  // 6B. CUSTOM 3D PLANT LAYOUT & WIRING BOM ADDITIONS (when present)
   const custom3d = calculationResult.costSummary.custom3dSummary;
   if (custom3d && (custom3d.totalAddedComponents > 0 || custom3d.totalWireCount > 0)) {
     if (currentY > 210) {
@@ -375,7 +321,12 @@ export function generateSizingPdf({
       currentY = 22;
     }
 
-    renderSectionHeading('03B', 'CUSTOM 3D PLANT LAYOUT & WIRING ADDITIONS');
+    currentY = renderPdfSectionHeading(
+      doc,
+      currentY,
+      '03B',
+      'CUSTOM 3D PLANT LAYOUT & WIRING ADDITIONS'
+    );
 
     const customRows: string[][] = [
       [
@@ -397,41 +348,27 @@ export function generateSizingPdf({
       head: [['3D PLANT ITEM', 'COUNT', 'SPECIFICATION', 'COST IMPACT']],
       body: customRows,
       theme: 'plain',
-      headStyles: {
-        textColor: [100, 116, 139],
-        fontSize: 7.5,
-        fontStyle: 'bold',
-        cellPadding: { top: 3, bottom: 3, left: 1, right: 1 },
-        lineColor: [226, 232, 240],
-        lineWidth: { bottom: 0.25 },
-      },
-      bodyStyles: {
-        textColor: [51, 65, 85],
-        fontSize: 8.5,
-        cellPadding: { top: 3.2, bottom: 3.2, left: 1, right: 1 },
-        lineColor: [241, 245, 249],
-        lineWidth: { bottom: 0.15 },
-      },
+      headStyles: PLAIN_TABLE_HEAD_STYLES,
+      bodyStyles: PLAIN_TABLE_BODY_STYLES,
       columnStyles: {
         0: { fontStyle: 'bold', textColor: [15, 23, 42], cellWidth: 42 },
         1: { fontStyle: 'bold', textColor: [217, 119, 6], cellWidth: 22 },
         2: { textColor: [71, 85, 105], cellWidth: 62 },
         3: { textColor: [100, 116, 139] },
       },
-      margin: { left: MARGIN_X, right: MARGIN_X },
+      margin: { left: PDF_MARGIN_X, right: PDF_MARGIN_X },
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 12;
+    currentY = getLastAutoTableFinalY(doc) + 12;
   }
 
-  // 7. CODE COMPLIANCE & SAFETY ADVISORIES
   if (warnings.length > 0) {
     if (currentY > 210) {
       doc.addPage();
       currentY = 22;
     }
 
-    renderSectionHeading('04', 'CODE COMPLIANCE & ADVISORIES');
+    currentY = renderPdfSectionHeading(doc, currentY, '04', 'CODE COMPLIANCE & ADVISORIES');
 
     const warningRows = warnings.map((w) => [
       w.severity.toUpperCase(),
@@ -445,41 +382,29 @@ export function generateSizingPdf({
       head: [['SEVERITY', 'OBSERVATION', 'ANALYSIS', 'RECOMMENDED ACTION']],
       body: warningRows,
       theme: 'plain',
-      headStyles: {
-        textColor: [100, 116, 139],
-        fontSize: 7.5,
-        fontStyle: 'bold',
-        cellPadding: { top: 3, bottom: 3, left: 1, right: 1 },
-        lineColor: [226, 232, 240],
-        lineWidth: { bottom: 0.25 },
-      },
-      bodyStyles: {
-        textColor: [51, 65, 85],
-        fontSize: 8.5,
-        cellPadding: { top: 3.2, bottom: 3.2, left: 1, right: 1 },
-        lineColor: [241, 245, 249],
-        lineWidth: { bottom: 0.15 },
-      },
+      headStyles: PLAIN_TABLE_HEAD_STYLES,
+      bodyStyles: PLAIN_TABLE_BODY_STYLES,
       columnStyles: {
         0: { fontStyle: 'bold', textColor: [217, 119, 6], cellWidth: 24 },
         1: { fontStyle: 'bold', textColor: [15, 23, 42], cellWidth: 40 },
         2: { textColor: [71, 85, 105], cellWidth: 54 },
         3: { textColor: [100, 116, 139] },
       },
-      margin: { left: MARGIN_X, right: MARGIN_X },
+      margin: { left: PDF_MARGIN_X, right: PDF_MARGIN_X },
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 12;
+    currentY = getLastAutoTableFinalY(doc) + 12;
   }
 
   if (yieldSummary) {
-    const effectiveYieldSummary = yieldSummary;
     if (currentY > 205) {
       doc.addPage();
       currentY = 22;
     }
 
-    renderSectionHeading(
+    currentY = renderPdfSectionHeading(
+      doc,
+      currentY,
       warnings.length > 0 ? '05' : '04',
       '24-HOUR SYSTEM DISPATCH & SELF-SUFFICIENCY SUMMARY'
     );
@@ -487,29 +412,29 @@ export function generateSizingPdf({
     const dispatchRows = [
       [
         'Daily Solar Harvest',
-        `${effectiveYieldSummary.totalHarvestedPvKwh.toFixed(2)} kWh`,
-        `Potential: ${effectiveYieldSummary.totalPotentialPvKwh.toFixed(2)} kWh`,
-        `Clipped / Curtailed: ${effectiveYieldSummary.totalClippedPvKwh.toFixed(2)} kWh`,
+        `${yieldSummary.totalHarvestedPvKwh.toFixed(2)} kWh`,
+        `Potential: ${yieldSummary.totalPotentialPvKwh.toFixed(2)} kWh`,
+        `Clipped / Curtailed: ${yieldSummary.totalClippedPvKwh.toFixed(2)} kWh`,
       ],
       [
         'Household Energy Served',
-        `${effectiveYieldSummary.totalLoadConsumedKwh.toFixed(2)} kWh`,
-        `Direct Daytime PV: ${effectiveYieldSummary.directSolarToLoadKwh.toFixed(2)} kWh`,
-        `Self-Sufficiency Ratio: ${effectiveYieldSummary.selfSufficiencyPercent.toFixed(1)}%`,
+        `${yieldSummary.totalLoadConsumedKwh.toFixed(2)} kWh`,
+        `Direct Daytime PV: ${yieldSummary.directSolarToLoadKwh.toFixed(2)} kWh`,
+        `Self-Sufficiency Ratio: ${yieldSummary.selfSufficiencyPercent.toFixed(1)}%`,
       ],
       [
         'LiFePO4 Battery Cycling',
-        `+${effectiveYieldSummary.batteryChargedKwh.toFixed(2)} / -${effectiveYieldSummary.batteryDischargedKwh.toFixed(2)} kWh`,
-        `SoC Range: ${effectiveYieldSummary.minBatterySocPercent.toFixed(0)}% to ${effectiveYieldSummary.maxBatterySocPercent.toFixed(0)}%`,
-        effectiveYieldSummary.brownoutSurvived
+        `+${yieldSummary.batteryChargedKwh.toFixed(2)} / -${yieldSummary.batteryDischargedKwh.toFixed(2)} kWh`,
+        `SoC Range: ${yieldSummary.minBatterySocPercent.toFixed(0)}% to ${yieldSummary.maxBatterySocPercent.toFixed(0)}%`,
+        yieldSummary.brownoutSurvived
           ? 'Outage Stress Test: Survived (0 min unmet)'
-          : `Outage Unmet Window: ${effectiveYieldSummary.blackoutUnmetMinutes} mins`,
+          : `Outage Unmet Window: ${yieldSummary.blackoutUnmetMinutes} mins`,
       ],
       [
         'Utility Grid Exchange',
-        `${effectiveYieldSummary.gridImportedKwh.toFixed(2)} kWh Imported`,
-        `${effectiveYieldSummary.gridExportedKwh.toFixed(2)} kWh Exported`,
-        `Solar Local Use: ${effectiveYieldSummary.solarSelfConsumptionPercent.toFixed(1)}%`,
+        `${yieldSummary.gridImportedKwh.toFixed(2)} kWh Imported`,
+        `${yieldSummary.gridExportedKwh.toFixed(2)} kWh Exported`,
+        `Solar Local Use: ${yieldSummary.solarSelfConsumptionPercent.toFixed(1)}%`,
       ],
     ];
 
@@ -518,47 +443,23 @@ export function generateSizingPdf({
       head: [['DISPATCH METRIC', '24-HR TOTAL', 'PRIMARY BREAKDOWN', 'PERFORMANCE BENCHMARK']],
       body: dispatchRows,
       theme: 'plain',
-      headStyles: {
-        textColor: [100, 116, 139],
-        fontSize: 7.5,
-        fontStyle: 'bold',
-        cellPadding: { top: 3, bottom: 3, left: 1, right: 1 },
-        lineColor: [226, 232, 240],
-        lineWidth: { bottom: 0.25 },
-      },
-      bodyStyles: {
-        textColor: [51, 65, 85],
-        fontSize: 8.5,
-        cellPadding: { top: 3.2, bottom: 3.2, left: 1, right: 1 },
-        lineColor: [241, 245, 249],
-        lineWidth: { bottom: 0.15 },
-      },
+      headStyles: PLAIN_TABLE_HEAD_STYLES,
+      bodyStyles: PLAIN_TABLE_BODY_STYLES,
       columnStyles: {
         0: { fontStyle: 'bold', textColor: [15, 23, 42], cellWidth: 42 },
         1: { fontStyle: 'bold', textColor: [217, 119, 6], cellWidth: 36 },
         2: { textColor: [71, 85, 105], cellWidth: 46 },
         3: { textColor: [100, 116, 139] },
       },
-      margin: { left: MARGIN_X, right: MARGIN_X },
+      margin: { left: PDF_MARGIN_X, right: PDF_MARGIN_X },
     });
   }
 
-  // 8. ELEGANT RUNNING FOOTER ON ALL PAGES
-  const totalPages = doc.getNumberOfPages();
-  for (let p = 1; p <= totalPages; p++) {
-    doc.setPage(p);
-
-    // Subtle hairline
-    setDraw(COLOR_LINE);
-    doc.setLineWidth(0.2);
-    doc.line(MARGIN_X, 285, PAGE_WIDTH - MARGIN_X, 285);
-
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'normal');
-    setText(COLOR_SLATE_400);
-    doc.text('KitoSolar • Solar PV Engineering Sizing & Bill of Materials', MARGIN_X, 289.5);
-    doc.text(`Page ${p} of ${totalPages}`, PAGE_WIDTH - MARGIN_X, 289.5, { align: 'right' });
-  }
+  addPdfPageFooters(
+    doc,
+    'KitoSolar • Solar PV Engineering Sizing & Bill of Materials',
+    PDF_COLORS.slate400
+  );
 
   return doc;
 }
@@ -567,6 +468,5 @@ export function downloadSizingPdf(params: ExportPdfParams): void {
   const doc = generateSizingPdf(params);
   const dateSlug = new Date().toISOString().split('T')[0];
   const systemSlug = isGridTieTopology(params.calculationResult.systemType) ? 'OnGrid' : 'Hybrid';
-  const filename = `KitoSolar-Sizing-${systemSlug}-${dateSlug}.pdf`;
-  doc.save(filename);
+  doc.save(`KitoSolar-Sizing-${systemSlug}-${dateSlug}.pdf`);
 }

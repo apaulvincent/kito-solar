@@ -1,6 +1,10 @@
-// src/features/financial-roi/utils/utilityTariffPresets.ts
-// Pre-configured Philippine utility rate presets, Net Metering export generation credits, and benchmark CAPEX figures.
-
+import {
+  DEFAULT_PEAK_SUN_HOURS,
+  DEFAULT_RETAIL_TARIFF_PHP_PER_KWH,
+  DEFAULT_SYSTEM_EFFICIENCY,
+  LIFEPO4_BATTERY_DOD,
+  LIFEPO4_ROUND_TRIP_EFFICIENCY,
+} from '@/lib/solarConstants';
 import { FinancialConfig, UtilityPreset } from '../types/financialRoi';
 
 export const UTILITY_PRESETS: UtilityPreset[] = [
@@ -9,7 +13,7 @@ export const UTILITY_PRESETS: UtilityPreset[] = [
     name: 'Meralco (Residential D-100)',
     shortName: 'Meralco',
     region: 'Metro Manila, Cavite, Laguna, Batangas, Bulacan, Rizal',
-    retailRatePhp: 11.85,
+    retailRatePhp: DEFAULT_RETAIL_TARIFF_PHP_PER_KWH,
     exportCreditRatePhp: 6.40,
     netMeteringSetupCostPhp: 35000,
     description: 'Blended residential effective tariff ~₱11.85/kWh; ERC Net Metering export credited at Gen Charge ~₱6.40/kWh.',
@@ -79,7 +83,7 @@ export const UTILITY_PRESETS: UtilityPreset[] = [
     name: 'Custom Utility Tariff',
     shortName: 'Custom',
     region: 'User Defined Tariff & Rates',
-    retailRatePhp: 11.85,
+    retailRatePhp: DEFAULT_RETAIL_TARIFF_PHP_PER_KWH,
     exportCreditRatePhp: 6.40,
     netMeteringSetupCostPhp: 35000,
     description: 'Directly configure custom retail electricity rate and net metering export credit.',
@@ -88,7 +92,7 @@ export const UTILITY_PRESETS: UtilityPreset[] = [
 
 export const DEFAULT_FINANCIAL_CONFIG: FinancialConfig = {
   selectedUtilityId: 'meralco',
-  retailRatePhp: 11.85,
+  retailRatePhp: DEFAULT_RETAIL_TARIFF_PHP_PER_KWH,
   exportCreditRatePhp: 6.40,
   netMeteringSetupCostPhp: 35000,
   annualTariffInflationPercent: 4.5,
@@ -104,20 +108,21 @@ export const DEFAULT_FINANCIAL_CONFIG: FinancialConfig = {
   capExportCreditsAtBill: true,
 };
 
-// Turnkey CAPEX benchmarks in the Philippine solar installer market (2025/2026)
+// Turnkey CAPEX benchmarks in the Philippine solar installer market
 export const CAPEX_BENCHMARKS = {
-  simulationHorizonYears: 10,     // 10-Year simulation horizon
-  pvArrayPerKwpPhp: 10000,       // Tier-1 N-Type TOPCon Panels (~₱5,800 per 580W module, ~₱10,000/kWp)
-  gridTieInverterPerKwPhp: 7000, // On-Grid String Inverter (e.g., Sungrow, Huawei, GoodWe, Solis) (~₱7,000/kW)
-  hybridInverterPerKwPhp: 11000, // Hybrid Low/High Voltage Inverter (e.g., Deye, Luxpower, Megarevo) (~₱11,000/kW)
-  batteryPerKwhPhp: 12000,       // 51.2V 100Ah LiFePO4 server-rack battery pack (~₱61,440 per 5.12kWh rack)
-  bosAndMountingPerKwpPhp: 3500, // Aluminum rail mounting, DC/AC breakers, SPD, solar cables, trunking
-  laborAndPermitsRatio: 0.12,   // 12% of hardware subtotal for engineering, PE-stamped drawings & commissioning
-  inverterReplacementRatio: 0.65, // Year 10 replacement is 65% of initial inverter cost due to hardware deflation
-  batteryReplacementRatio: 0.60,  // Year 8 replacement is 60% of initial LiFePO4 cost
-  defaultPsh: 4.5,              // Conservative PH annual daily PSH
-  defaultSystemEfficiency: 0.80,// Wire loss, soiling, thermal coefficient, mismatch
-  batteryDod: 0.80,             // 80% Depth of Discharge for LiFePO4 warranty life
-  batteryRoundTripEfficiency: 0.90, // 90% AC-to-battery-to-AC roundtrip efficiency
-  netMeteringBillCapRatio: 0.95, // Under ERC rules, fixed distribution/metering fees cannot be offset by exported kWh
+  simulationHorizonYears: 10,
+  pvArrayPerKwpPhp: 10000,
+  gridTieInverterPerKwPhp: 7000,
+  hybridInverterPerKwPhp: 11000,
+  batteryPerKwhPhp: 12000,
+  bosAndMountingPerKwpPhp: 3500,
+  laborAndPermitsRatio: 0.12,
+  inverterReplacementRatio: 0.65,
+  batteryReplacementRatio: 0.60,
+  defaultPsh: DEFAULT_PEAK_SUN_HOURS,
+  defaultSystemEfficiency: DEFAULT_SYSTEM_EFFICIENCY,
+  batteryDod: LIFEPO4_BATTERY_DOD,
+  batteryRoundTripEfficiency: LIFEPO4_ROUND_TRIP_EFFICIENCY,
+  // Under ERC Net Metering rules, fixed utility/metering fees remain (~5% bill floor)
+  netMeteringBillCapRatio: 0.95,
 };

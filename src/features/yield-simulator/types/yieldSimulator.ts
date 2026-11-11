@@ -51,6 +51,7 @@ export interface TelemetryTimeStep {
   isOverloadFault: boolean;
   isAntiIslandingTripped: boolean;
   isLowBatteryShutdown: boolean;
+  applianceWatts: Record<string, number>;
 }
 
 export interface DiagnosticInsight {

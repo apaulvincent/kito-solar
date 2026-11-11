@@ -544,6 +544,7 @@ export function runYieldSimulation(
       isOverloadFault,
       isAntiIslandingTripped,
       isLowBatteryShutdown,
+      applianceWatts: loadStep.applianceWatts,
     });
   }
 
