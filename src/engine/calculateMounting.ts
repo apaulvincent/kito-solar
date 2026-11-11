@@ -1,4 +1,3 @@
-// src/engine/calculateMounting.ts
 import { MountingCalculationResult, MountingItem } from '@/types/calculator';
 
 export function calculateMounting(
@@ -27,7 +26,6 @@ export function calculateMounting(
 
   // 3. 2.2m Roof Rails: Standard 550W+ module is ~1.134m wide. 
   // Dual rails (top and bottom) per row = 2.27m of rail per module width.
-  // Total rail segments of 2.2m length:
   const totalRails = Math.max(2, Math.ceil((N * 1.134 * 2) / 2.2));
 
   // 4. Rail Splices: Joins between adjacent rail pieces along each rail run

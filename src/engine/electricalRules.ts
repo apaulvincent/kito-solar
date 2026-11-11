@@ -1,4 +1,3 @@
-// src/services/ruleService.ts
 import {
   RuleBreakerRecord,
   RuleWireRecord,
@@ -13,7 +12,7 @@ import conduitRulesSeed from '@/data/seed/calculator_rule_conduit.json';
 import isolatorRulesSeed from '@/data/seed/calculator_rule_isolators.json';
 import groundingRulesSeed from '@/data/seed/calculator_rule_grounding.json';
 
-export class RuleService {
+class ElectricalRulesLookup {
   private breakers: RuleBreakerRecord[] = breakerRulesSeed as RuleBreakerRecord[];
   private wires: RuleWireRecord[] = wireRulesSeed as RuleWireRecord[];
   private conduits: RuleConduitRecord[] = conduitRulesSeed as RuleConduitRecord[];
@@ -25,18 +24,14 @@ export class RuleService {
       .filter((b) => b.system_side === systemSide)
       .sort((a, b) => a.breaker_rating_a - b.breaker_rating_a);
 
-    // Find row where min_current_a <= currentA <= max_current_a
     const match = sideBreakers.find(
       (b) => currentA >= b.min_current_a && currentA <= b.max_current_a
     );
-
     if (match) return match.breaker_rating_a;
 
-    // Fallback: pick smallest breaker whose rating is >= currentA
     const nextHighest = sideBreakers.find((b) => b.breaker_rating_a >= currentA);
     if (nextHighest) return nextHighest.breaker_rating_a;
 
-    // Highest available
     return sideBreakers[sideBreakers.length - 1]?.breaker_rating_a || Math.ceil(currentA);
   }
 
@@ -45,7 +40,6 @@ export class RuleService {
       .filter((w) => w.wire_group === wireGroup)
       .sort((a, b) => a.max_current_a - b.max_current_a);
 
-    // Find smallest max_current_a that accommodates ratingOrCurrentA
     const match = groupWires.find((w) => w.max_current_a >= ratingOrCurrentA);
     if (match) return match.wire_spec;
 
@@ -58,7 +52,6 @@ export class RuleService {
     );
     if (match) return match.conduit_spec;
 
-    // Fallback search by partial string or default
     const partial = this.conduits.find(
       (c) => c.wire_group === wireGroup && wireSpec.includes(c.wire_spec.split(' ')[0])
     );
@@ -73,7 +66,6 @@ export class RuleService {
     const match = sideIsolators.find((i) => i.breaker_rating_a === breakerRatingA);
     if (match) return match.isolator_rating_a;
 
-    // Fallback: next higher rating
     const next = sideIsolators.find((i) => i.breaker_rating_a >= breakerRatingA);
     if (next) return next.isolator_rating_a;
 
@@ -90,7 +82,6 @@ export class RuleService {
       return { conductor: match.conductor_spec, rod: match.rod_spec };
     }
 
-    // Default to common safe baseline
     return {
       conductor: sorted[0]?.conductor_spec || '14 AWG Copper / 12 AWG Aluminum',
       rod: sorted[0]?.rod_spec || '5/8 inches x 8 feet Copper-Clad Steel',
@@ -98,4 +89,4 @@ export class RuleService {
   }
 }
 
-export const ruleService = new RuleService();
+export const electricalRules = new ElectricalRulesLookup();

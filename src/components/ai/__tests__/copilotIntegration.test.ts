@@ -1,9 +1,8 @@
 import { ALL_QUICK_SIZING_PROMPTS, getRandomPrompts } from '../SolarCopilotDrawer';
-// src/components/ai/__tests__/copilotIntegration.test.ts
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { calculatePvSystem } from '@/lib/solarSizingEngine';
-import { matchHardwareCatalog } from '@/lib/hardwareCatalog';
+import { buildSolarSetupProposal, calculatePvSystem } from '@/lib/solarSizingEngine';
+import { matchHardwareCatalog, searchHardwareCatalog } from '@/lib/hardwareCatalog';
 import { aiCopilotService } from '@/services/aiCopilotService';
 
 describe('AI Copilot Tool-Calling & Deterministic PV Sizing Engine', () => {
@@ -15,7 +14,6 @@ describe('AI Copilot Tool-Calling & Deterministic PV Sizing Engine', () => {
     it('accurately sizes PV system from monthly peso bill', () => {
       const output = calculatePvSystem({
         monthlyBillPhp: 7000,
-        location: 'Metro Manila',
         systemType: 'hybrid',
       });
 
@@ -198,11 +196,36 @@ describe('AI Copilot Tool-Calling & Deterministic PV Sizing Engine', () => {
     });
   });
 
-  describe('Zero Regex Verification', () => {
-    it('verifies that regex bill extraction has been eliminated from the service', () => {
-      expect((aiCopilotService as any).extractBillAmount).toBeUndefined();
+  describe('Hardware Search & Unified Proposal Builder', () => {
+    it('filters catalog entries accurately by searchQuery and category', () => {
+      const inverterHits = searchHardwareCatalog({ searchQuery: 'Deye', category: 'inverter' });
+      expect(inverterHits.inverters.length).toBeGreaterThan(0);
+      expect(inverterHits.inverters.every((i) => i.brand === 'Deye')).toBe(true);
+      expect(inverterHits.panels).toHaveLength(0);
+      expect(inverterHits.batteries).toHaveLength(0);
+
+      const panelHits = searchHardwareCatalog({ searchQuery: '580w', category: 'panel' });
+      expect(panelHits.panels.some((p) => p.model === 'CS6R-580MS')).toBe(true);
+    });
+
+    it('builds consistent ProjectSizingResult BOM totals where line items sum to totalSystemCostPhp', async () => {
+      const { proposal } = await buildSolarSetupProposal({
+        monthlyBillPhp: 7000,
+        location: 'Metro Manila',
+        systemType: 'hybrid',
+        preferredInverterBrand: 'Deye',
+      });
+      const bom = proposal.billOfMaterials;
+      const lineSum =
+        bom.panel.subtotalPhp +
+        bom.inverter.subtotalPhp +
+        (bom.battery?.subtotalPhp || 0) +
+        bom.bosAndInstallationPhp;
+      expect(lineSum).toBe(bom.totalSystemCostPhp);
+      expect(proposal.engineeringSpecs.requiredRoofAreaSqm).toBeGreaterThan(0);
     });
   });
+
   describe('Quick Sizing Prompts Pool & Random Selection', () => {
     it('has at least 24 rich, diverse quick sizing prompts in the pool', () => {
       expect(ALL_QUICK_SIZING_PROMPTS.length).toBeGreaterThanOrEqual(24);

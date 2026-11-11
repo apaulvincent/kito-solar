@@ -1,6 +1,6 @@
-// src/engine/calculateStringSizing.ts
 import { SolarInverterRecord, SolarModuleRecord } from '@/types/supabase';
 import { StringSizingResult } from '@/types/calculator';
+import { parseMpptVoltageRange } from './inverterHelpers';
 
 export function calculateStringSizing(
   inverter: SolarInverterRecord,
@@ -11,21 +11,10 @@ export function calculateStringSizing(
   const voc = Number(module.voc_v) || 1;
   const maxPvVoltageV = Number(inverter.max_pv_input_voltage_v) || 500;
 
-  let minMpptV = Number(inverter.startup_voltage_v) || 120;
-  let maxMpptV = maxPvVoltageV;
-
-  if (inverter.mppt_voltage_range && inverter.mppt_voltage_range.includes('-')) {
-    const parts = inverter.mppt_voltage_range.split('-');
-    const p0 = parseFloat(parts[0].trim());
-    const p1 = parseFloat(parts[1].trim());
-    if (!isNaN(p0)) minMpptV = p0;
-    if (!isNaN(p1)) maxMpptV = p1;
-  }
-
+  const { minMpptV, maxMpptV } = parseMpptVoltageRange(inverter, maxPvVoltageV);
   const vstart = Number(inverter.startup_voltage_v) || minMpptV;
   const vtarget = Number(inverter.rated_pv_input_voltage_v) || (minMpptV + maxMpptV) / 2;
 
-  // Parse tracker count and max available string inputs from mppt_tracker_string_config (e.g., '2 / 1+1' or '2/2+2')
   let trackerCount = 1;
   let maxStrings = 1;
   const configRaw = inverter.mppt_tracker_string_config || '1 / 1';
@@ -54,7 +43,6 @@ export function calculateStringSizing(
 
   if (maxStrings <= 0) maxStrings = trackerCount || 1;
 
-  // Determine optimal string count that satisfies electrical safety and MPPT window
   const panelCount = Math.max(1, activePanelCount);
   const maxCandidateStrings = Math.min(panelCount, maxStrings);
 
@@ -68,42 +56,36 @@ export function calculateStringSizing(
 
     let score = 0;
 
-    // Hard Safety rule: Voc must not exceed inverter maximum DC voltage
     if (stringVoc > maxPvVoltageV) {
       score -= 50000;
     }
 
-    // MPPT window matching
     if (stringVmp >= minMpptV && stringVmp <= maxMpptV) {
       score += 1000;
-      // Proximity to target/rated MPPT voltage
       score += Math.max(0, 200 - Math.abs(stringVmp - vtarget));
     } else if (stringVmp < minMpptV) {
       score -= 500 + (minMpptV - stringVmp) * 15;
       if (stringVmp < vstart) {
-        score -= 2000; // Severe penalty for falling below startup voltage
+        score -= 2000;
       }
     } else {
       score -= 500 + (stringVmp - maxMpptV) * 15;
     }
 
-    // Tracker balance
     if (s === trackerCount) {
-      score += 250; // Optimal 1:1 match per tracker
+      score += 250;
     } else if (trackerCount > 1 && s > trackerCount && s % trackerCount === 0) {
-      score += 180; // Symmetrical parallel strings across all trackers (e.g. 2+2)
+      score += 180;
     } else if (s < trackerCount) {
-      score += 40; // Valid, but uses fewer trackers than available
+      score += 40;
     } else {
-      score -= 50; // Asymmetrical across trackers
+      score -= 50;
     }
 
-    // Even panel distribution across strings
     if (panelCount % s === 0) {
       score += 100;
     }
 
-    // Prefer simpler BOS (fewer strings) if electrical scores are comparable
     score += (maxStrings - s) * 5;
 
     if (score > bestScore) {
@@ -112,11 +94,9 @@ export function calculateStringSizing(
     }
   }
 
-  // Split panels across strings
   const panelsPerString = Math.max(1, Math.round(panelCount / recommendedStrings));
   const voltagePerStringVmp = Number((panelsPerString * vmp).toFixed(1));
   const voltagePerStringVoc = Number((panelsPerString * voc).toFixed(1));
-
   const withinMpptRange = voltagePerStringVmp >= minMpptV && voltagePerStringVmp <= maxMpptV;
 
   const explanation = withinMpptRange

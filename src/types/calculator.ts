@@ -1,4 +1,3 @@
-// src/types/calculator.ts
 import { SolarInverterRecord, SolarModuleRecord, BatteryRecord, AccessoryRecord } from './supabase';
 import { Layout3DState } from './layout3d';
 
@@ -155,7 +154,6 @@ export interface ProjectCostItem {
   unitPricePhp?: number | null;
   totalPricePhp?: number | null;
   isTbd: boolean;
-  isEstimated?: boolean;
   isCustomPrice?: boolean;
 }
 

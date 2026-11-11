@@ -5,7 +5,6 @@ import {
   SystemType,
   ProjectCostItem,
   ProjectCostSummary,
-  PvSizingResult,
 } from '@/types/calculator';
 
 import { calculateDc } from './calculateDc';
@@ -14,13 +13,20 @@ import { calculateBattery } from './calculateBattery';
 import { calculatePvSizing } from './calculatePvSizing';
 import { calculateStringSizing } from './calculateStringSizing';
 import { calculateMounting } from './calculateMounting';
+import { isBatteryCapableInverter, parseBatteryVoltageRange } from './inverterHelpers';
 import { parseNumericValue } from '@/lib/utils';
 import accessoriesSeed from '@/data/seed/calculator_accessories.json';
 import batteriesSeed from '@/data/seed/batteries.json';
 import { BatteryRecord } from '@/types/supabase';
 import { AddableComponentKey, PLANT_ROOM_GEOMETRY } from '@/types/layout3d';
 import { ADDABLE_CATALOG_MAP, isBaselineSystemWire } from '@/lib/diagramNodeSpecs';
-import { MODULES_PER_3D_PV_ARRAY } from '@/lib/solarConstants';
+import {
+  DAYS_PER_MONTH,
+  DEFAULT_PEAK_SUN_HOURS,
+  DEFAULT_SYSTEM_LOSSES,
+  MODULES_PER_3D_PV_ARRAY,
+  WORKBENCH_DEFAULT_TARIFF_PHP_PER_KWH,
+} from '@/lib/solarConstants';
 
 export function calculateSystem(input: CalculationInput): SystemCalculationResult {
   const {
@@ -47,13 +53,7 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
   const addedPvArrays = getAddedCount('pv_array_unit');
   const addedPanelsFrom3D = addedPvArrays * MODULES_PER_3D_PV_ARRAY;
 
-  // Determine system classification: Hybrid vs On-grid
-  const isBatteryCapable = Boolean(
-    inverter.battery_type &&
-    inverter.battery_voltage_range &&
-    inverter.battery_type.toLowerCase() !== 'none'
-  );
-
+  const isBatteryCapable = isBatteryCapableInverter(inverter);
   const systemType: SystemType = isBatteryCapable ? 'hybrid' : 'ongrid';
 
   // Accessory pricing map (live Supabase accessories or fallback seed)
@@ -80,26 +80,9 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
     }
   }
 
-  // Sizing calculations
-  const basePvSizing = calculatePvSizing(inverter, module, panelCountOverride);
-  const totalEffectivePanels = basePvSizing.activePanelCount + addedPanelsFrom3D;
-  const moduleWattW = parseNumericValue(module.pv_wattage_w) || 0;
-  const totalPvPowerW = totalEffectivePanels * moduleWattW;
-  const ratedAcPower = parseNumericValue(inverter.rated_ac_power_w) || 0;
-  const dcAcRatio = ratedAcPower > 0 ? Number((totalPvPowerW / ratedAcPower).toFixed(2)) : 1.0;
-  const voc = Number(module.voc_v) || 1;
-  const vmp = Number(module.vmp_v) || 1;
-  const totalVocV = Number((totalEffectivePanels * voc).toFixed(1));
-  const totalVmpV = Number((totalEffectivePanels * vmp).toFixed(1));
-
-  const pvSizing: PvSizingResult = {
-    ...basePvSizing,
-    activePanelCount: totalEffectivePanels,
-    totalPvPowerW,
-    dcAcRatio,
-    totalVocV,
-    totalVmpV,
-  };
+  const pvSizing = calculatePvSizing(inverter, module, panelCountOverride, addedPanelsFrom3D);
+  const totalEffectivePanels = pvSizing.activePanelCount;
+  const basePanelCount = totalEffectivePanels - addedPanelsFrom3D;
 
   const stringSizing = calculateStringSizing(inverter, module, totalEffectivePanels);
   const dc = calculateDc(inverter, module);
@@ -117,7 +100,7 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
   const mounting = calculateMounting(totalEffectivePanels, stringSizing.recommendedStrings + addedPvArrays, accessoryPriceMap);
   const baseMountingCostPhp =
     addedPvArrays > 0
-      ? calculateMounting(basePvSizing.activePanelCount, calculateStringSizing(inverter, module, basePvSizing.activePanelCount).recommendedStrings, accessoryPriceMap).totalMountingCostPhp || 0
+      ? calculateMounting(basePanelCount, calculateStringSizing(inverter, module, basePanelCount).recommendedStrings, accessoryPriceMap).totalMountingCostPhp || 0
       : mounting.totalMountingCostPhp || 0;
   const extraMountingFrom3DPhp = Math.max(0, (mounting.totalMountingCostPhp || 0) - baseMountingCostPhp);
 
@@ -181,23 +164,17 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
         recommendation: 'Configure a compatible 24V or 48V/51.2V battery pack to unlock backup and self-consumption capabilities.',
       });
     } else {
-      // Check voltage compatibility
       const batteryNominal = Number(battery.nominal_voltage_v) || 0;
-      const rangeStr = inverter.battery_voltage_range || '';
-      if (rangeStr.includes('-')) {
-        const [minV, maxV] = rangeStr.split('-').map((v) => parseFloat(v.trim()));
-        if (!isNaN(minV) && !isNaN(maxV)) {
-          if (batteryNominal < minV * 0.85 || batteryNominal > maxV * 1.15) {
-            warnings.push({
-              id: 'battery-voltage-mismatch',
-              severity: 'warning',
-              category: 'battery',
-              title: 'Battery Voltage Mismatch',
-              message: `Selected battery nominal voltage (${batteryNominal} V) may fall outside the inverter voltage window (${rangeStr} V).`,
-              recommendation: `Confirm series/parallel configuration to match the inverter battery port requirement (${rangeStr} V).`,
-            });
-          }
-        }
+      const vRange = parseBatteryVoltageRange(inverter);
+      if (vRange && (batteryNominal < vRange.minV * 0.85 || batteryNominal > vRange.maxV * 1.15)) {
+        warnings.push({
+          id: 'battery-voltage-mismatch',
+          severity: 'warning',
+          category: 'battery',
+          title: 'Battery Voltage Mismatch',
+          message: `Selected battery nominal voltage (${batteryNominal} V) may fall outside the inverter voltage window (${inverter.battery_voltage_range || ''} V).`,
+          recommendation: `Confirm series/parallel configuration to match the inverter battery port requirement (${inverter.battery_voltage_range || ''} V).`,
+        });
       }
     }
   }
@@ -216,7 +193,8 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
   // Summary Metrics
   const singleInvKw = Number(((parseNumericValue(inverter.rated_ac_power_w) / 1000) || 0).toFixed(1));
   const totalInverterUnits = 1 + addedInverters;
-  const effectiveArrayPowerKw = Number(((totalEffectivePanels * moduleWattW) / 1000).toFixed(2));
+  const moduleWattW = parseNumericValue(module.pv_wattage_w) || 0;
+  const effectiveArrayPowerKw = Number((pvSizing.totalPvPowerW / 1000).toFixed(2));
 
   const summary = {
     inverterModel: addedInverters > 0 ? `${totalInverterUnits}x ${inverter.model}` : inverter.model,
@@ -485,15 +463,12 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
 
   const grandTotalPhp = equipmentSubtotalPhp + mountingSubtotalPhp + switchgearSubtotalPhp;
 
-  // 4. Financial ROI & Payback Computation
-  // Default tariff: ₱12.00/kWh (Meralco / Philippine DU national average)
-  const tariffRatePhp = 12.0;
-  const peakSunHours = 4.5;
-  const systemLosses = 0.20;
   const monthlySolarGenKwh = Math.round(
-    effectiveArrayPowerKw * peakSunHours * (1 - systemLosses) * 30
+    effectiveArrayPowerKw * DEFAULT_PEAK_SUN_HOURS * (1 - DEFAULT_SYSTEM_LOSSES) * DAYS_PER_MONTH
   );
-  const estimatedMonthlySavingsPhp = Math.round(monthlySolarGenKwh * tariffRatePhp);
+  const estimatedMonthlySavingsPhp = Math.round(
+    monthlySolarGenKwh * WORKBENCH_DEFAULT_TARIFF_PHP_PER_KWH
+  );
   const annualSavingsPhp = estimatedMonthlySavingsPhp * 12;
 
   const hasAnyTbdItems = tbdItemCount > 0;
@@ -501,8 +476,6 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
   const paybackPeriodYears = canComputeRoi
     ? Number((grandTotalPhp / annualSavingsPhp).toFixed(1))
     : null;
-
-  const hasBenchmarkEstimates = costItems.some((ci) => ci.isEstimated);
 
   const costSummary: ProjectCostSummary = {
     items: costItems,
@@ -528,7 +501,7 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
       roiUnavailableReason: hasAnyTbdItems
         ? `ROI and simple payback period cannot be determined while ${tbdItemCount} component(s) are marked TBD. Complete pricing is required.`
         : undefined,
-      isBenchmarkEstimate: hasBenchmarkEstimates,
+      isBenchmarkEstimate: false,
     },
   };
 

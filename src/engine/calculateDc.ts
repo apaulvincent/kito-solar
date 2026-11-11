@@ -1,27 +1,20 @@
-// src/engine/calculateDc.ts
 import { SolarInverterRecord, SolarModuleRecord } from '@/types/supabase';
 import { DcCalculationResult } from '@/types/calculator';
-import { ruleService } from '@/services/ruleService';
+import { electricalRules } from './electricalRules';
 
 export function calculateDc(
   inverter: SolarInverterRecord,
   module: SolarModuleRecord
 ): DcCalculationResult {
   const rawCurrentA = Number(module.isc_a) || 0;
-  // Computed current: PV Isc * 1.25 (125% continuous duty multiplier)
+  // 125% continuous duty multiplier per NEC 690.8 / PEC 6.90
   const computedCurrentA = Number((rawCurrentA * 1.25).toFixed(3));
 
-  // Breaker rating from DC breaker table
-  const breakerRatingA = ruleService.findBreaker('dc', computedCurrentA);
-
-  // PV DC Wire from dc_pv group based on breaker rating
-  const wireSpec = ruleService.findWire('dc_pv', breakerRatingA);
+  const breakerRatingA = electricalRules.findBreaker('dc', computedCurrentA);
+  const wireSpec = electricalRules.findWire('dc_pv', breakerRatingA);
   const wireNote = 'Use 2 cables — 1 red and 1 black';
+  const isolatorRatingA = electricalRules.findIsolator('dc', breakerRatingA);
 
-  // DC Isolator mapped from breaker rating
-  const isolatorRatingA = ruleService.findIsolator('dc', breakerRatingA);
-
-  // DC SPD based on inverter max PV input voltage
   const maxPvVoltage = Number(inverter.max_pv_input_voltage_v) || 0;
   let spdRating = '600V DC SPD';
   let spdRatingV = 600;
@@ -40,11 +33,8 @@ export function calculateDc(
     spdRatingV = 0;
   }
 
-  // DC Conduit
-  const conduitSpec = ruleService.findConduit('dc_pv', wireSpec);
-
-  // Grounding
-  const groundInfo = ruleService.findGrounding(breakerRatingA);
+  const conduitSpec = electricalRules.findConduit('dc_pv', wireSpec);
+  const groundInfo = electricalRules.findGrounding(breakerRatingA);
 
   return {
     rawCurrentA,
@@ -63,8 +53,8 @@ export function calculateDc(
       wire: `Conductor ampacity sized to safely carry DC breaker rating (${breakerRatingA} A).`,
       isolator: `DC disconnect sized for load-break isolation rating above DC breaker capacity (${isolatorRatingA} A).`,
       spd: `Sized for inverter maximum open-circuit PV input voltage ceiling (${maxPvVoltage} V DC).`,
-      conduit: `Conduit inner diameter accommodates double-insulated solar homerun cables (1 Red +, 1 Black -).`,
-      grounding: `Equipment grounding conductor sized per electrical standard for DC circuit protection.`,
+      conduit: 'Conduit inner diameter accommodates double-insulated solar homerun cables (1 Red +, 1 Black -).',
+      grounding: 'Equipment grounding conductor sized per electrical standard for DC circuit protection.',
     },
   };
 }

@@ -1,20 +1,14 @@
-// src/engine/calculateBattery.ts
 import { SolarInverterRecord, BatteryRecord } from '@/types/supabase';
 import { BatteryCalculationResult } from '@/types/calculator';
-import { ruleService } from '@/services/ruleService';
+import { electricalRules } from './electricalRules';
+import { isBatteryCapableInverter } from './inverterHelpers';
 
 export function calculateBattery(
   inverter: SolarInverterRecord,
   battery: BatteryRecord | null,
   batteryCount: number = 1
 ): BatteryCalculationResult {
-  const isBatteryCapable = Boolean(
-    inverter.battery_type &&
-    inverter.battery_voltage_range &&
-    inverter.battery_type.toLowerCase() !== 'none'
-  );
-
-  if (!isBatteryCapable || !battery || batteryCount <= 0) {
+  if (!isBatteryCapableInverter(inverter) || !battery || batteryCount <= 0) {
     return {
       hasBattery: false,
       batteryType: inverter.battery_type || 'No Battery Required (Grid-Tied)',
@@ -37,19 +31,15 @@ export function calculateBattery(
   const singleEnergyWh = Number(battery.energy_wh) || singleCapacityAh * nominalVoltageV;
   const singleDischargeCurrent = Number(battery.discharge_current_a) || singleCapacityAh;
 
-  // Single or parallel battery configuration
   const totalCapacityAh = singleCapacityAh * batteryCount;
   const totalEnergyWh = singleEnergyWh * batteryCount;
   const bankVoltageV = nominalVoltageV;
   const dischargeCurrentA = singleDischargeCurrent;
 
-  // Recommended breaker: use battery record recommended_breaker_a (or derived from discharge current * 1.25)
-  const baseBreakerA = Number(battery.recommended_breaker_a) || Math.ceil(singleDischargeCurrent * 1.25);
-  // Scale breaker if parallel inputs require, but maintain standard single unit or bank sizing
-  const recommendedBreakerA = baseBreakerA;
+  const recommendedBreakerA =
+    Number(battery.recommended_breaker_a) || Math.ceil(singleDischargeCurrent * 1.25);
 
-  // Battery wire from 'battery' rule table
-  const wireSpec = ruleService.findWire('battery', recommendedBreakerA);
+  const wireSpec = electricalRules.findWire('battery', recommendedBreakerA);
 
   return {
     hasBattery: true,

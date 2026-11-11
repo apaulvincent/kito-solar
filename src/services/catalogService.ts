@@ -1,4 +1,3 @@
-// src/services/catalogService.ts
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import {
   SolarInverterRecord,
@@ -7,7 +6,6 @@ import {
   AccessoryRecord,
 } from '@/types/supabase';
 
-// Seeded offline fallbacks
 import invertersSeed from '@/data/seed/solar_inverters.json';
 import modulesSeed from '@/data/seed/solar_modules.json';
 import batteriesSeed from '@/data/seed/batteries.json';
@@ -34,6 +32,7 @@ export class CatalogService {
         console.warn('Supabase query failed, falling back to local seed data:', err);
       }
     }
+    this.isLive = false;
     return invertersSeed as SolarInverterRecord[];
   }
 
@@ -48,6 +47,7 @@ export class CatalogService {
           .order('pv_wattage_w', { ascending: true });
 
         if (!error && data && data.length > 0) {
+          this.isLive = true;
           return data as SolarModuleRecord[];
         }
       } catch (err) {
@@ -68,6 +68,7 @@ export class CatalogService {
           .order('capacity_ah', { ascending: true });
 
         if (!error && data && data.length > 0) {
+          this.isLive = true;
           return data as BatteryRecord[];
         }
       } catch (err) {

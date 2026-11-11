@@ -1,7 +1,7 @@
-// src/components/ai/SolarCopilotDrawer.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { aiCopilotService, CopilotMessage } from '@/services/aiCopilotService';
+import type { ProjectSizingResult } from '@/types/solar-ai';
 import { SetupProposalCard } from './SetupProposalCard';
 import { ChatMessageContent } from './ChatMessageContent';
 import {
@@ -62,8 +62,6 @@ export function getRandomPrompts(pool: string[] = ALL_QUICK_SIZING_PROMPTS, coun
   }
   return copy.slice(0, count);
 }
-
-export const STARTER_PROMPTS = ALL_QUICK_SIZING_PROMPTS;
 
 export const SolarCopilotDrawer: React.FC = () => {
   const isCopilotOpen = useCalculatorStore((state) => state.isCopilotOpen);
@@ -231,7 +229,7 @@ export const SolarCopilotDrawer: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Solar Assistant & System Sizer · <span className="font-mono text-[11px]">{aiCopilotService.getActiveEngineName()}</span>
+              Solar Assistant & System Sizer · <span className="font-mono text-[11px]">Gemini Flash</span>
             </p>
           </div>
         </div>
@@ -264,7 +262,7 @@ export const SolarCopilotDrawer: React.FC = () => {
               t.toolName === 'generateSolarSetup' ||
               t.toolName === 'generateSolarSetupFromBill' ||
               t.toolName === 'modifyExistingProjectSetup'
-          )?.result as any;
+          )?.result as ProjectSizingResult | undefined;
 
           return (
             <div

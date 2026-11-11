@@ -86,3 +86,16 @@ export interface ProjectSizingResult {
     twentyFiveYearNetSavingsPhp?: number;
   };
 }
+
+export type CopilotToolName =
+  | 'generateSolarSetup'
+  | 'generateSolarSetupFromBill'
+  | 'modifyExistingProjectSetup'
+  | 'searchHardwareKnowledgeBase'
+  | 'searchSolarKnowledgeBase';
+
+export interface ToolInvocationRecord {
+  toolName: CopilotToolName;
+  state: 'result';
+  result?: ProjectSizingResult | unknown;
+}

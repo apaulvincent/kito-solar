@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { DiagramNodeKey } from '@/types/diagram';
-import defaultLayoutSeed from '@/data/seed/default_layout_3d.json';
+import defaultLayoutSeedRaw from '@/data/seed/default_layout_3d.json';
 import {
   AddableComponentKey,
   AddableComponentSpec,
@@ -27,6 +27,24 @@ import {
   routeAndMeasureWire,
   WallObstacle2D,
 } from './wireRouting3d';
+
+interface RawLayoutSeed {
+  baseNodePositions?: Record<string, unknown>;
+  removedBaseNodes?: unknown[];
+  placedComponents?: unknown[];
+  wires?: Array<{
+    id: string;
+    polarity: string;
+    fromNodeId: string;
+    fromPortId: string;
+    toNodeId: string;
+    toPortId: string;
+    lengthMeters?: unknown;
+    routeOffset?: unknown[];
+  }>;
+}
+
+const defaultLayoutSeed = defaultLayoutSeedRaw as RawLayoutSeed | null | undefined;
 
 const FALLBACK_BASE_NODE_POSITIONS: Record<DiagramNodeKey, [number, number, number]> = {
   pv_array: [-7.8, 0.75, 2.2],
@@ -171,13 +189,13 @@ function isPlacedComponentSeed(value: unknown): value is PlacedComponent3D {
 }
 
 export function createEmptyLayout3D(): Layout3DState {
-  const seedRemoved = Array.isArray(defaultLayoutSeed?.removedBaseNodes)
+  const seedRemoved: DiagramNodeKey[] = Array.isArray(defaultLayoutSeed?.removedBaseNodes)
     ? defaultLayoutSeed.removedBaseNodes.filter((k): k is DiagramNodeKey => typeof k === 'string' && k in BASE_NODE_SPECS)
     : [];
   const rawPlaced = Array.isArray(defaultLayoutSeed?.placedComponents)
     ? defaultLayoutSeed.placedComponents
     : [];
-  const seedPlaced = rawPlaced.filter(isPlacedComponentSeed);
+  const seedPlaced: PlacedComponent3D[] = rawPlaced.filter(isPlacedComponentSeed);
 
   const extraSeedWires = (Array.isArray(defaultLayoutSeed?.wires) ? defaultLayoutSeed.wires : [])
     .filter((w) => !DEFAULT_SYSTEM_WIRE_SPECS.some((s) => s.id === w.id))

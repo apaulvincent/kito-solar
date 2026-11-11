@@ -1,6 +1,5 @@
-// src/engine/__tests__/calculations.test.ts
 import { describe, it, expect } from 'vitest';
-import { ruleService } from '@/services/ruleService';
+import { electricalRules } from '../electricalRules';
 import { calculateAc } from '../calculateAc';
 import { calculatePvSizing } from '../calculatePvSizing';
 import { calculateStringSizing } from '../calculateStringSizing';
@@ -18,35 +17,35 @@ describe('Calculator Engine Unit Test Suite', () => {
 
   describe('Rule Service Lookups', () => {
     it('selects correct DC breakers across threshold ranges', () => {
-      expect(ruleService.findBreaker('dc', 10)).toBe(15);
-      expect(ruleService.findBreaker('dc', 17.625)).toBe(20);
-      expect(ruleService.findBreaker('dc', 24)).toBe(25);
-      expect(ruleService.findBreaker('dc', 35)).toBe(40);
+      expect(electricalRules.findBreaker('dc', 10)).toBe(15);
+      expect(electricalRules.findBreaker('dc', 17.625)).toBe(20);
+      expect(electricalRules.findBreaker('dc', 24)).toBe(25);
+      expect(electricalRules.findBreaker('dc', 35)).toBe(40);
     });
 
     it('selects correct AC breakers across threshold ranges', () => {
-      expect(ruleService.findBreaker('ac', 14)).toBe(15);
-      expect(ruleService.findBreaker('ac', 35.75)).toBe(40);
-      expect(ruleService.findBreaker('ac', 60)).toBe(63);
+      expect(electricalRules.findBreaker('ac', 14)).toBe(15);
+      expect(electricalRules.findBreaker('ac', 35.75)).toBe(40);
+      expect(electricalRules.findBreaker('ac', 60)).toBe(63);
     });
 
     it('selects DC and AC isolators properly', () => {
-      expect(ruleService.findIsolator('dc', 20)).toBe(25);
-      expect(ruleService.findIsolator('dc', 32)).toBe(40);
-      expect(ruleService.findIsolator('ac', 40)).toBe(50);
+      expect(electricalRules.findIsolator('dc', 20)).toBe(25);
+      expect(electricalRules.findIsolator('dc', 32)).toBe(40);
+      expect(electricalRules.findIsolator('ac', 40)).toBe(50);
     });
 
     it('selects wires and conduits accurately', () => {
-      const dcWire = ruleService.findWire('dc_pv', 20);
+      const dcWire = electricalRules.findWire('dc_pv', 20);
       expect(dcWire).toContain('4.0mm²');
-      const conduit = ruleService.findConduit('dc_pv', dcWire);
+      const conduit = electricalRules.findConduit('dc_pv', dcWire);
       expect(conduit).toContain('32mm²');
     });
 
     it('selects grounding conductor and rod based on amperage', () => {
-      const g1 = ruleService.findGrounding(20);
+      const g1 = electricalRules.findGrounding(20);
       expect(g1.conductor).toContain('14 AWG');
-      const g2 = ruleService.findGrounding(40);
+      const g2 = electricalRules.findGrounding(40);
       expect(g2.conductor).toContain('8 AWG');
     });
   });
