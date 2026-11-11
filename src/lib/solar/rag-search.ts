@@ -1,7 +1,37 @@
-// src/lib/solar/rag-search.ts
 import { SolarKnowledgeChunk } from '@/types/solar-ai';
-import { SEED_KNOWLEDGE_CHUNKS } from './seed-catalog';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+
+const SEED_KNOWLEDGE_CHUNKS: SolarKnowledgeChunk[] = [
+  {
+    id: 'kb-string-sizing-rules',
+    document_title: 'Philippine Electrical Code (PEC) Article 6.90 - PV String Voltage Calculations',
+    category: 'electrical_code',
+    content:
+      'Under PEC Article 6.90 and NEC 690.7, maximum PV system DC voltage must be calculated at the lowest expected ambient temperature. For Luzon and Visayas, record low temperatures reach 18°C. Open-circuit voltage (Voc) rises as temperature drops, following the temperature coefficient gamma_Voc (typically -0.25%/°C to -0.28%/°C). The total series string Voc must never exceed the inverter absolute maximum DC input voltage (500V or 600V for residential, 800V-1000V for commercial). Exceeding this rating causes instantaneous component puncture and voids inverter warranty.',
+  },
+  {
+    id: 'kb-deye-mppt-operating-range',
+    document_title: 'Deye SUN-8K-SG01LP1-EU Hybrid Inverter Engineering Manual',
+    category: 'datasheet',
+    related_hardware_model: 'SUN-8K-SG01LP1-EU',
+    content:
+      'The Deye 8kW hybrid inverter features 2 MPPT trackers with an operating MPPT range of 150V to 425V and an absolute maximum DC input voltage of 500V. For 550W-600W Tier-1 panels (nominal Vmp ~42V-44V), minimum panels in series per MPPT to ensure early morning startup is 4 panels (170V), while optimal nominal string length is 6 to 9 panels per string (260V-380V). Connecting 14 or more modern panels in a single string violates the 500V maximum DC limit and must instead be split into 2 parallel strings (e.g., 7S2P or 8S2P across the 2 MPPTs).',
+  },
+  {
+    id: 'kb-net-metering-philippines',
+    document_title: 'ERC Net Metering Rules for End-Users in the Philippines',
+    category: 'net_metering',
+    content:
+      'The Energy Regulatory Commission (ERC) Net-Metering Rules allow qualified end-users up to 100kW peak to export surplus daytime solar generation into distribution utility grids (Meralco, VECO, Davao Light). Export credits are valued at the utility blended generation cost (currently approximately ₱5.00 - ₱5.65/kWh), rather than retail retail rates (₱11.00 - ₱12.50/kWh). Because retail rates exceed export credits by over 50%, maximizing daytime self-consumption or storing surplus solar in LiFePO4 batteries yields significantly higher financial ROI than relying solely on net metering export.',
+  },
+  {
+    id: 'kb-hybrid-vs-gridtie',
+    document_title: 'Grid-Tie vs. Hybrid Solar Systems in the Philippines',
+    category: 'sizing_guide',
+    content:
+      'Grid-Tie systems shut down instantly during utility blackouts (anti-islanding safety) and provide no brownout protection. They offer the lowest initial equipment investment and fastest payback (typically 3 to 4.5 years). Hybrid systems include an automatic transfer switch (ATS) and LiFePO4 battery storage, maintaining continuous electricity to critical lighting, refrigeration, and aircon loads within 10 milliseconds of a utility blackout. Payback for hybrid systems ranges from 4.5 to 6.5 years depending on battery capacity.',
+  },
+];
 
 export async function searchSolarKnowledge(
   query: string,

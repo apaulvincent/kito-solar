@@ -1,14 +1,10 @@
 // src/engine/__tests__/calculations.test.ts
 import { describe, it, expect } from 'vitest';
 import { ruleService } from '@/services/ruleService';
-import { calculateDc } from '../calculateDc';
 import { calculateAc } from '../calculateAc';
-import { calculateBattery } from '../calculateBattery';
 import { calculatePvSizing } from '../calculatePvSizing';
 import { calculateStringSizing } from '../calculateStringSizing';
 import { calculateMounting } from '../calculateMounting';
-import { calculateAts } from '../calculateAts';
-import { calculateGrounding } from '../calculateGrounding';
 import { calculateSystem } from '../calculateSystem';
 import invertersSeed from '@/data/seed/solar_inverters.json';
 import modulesSeed from '@/data/seed/solar_modules.json';
@@ -114,17 +110,17 @@ describe('Calculator Engine Unit Test Suite', () => {
   });
 
   describe('ATS Calculation', () => {
-    it('handles ATS presence and absence cleanly', () => {
-      const atsNone = calculateAts(null);
-      expect(atsNone.isConfigured).toBe(false);
-      expect(atsNone.note).toBe('ATS not configured');
+    it('sizes the ATS from the main service breaker and omits it when absent', () => {
+      const atsNone = calculateAc(sampleInverter, 230, null);
+      expect(atsNone.atsConfigured).toBe(false);
+      expect(atsNone.atsNote).toBe('ATS not configured');
 
-      const ats100 = calculateAts(100);
-      expect(ats100.isConfigured).toBe(true);
-      expect(ats100.recommendedRatingA).toBe(100);
+      const ats100 = calculateAc(sampleInverter, 230, 100);
+      expect(ats100.atsConfigured).toBe(true);
+      expect(ats100.atsRatingA).toBe(100);
 
-      const ats50 = calculateAts(50);
-      expect(ats50.recommendedRatingA).toBe(63); // next standard tier
+      const ats50 = calculateAc(sampleInverter, 230, 50);
+      expect(ats50.atsRatingA).toBe(63);
     });
   });
 
