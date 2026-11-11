@@ -1,11 +1,21 @@
-// src/components/inspector/__tests__/Component3DPreview.test.ts
-import { describe, it, expect } from 'vitest';
-import * as fs from 'fs';
-import * as path from 'path';
-import { getNodeTypeFromKey } from '@/components/diagram/NodeGeometry';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { createElement } from 'react';
+import {
+  BASE_NODE_SPECS,
+  getBreakerAppearance,
+  getNodeTypeFromKey,
+  getOptimalCameraDistance,
+} from '@/lib/diagramNodeSpecs';
+import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { ComponentInspector } from '../ComponentInspector';
 
-describe('Component3DPreview & NodeGeometry Architecture', () => {
-  it('correctly maps all diagram node keys to valid 3D node types', () => {
+describe('Component3DPreview & Node Spec Architecture', () => {
+  beforeEach(() => {
+    useCalculatorStore.getState().resetToDefaults();
+  });
+
+  it('maps all diagram node keys to valid 3D node types with consistent camera distances', () => {
     expect(getNodeTypeFromKey('pv_array')).toBe('pv');
     expect(getNodeTypeFromKey('dc_isolator')).toBe('isolator');
     expect(getNodeTypeFromKey('ac_isolator')).toBe('isolator');
@@ -22,25 +32,23 @@ describe('Component3DPreview & NodeGeometry Architecture', () => {
     expect(getNodeTypeFromKey('grid')).toBe('grid');
     expect(getNodeTypeFromKey('load')).toBe('load');
     expect(getNodeTypeFromKey('grounding')).toBe('grounding');
+
+    expect(getOptimalCameraDistance('grid')).toBeGreaterThan(getOptimalCameraDistance('breaker'));
+    expect(getBreakerAppearance('battery_breaker').hasTieBar).toBe(true);
+    expect(getBreakerAppearance('dc_breaker').toggleColor).toBe('#DC2626');
   });
 
-  it('verifies Component3DPreview source implements 3D canvas and fallback', () => {
-    const previewFile = path.resolve(process.cwd(), 'src/components/inspector/Component3DPreview.tsx');
-    const source = fs.readFileSync(previewFile, 'utf-8');
-
-    expect(source).toContain('<Canvas');
-    expect(source).toContain('OrbitControls');
-    expect(source).toContain('NodeGeometry');
-    expect(source).toContain('safeFallback');
-    expect(source).toContain('webgl');
+  it('uses .svg 2D fallback assets for every baseline node spec', () => {
+    for (const spec of Object.values(BASE_NODE_SPECS)) {
+      expect(spec.imagePath.endsWith('.svg')).toBe(true);
+    }
   });
 
-  it('verifies ComponentInspector embeds Component3DPreview', () => {
-    const inspectorFile = path.resolve(process.cwd(), 'src/components/inspector/ComponentInspector.tsx');
-    const source = fs.readFileSync(inspectorFile, 'utf-8');
-
-    expect(source).toContain('<Component3DPreview');
-    expect(source).toContain('nodeKey={selectedNodeKey}');
-    expect(source).not.toContain('/assets/accessories/pv-dc-breaker.webp');
+  it('renders ComponentInspector with the node rating and 2D fallback asset in non-WebGL environments', () => {
+    useCalculatorStore.getState().setSelectedNodeKey('ats');
+    const html = renderToStaticMarkup(createElement(ComponentInspector));
+    expect(html).toContain('Automatic Transfer Switch (ATS)');
+    expect(html).toContain('/assets/accessories/ats.svg');
+    expect(html).toContain('2D Asset');
   });
 });

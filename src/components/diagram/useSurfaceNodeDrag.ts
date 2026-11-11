@@ -1,4 +1,3 @@
-// src/components/diagram/useSurfaceNodeDrag.ts
 import { useCallback, useRef } from 'react';
 import { useThree, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -45,14 +44,12 @@ export function useSurfaceNodeDrag({
 
   const handlePointerDown = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
-      // Only respond to primary mouse button / touch
       if (e.nativeEvent.button !== undefined && e.nativeEvent.button !== 0) return;
       e.stopPropagation();
 
       const startX = e.nativeEvent.clientX;
       const startY = e.nativeEvent.clientY;
 
-      // In Wire modes, dragging from a component pulls a wire from its nearest matching terminal
       if (canvasTool !== 'select') {
         onWireStart?.(nodeId, startX, startY);
         return;

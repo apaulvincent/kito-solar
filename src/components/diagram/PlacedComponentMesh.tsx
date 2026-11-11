@@ -1,12 +1,12 @@
-// src/components/diagram/PlacedComponentMesh.tsx
 import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { ADDABLE_CATALOG_MAP } from '@/lib/layout3dEngine';
+import { ADDABLE_CATALOG_MAP } from '@/lib/diagramNodeSpecs';
 import { PlacedComponent3D } from '@/types/layout3d';
 import { NodeGeometry } from './NodeGeometry';
+import { NodeSelectionHalo } from './NodeSelectionHalo';
 import { useSurfaceNodeDrag } from './useSurfaceNodeDrag';
 
 interface PlacedComponentMeshProps {
@@ -33,8 +33,6 @@ export function PlacedComponentMesh({
 
   const isSelected = selectedCustomNodeId === item.id;
   const [width, height] = spec.dimensions;
-  const haloWidth = width + 0.32;
-  const haloHeight = height + 0.32;
 
   const { handlePointerDown, isDraggingRef } = useSurfaceNodeDrag({
     nodeId: item.id,
@@ -85,46 +83,19 @@ export function PlacedComponentMesh({
         nodeKey={item.catalogKey}
         isSelected={isSelected}
         isHovered={hovered}
-        color={spec.color}
       />
 
       {(isSelected || hovered) && (
-        <>
-          {item.surface === 'wall' ? (
-            <group position={[0, 0, -0.07]}>
-              <mesh>
-                <planeGeometry args={[haloWidth, haloHeight]} />
-                <meshBasicMaterial
-                  color={isSelected ? '#F59E0B' : '#38BDF8'}
-                  transparent
-                  opacity={isSelected ? 0.42 : 0.22}
-                  side={THREE.DoubleSide}
-                />
-              </mesh>
-              <lineSegments>
-                <edgesGeometry args={[new THREE.PlaneGeometry(haloWidth, haloHeight)]} />
-                <lineBasicMaterial
-                  color={isSelected ? '#F59E0B' : '#38BDF8'}
-                  transparent
-                  opacity={isSelected ? 0.9 : 0.6}
-                />
-              </lineSegments>
-            </group>
-          ) : (
-            <mesh
-              position={[0, -spec.floorCenterY + 0.02, 0]}
-              rotation={[-Math.PI / 2, 0, 0]}
-            >
-              <ringGeometry args={[Math.max(0.55, width * 0.48), Math.max(0.75, width * 0.62), 32]} />
-              <meshBasicMaterial
-                color={isSelected ? '#F59E0B' : spec.color}
-                transparent
-                opacity={0.65}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
-          )}
-        </>
+        <NodeSelectionHalo
+          surface={item.surface}
+          width={width}
+          height={height}
+          isSelected={isSelected}
+          floorRingColor={spec.color}
+          floorRingYOffset={-spec.floorCenterY + 0.02}
+          floorRingInnerRadius={Math.max(0.55, width * 0.48)}
+          floorRingOuterRadius={Math.max(0.75, width * 0.62)}
+        />
       )}
 
       {(hovered || isSelected) && (

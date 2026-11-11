@@ -1,18 +1,18 @@
-// src/components/diagram/__tests__/layout3dBuilder.test.ts
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import {
-  ADDABLE_COMPONENT_CATALOG,
+  DEFAULT_BASE_NODE_POSITIONS,
   DEFAULT_SYSTEM_WIRE_SPECS,
   clampAndSnapPosition,
   createEmptyLayout3D,
+  sanitizeLayout3D,
+} from '@/lib/layout3dEngine';
+import { ADDABLE_COMPONENT_CATALOG } from '@/lib/diagramNodeSpecs';
+import {
   findCompanionPairPort,
-  findNearestSnapPort,
   findNearestSnapPortByRay,
   getNodeTerminalPorts,
-  sanitizeLayout3D,
-  serializeLayout3DPreset,
-} from '@/lib/layout3dEngine';
+} from '@/lib/wireRouting3d';
 import { PLANT_ROOM_GEOMETRY, SCENE_LIMITS } from '@/types/layout3d';
 import { projectService } from '@/services/projectService';
 import { generateSizingPdf } from '@/services/pdfExportService';
@@ -105,46 +105,15 @@ describe('3D Interactive Plant Builder: Spatial, Wiring, BOM & Persistence Suite
 
     const batPosPort = batteryPorts.find((p) => p.polarity === 'positive')!;
     const batNegPort = batteryPorts.find((p) => p.polarity === 'negative')!;
-
-    // Cursor within 0.4m of battery ports while pulling Positive (+) wire snaps to BAT (+)
-    const validSnap = findNearestSnapPort({
-      cursorWorld: [
-        batPosPort.worldPosition[0] + 0.15,
-        batPosPort.worldPosition[1] + 0.1,
-        batPosPort.worldPosition[2],
-      ],
-      allPorts,
-      sourceNodeId: 'brk_1',
-      wirePolarity: 'positive',
-    });
-    expect(validSnap).not.toBeNull();
-    expect(validSnap!.polarityMismatch).toBe(false);
-    expect(validSnap!.port.portId).toBe('bat_pos');
-
-    // Aiming Positive (+) wire directly onto Negative (-) lug (< 0.05m) triggers polarityMismatch
-    const shortCircuitAttempt = findNearestSnapPort({
-      cursorWorld: [
-        batNegPort.worldPosition[0] + 0.02,
-        batNegPort.worldPosition[1],
-        batNegPort.worldPosition[2],
-      ],
-      allPorts,
-      sourceNodeId: 'brk_1',
-      wirePolarity: 'positive',
-    });
-    expect(shortCircuitAttempt).not.toBeNull();
-    expect(shortCircuitAttempt!.polarityMismatch).toBe(true);
-
-    // Screen-ray magnetic snap across 3D depth also locks onto floor battery terminal
     const origin: [number, number, number] = [0.6, 4.4, 18.5];
-    const dir: [number, number, number] = [
-      batPosPort.worldPosition[0] - origin[0],
-      batPosPort.worldPosition[1] - origin[1],
-      batPosPort.worldPosition[2] - origin[2],
-    ];
+
     const raySnap = findNearestSnapPortByRay({
       rayOrigin: origin,
-      rayDirection: dir,
+      rayDirection: [
+        batPosPort.worldPosition[0] - origin[0],
+        batPosPort.worldPosition[1] - origin[1],
+        batPosPort.worldPosition[2] - origin[2],
+      ],
       allPorts,
       sourceNodeId: 'brk_1',
       wirePolarity: 'positive',
@@ -153,7 +122,20 @@ describe('3D Interactive Plant Builder: Spatial, Wiring, BOM & Persistence Suite
     expect(raySnap!.polarityMismatch).toBe(false);
     expect(raySnap!.port.portId).toBe('bat_pos');
 
-    // Companion (+/-) pair lookup finds bat_neg from bat_pos
+    const shortCircuitAttempt = findNearestSnapPortByRay({
+      rayOrigin: origin,
+      rayDirection: [
+        batNegPort.worldPosition[0] - origin[0],
+        batNegPort.worldPosition[1] - origin[1],
+        batNegPort.worldPosition[2] - origin[2],
+      ],
+      allPorts,
+      sourceNodeId: 'brk_1',
+      wirePolarity: 'positive',
+    });
+    expect(shortCircuitAttempt).not.toBeNull();
+    expect(shortCircuitAttempt!.polarityMismatch).toBe(true);
+
     const companion = findCompanionPairPort(batPosPort, batteryPorts);
     expect(companion?.portId).toBe('bat_neg');
   });
@@ -351,13 +333,18 @@ describe('3D Interactive Plant Builder: Spatial, Wiring, BOM & Persistence Suite
     store.updateWireRouteOffset(targetWire.id, [0.8, -0.4]);
     store.moveBaseNode('dc_isolator', [-5.8, 2.9, 0.0]);
 
-    const exportedPreset = serializeLayout3DPreset(useCalculatorStore.getState().layout3d);
-    expect(exportedPreset.baseNodePositions.dc_isolator).toEqual([-5.8, 2.9, 0.0]);
+    const currentLayout = useCalculatorStore.getState().layout3d;
+    const exportedPreset = {
+      layout_3d: {
+        ...currentLayout,
+        baseNodePositions: { ...DEFAULT_BASE_NODE_POSITIONS, ...currentLayout.baseNodePositions },
+      },
+    };
+    expect(exportedPreset.layout_3d.baseNodePositions.dc_isolator).toEqual([-5.8, 2.9, 0.0]);
     expect(
-      exportedPreset.wires.find((w) => w.id === targetWire.id)?.routeOffset
+      exportedPreset.layout_3d.wires.find((w) => w.id === targetWire.id)?.routeOffset
     ).toEqual([0.8, -0.4]);
 
-    // Reset then import JSON preset back
     store.resetLayout3D();
     const importRes = useCalculatorStore.getState().importLayout3DJson(exportedPreset);
     expect(importRes.ok).toBe(true);

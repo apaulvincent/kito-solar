@@ -1,9 +1,13 @@
-// src/components/diagram/PlantComponentPalette.tsx
 import { useState, useMemo } from 'react';
 import { Plus, PanelRightClose, Layers, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { ADDABLE_COMPONENT_CATALOG, getLimitStatus } from '@/lib/layout3dEngine';
-import { AddableComponentSpec, SCENE_LIMITS } from '@/types/layout3d';
+import { getLimitStatus } from '@/lib/layout3dEngine';
+import {
+  ADDABLE_COMPONENT_CATALOG,
+  resolveCatalogUnitPrice,
+} from '@/lib/diagramNodeSpecs';
+import { MODULES_PER_3D_PV_ARRAY } from '@/lib/solarConstants';
+import { AddableComponentSpec } from '@/types/layout3d';
 import { formatPeso } from '@/lib/utils';
 
 type CategoryFilter =
@@ -58,30 +62,6 @@ export function PlantComponentPalette() {
 
   if (!isPaletteOpen) return null;
 
-  const resolveUnitPrice = (spec: AddableComponentSpec): number => {
-    if (spec.key === 'inverter_unit') {
-      const custom = customPrices.inverter;
-      if (typeof custom === 'number') return custom;
-      return selectedInverter.price_php ?? spec.fallbackUnitPricePhp;
-    }
-    if (spec.key === 'battery_unit') {
-      const custom = customPrices.battery;
-      if (typeof custom === 'number') return custom;
-      return selectedBattery?.price_php ?? spec.fallbackUnitPricePhp;
-    }
-    if (spec.key === 'pv_array_unit') {
-      const modulePrice =
-        typeof customPrices.solar_panels === 'number'
-          ? customPrices.solar_panels
-          : selectedModule.price_php ?? 6500;
-      return modulePrice * 3;
-    }
-    const bomKey = spec.bomAccessoryKey || spec.key;
-    const custom = customPrices[bomKey];
-    if (typeof custom === 'number') return custom;
-    return spec.fallbackUnitPricePhp ?? accessoryPriceLookup.get(bomKey) ?? 0;
-  };
-
   const resolveSubtitle = (spec: AddableComponentSpec): string => {
     if (spec.key === 'inverter_unit') {
       return `${selectedInverter.brand} ${selectedInverter.model}`;
@@ -90,7 +70,7 @@ export function PlantComponentPalette() {
       return selectedBattery ? selectedBattery.model : '51.2V-200 Ah LiFePO4';
     }
     if (spec.key === 'pv_array_unit') {
-      return `3x ${selectedModule.pv_wattage_w}W Modules`;
+      return `${MODULES_PER_3D_PV_ARRAY}x ${selectedModule.pv_wattage_w}W Modules`;
     }
     return spec.defaultRatingLabel;
   };
@@ -119,7 +99,6 @@ export function PlantComponentPalette() {
       aria-label="3D Component Library"
       className="w-72 sm:w-80 shrink-0 h-full z-20 flex flex-col border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden pointer-events-auto"
     >
-      {/* Header */}
       <div className="px-3.5 py-2.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 bg-slate-50/80 dark:bg-slate-950/60">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
@@ -141,7 +120,6 @@ export function PlantComponentPalette() {
         </button>
       </div>
 
-      {/* Category Filter Tabs */}
       <div className="px-2.5 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center gap-1 overflow-x-auto no-scrollbar">
         {CATEGORY_TABS.map((tab) => {
           const isActive = activeCategory === tab.id;
@@ -162,7 +140,6 @@ export function PlantComponentPalette() {
         })}
       </div>
 
-      {/* Spawn / Limit Status Banner */}
       {feedbackBanner && (
         <div
           className={`px-3 py-1.5 text-[10px] font-mono flex items-center justify-between gap-2 border-b ${
@@ -190,11 +167,14 @@ export function PlantComponentPalette() {
         </div>
       )}
 
-      {/* Component Cards List */}
       <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
         {visibleCatalog.map((spec) => {
           const limit = getLimitStatus(layout3d.placedComponents, spec.key);
-          const unitPrice = resolveUnitPrice(spec);
+          const unitPrice = resolveCatalogUnitPrice(spec, customPrices, accessoryPriceLookup, {
+            inverterPricePhp: selectedInverter.price_php,
+            modulePricePhp: selectedModule.price_php,
+            batteryPricePhp: selectedBattery?.price_php,
+          });
           const countAdded = placedCountsByKey[spec.key] || 0;
 
           return (
@@ -210,7 +190,6 @@ export function PlantComponentPalette() {
                   : 'border-slate-200/60 dark:border-slate-800/60 bg-slate-100/60 dark:bg-slate-950/30 opacity-55 cursor-not-allowed'
               }`}
             >
-              {/* Component Illustration (Matches 3D View) */}
               <div className="w-12 h-12 rounded-lg bg-[#090D16] border border-slate-700/80 p-1 flex items-center justify-center shrink-0 shadow-xs">
                 <img
                   src={spec.imagePath}
@@ -220,7 +199,6 @@ export function PlantComponentPalette() {
                 />
               </div>
 
-              {/* Spec & Price Details */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-1">
                   <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
@@ -252,7 +230,6 @@ export function PlantComponentPalette() {
           );
         })}
       </div>
-
     </aside>
   );
 }

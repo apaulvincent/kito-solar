@@ -1,5 +1,3 @@
-// src/types/diagram.ts
-
 export type DiagramNodeKey =
   | 'pv_array'
   | 'dc_breaker'
@@ -19,27 +17,3 @@ export type DiagramNodeKey =
   | 'grid'
   | 'load'
   | 'grounding';
-
-export interface DiagramNodeMeta {
-  key: DiagramNodeKey;
-  label: string;
-  sublabel?: string;
-  category: 'pv' | 'dc' | 'inverter' | 'battery' | 'ac' | 'grid' | 'ground';
-  position: [number, number, number];
-  specKey?: string; // Links to calculator result key
-  icon?: string;
-}
-
-export interface CableConnection {
-  id: string;
-  from: DiagramNodeKey;
-  to: DiagramNodeKey;
-  type: 'dc' | 'ac' | 'battery' | 'ground';
-  color: string;
-  bidirectional?: boolean;
-  waypoints?: [number, number, number][];
-}
-
-export interface ConduitRoute extends CableConnection {
-  waypoints: [number, number, number][];
-}

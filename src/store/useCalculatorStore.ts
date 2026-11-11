@@ -31,17 +31,16 @@ import {
   WirePolarity,
 } from '@/types/layout3d';
 import {
-  ADDABLE_CATALOG_MAP,
   DEFAULT_BASE_NODE_POSITIONS,
-  Layout3DSchema,
-  buildOrthogonalWireWaypoints,
-  calculateWaypointsLengthMeters,
+  computeWireLengthForLayout,
   createEmptyLayout3D,
   findFreeSpawnPosition,
   getLimitStatus,
+  parseLayout3DJson,
   recomputeAttachedWireLengths,
   sanitizeLayout3D,
 } from '@/lib/layout3dEngine';
+import { ADDABLE_CATALOG_MAP, BASE_NODE_SPECS } from '@/lib/diagramNodeSpecs';
 
 export type WorkbenchTabKey = 'electrical' | 'pv_sizing' | 'mounting_bom' | 'warnings';
 export type ActiveView = 'home' | 'tool' | 'projects' | 'login' | 'register' | 'account' | 'load-calculator' | 'solar-mapper' | 'financial-roi' | 'yield-simulator' | 'contact';
@@ -762,37 +761,14 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   },
 
   setSelectedNodeKey: (key) => {
-    set({
+    const targetTab = key ? BASE_NODE_SPECS[key]?.workbenchTab : undefined;
+    set((state) => ({
       selectedNodeKey: key,
       selectedCustomNodeId: null,
       selectedWireId: null,
       isInspectorOpen: Boolean(key),
-    });
-    if (key) {
-      if (key === 'pv_array') {
-        set({ activeWorkbenchTab: 'pv_sizing' });
-      } else if (
-        key === 'battery' ||
-        key === 'battery_breaker' ||
-        key === 'battery_wire' ||
-        key === 'dc_breaker' ||
-        key === 'dc_isolator' ||
-        key === 'dc_spd' ||
-        key === 'dc_conduit' ||
-        key === 'inverter' ||
-        key === 'ac_breaker' ||
-        key === 'ac_isolator' ||
-        key === 'ac_spd' ||
-        key === 'ats' ||
-        key === 'eps_breaker' ||
-        key === 'main_panel' ||
-        key === 'grid' ||
-        key === 'load' ||
-        key === 'grounding'
-      ) {
-        set({ activeWorkbenchTab: 'electrical' });
-      }
-    }
+      activeWorkbenchTab: targetTab || state.activeWorkbenchTab,
+    }));
   },
 
   setHoveredNodeKey: (key) => {
@@ -1414,8 +1390,15 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
       return { ok: false, error: 'These two terminals are already wired together.' };
     }
 
-    const waypoints = buildOrthogonalWireWaypoints(fromWorldPos, toWorldPos, polarity);
-    const lengthMeters = calculateWaypointsLengthMeters(waypoints);
+    const lengthMeters = computeWireLengthForLayout(state.layout3d, {
+      polarity,
+      fromNodeId,
+      fromPortId,
+      toNodeId,
+      toPortId,
+      fromWorldPos,
+      toWorldPos,
+    });
 
     const newWire: WireConnection3D = {
       id: `wire_${generateShortId(10)}`,
@@ -1693,28 +1676,15 @@ export const useCalculatorStore = create<CalculatorState>((set, get, api) => {
   },
 
   importLayout3DJson: (rawJson) => {
-    if (!rawJson || typeof rawJson !== 'object') {
-      return { ok: false, error: 'Invalid JSON file format.' };
-    }
-    const obj = rawJson as Record<string, unknown>;
-    const candidate =
-      'layout_3d' in obj && typeof obj.layout_3d === 'object' && obj.layout_3d !== null
-        ? obj.layout_3d
-        : obj;
-
-    const parsed = Layout3DSchema.safeParse(candidate);
-    if (!parsed.success) {
-      return {
-        ok: false,
-        error: 'JSON does not match the Kito Solar 3D layout & wiring schema.',
-      };
+    const parsed = parseLayout3DJson(rawJson);
+    if (!parsed.ok) {
+      return parsed;
     }
 
     const state = get();
-    const draftLayout = parsed.data as Layout3DState;
     const nextLayout: Layout3DState = {
-      ...draftLayout,
-      wires: recomputeAttachedWireLengths(draftLayout),
+      ...parsed.data,
+      wires: recomputeAttachedWireLengths(parsed.data),
     };
 
     const nextCalc = compute(

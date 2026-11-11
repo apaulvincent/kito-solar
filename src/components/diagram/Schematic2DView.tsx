@@ -1,4 +1,3 @@
-// src/components/diagram/Schematic2DView.tsx
 import { useState, useRef, useEffect } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { DiagramNodeKey } from '@/types/diagram';
@@ -74,7 +73,6 @@ function HorizontalConduit({
           preserveAspectRatio="none"
           viewBox="0 0 100 20"
         >
-          {/* EMT Pipe casing */}
           <line
             x1="0"
             y1="10"
@@ -85,7 +83,6 @@ function HorizontalConduit({
             strokeLinecap="round"
             className="text-slate-200 dark:text-slate-800/80"
           />
-          {/* Inactive dashed line */}
           <line
             x1="0"
             y1="10"
@@ -110,7 +107,6 @@ function HorizontalConduit({
         preserveAspectRatio="none"
         viewBox="0 0 100 20"
       >
-        {/* Outer EMT Conduit Pipe Sleeve */}
         <line
           x1="0"
           y1="10"
@@ -122,7 +118,6 @@ function HorizontalConduit({
           className="text-slate-200 dark:text-slate-800/90"
         />
 
-        {/* Conduit Cavity Tint */}
         <line
           x1="0"
           y1="10"
@@ -133,7 +128,6 @@ function HorizontalConduit({
           strokeLinecap="round"
         />
 
-        {/* Inner Conductor Core */}
         <line
           x1="0"
           y1="10"
@@ -144,7 +138,6 @@ function HorizontalConduit({
           strokeLinecap="round"
         />
 
-        {/* Directional Chevrons */}
         {reverse ? (
           <>
             <path d="M 52 7 L 47 10 L 52 13" stroke={colors.coreDark} strokeWidth="1.2" fill="none" opacity="0.6" />
@@ -159,7 +152,6 @@ function HorizontalConduit({
           </>
         )}
 
-        {/* Flow Pulse Halo */}
         <circle cy="10" r="5" fill={colors.glow} opacity="0.35">
           <animate
             attributeName="cx"
@@ -169,7 +161,6 @@ function HorizontalConduit({
           />
         </circle>
 
-        {/* Glowing Bead 1 */}
         <circle
           cy="10"
           r="3"
@@ -184,7 +175,6 @@ function HorizontalConduit({
           />
         </circle>
 
-        {/* Glowing Bead 2 (Offset) */}
         <circle
           cy="10"
           r="2.5"
@@ -335,7 +325,6 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
   const atsSource = useCalculatorStore((s) => s.atsSource);
   const toggleAtsSource = useCalculatorStore((s) => s.toggleAtsSource);
 
-  // Pan and Zoom interactive state
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -353,7 +342,6 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
   const zoomIn = () => setScale((s) => Math.min(2.0, Number((s + 0.15).toFixed(2))));
   const zoomOut = () => setScale((s) => Math.max(0.4, Number((s - 0.15).toFixed(2))));
 
-  // Synchronize reset when parent signals view reset
   useEffect(() => {
     if (resetViewCount !== undefined && resetViewCount > 0) {
       resetView();
@@ -493,7 +481,6 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
         isDragging ? 'cursor-grabbing' : 'cursor-grab'
       }`}
     >
-      {/* Precision Blueprint Dot Grid (Stays fixed to create infinite canvas feel) */}
       <div
         className="absolute inset-0 pointer-events-none opacity-30 dark:opacity-20"
         style={{
@@ -503,7 +490,6 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
         }}
       />
 
-      {/* Floating Pan & Zoom HUD Controls (Docked cleanly under top-right controls to avoid footer telemetry overlap) */}
       <div className="absolute top-14 right-3 z-30 flex items-center gap-1 p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-lg pointer-events-auto">
         <button
           onClick={zoomOut}
@@ -536,7 +522,6 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
         </button>
       </div>
 
-      {/* Transformed Canvas Container */}
       <div
         className="w-full h-full flex flex-col items-center justify-center origin-center"
         style={{
@@ -544,9 +529,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
           transition: isDragging ? 'none' : 'transform 0.08s ease-out',
         }}
       >
-        {/* Schematic Container with Spacious Layout Spine */}
         <div className="relative z-10 flex flex-col items-center min-w-[1720px] px-8 py-6">
-          {/* Title & Sequence Breadcrumb */}
           <div className="w-full flex items-center justify-between px-4 pb-2 border-b border-slate-200 dark:border-slate-800/80 text-[11px] font-mono text-slate-500 dark:text-slate-400">
             <div className="flex items-center gap-2">
               <span className="font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
@@ -573,9 +556,7 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
             </div>
           </div>
 
-          {/* Main Horizontal Single-Line Circuit Flow (All primary equipment on a unified centerline, pb-96 for ground clearance) */}
           <div className="flex items-center gap-2 w-full justify-between pt-28 pb-96">
-            {/* Node 1: PV Array */}
             <div className="flex flex-col items-center relative" data-schematic-node="true">
               <div
                 onClick={() => triggerSelect('pv_array')}
@@ -595,14 +576,12 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                   {calculationResult.summary.totalPanels} Modules
                 </span>
               </div>
-              {/* Grounding drop tap down to PE busbar */}
               <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center">
                 <div className="w-0.5 h-72 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
               </div>
             </div>
 
-            {/* DC Conduit 1: PV Array -> DC Isolator */}
             <HorizontalConduit
               type="dc"
               active={true}
@@ -631,16 +610,13 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
               </div>
             </div>
 
-            {/* DC Conduit 2: DC Isolator -> DC Breaker */}
             <HorizontalConduit
               type="dc"
               active={true}
               className="flex-1 min-w-[55px] max-w-[85px]"
             />
 
-            {/* Node 3: DC Protection Cluster (DC Breaker in Series + DC SPD hanging below) */}
             <div className="flex flex-col items-center relative" data-schematic-node="true">
-              {/* DC Circuit Breaker (Series path - connected directly to Inverter on horizontal spine) */}
               <div
                 onClick={() => triggerSelect('dc_breaker')}
                 onMouseEnter={() => setHoveredNodeKey('dc_breaker')}
@@ -660,7 +636,6 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 </span>
               </div>
 
-              {/* Parallel Drop: DC SPD hanging below DC Breaker (Wide format matching breaker) */}
               <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-2">
                 <div className="w-0.5 h-3 bg-amber-500" />
                 <div
@@ -685,16 +660,13 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
               </div>
             </div>
 
-            {/* DC Conduit 3: DC Breaker -> Inverter (Direct horizontal connection to Inverter) */}
             <HorizontalConduit
               type="dc"
               active={true}
               className="flex-1 min-w-[55px] max-w-[85px]"
             />
 
-            {/* Node 4: Solar Inverter (Level with Breakers, with Battery Branch hanging below) */}
             <div className="flex flex-col items-center relative" data-schematic-node="true">
-              {/* Central Inverter Box */}
               <div
                 onClick={() => triggerSelect('inverter')}
                 onMouseEnter={() => setHoveredNodeKey('inverter')}
@@ -722,13 +694,10 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 </span>
               </div>
 
-              {/* Hybrid Battery Dropdown Branch (Wide format matching inverter) */}
               {isHybrid ? (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-1 z-20">
-                  {/* Vertical Conduit to Battery MCCB */}
                   <VerticalConduit type="battery" speed="1.4s" />
 
-                  {/* Node: Battery Breaker (MCCB) */}
                   <div
                     onClick={() => triggerSelect('battery_breaker')}
                     onMouseEnter={() => setHoveredNodeKey('battery_breaker')}
@@ -747,10 +716,8 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                     <span className="text-[9px] font-mono text-slate-400 mt-0.5 whitespace-nowrap">DC Molded Case</span>
                   </div>
 
-                  {/* Vertical Conduit to Battery Bank */}
                   <VerticalConduit type="battery" speed="1.4s" />
 
-                  {/* Node: Battery Storage Bank */}
                   <div
                     onClick={() => triggerSelect('battery')}
                     onMouseEnter={() => setHoveredNodeKey('battery')}
@@ -771,7 +738,6 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                     </span>
                   </div>
 
-                  {/* Grounding tap from battery chassis down to PE busbar */}
                   <div className="w-0.5 h-24 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
                 </div>
@@ -783,16 +749,13 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
               )}
             </div>
 
-            {/* AC Conduit 4: Inverter -> AC Breaker (Direct horizontal connection from Inverter) */}
             <HorizontalConduit
               type="ac"
               active={atsSource === 'solar'}
               className="flex-1 min-w-[55px] max-w-[85px]"
             />
 
-            {/* Node 5: AC Protection Cluster (AC Breaker + AC SPD hanging below) */}
             <div className="flex flex-col items-center relative" data-schematic-node="true">
-              {/* AC Circuit Breaker (Series path - connected directly to Inverter on horizontal spine) */}
               <div
                 onClick={() => triggerSelect('ac_breaker')}
                 onMouseEnter={() => setHoveredNodeKey('ac_breaker')}
@@ -812,7 +775,6 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 </span>
               </div>
 
-              {/* Parallel Drop: AC SPD hanging below AC Breaker (Wide format matching breaker) */}
               <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pt-2">
                 <div className="w-0.5 h-3 bg-sky-500" />
                 <div
@@ -837,14 +799,12 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
               </div>
             </div>
 
-            {/* AC Conduit 5: AC Breaker -> AC Isolator */}
             <HorizontalConduit
               type="ac"
               active={atsSource === 'solar'}
               className="flex-1 min-w-[55px] max-w-[85px]"
             />
 
-            {/* Node 6: AC Isolator Switch */}
             <div className="flex flex-col items-center relative" data-schematic-node="true">
               <div
                 onClick={() => triggerSelect('ac_isolator')}
@@ -866,16 +826,13 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
               </div>
             </div>
 
-            {/* AC Conduit 6: AC Isolator -> Main Panel */}
             <HorizontalConduit
               type="ac"
               active={atsSource === 'solar'}
               className="flex-1 min-w-[55px] max-w-[85px]"
             />
 
-            {/* Node 7: Main Distribution Panel (MDB • 01) with Utility Grid Service Drop from above */}
             <div className="flex flex-col items-center relative" data-schematic-node="true">
-              {/* Utility Grid Service Entrance Drop connected directly to Main Panel from above */}
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 flex flex-col items-center pb-2 z-20">
                 <div
                   onClick={() => triggerSelect('grid')}
@@ -898,7 +855,6 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                     <span className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">230V Interconnect</span>
                   </div>
                 </div>
-                {/* Vertical Service Entrance Conduit dropping into Main Panel */}
                 <VerticalConduit
                   type="grid"
                   active={atsSource === 'utility'}
@@ -906,7 +862,6 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 />
               </div>
 
-              {/* Main Service Panel Box */}
               <div
                 onClick={() => triggerSelect('main_panel')}
                 onMouseEnter={() => setHoveredNodeKey('main_panel')}
@@ -926,21 +881,18 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
                 </span>
               </div>
 
-              {/* Ground bonding tap down to PE busbar */}
               <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center">
                 <div className="w-0.5 h-72 bg-emerald-600/60 border-l border-dashed border-emerald-500" />
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
               </div>
             </div>
 
-            {/* AC Conduit 7: Main Panel -> ATS Switch */}
             <HorizontalConduit
               type="ac"
               active={true}
               className="flex-1 min-w-[55px] max-w-[85px]"
             />
 
-            {/* Node 8: ATS Switch (XFER • ATS) - Swapping power feed to the building load */}
             <div className="flex flex-col items-center relative" data-schematic-node="true">
               <div
                 onClick={() => {
@@ -972,14 +924,12 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
               </div>
             </div>
 
-            {/* AC Conduit 8: ATS Switch -> Building Load */}
             <HorizontalConduit
               type="ac"
               active={true}
               className="flex-1 min-w-[55px] max-w-[85px]"
             />
 
-            {/* Node 9: Building Load */}
             <div className="flex flex-col items-center relative" data-schematic-node="true">
               <div
                 onClick={() => triggerSelect('load')}
@@ -1002,7 +952,6 @@ export function Schematic2DView({ resetViewCount }: Schematic2DViewProps) {
             </div>
           </div>
 
-          {/* Continuous Equipment Grounding Busbar (PE / EGC) Along The Base - Safely moved down below battery */}
           <div
             onClick={() => triggerSelect('grounding')}
             onMouseEnter={() => setHoveredNodeKey('grounding')}

@@ -1,6 +1,17 @@
-// src/types/layout3d.ts
 import { DiagramNodeKey } from './diagram';
-import { NodeType } from '@/components/diagram/NodeGeometry';
+
+export type NodeType =
+  | 'pv'
+  | 'breaker'
+  | 'isolator'
+  | 'spd'
+  | 'inverter'
+  | 'battery'
+  | 'panel'
+  | 'grid'
+  | 'load'
+  | 'ats'
+  | 'grounding';
 
 export type WirePolarity = 'positive' | 'negative' | 'ground';
 export type MountSurface = 'wall' | 'floor';
@@ -50,21 +61,16 @@ export interface AddableComponentSpec {
   imagePath: string;
   color: string;
   defaultRatingLabel: string;
-  /** Accessory key or equipment marker used by calculateSystem BOM */
   bomAccessoryKey?: string;
   fallbackUnitPricePhp: number;
-  /** Width, height, depth in meters for spacing & floor clearance */
   dimensions: [number, number, number];
-  /** Vertical center Y when resting on concrete floor slab (Y = 0) */
   floorCenterY: number;
-  /** Preferred Unistrut Y tier when spawning on wall */
   preferredWallY: number;
 }
 
 /**
  * Commercial / Medium-Size Business Plant Room Limits.
  * Supports ~50-100 kWp C&I solar + ~240 kWh ESS while keeping WebGL draw calls fast.
- * Increase constants here to expand capacity in future enterprise tiers.
  */
 export const SCENE_LIMITS = {
   maxTotalPlacedComponents: 112,
@@ -80,9 +86,6 @@ export const SCENE_LIMITS = {
   } satisfies Record<ComponentLimitGroup, number>,
 } as const;
 
-/**
- * Expanded Commercial Plant Room Geometry Constants (Meters)
- */
 export const PLANT_ROOM_GEOMETRY = {
   centerX: 0.7,
   wall: {
@@ -126,12 +129,11 @@ export interface PlacedComponent3D {
 export interface WireConnection3D {
   id: string;
   polarity: WirePolarity;
-  fromNodeId: string; // DiagramNodeKey or PlacedComponent3D.id
+  fromNodeId: string;
   fromPortId: string;
   toNodeId: string;
   toPortId: string;
   lengthMeters: number;
-  /** User-dragged [offsetX, offsetY] adjustment in meters to organize wire channels */
   routeOffset?: [number, number];
 }
 

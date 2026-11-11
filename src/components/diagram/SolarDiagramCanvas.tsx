@@ -1,4 +1,3 @@
-// src/components/diagram/SolarDiagramCanvas.tsx
 import { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import {
@@ -19,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { DEFAULT_SYSTEM_WIRE_SPECS } from '@/lib/layout3dEngine';
+import { isBaselineSystemWire } from '@/lib/diagramNodeSpecs';
 import { SolarScene } from './SolarScene';
 import { PlantComponentPalette } from './PlantComponentPalette';
 
@@ -61,8 +61,8 @@ export function SolarDiagramCanvas() {
 
   const selectedCustomNode = layout3d.placedComponents.find((c) => c.id === selectedCustomNodeId) || null;
   const selectedWire = layout3d.wires.find((w) => w.id === selectedWireId) || null;
-  const customWiresCount = layout3d.wires.filter((w) => !w.id.startsWith('base_wire_')).length;
-  const baseWiresCount = layout3d.wires.filter((w) => w.id.startsWith('base_wire_')).length;
+  const customWiresCount = layout3d.wires.filter((w) => !isBaselineSystemWire(w)).length;
+  const baseWiresCount = layout3d.wires.filter((w) => isBaselineSystemWire(w)).length;
   const hasCustomLayoutChanges =
     layout3d.placedComponents.length > 0 ||
     (layout3d.removedBaseNodes?.length || 0) > 0 ||
@@ -70,7 +70,6 @@ export function SolarDiagramCanvas() {
     baseWiresCount < DEFAULT_SYSTEM_WIRE_SPECS.length ||
     Object.keys(layout3d.baseNodePositions).length > 0;
 
-  // Auto-dismiss polarity alert after 5 seconds
   useEffect(() => {
     if (!polarityAlertMessage) return;
     const timer = window.setTimeout(() => {
@@ -79,7 +78,6 @@ export function SolarDiagramCanvas() {
     return () => window.clearTimeout(timer);
   }, [polarityAlertMessage, setPolarityAlertMessage]);
 
-  // Keyboard shortcuts for Delete/Backspace on selected 3D node/wire & Escape to return to Select mode
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -93,14 +91,12 @@ export function SolarDiagramCanvas() {
         return;
       }
 
-      // Undo: Ctrl+Z or Cmd+Z (without Shift)
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
         e.preventDefault();
         undoLayout3D();
         return;
       }
 
-      // Redo: Ctrl+Y or Cmd+Y, or Ctrl+Shift+Z or Cmd+Shift+Z
       if (
         ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) ||
         ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'z' || e.key === 'Z'))
@@ -152,7 +148,6 @@ export function SolarDiagramCanvas() {
     setSelectedWireId,
   ]);
 
-  // Sync fullscreen state when Esc exits browser fullscreen
   useEffect(() => {
     const onFsChange = () => {
       setIsFullscreen(Boolean(document.fullscreenElement));
@@ -191,13 +186,9 @@ export function SolarDiagramCanvas() {
           : 'h-[540px] lg:h-[620px] xl:h-[680px]'
       }`}
     >
-      {/* Left Column: 3D Viewport + HUD (Pushed left when Hardware Library is open) */}
       <div className="relative flex-1 min-w-0 h-full overflow-hidden">
-        {/* Top Engineering HUD Overlay */}
         <div className="absolute top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
-          {/* Left: 3D Builder Tools & System Status */}
           <div className="flex flex-wrap items-center gap-2 pointer-events-auto">
-            {/* Interactive 3D Plant Builder Toolset (Move, +Red Wire, -Dark Gray Wire, +/- Twin Pair, GND, Cut Wire) */}
             <div
               role="group"
               aria-label="3D Wiring and Placement Tools"
@@ -295,7 +286,6 @@ export function SolarDiagramCanvas() {
               </button>
             </div>
 
-            {/* System Mode Pill */}
             <span className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 shadow-sm">
               <span
                 className={`w-2 h-2 rounded-full ${
@@ -307,7 +297,6 @@ export function SolarDiagramCanvas() {
               {calculationResult.systemType === 'hybrid' ? 'HYBRID' : 'ON-GRID'}
             </span>
 
-            {/* ATS Transfer Switch Active Source Pill */}
             <button
               type="button"
               onClick={toggleAtsSource}
@@ -327,7 +316,6 @@ export function SolarDiagramCanvas() {
               </span>
             </button>
 
-            {/* Contextual Baseline 3D Component Selection Pill + Delete */}
             {selectedNodeKey && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-amber-50 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-200 shadow-sm backdrop-blur-md">
                 <Eye className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
@@ -351,7 +339,6 @@ export function SolarDiagramCanvas() {
               </span>
             )}
 
-            {/* Contextual Custom 3D Component Selection Pill + Delete */}
             {selectedCustomNode && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-amber-50 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-700/70 text-amber-900 dark:text-amber-200 shadow-sm backdrop-blur-md">
                 <span>
@@ -369,7 +356,6 @@ export function SolarDiagramCanvas() {
               </span>
             )}
 
-            {/* Contextual Custom Wire Selection Pill + Organize / Delete */}
             {selectedWire && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-slate-900/95 border border-amber-500/70 text-white shadow-sm backdrop-blur-md">
                 <span
@@ -413,9 +399,7 @@ export function SolarDiagramCanvas() {
             )}
           </div>
 
-          {/* Right: Undo/Redo, Clear Wires, Reset Layout, Palette Toggle & Viewport Controls */}
           <div className="flex items-center gap-1.5 pointer-events-auto">
-            {/* Undo / Redo History Controls (max 10 entries each, in-memory) */}
             <div className="flex items-center gap-1 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-1 rounded-lg shadow-sm">
               <button
                 type="button"
@@ -535,7 +519,6 @@ export function SolarDiagramCanvas() {
           </div>
         </div>
 
-        {/* Polarity / Wiring Guard Alert Banner */}
         {polarityAlertMessage && (
           <div className="absolute top-14 left-3 z-30 max-w-lg px-3.5 py-2 rounded-xl bg-red-950/95 border border-red-500/80 text-red-100 text-xs font-mono flex items-center gap-2 shadow-xl backdrop-blur-md pointer-events-auto">
             <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
@@ -551,7 +534,6 @@ export function SolarDiagramCanvas() {
           </div>
         )}
 
-        {/* Bottom Telemetry Bar */}
         <div className="absolute bottom-2.5 left-3 right-3 z-20 flex items-center justify-between text-[11px] font-mono text-slate-600 dark:text-slate-400 pointer-events-none">
           <span className="hidden sm:inline bg-white/95 dark:bg-slate-900/95 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-sm">
             {canvasTool === 'wire_cut'
@@ -565,7 +547,6 @@ export function SolarDiagramCanvas() {
           </span>
         </div>
 
-        {/* 3D CAD Viewport Render */}
         <Canvas
           camera={{ position: [0.6, 4.4, 18.5], fov: 42 }}
           shadows
@@ -578,7 +559,6 @@ export function SolarDiagramCanvas() {
         </Canvas>
       </div>
 
-      {/* Right Column: Docked 3D Hardware Library (Pushes 3D Viewport Left When Open) */}
       <PlantComponentPalette />
     </div>
   );

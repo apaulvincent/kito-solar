@@ -19,6 +19,8 @@ import accessoriesSeed from '@/data/seed/calculator_accessories.json';
 import batteriesSeed from '@/data/seed/batteries.json';
 import { BatteryRecord } from '@/types/supabase';
 import { AddableComponentKey, PLANT_ROOM_GEOMETRY } from '@/types/layout3d';
+import { ADDABLE_CATALOG_MAP, isBaselineSystemWire } from '@/lib/diagramNodeSpecs';
+import { MODULES_PER_3D_PV_ARRAY } from '@/lib/solarConstants';
 
 export function calculateSystem(input: CalculationInput): SystemCalculationResult {
   const {
@@ -43,7 +45,7 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
   const addedInverters = getAddedCount('inverter_unit');
   const addedBatteries = getAddedCount('battery_unit');
   const addedPvArrays = getAddedCount('pv_array_unit');
-  const addedPanelsFrom3D = addedPvArrays * 3;
+  const addedPanelsFrom3D = addedPvArrays * MODULES_PER_3D_PV_ARRAY;
 
   // Determine system classification: Hybrid vs On-grid
   const isBatteryCapable = Boolean(
@@ -416,8 +418,8 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
     );
   }
 
-  // Distribution Subpanels added in 3D space
   if (getAddedCount('sub_panel') > 0) {
+    const subpanelFallback = ADDABLE_CATALOG_MAP.get('sub_panel')?.fallbackUnitPricePhp ?? 1450;
     addSwitchgearItem(
       'sub_panel',
       'Distribution Subpanel (NEMA 3R Load Center)',
@@ -425,12 +427,11 @@ export function calculateSystem(input: CalculationInput): SystemCalculationResul
       0,
       'pc',
       getAddedCount('sub_panel'),
-      1450
+      subpanelFallback
     );
   }
 
-  // Custom 3D (+/- & GND) Polarity Wire Runs (exclude baseline system port-to-port wires)
-  const customWires = (layout3d?.wires || []).filter((w) => !w.id.startsWith('base_wire_'));
+  const customWires = (layout3d?.wires || []).filter((w) => !isBaselineSystemWire(w));
   let positiveWireMeters = 0;
   let negativeWireMeters = 0;
   let groundWireMeters = 0;

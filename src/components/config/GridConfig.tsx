@@ -1,8 +1,7 @@
-// src/components/config/GridConfig.tsx
-import { useState, useEffect } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { Network, Sliders } from 'lucide-react';
 import { Autocomplete, HighlightMatch } from '@/components/common/Autocomplete';
+import { MODULES_PER_3D_PV_ARRAY } from '@/lib/solarConstants';
 
 interface GridVoltageOption {
   value: number;
@@ -51,32 +50,17 @@ export function GridConfig() {
 
   const added3DPvArrays =
     layout3d?.placedComponents?.filter((p) => p.catalogKey === 'pv_array_unit').length || 0;
-  const addedPanelsFrom3D = added3DPvArrays * 3;
+  const addedPanelsFrom3D = added3DPvArrays * MODULES_PER_3D_PV_ARRAY;
 
   const activePanels = calculationResult.pvSizing.activePanelCount;
   const minPanels = calculationResult.pvSizing.minPanels;
   const maxPanels = calculationResult.pvSizing.maxPanels;
   const recPanels = calculationResult.pvSizing.recommendedPanels;
 
-  const [selectedVoltage, setSelectedVoltage] = useState<GridVoltageOption | null>(
-    () => GRID_VOLTAGE_OPTIONS.find((opt) => opt.value === gridVoltageV) ?? GRID_VOLTAGE_OPTIONS[1]
-  );
-
-  const [selectedBreaker, setSelectedBreaker] = useState<MainBreakerOption | null>(
-    () => MAIN_BREAKER_OPTIONS.find((opt) => opt.value === mainBreakerA) ?? MAIN_BREAKER_OPTIONS[5]
-  );
-
-  useEffect(() => {
-    const matched = GRID_VOLTAGE_OPTIONS.find((opt) => opt.value === gridVoltageV);
-    if (matched) {
-      setSelectedVoltage(matched);
-    }
-  }, [gridVoltageV]);
-
-  useEffect(() => {
-    const matched = MAIN_BREAKER_OPTIONS.find((opt) => opt.value === mainBreakerA);
-    setSelectedBreaker(matched ?? null);
-  }, [mainBreakerA]);
+  const selectedVoltage =
+    GRID_VOLTAGE_OPTIONS.find((opt) => opt.value === gridVoltageV) ?? GRID_VOLTAGE_OPTIONS[1];
+  const selectedBreaker =
+    MAIN_BREAKER_OPTIONS.find((opt) => opt.value === mainBreakerA) ?? null;
 
   return (
     <div className="space-y-4">
@@ -91,7 +75,6 @@ export function GridConfig() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Grid Voltage Autocomplete */}
         <div>
           <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1 font-semibold">
             Grid Nominal Voltage (V)
@@ -100,7 +83,6 @@ export function GridConfig() {
             options={GRID_VOLTAGE_OPTIONS}
             value={selectedVoltage}
             onChange={(opt) => {
-              setSelectedVoltage(opt);
               if (opt) setGridVoltage(opt.value);
             }}
             getOptionLabel={(opt) => opt.label}
@@ -127,7 +109,6 @@ export function GridConfig() {
           />
         </div>
 
-        {/* Main Panel Service Breaker Autocomplete */}
         <div>
           <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1 font-semibold">
             Main Panel Service Breaker (A)
@@ -136,7 +117,6 @@ export function GridConfig() {
             options={MAIN_BREAKER_OPTIONS}
             value={selectedBreaker}
             onChange={(opt) => {
-              setSelectedBreaker(opt);
               setMainBreaker(opt ? opt.value : null);
             }}
             getOptionLabel={(opt) => opt.label}
@@ -164,7 +144,6 @@ export function GridConfig() {
         </div>
       </div>
 
-      {/* Array Module Count Sizing Fine-Tuning */}
       <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 space-y-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
@@ -187,7 +166,6 @@ export function GridConfig() {
           </div>
         </div>
 
-        {/* Range Slider */}
         <div className="space-y-1">
           <input
             type="range"

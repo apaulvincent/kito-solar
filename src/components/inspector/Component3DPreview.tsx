@@ -1,10 +1,10 @@
-// src/components/inspector/Component3DPreview.tsx
 import { Center, OrbitControls } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { Box, RotateCw } from 'lucide-react';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useRef, useState } from 'react';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { getNodeTypeFromKey, NodeGeometry, NodeType } from '../diagram/NodeGeometry';
+import { getNodeTypeFromKey, getOptimalCameraDistance } from '@/lib/diagramNodeSpecs';
+import { NodeGeometry } from '../diagram/NodeGeometry';
 
 interface Component3DPreviewProps {
   nodeKey: string;
@@ -13,28 +13,13 @@ interface Component3DPreviewProps {
   className?: string;
 }
 
-function getOptimalCameraDistance(nodeType: NodeType): number {
-  switch (nodeType) {
-    case 'grid':
-      return 4.6;
-    case 'pv':
-      return 4.4;
-    case 'load':
-      return 3.2;
-    case 'inverter':
-    case 'panel':
-      return 2.8;
-    case 'battery':
-      return 2.6;
-    case 'ats':
-      return 2.3;
-    case 'grounding':
-      return 2.2;
-    case 'breaker':
-    case 'isolator':
-    case 'spd':
-    default:
-      return 1.9;
+function detectWebGLSupport(): boolean {
+  if (typeof document === 'undefined') return false;
+  try {
+    const canvas = document.createElement('canvas');
+    return Boolean(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+  } catch {
+    return false;
   }
 }
 
@@ -44,42 +29,22 @@ export function Component3DPreview({
   title,
   className = '',
 }: Component3DPreviewProps) {
-  const [hasWebGL, setHasWebGL] = useState(true);
+  const [hasWebGL] = useState(detectWebGLSupport);
   const [hasError, setHasError] = useState(false);
   const controlsRef = useRef<OrbitControlsImpl>(null);
-
-  useEffect(() => {
-    try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      if (!gl) {
-        setHasWebGL(false);
-      }
-    } catch {
-      setHasWebGL(false);
-    }
-  }, []);
 
   const nodeType = getNodeTypeFromKey(nodeKey);
   const cameraDistance = getOptimalCameraDistance(nodeType);
 
   const handleResetView = () => {
-    if (controlsRef.current) {
-      controlsRef.current.reset();
-    }
+    controlsRef.current?.reset();
   };
 
   if (!hasWebGL || hasError) {
-    const safeFallback = fallbackImagePath
-      ? fallbackImagePath.endsWith('.webp')
-        ? fallbackImagePath.replace('.webp', '.svg')
-        : fallbackImagePath
-      : '/assets/accessories/ac-breaker.svg';
-
     return (
       <div className={`relative flex items-center justify-center overflow-hidden rounded-xl bg-slate-900 border border-slate-700/80 p-3 shadow-inner ${className}`}>
         <img
-          src={safeFallback}
+          src={fallbackImagePath || '/assets/accessories/ac-breaker.svg'}
           alt={title || 'Component'}
           className="w-full h-full object-contain filter drop-shadow-md"
         />
@@ -95,7 +60,6 @@ export function Component3DPreview({
       className={`group relative overflow-hidden rounded-xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 hover:border-amber-500/50 transition-colors shadow-inner select-none ${className}`}
       title="Click and drag to rotate 3D view"
     >
-      {/* 3D Canvas Viewport */}
       <Canvas
         camera={{ position: [0, 0, cameraDistance], fov: 42 }}
         dpr={[1, 2]}
@@ -132,13 +96,11 @@ export function Component3DPreview({
         />
       </Canvas>
 
-      {/* Floating 3D Badge */}
       <div className="pointer-events-none absolute top-2 left-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-900/80 border border-slate-700/60 backdrop-blur-sm text-[10px] font-mono text-amber-400 font-semibold shadow-sm">
         <Box className="w-3 h-3 text-amber-400" />
         <span>3D CAD Model</span>
       </div>
 
-      {/* Reset Rotation Button */}
       <button
         type="button"
         onClick={handleResetView}
@@ -148,7 +110,6 @@ export function Component3DPreview({
         <RotateCw className="w-3 h-3" />
       </button>
 
-      {/* Subtle Drag Prompt at Bottom */}
       <div className="pointer-events-none absolute bottom-1.5 inset-x-0 flex justify-center">
         <span className="px-2 py-0.5 rounded text-[9px] font-mono text-slate-400 bg-slate-900/70 border border-slate-800/80 backdrop-blur-xs">
           Drag to orbit • Scroll to zoom

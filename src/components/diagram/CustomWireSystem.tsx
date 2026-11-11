@@ -1,21 +1,29 @@
-// src/components/diagram/CustomWireSystem.tsx
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { useThree, useFrame } from '@react-three/fiber';
+import { useState, useMemo, useRef, useEffect, useCallback, type MutableRefObject } from 'react';
+import { useThree, useFrame, ThreeEvent } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { DiagramNodeKey } from '@/types/diagram';
+import { getWallObstacles } from '@/lib/layout3dEngine';
 import {
   ADDABLE_CATALOG_MAP,
+  BASE_SCENE_NODES,
+} from '@/lib/diagramNodeSpecs';
+import {
   buildOrthogonalWireWaypoints,
   calculateWaypointsLengthMeters,
   findCompanionPairPort,
   findNearestSnapPortByRay,
   getNodeTerminalPorts,
-  getWallObstacles,
-} from '@/lib/layout3dEngine';
-import { SnapCandidateResult, TerminalPort3D, WirePolarity, Layout3DState } from '@/types/layout3d';
-import { NodeType } from './NodeGeometry';
+} from '@/lib/wireRouting3d';
+import { SnapCandidateResult, TerminalPort3D, WirePolarity, Layout3DState, NodeType } from '@/types/layout3d';
+import {
+  Y_AXIS,
+  buildWirePulses,
+  pickNearestPortToRay,
+  projectRayCursorToPlantWorld,
+  stepWirePulses,
+} from './wireMath';
 
 interface CustomWireSystemProps {
   nodePositions: Record<DiagramNodeKey, [number, number, number]>;
@@ -23,8 +31,7 @@ interface CustomWireSystemProps {
   isDark: boolean;
   isAnimationPaused?: boolean;
   onLockControls: (locked: boolean) => void;
-  /** Mutable ref registered so DiagramNodeMesh / PlacedComponentMesh can start wire pulls in wire mode */
-  wireStartTriggerRef?: React.MutableRefObject<
+  wireStartTriggerRef?: MutableRefObject<
     ((nodeId: string, clientX: number, clientY: number) => boolean) | null
   >;
 }
@@ -44,28 +51,6 @@ interface LiveRouteDragState {
   initialOffset: [number, number];
 }
 
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
-const WALL_PREVIEW_PLANE = new THREE.Plane(new THREE.Vector3(0, 0, 1), -0.1);
-const FLOOR_PREVIEW_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.25);
-
-const BASE_NODE_META: { key: DiagramNodeKey; label: string; nodeType: NodeType; hybridOnly?: boolean }[] = [
-  { key: 'pv_array', label: 'PV ARRAY', nodeType: 'pv' },
-  { key: 'dc_isolator', label: 'DC ISOLATOR', nodeType: 'isolator' },
-  { key: 'dc_breaker', label: 'DC BREAKER', nodeType: 'breaker' },
-  { key: 'dc_spd', label: 'DC SPD', nodeType: 'spd' },
-  { key: 'inverter', label: 'SOLAR INVERTER', nodeType: 'inverter' },
-  { key: 'battery_breaker', label: 'BATTERY MCCB', nodeType: 'breaker', hybridOnly: true },
-  { key: 'battery', label: 'BATTERY STORAGE', nodeType: 'battery', hybridOnly: true },
-  { key: 'ac_breaker', label: 'AC BREAKER', nodeType: 'breaker' },
-  { key: 'ac_spd', label: 'AC SPD', nodeType: 'spd' },
-  { key: 'ac_isolator', label: 'AC ISOLATOR', nodeType: 'isolator' },
-  { key: 'main_panel', label: 'MAIN PANEL', nodeType: 'panel' },
-  { key: 'ats', label: 'ATS SWITCH', nodeType: 'ats' },
-  { key: 'grid', label: 'UTILITY GRID', nodeType: 'grid' },
-  { key: 'load', label: 'BUILDING LOAD', nodeType: 'load' },
-  { key: 'grounding', label: 'GROUND BUSBAR', nodeType: 'grounding' },
-];
-
 function WirePolylineSegments({
   waypoints,
   color,
@@ -84,9 +69,9 @@ function WirePolylineSegments({
   emissive?: string;
   emissiveIntensity?: number;
   opacity?: number;
-  onClick?: (e: any) => void;
-  onPointerDown?: (e: any) => void;
-  onPointerOver?: (e: any) => void;
+  onClick?: (e: ThreeEvent<MouseEvent>) => void;
+  onPointerDown?: (e: ThreeEvent<PointerEvent>) => void;
+  onPointerOver?: (e: ThreeEvent<PointerEvent>) => void;
   onPointerOut?: () => void;
 }) {
   if (waypoints.length < 2) return null;
@@ -126,7 +111,6 @@ function WirePolylineSegments({
                 opacity={opacity}
               />
             </mesh>
-            {/* Invisible thicker hit cylinder when interactive */}
             {onClick && (
               <mesh visible={false}>
                 <cylinderGeometry args={[radius * 2.8, radius * 2.8, dist, 8]} />
@@ -137,7 +121,6 @@ function WirePolylineSegments({
         );
       })}
 
-      {/* Molded cable bend elbows */}
       {waypoints.slice(1, -1).map((pt, idx) => (
         <mesh key={`welbow-${idx}`} position={pt}>
           <sphereGeometry args={[radius * 1.12, 10, 10]} />
@@ -153,7 +136,6 @@ function WirePolylineSegments({
         </mesh>
       ))}
 
-      {/* Crimp terminal boots at both ends */}
       {[waypoints[0], waypoints[waypoints.length - 1]].map((endPt, idx) => (
         <mesh key={`wboot-${idx}`} position={endPt}>
           <cylinderGeometry args={[radius * 1.35, radius * 1.35, 0.045, 10]} />
@@ -183,6 +165,9 @@ export function CustomWireSystem({
   const updateWireRouteOffset = useCalculatorStore((s) => s.updateWireRouteOffset);
   const pushLayout3DUndoSnapshot = useCalculatorStore((s) => s.pushLayout3DUndoSnapshot);
   const setPolarityAlertMessage = useCalculatorStore((s) => s.setPolarityAlertMessage);
+
+  const layout3dRef = useRef(layout3d);
+  layout3dRef.current = layout3d;
 
   const [hoveredPortKey, setHoveredPortKey] = useState<string | null>(null);
   const [hoveredWireId, setHoveredWireId] = useState<string | null>(null);
@@ -215,16 +200,15 @@ export function CustomWireSystem({
     [nodePositions, layout3d.placedComponents, isHybrid, layout3d.removedBaseNodes]
   );
 
-  // Compute all 3D terminal ports across active baseline nodes and custom placed nodes
   const allPorts = useMemo<TerminalPort3D[]>(() => {
     const ports: TerminalPort3D[] = [];
 
-    for (const meta of BASE_NODE_META) {
+    for (const meta of BASE_SCENE_NODES) {
       if (removedBaseSet.has(meta.key)) continue;
       if (meta.hybridOnly && !isHybrid) continue;
       const pos = nodePositions[meta.key];
       if (!pos) continue;
-      ports.push(...getNodeTerminalPorts(meta.key, meta.label, meta.nodeType, pos));
+      ports.push(...getNodeTerminalPorts(meta.key, meta.wireLabel, meta.nodeType, pos));
     }
 
     for (const placed of layout3d.placedComponents) {
@@ -253,39 +237,6 @@ export function CustomWireSystem({
     }
     return map;
   }, [allPorts]);
-
-  const projectCursorWorld = useCallback(
-    (raycaster: THREE.Raycaster, fallbackOrigin: [number, number, number]): [number, number, number] => {
-      const wallVec = new THREE.Vector3();
-      const floorVec = new THREE.Vector3();
-      const hitWall = raycaster.ray.intersectPlane(WALL_PREVIEW_PLANE, wallVec);
-      const hitFloor = raycaster.ray.intersectPlane(FLOOR_PREVIEW_PLANE, floorVec);
-
-      if (fallbackOrigin[2] > 0.6 && hitFloor && floorVec.z > 0.3) {
-        return [
-          Number(floorVec.x.toFixed(2)),
-          0.35,
-          Number(floorVec.z.toFixed(2)),
-        ];
-      }
-      if (hitWall && wallVec.y >= 0.05 && wallVec.y <= 7.2) {
-        return [
-          Number(wallVec.x.toFixed(2)),
-          Number(wallVec.y.toFixed(2)),
-          0.12,
-        ];
-      }
-      if (hitFloor) {
-        return [
-          Number(floorVec.x.toFixed(2)),
-          0.35,
-          Number(Math.max(0.2, floorVec.z).toFixed(2)),
-        ];
-      }
-      return fallbackOrigin;
-    },
-    []
-  );
 
   const beginWirePullFromPort = useCallback(
     (port: TerminalPort3D) => {
@@ -332,7 +283,6 @@ export function CustomWireSystem({
     [canvasTool, portsByNode, onLockControls, setPolarityAlertMessage]
   );
 
-  // Allow clicking/dragging anywhere on a node in Wire mode to start pulling from its nearest matching terminal
   useEffect(() => {
     if (!wireStartTriggerRef) return;
     wireStartTriggerRef.current = (nodeId: string, clientX: number, clientY: number) => {
@@ -354,22 +304,7 @@ export function CustomWireSystem({
           : canvasTool === 'wire_gnd'
           ? 'ground'
           : 'positive';
-      const candidates = nodePorts.filter((p) => p.polarity === targetPol);
-      const pool = candidates.length > 0 ? candidates : nodePorts;
-
-      let best = pool[0];
-      let bestDist = Infinity;
-      const tmpVec = new THREE.Vector3();
-      for (const p of pool) {
-        tmpVec.set(p.worldPosition[0], p.worldPosition[1], p.worldPosition[2]);
-        const d = raycaster.ray.distanceToPoint(tmpVec);
-        if (d < bestDist) {
-          bestDist = d;
-          best = p;
-        }
-      }
-
-      beginWirePullFromPort(best);
+      beginWirePullFromPort(pickNearestPortToRay(raycaster.ray, nodePorts, targetPol));
       return true;
     };
 
@@ -378,7 +313,6 @@ export function CustomWireSystem({
     };
   }, [wireStartTriggerRef, isWireMode, portsByNode, gl, camera, canvasTool, beginWirePullFromPort]);
 
-  // Global window pointermove / pointerup listener while dragging an existing wire to organize its channel
   useEffect(() => {
     if (!liveRouteDrag) return;
 
@@ -398,7 +332,7 @@ export function CustomWireSystem({
       );
       raycaster.setFromCamera(ndc, camera);
 
-      const worldPt = projectCursorWorld(raycaster, current.startWorld);
+      const worldPt = projectRayCursorToPlantWorld(raycaster.ray, current.startWorld);
       const deltaX = worldPt[0] - current.startWorld[0];
       const deltaY = worldPt[1] - current.startWorld[1];
 
@@ -415,9 +349,7 @@ export function CustomWireSystem({
     const handleRouteUp = () => {
       const current = liveRouteDragRef.current;
       if (current && layoutBeforeRouteDragRef.current) {
-        const curWire = useCalculatorStore
-          .getState()
-          .layout3d.wires.find((w) => w.id === current.wireId);
+        const curWire = layout3dRef.current.wires.find((w) => w.id === current.wireId);
         const curOffset = curWire?.routeOffset || [0, 0];
         const diffX = Math.abs(curOffset[0] - current.initialOffset[0]);
         const diffY = Math.abs(curOffset[1] - current.initialOffset[1]);
@@ -442,13 +374,11 @@ export function CustomWireSystem({
     Boolean(liveRouteDrag),
     camera,
     gl,
-    projectCursorWorld,
     updateWireRouteOffset,
     pushLayout3DUndoSnapshot,
     onLockControls,
   ]);
 
-  // Global window pointermove / pointerup listener while pulling a wire
   useEffect(() => {
     if (!liveDrag) return;
 
@@ -482,7 +412,7 @@ export function CustomWireSystem({
 
       const nextCursor = snap
         ? snap.port.worldPosition
-        : projectCursorWorld(raycaster, current.sourcePort.worldPosition);
+        : projectRayCursorToPlantWorld(raycaster.ray, current.sourcePort.worldPosition);
 
       const nextState: LiveWireDragState = {
         ...current,
@@ -530,10 +460,7 @@ export function CustomWireSystem({
       if (isTwinPair && companionSourcePort) {
         const targetNodePorts = portsByNode.get(snapCandidate.port.nodeId) || [];
         const companionTarget = findCompanionPairPort(snapCandidate.port, targetNodePorts);
-        if (
-          companionTarget &&
-          companionTarget.polarity === companionSourcePort.polarity
-        ) {
+        if (companionTarget && companionTarget.polarity === companionSourcePort.polarity) {
           addWireConnection({
             polarity: companionSourcePort.polarity,
             fromNodeId: companionSourcePort.nodeId,
@@ -559,121 +486,68 @@ export function CustomWireSystem({
     portsByNode,
     camera,
     gl,
-    projectCursorWorld,
     addWireConnection,
     onLockControls,
     setPolarityAlertMessage,
   ]);
 
-  // Compute rendered wire paths + animated current flow particles
   const renderedWires = useMemo(() => {
-    return layout3d.wires.map((wire) => {
-      if (
-        removedBaseSet.has(wire.fromNodeId as DiagramNodeKey) ||
-        removedBaseSet.has(wire.toNodeId as DiagramNodeKey)
-      ) {
-        return null;
-      }
-      if (
-        !isHybrid &&
-        (wire.fromNodeId === 'battery' ||
-          wire.fromNodeId === 'battery_breaker' ||
-          wire.toNodeId === 'battery' ||
-          wire.toNodeId === 'battery_breaker')
-      ) {
-        return null;
-      }
+    return layout3d.wires
+      .map((wire) => {
+        if (
+          removedBaseSet.has(wire.fromNodeId as DiagramNodeKey) ||
+          removedBaseSet.has(wire.toNodeId as DiagramNodeKey)
+        ) {
+          return null;
+        }
+        if (
+          !isHybrid &&
+          (wire.fromNodeId === 'battery' ||
+            wire.fromNodeId === 'battery_breaker' ||
+            wire.toNodeId === 'battery' ||
+            wire.toNodeId === 'battery_breaker')
+        ) {
+          return null;
+        }
 
-      const fromPort = portLookup.get(`${wire.fromNodeId}::${wire.fromPortId}`);
-      const toPort = portLookup.get(`${wire.toNodeId}::${wire.toPortId}`);
+        const fromPort = portLookup.get(`${wire.fromNodeId}::${wire.fromPortId}`);
+        const toPort = portLookup.get(`${wire.toNodeId}::${wire.toPortId}`);
 
-      const fallbackFrom =
-        (nodePositions as Record<string, [number, number, number]>)[wire.fromNodeId] ||
-        layout3d.placedComponents.find((c) => c.id === wire.fromNodeId)?.position;
-      const fallbackTo =
-        (nodePositions as Record<string, [number, number, number]>)[wire.toNodeId] ||
-        layout3d.placedComponents.find((c) => c.id === wire.toNodeId)?.position;
+        const fallbackFrom =
+          (nodePositions as Record<string, [number, number, number]>)[wire.fromNodeId] ||
+          layout3d.placedComponents.find((c) => c.id === wire.fromNodeId)?.position;
+        const fallbackTo =
+          (nodePositions as Record<string, [number, number, number]>)[wire.toNodeId] ||
+          layout3d.placedComponents.find((c) => c.id === wire.toNodeId)?.position;
 
-      const pStart = fromPort?.worldPosition || fallbackFrom;
-      const pEnd = toPort?.worldPosition || fallbackTo;
-      if (!pStart || !pEnd) return null;
+        const pStart = fromPort?.worldPosition || fallbackFrom;
+        const pEnd = toPort?.worldPosition || fallbackTo;
+        if (!pStart || !pEnd) return null;
 
-      const waypoints = buildOrthogonalWireWaypoints(pStart, pEnd, wire.polarity, {
-        fromDir: fromPort ? (fromPort.localOffset[1] >= 0 ? 1 : -1) : undefined,
-        toDir: toPort ? (toPort.localOffset[1] >= 0 ? 1 : -1) : undefined,
-        obstacles: wallObstacles,
-        routeOffset: wire.routeOffset,
-      });
-      const lengthMeters = calculateWaypointsLengthMeters(waypoints);
+        const waypoints = buildOrthogonalWireWaypoints(pStart, pEnd, wire.polarity, {
+          fromDir: fromPort ? (fromPort.localOffset[1] >= 0 ? 1 : -1) : undefined,
+          toDir: toPort ? (toPort.localOffset[1] >= 0 ? 1 : -1) : undefined,
+          obstacles: wallObstacles,
+          routeOffset: wire.routeOffset,
+        });
 
-      return {
-        wire,
-        waypoints,
-        lengthMeters,
-        fromLabel: fromPort ? `${fromPort.nodeLabel} ${fromPort.label}` : wire.fromNodeId,
-        toLabel: toPort ? `${toPort.nodeLabel} ${toPort.label}` : wire.toNodeId,
-      };
-    }).filter(Boolean) as {
-      wire: (typeof layout3d.wires)[number];
-      waypoints: [number, number, number][];
-      lengthMeters: number;
-      fromLabel: string;
-      toLabel: string;
-    }[];
+        return {
+          wire,
+          waypoints,
+          lengthMeters: calculateWaypointsLengthMeters(waypoints),
+          fromLabel: fromPort ? `${fromPort.nodeLabel} ${fromPort.label}` : wire.fromNodeId,
+          toLabel: toPort ? `${toPort.nodeLabel} ${toPort.label}` : wire.toNodeId,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
   }, [layout3d.wires, layout3d.placedComponents, portLookup, nodePositions, isHybrid, wallObstacles, removedBaseSet]);
 
-  // Animated pulse beads along (+/-) wires (grounding wires have zero particles)
   const pulseMeshRef = useRef<THREE.InstancedMesh>(null);
   const pulseDummy = useMemo(() => new THREE.Object3D(), []);
-  const wirePulses = useMemo(() => {
-    const items: {
-      wireIdx: number;
-      phase: number;
-      polarity: WirePolarity;
-      segments: { a: [number, number, number]; b: [number, number, number]; len: number; cumStart: number; cumEnd: number }[];
-      totalDist: number;
-    }[] = [];
-
-    const solarAcNodes = new Set(['ac_breaker', 'ac_spd', 'ac_isolator']);
-
-    renderedWires.forEach((rw, wIdx) => {
-      // Grounding wires (neon green) never have flowing particles
-      if (rw.wire.polarity === 'ground') return;
-
-      const { fromNodeId, toNodeId } = rw.wire;
-      const isUtilityFeed = fromNodeId === 'grid' || toNodeId === 'grid';
-      const isSolarAcFeed =
-        solarAcNodes.has(fromNodeId) || solarAcNodes.has(toNodeId);
-
-      if (atsSource === 'utility' && isSolarAcFeed) return;
-      if (atsSource === 'solar' && isUtilityFeed) return;
-
-      let cum = 0;
-      const segs = [];
-      for (let i = 0; i < rw.waypoints.length - 1; i++) {
-        const a = rw.waypoints[i];
-        const b = rw.waypoints[i + 1];
-        const len = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
-        if (len > 0.001) {
-          segs.push({ a, b, len, cumStart: cum, cumEnd: cum + len });
-          cum += len;
-        }
-      }
-      if (cum <= 0.01) return;
-      const beadCount = Math.max(2, Math.min(6, Math.round(cum * 1.1)));
-      for (let b = 0; b < beadCount; b++) {
-        items.push({
-          wireIdx: wIdx,
-          phase: b / beadCount,
-          polarity: rw.wire.polarity,
-          segments: segs,
-          totalDist: cum,
-        });
-      }
-    });
-
-    return items;
-  }, [renderedWires, atsSource]);
+  const wirePulses = useMemo(
+    () => buildWirePulses(renderedWires, atsSource),
+    [renderedWires, atsSource]
+  );
 
   useEffect(() => {
     if (!pulseMeshRef.current || wirePulses.length === 0) return;
@@ -689,36 +563,9 @@ export function CustomWireSystem({
 
   useFrame((state) => {
     if (!pulseMeshRef.current || wirePulses.length === 0 || isAnimationPaused) return;
-    const t = state.clock.getElapsedTime();
-
-    for (let i = 0; i < wirePulses.length; i++) {
-      const wp = wirePulses[i];
-      const rawProgress = (wp.phase + (t * 0.85) / wp.totalDist) % 1.0;
-      // Negative (-) wire particles flow in reverse (from destination back to source)
-      const progress =
-        wp.polarity === 'negative' ? (1.0 - rawProgress + 1.0) % 1.0 : rawProgress;
-      const target = progress * wp.totalDist;
-      let seg = wp.segments[0];
-      for (let s = 0; s < wp.segments.length; s++) {
-        if (target >= wp.segments[s].cumStart && target <= wp.segments[s].cumEnd) {
-          seg = wp.segments[s];
-          break;
-        }
-      }
-      const u = seg.len > 0 ? Math.max(0, Math.min(1, (target - seg.cumStart) / seg.len)) : 0;
-      pulseDummy.position.set(
-        seg.a[0] + u * (seg.b[0] - seg.a[0]),
-        seg.a[1] + u * (seg.b[1] - seg.a[1]),
-        seg.a[2] + u * (seg.b[2] - seg.a[2]) + 0.028
-      );
-      pulseDummy.scale.setScalar(1.0);
-      pulseDummy.updateMatrix();
-      pulseMeshRef.current.setMatrixAt(i, pulseDummy.matrix);
-    }
-    pulseMeshRef.current.instanceMatrix.needsUpdate = true;
+    stepWirePulses(pulseMeshRef.current, wirePulses, state.clock.getElapsedTime(), pulseDummy);
   });
 
-  // Live preview waypoints
   const previewPrimaryWaypoints = useMemo(() => {
     if (!liveDrag) return [];
     return buildOrthogonalWireWaypoints(
@@ -766,7 +613,12 @@ export function CustomWireSystem({
   }, [liveDrag, portsByNode, wallObstacles]);
 
   const startWireRouteDrag = useCallback(
-    (wire: (typeof layout3d.wires)[number], clientX: number, clientY: number, fallbackMid: [number, number, number]) => {
+    (
+      wire: Layout3DState['wires'][number],
+      clientX: number,
+      clientY: number,
+      fallbackMid: [number, number, number]
+    ) => {
       const rect = gl.domElement.getBoundingClientRect();
       const ndc = new THREE.Vector2(
         ((clientX - rect.left) / rect.width) * 2 - 1,
@@ -774,7 +626,7 @@ export function CustomWireSystem({
       );
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(ndc, camera);
-      const startWorld = projectCursorWorld(raycaster, fallbackMid);
+      const startWorld = projectRayCursorToPlantWorld(raycaster.ray, fallbackMid);
 
       const initial: LiveRouteDragState = {
         wireId: wire.id,
@@ -782,21 +634,17 @@ export function CustomWireSystem({
         initialOffset: wire.routeOffset || [0, 0],
       };
       setSelectedWireId(wire.id);
-      layoutBeforeRouteDragRef.current = useCalculatorStore.getState().layout3d;
+      layoutBeforeRouteDragRef.current = layout3dRef.current;
       liveRouteDragRef.current = initial;
       setLiveRouteDrag(initial);
       onLockControls(true);
       document.body.style.cursor = 'grabbing';
     },
-    [gl, camera, projectCursorWorld, setSelectedWireId, onLockControls]
+    [gl, camera, setSelectedWireId, onLockControls]
   );
-
-  // Always display all physical (+) Red, (-) Dark Gray, and (GND) Neon Green terminal lugs
-  const visiblePorts = allPorts;
 
   return (
     <group>
-      {/* 1. Saved Positive (+) Red, Negative (-) Dark Gray & Ground (GND) Neon Green Wire Runs */}
       {renderedWires.map(({ wire, waypoints }) => {
         const isSelected = selectedWireId === wire.id;
         const isHovered = hoveredWireId === wire.id;
@@ -824,7 +672,6 @@ export function CustomWireSystem({
               : '#94A3B8'
             : baseColor;
 
-        // Compute midpoint of the middle draggable segment for the interactive handle
         const midSegIdx = Math.max(1, Math.floor((waypoints.length - 1) / 2));
         const segA = waypoints[midSegIdx] || waypoints[0];
         const segB = waypoints[Math.min(waypoints.length - 1, midSegIdx + 1)] || segA;
@@ -893,7 +740,6 @@ export function CustomWireSystem({
               }}
             />
 
-            {/* Draggable 3D Wire Organizer Handle on Selected or Hovered Wire */}
             {(isSelected || isHovered) && !isCutMode && midPoint && (
               <mesh
                 position={[midPoint[0], midPoint[1], midPoint[2] + 0.035]}
@@ -924,7 +770,6 @@ export function CustomWireSystem({
         );
       })}
 
-      {/* Animated Current Flow Beads on (+/-) Wires (No particles on Grounding wires) */}
       {wirePulses.length > 0 && (
         <instancedMesh
           key={`custom-pulses-${wirePulses.length}`}
@@ -937,7 +782,6 @@ export function CustomWireSystem({
         </instancedMesh>
       )}
 
-      {/* 2. Live Dragging Wire Preview + Magnetic Snap Indicator */}
       {liveDrag && previewPrimaryWaypoints.length >= 2 && (
         <group>
           <WirePolylineSegments
@@ -976,7 +820,6 @@ export function CustomWireSystem({
             />
           )}
 
-          {/* Magnetic Snap Ring & Floating Status Pill */}
           {liveDrag.snapCandidate && (
             <group position={liveDrag.snapCandidate.port.worldPosition}>
               <mesh>
@@ -1012,8 +855,7 @@ export function CustomWireSystem({
         </group>
       )}
 
-      {/* 3. Physical 3D Positive (+) Red, Negative (-) Dark Gray & Ground (GND) Neon Green Terminal Lugs */}
-      {visiblePorts.map((port) => {
+      {allPorts.map((port) => {
         const key = `${port.nodeId}::${port.portId}`;
         const isPos = port.polarity === 'positive';
         const isGnd = port.polarity === 'ground';
@@ -1050,7 +892,6 @@ export function CustomWireSystem({
               }
             }}
           >
-            {/* Outer Metallic Crimp Collar */}
             <mesh>
               <cylinderGeometry args={[0.068, 0.068, 0.032, 16]} />
               <meshStandardMaterial
@@ -1060,7 +901,6 @@ export function CustomWireSystem({
               />
             </mesh>
 
-            {/* Color-Coded Insulated Terminal Stud: Red (+) / Dark Gray (-) / Neon Green (GND) */}
             <mesh>
               <sphereGeometry args={[0.056, 14, 14]} />
               <meshStandardMaterial
@@ -1072,7 +912,6 @@ export function CustomWireSystem({
               />
             </mesh>
 
-            {/* Larger invisible pointer hit sphere for effortless grabbing */}
             <mesh visible={false}>
               <sphereGeometry args={[isWireMode ? 0.17 : 0.11, 8, 8]} />
               <meshBasicMaterial />
