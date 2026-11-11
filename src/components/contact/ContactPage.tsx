@@ -165,6 +165,16 @@ export function ContactPage() {
 
     setIsSubmitting(true);
 
+    if (typeof fetch === 'function') {
+      void fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      }).catch((err) => {
+        console.warn('[Contact] Serverless route optional fallback:', err);
+      });
+    }
+
     const hiddenLink = document.createElement('a');
     hiddenLink.href = buildMailtoDispatchUrl();
     hiddenLink.style.display = 'none';
