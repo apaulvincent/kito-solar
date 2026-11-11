@@ -1,6 +1,5 @@
-// src/features/financial-roi/components/CashflowTimelineChart.tsx
 import { useState, useRef } from 'react';
-import { Layers, TrendingUp, Sparkles } from 'lucide-react';
+import { Layers, TrendingUp } from 'lucide-react';
 import { useFinancialRoiStore, useFinancialRoiSimulation } from '../store/useFinancialRoiStore';
 import { ExportStrategy, YearlyCashflowPoint } from '../types/financialRoi';
 

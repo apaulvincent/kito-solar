@@ -1,16 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { Cpu, ChevronDown, ChevronUp } from 'lucide-react';
+import { Cpu } from 'lucide-react';
 import { parseNumericValue } from '@/lib/utils';
 import { Autocomplete, HighlightMatch } from '@/components/common/Autocomplete';
 import { SolarInverterRecord } from '@/types/supabase';
 import { isBatteryCapableInverter } from '@/engine/inverterHelpers';
+import { SpecAccordion } from './SpecAccordion';
 
 export function InverterSelector() {
   const inverters = useCalculatorStore((s) => s.inverters);
   const selectedInverter = useCalculatorStore((s) => s.selectedInverter);
   const setInverter = useCalculatorStore((s) => s.setInverter);
-  const [isOpen, setIsOpen] = useState(false);
 
   const brands = useMemo(() => {
     const set = new Set(inverters.map((i) => i.brand));
@@ -108,99 +108,77 @@ export function InverterSelector() {
         </div>
       </div>
 
-      <div className="rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]">
-        <button
-          type="button"
-          onClick={() => setIsOpen((prev) => !prev)}
-          aria-expanded={isOpen}
-          aria-label={`${isOpen ? 'Hide' : 'Show'} ${selectedInverter.model} specifications`}
-          className="w-full px-3.5 py-2.5 flex items-center justify-between text-left hover:bg-slate-50/80 dark:hover:bg-white/[0.04] transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 group"
-        >
-          <div className="flex items-center gap-2 min-w-0">
+      <SpecAccordion
+        modelName={selectedInverter.model}
+        headerContent={
+          <>
             <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400 truncate">
               {selectedInverter.model}
             </span>
             <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 shrink-0">
               Grid: {selectedInverter.grid_connection_form || 'L+N+PE'}
             </span>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[11px] font-mono font-medium text-slate-500 dark:text-slate-400 hidden xs:inline">
-              {isOpen ? 'Hide Specs' : 'View Specs'}
-            </span>
-            <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-white/10 border border-slate-200/80 dark:border-white/10 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
-              {isOpen ? (
-                <ChevronUp className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5" />
-              )}
+          </>
+        }
+      >
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+          <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">Rated AC Power</span>
+            <span className="font-bold text-slate-900 dark:text-white">
+              {(parseNumericValue(selectedInverter.rated_ac_power_w) / 1000).toFixed(1)} kW
             </span>
           </div>
-        </button>
 
-        {isOpen && (
-          <div className="p-3 border-t border-slate-100 dark:border-white/5 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
-              <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">Rated AC Power</span>
-                <span className="font-bold text-slate-900 dark:text-white">
-                  {(parseNumericValue(selectedInverter.rated_ac_power_w) / 1000).toFixed(1)} kW
-                </span>
-              </div>
-
-              <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">Max AC Current</span>
-                <span className="font-bold text-slate-900 dark:text-white">
-                  {selectedInverter.max_ac_current_a} A
-                </span>
-              </div>
-
-              <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">Max PV Input</span>
-                <span className="font-bold text-slate-900 dark:text-white">
-                  {(selectedInverter.max_pv_input_power_w / 1000).toFixed(1)} kW
-                </span>
-              </div>
-
-              <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">Max PV Voltage</span>
-                <span className="font-bold text-slate-900 dark:text-white">
-                  {selectedInverter.max_pv_input_voltage_v} V
-                </span>
-              </div>
-
-              <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">MPPT Range</span>
-                <span className="font-bold text-slate-900 dark:text-white">
-                  {selectedInverter.mppt_voltage_range} V
-                </span>
-              </div>
-
-              <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">Startup Voltage</span>
-                <span className="font-bold text-slate-900 dark:text-white">
-                  {selectedInverter.startup_voltage_v} V
-                </span>
-              </div>
-
-              <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">MPPT Config</span>
-                <span className="font-bold text-slate-900 dark:text-white">
-                  {selectedInverter.mppt_tracker_string_config || '1 / 1'}
-                </span>
-              </div>
-
-              <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">Battery Support</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                  {selectedInverter.battery_voltage_range ? `${selectedInverter.battery_voltage_range} V` : 'None'}
-                </span>
-              </div>
-            </div>
+          <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">Max AC Current</span>
+            <span className="font-bold text-slate-900 dark:text-white">
+              {selectedInverter.max_ac_current_a} A
+            </span>
           </div>
-        )}
-      </div>
+
+          <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">Max PV Input</span>
+            <span className="font-bold text-slate-900 dark:text-white">
+              {(selectedInverter.max_pv_input_power_w / 1000).toFixed(1)} kW
+            </span>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">Max PV Voltage</span>
+            <span className="font-bold text-slate-900 dark:text-white">
+              {selectedInverter.max_pv_input_voltage_v} V
+            </span>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">MPPT Range</span>
+            <span className="font-bold text-slate-900 dark:text-white">
+              {selectedInverter.mppt_voltage_range} V
+            </span>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">Startup Voltage</span>
+            <span className="font-bold text-slate-900 dark:text-white">
+              {selectedInverter.startup_voltage_v} V
+            </span>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">MPPT Config</span>
+            <span className="font-bold text-slate-900 dark:text-white">
+              {selectedInverter.mppt_tracker_string_config || '1 / 1'}
+            </span>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">Battery Support</span>
+            <span className="font-bold text-emerald-600 dark:text-emerald-400">
+              {selectedInverter.battery_voltage_range ? `${selectedInverter.battery_voltage_range} V` : 'None'}
+            </span>
+          </div>
+        </div>
+      </SpecAccordion>
     </div>
   );
 }

@@ -1,7 +1,6 @@
-// src/components/results/CalculationWorkbench.tsx
 import { useState } from 'react';
 import { useCalculatorStore, WorkbenchTabKey } from '@/store/useCalculatorStore';
-import { Zap, Sun, Hammer, AlertTriangle, Layers, CheckCircle2, LayoutPanelTop, Rows3, ListChevronsDownUp, ListChevronsUpDown } from 'lucide-react';
+import { Zap, Sun, Hammer, AlertTriangle, CheckCircle2, LayoutPanelTop, Rows3, ListChevronsDownUp, ListChevronsUpDown } from 'lucide-react';
 import { DcResultsCard } from './DcResultsCard';
 import { AcResultsCard } from './AcResultsCard';
 import { BatteryResultsCard } from './BatteryResultsCard';

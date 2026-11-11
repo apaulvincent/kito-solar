@@ -1,11 +1,8 @@
-// src/components/account/AccountPage.tsx
 import {
   Mail,
   Shield,
   Calendar,
   LogOut,
-  Lock,
-  User as UserIcon,
   Fingerprint,
   Clock,
   ArrowLeft,
@@ -13,6 +10,8 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { formatDisplayDate } from '@/lib/timeFormat';
+import { LoginRequiredPrompt } from '@/components/common/LoginRequiredPrompt';
 
 export function AccountPage() {
   const user = useAuthStore((s) => s.user);
@@ -22,36 +21,12 @@ export function AccountPage() {
   if (!user) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 sm:p-6 bg-slate-50 dark:bg-[#090D16]">
-        <div className="max-w-md w-full p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl text-center space-y-6">
-          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 mx-auto flex items-center justify-center">
-            <Lock className="w-8 h-8" />
-          </div>
-
-          <div className="space-y-2">
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              Sign in to view your account
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Access your profile details, verified authentication status, and personal preferences.
-            </p>
-          </div>
-
-          <div className="space-y-3 pt-2">
-            <button
-              type="button"
-              onClick={() => setActiveView('login')}
-              className="w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-md transition-all active:scale-[0.99]"
-            >
-              Log In to Account
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveView('register')}
-              className="w-full py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-bold text-sm transition-all"
-            >
-              Create New Account
-            </button>
-          </div>
+        <div className="max-w-md w-full p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl">
+          <LoginRequiredPrompt
+            title="Sign in to view your account"
+            description="Access your profile details, verified authentication status, and personal preferences."
+            registerLabel="Create New Account"
+          />
         </div>
       </div>
     );
@@ -59,21 +34,16 @@ export function AccountPage() {
 
   const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Solar Engineer';
   const provider = user.app_metadata?.provider || 'email';
-  const createdAt = user.created_at
-    ? new Date(user.created_at).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
-    : 'Recent Member';
-
-  const lastSignInAt = user.last_sign_in_at
-    ? new Date(user.last_sign_in_at).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
-    : 'Current Session';
+  const createdAt = formatDisplayDate(
+    user.created_at,
+    { year: 'numeric', month: 'long', day: 'numeric' },
+    'Recent Member'
+  );
+  const lastSignInAt = formatDisplayDate(
+    user.last_sign_in_at,
+    { year: 'numeric', month: 'short', day: 'numeric' },
+    'Current Session'
+  );
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50 dark:bg-[#090D16] py-10 px-4 sm:px-6 lg:px-8">

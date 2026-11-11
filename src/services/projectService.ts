@@ -145,8 +145,6 @@ export const projectService = {
       updated_at: now,
     };
 
-    // Attempt cloud insert
-    let savedToCloud = false;
     if (supabase && isSupabaseConfigured) {
       try {
         const { data, error } = await supabase
@@ -162,11 +160,9 @@ export const projectService = {
             : { ...baseCloudPayload, custom_prices: cp };
           const retry = await supabase.from('user_projects').insert([retryPayload]).select().single();
           if (!retry.error && retry.data) {
-            savedToCloud = true;
             newProject.id = retry.data.id;
           }
         } else if (!error && data) {
-          savedToCloud = true;
           newProject.id = data.id;
         }
       } catch (err) {

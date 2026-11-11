@@ -1,68 +1,56 @@
-// src/components/results/__tests__/MountingBomCard.test.tsx
 import { describe, it, expect } from 'vitest';
-import * as fs from 'fs';
-import * as path from 'path';
-import { createElement } from 'react';
+import { act, createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MountingBomCard } from '../MountingBomCard';
+import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { mountIntoDom } from '@/test/domTestUtils';
 
-describe('MountingBomCard Component & Accessibility Remediation', () => {
-  const componentPath = path.resolve(process.cwd(), 'src/components/results/MountingBomCard.tsx');
-  const sourceCode = fs.readFileSync(componentPath, 'utf-8');
-
-  it('renders without throwing and contains essential BOM sections', () => {
+describe('MountingBomCard Component & Accessibility Suite', () => {
+  it('renders essential BOM sections without NaN or undefined', () => {
     const markup = renderToStaticMarkup(createElement(MountingBomCard));
-    expect(markup).toBeTruthy();
     expect(markup).toContain('BILL OF MATERIALS (BOM)');
     expect(markup).toContain('Roof Mounting Hardware');
     expect(markup).not.toContain('NaN');
     expect(markup).not.toContain('undefined');
   });
 
-  it('includes useEffect keyboard listener for Escape key dismissal', () => {
-    expect(sourceCode).toContain("e.key === 'Escape'");
-    expect(sourceCode).toContain("window.addEventListener('keydown'");
-    expect(sourceCode).toContain("window.removeEventListener('keydown'");
-    expect(sourceCode).toContain('setInspectedItem(null)');
+  it('opens CAD inspection dialog with accessible ARIA tags, contrast classes, and Escape dismissal', () => {
+    const mounted = mountIntoDom(createElement(MountingBomCard));
+    try {
+      const inspectBtn = mounted.container.querySelector<HTMLButtonElement>(
+        'button[aria-label*="CAD specifications"]'
+      );
+      expect(inspectBtn).not.toBeNull();
+
+      act(() => {
+        inspectBtn?.click();
+      });
+
+      const dialog = document.body.querySelector('[role="dialog"]');
+      expect(dialog).not.toBeNull();
+      expect(dialog?.getAttribute('aria-modal')).toBe('true');
+      expect(dialog?.getAttribute('aria-labelledby')).toBe('cad-dialog-title');
+      expect(dialog?.querySelector('#cad-dialog-title')).not.toBeNull();
+      expect(dialog?.innerHTML).toContain('<svg');
+      expect(dialog?.textContent).toContain('Measured Millimeter Dimensions');
+      expect(dialog?.textContent).toContain('Engineering Specifications & Standards');
+
+      const lengthLabel = Array.from(dialog?.querySelectorAll('span') || []).find(
+        (el) => el.textContent?.trim() === 'Length'
+      );
+      expect(lengthLabel?.className).toContain('text-slate-600');
+      expect(lengthLabel?.className).toContain('dark:text-slate-400');
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      });
+      expect(document.body.querySelector('[role="dialog"]')).toBeNull();
+    } finally {
+      mounted.unmount();
+    }
   });
 
-  it('implements backdrop click dismissal with stopPropagation on modal container', () => {
-    expect(sourceCode).toContain('onClick={() => setInspectedItem(null)}');
-    expect(sourceCode).toContain('onClick={(e) => e.stopPropagation()}');
-  });
-
-  it('includes proper ARIA accessibility attributes on the dialog and header title', () => {
-    expect(sourceCode).toContain('role="dialog"');
-    expect(sourceCode).toContain('aria-modal="true"');
-    expect(sourceCode).toContain('aria-labelledby="cad-dialog-title"');
-    expect(sourceCode).toContain('id="cad-dialog-title"');
-  });
-
-  it('complies with WCAG AA contrast (>= 4.5:1) by replacing low-contrast text-slate-400 captions', () => {
-    // Verified that dimension captions use text-slate-600 dark:text-slate-400
-    expect(sourceCode).toContain('text-[10px] font-mono text-slate-600 dark:text-slate-400 uppercase block">Length');
-    expect(sourceCode).toContain('text-[10px] font-mono text-slate-600 dark:text-slate-400 uppercase block">Width / Flange');
-    expect(sourceCode).toContain('text-[10px] font-mono text-slate-600 dark:text-slate-400 uppercase block">Height / Depth');
-    expect(sourceCode).toContain('text-[10px] font-mono text-slate-600 dark:text-slate-400 uppercase block">Wall Thickness');
-
-    // Verified that spec matrix labels use text-slate-600 dark:text-slate-400
-    expect(sourceCode).toContain('text-[10px] font-mono text-slate-600 dark:text-slate-400 block">Dimensions &amp; Profile');
-    expect(sourceCode).toContain('text-[10px] font-mono text-slate-600 dark:text-slate-400 block">Alloy &amp; Composition');
-    expect(sourceCode).toContain('text-[10px] font-mono text-slate-600 dark:text-slate-400 block">Fastener Hardware');
-    expect(sourceCode).toContain('text-[10px] font-mono text-slate-600 dark:text-slate-400 block">Tightening Torque');
-    expect(sourceCode).toContain('text-[10px] font-mono text-slate-600 dark:text-slate-400 block">Wind / Snow Load Capacity');
-    expect(sourceCode).toContain('text-[10px] font-mono text-slate-600 dark:text-slate-400 block">Corrosion Protection');
-    expect(sourceCode).toContain('text-[10px] font-mono text-slate-600 dark:text-slate-400">Certified Standards:');
-
-    // Ensure no bare text-slate-400 classes exist on text elements
-    const bareSlate400Matches = sourceCode.match(/class="[^"]*\btext-slate-400\b(?!\s*dark:)[^"]*"/g) || [];
-    expect(bareSlate400Matches).toEqual([]);
-  });
-
-  it('renders accessory name, quantity, and info basis in minimum detail mode, hiding dimensions, torque, spec box, and footer', async () => {
-    const { useCalculatorStore } = await import('@/store/useCalculatorStore');
-    
-    // Set to min mode
+  it('hides detailed specs in min mode and reveals them in detailed mode', () => {
     useCalculatorStore.getState().setStep2DetailMode('min');
     const minMarkup = renderToStaticMarkup(createElement(MountingBomCard));
 
@@ -72,7 +60,6 @@ describe('MountingBomCard Component & Accessibility Remediation', () => {
     expect(minMarkup).not.toContain('<span>CAD</span>');
     expect(minMarkup).not.toContain('Torque:');
 
-    // Set to detailed mode
     useCalculatorStore.getState().setStep2DetailMode('detailed');
     const detailedMarkup = renderToStaticMarkup(createElement(MountingBomCard));
 
@@ -81,7 +68,6 @@ describe('MountingBomCard Component & Accessibility Remediation', () => {
     expect(detailedMarkup).toContain('<span>CAD</span>');
     expect(detailedMarkup).toContain('Torque:');
 
-    // Reset back to default min mode
     useCalculatorStore.getState().setStep2DetailMode('min');
   });
 });

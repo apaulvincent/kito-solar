@@ -1,8 +1,8 @@
-// src/components/projects/ProjectsPage.tsx
-import { ArrowLeft, Box, Folder, Lock, Sparkles, LogIn, UserPlus } from 'lucide-react';
+import { ArrowLeft, Box, Folder, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { SavedProjectsList } from '@/components/account/SavedProjectsList';
+import { LoginRequiredPrompt } from '@/components/common/LoginRequiredPrompt';
 
 export function ProjectsPage() {
   const user = useAuthStore((s) => s.user);
@@ -11,60 +11,12 @@ export function ProjectsPage() {
   if (!user) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 sm:p-6 bg-slate-50 dark:bg-[#090D16]">
-        <div className="relative w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 sm:p-7 space-y-6 animate-in zoom-in-95 duration-200">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center shadow-xs flex-shrink-0">
-                <Lock className="w-6 h-6" />
-              </div>
-              <div>
-                <span className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 font-bold block">
-                  LOGIN REQUIRED
-                </span>
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
-                  Sign in to view your projects
-                </h3>
-              </div>
-            </div>
-          </div>
-
-          {/* Description */}
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            Access your saved solar configurations, sizing details, and electrical calculations.
-          </p>
-
-          {/* Actions (Consistent button size and font) */}
-          <div className="space-y-3 pt-1">
-            <button
-              type="button"
-              onClick={() => setActiveView('login')}
-              className="w-full py-3 px-4 rounded-xl font-bold text-sm text-white bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-95"
-            >
-              <LogIn className="w-4 h-4 text-amber-400" />
-              <span>Log In to Account</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveView('register')}
-              className="w-full py-3 px-4 rounded-xl font-bold text-sm text-slate-950 bg-amber-500 hover:bg-amber-400 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer active:scale-95"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Register New Account</span>
-            </button>
-          </div>
-
-          {/* Guest Link */}
-          <div className="text-center pt-1">
-            <button
-              type="button"
-              onClick={() => setActiveView('tool')}
-              className="text-xs font-semibold text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer"
-            >
-              Continue to Solar Tool as guest &rarr;
-            </button>
-          </div>
+        <div className="relative w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 sm:p-7 animate-in zoom-in-95 duration-200">
+          <LoginRequiredPrompt
+            title="Sign in to view your projects"
+            description="Access your saved solar configurations, sizing details, and electrical calculations."
+            guestActionLabel="Continue to Solar Tool as guest →"
+          />
         </div>
       </div>
     );

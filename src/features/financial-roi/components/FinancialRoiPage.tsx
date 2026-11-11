@@ -1,17 +1,13 @@
-// src/features/financial-roi/components/FinancialRoiPage.tsx
 import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   RotateCcw,
   FileDown,
   TrendingUp,
-  Lock,
-  LogIn,
-  UserPlus,
-  ArrowUpRight,
 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { LoginRequiredPrompt } from '@/components/common/LoginRequiredPrompt';
 import { useFinancialRoiStore, useFinancialRoiSimulation } from '../store/useFinancialRoiStore';
 import { QuickBillSliderBanner } from './QuickBillSliderBanner';
 import { ExportModeComparisonCards } from './ExportModeComparisonCards';
@@ -32,7 +28,6 @@ export const FinancialRoiPage: React.FC = () => {
 
   const [isExportingPdf, setIsExportingPdf] = useState(false);
 
-  // Authentication Lock: Page is strictly available to logged-in users
   useEffect(() => {
     if (!isAuthLoading && !user) {
       setActiveView('login');
@@ -50,49 +45,13 @@ export const FinancialRoiPage: React.FC = () => {
   if (!user) {
     return (
       <div className="min-h-[calc(100dvh-4rem)] flex items-center justify-center p-4 sm:p-6 bg-slate-50 dark:bg-[#050505]">
-        <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#0B0F17] border border-slate-200/80 dark:border-white/10 p-7 space-y-6 shadow-2xl">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-500 flex items-center justify-center shrink-0">
-                <Lock className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-amber-600 dark:text-amber-400 font-bold block">
-                  LOGIN REQUIRED
-                </span>
-                <h3 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
-                  Sign in to access Financial ROI Studio
-                </h3>
-              </div>
-            </div>
-
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-              Simulate 10-year utility tariff inflation, ERC net metering generation credits, and LiFePO4 battery payback curves with your engineering account.
-            </p>
-
-            <div className="space-y-3 pt-1">
-              <button
-                type="button"
-                onClick={() => setActiveView('login')}
-                className="group w-full rounded-full pl-5 pr-1.5 py-1.5 font-bold text-xs text-white bg-slate-900 dark:bg-white dark:text-slate-950 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex items-center justify-between cursor-pointer active:scale-[0.98]"
-              >
-                <span>Log In to Account</span>
-                <span className="w-7 h-7 rounded-full bg-white/15 dark:bg-slate-950/10 flex items-center justify-center">
-                  <LogIn className="w-3.5 h-3.5" />
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveView('register')}
-                className="group w-full rounded-full pl-5 pr-1.5 py-1.5 font-bold text-xs text-slate-950 bg-amber-500 hover:bg-amber-400 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex items-center justify-between cursor-pointer active:scale-[0.98]"
-              >
-                <span>Register Free Account</span>
-                <span className="w-7 h-7 rounded-full bg-slate-950/15 flex items-center justify-center">
-                  <UserPlus className="w-3.5 h-3.5" />
-                </span>
-              </button>
-            </div>
-          </div>
+        <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#0B0F17] border border-slate-200/80 dark:border-white/10 p-7 shadow-2xl">
+          <LoginRequiredPrompt
+            title="Sign in to access Financial ROI Studio"
+            description="Simulate 10-year utility tariff inflation, ERC net metering generation credits, and LiFePO4 battery payback curves with your engineering account."
+            registerLabel="Register Free Account"
+          />
+        </div>
       </div>
     );
   }

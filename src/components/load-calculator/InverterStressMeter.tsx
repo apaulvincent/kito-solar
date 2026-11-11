@@ -1,7 +1,6 @@
-// src/components/load-calculator/InverterStressMeter.tsx
 import React from 'react';
 import { SizingResult } from '@/lib/applianceSizingEngine';
-import { Gauge, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Gauge, AlertTriangle } from 'lucide-react';
 
 interface Props {
   result: SizingResult;

@@ -1,4 +1,3 @@
-// src/components/load-calculator/ActiveLoadList.tsx
 import React from 'react';
 import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
 import { ApplianceIcon } from './ApplianceIcon';
@@ -10,7 +9,6 @@ import {
   Clock,
   Sun,
   Moon,
-  Info,
   Sparkles,
   Home,
   Building2,

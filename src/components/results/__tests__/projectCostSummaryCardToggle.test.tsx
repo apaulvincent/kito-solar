@@ -1,54 +1,34 @@
-// src/components/results/__tests__/projectCostSummaryCardToggle.test.tsx
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
-import { createElement } from 'react';
+import { act, createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ProjectCostSummaryCard } from '../ProjectCostSummaryCard';
+import { installMockLocalStorage } from '@/test/mockLocalStorage';
+import { mountIntoDom } from '@/test/domTestUtils';
 
 describe('ProjectCostSummaryCard ROI & Subtotals Toggle Suite', () => {
-  const storeMap: Record<string, string> = {};
+  let storageHandle: ReturnType<typeof installMockLocalStorage>;
 
   beforeAll(() => {
-    const mockStorage = {
-      getItem: (key: string) => storeMap[key] ?? null,
-      setItem: (key: string, value: string) => {
-        storeMap[key] = String(value);
-      },
-      removeItem: (key: string) => {
-        delete storeMap[key];
-      },
-      clear: () => {
-        for (const k of Object.keys(storeMap)) {
-          delete storeMap[k];
-        }
-      },
-      length: 0,
-      key: () => null,
-    };
-
-    (globalThis as any).localStorage = mockStorage;
-    (globalThis as any).window = globalThis;
+    storageHandle = installMockLocalStorage();
   });
 
   afterAll(() => {
-    delete (globalThis as any).localStorage;
-    delete (globalThis as any).window;
+    storageHandle.restore();
   });
 
   beforeEach(() => {
-    localStorage.clear();
+    storageHandle.reset();
   });
 
   it('keeps Estimated System Total Investment permanently visible while hiding ROI and Subtotals by default', () => {
     const markup = renderToStaticMarkup(createElement(ProjectCostSummaryCard));
 
-    // Header and high-level investment total MUST remain visible
     expect(markup).toContain('FINANCIALS &amp; BILL OF MATERIALS (BOM)');
     expect(markup).toContain('Estimated Project Investment');
     expect(markup).toContain('ESTIMATED SYSTEM TOTAL INVESTMENT');
     expect(markup).toContain('View Pricing');
     expect(markup).toContain('>ROI<');
 
-    // Financial ROI and Discipline Subtotals MUST be hidden by default
     expect(markup).not.toContain('FINANCIAL SAVINGS &amp; ROI ANALYSIS');
     expect(markup).not.toContain('Major Equipment');
     expect(markup).not.toContain('Roof Racking Hardware');
@@ -63,19 +43,29 @@ describe('ProjectCostSummaryCard ROI & Subtotals Toggle Suite', () => {
     expect(markup).toContain('>ROI<');
     expect(markup).toContain('View Pricing');
 
-    // Expanded details are revealed
     expect(markup).toContain('FINANCIAL SAVINGS &amp; ROI ANALYSIS');
     expect(markup).toContain('Major Equipment');
     expect(markup).toContain('Roof Racking Hardware');
     expect(markup).toContain('Switchgear &amp; Protection');
   });
 
-  it('maintains proper accessibility aria-expanded attribute on toggle element', () => {
-    const collapsedMarkup = renderToStaticMarkup(createElement(ProjectCostSummaryCard));
-    expect(collapsedMarkup).toContain('aria-expanded="false"');
+  it('toggles ROI expansion on click and persists state to localStorage', () => {
+    const mounted = mountIntoDom(createElement(ProjectCostSummaryCard));
+    try {
+      const toggleBtn = mounted.container.querySelector<HTMLButtonElement>('button[aria-expanded]');
+      expect(toggleBtn).not.toBeNull();
+      expect(toggleBtn?.getAttribute('aria-expanded')).toBe('false');
+      expect(mounted.container.textContent).not.toContain('FINANCIAL SAVINGS & ROI ANALYSIS');
 
-    localStorage.setItem('kito_show_financial_roi_details', 'true');
-    const expandedMarkup = renderToStaticMarkup(createElement(ProjectCostSummaryCard));
-    expect(expandedMarkup).toContain('aria-expanded="true"');
+      act(() => {
+        toggleBtn?.click();
+      });
+
+      expect(toggleBtn?.getAttribute('aria-expanded')).toBe('true');
+      expect(mounted.container.textContent).toContain('FINANCIAL SAVINGS & ROI ANALYSIS');
+      expect(localStorage.getItem('kito_show_financial_roi_details')).toBe('true');
+    } finally {
+      mounted.unmount();
+    }
   });
 });

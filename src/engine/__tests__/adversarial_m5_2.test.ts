@@ -1,8 +1,10 @@
-// src/engine/__tests__/adversarial_m5_2.test.ts
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { calculateMounting } from '../calculateMounting';
+import { CadDimensionDrawing } from '@/components/results/MountingCadDiagram';
 
 describe('Adversarial Verification — Milestone 5 Challenger Suite', () => {
   describe('1. calculateMounting Contract & Stress Testing', () => {
@@ -157,49 +159,22 @@ describe('Adversarial Verification — Milestone 5 Challenger Suite', () => {
     });
   });
 
-  describe('3. Dimensional Inspector Drawer Functionality in MountingBomCard.tsx', () => {
-    const componentPath = path.resolve(
-      process.cwd(),
-      'src/components/results/MountingBomCard.tsx'
-    );
-    const source = fs.readFileSync(componentPath, 'utf8');
+  describe('3. Dimensional CAD Vector Blueprints Coverage', () => {
+    const keys = [
+      { key: 'roof_rail', expectedSpec: '28.0 mm' },
+      { key: 'rail_splice', expectedSpec: '150.0 mm' },
+      { key: 'l_foot', expectedSpec: '84.0 mm' },
+      { key: 'mid_clamp', expectedSpec: '40.0 mm Clamping Span' },
+      { key: 'end_clamp', expectedSpec: '40.0 mm Width' },
+      { key: 'grounding_lug', expectedSpec: '32.0 mm Lug Body' },
+    ];
 
-    it('contains state management for inspected item drawer', () => {
-      expect(source).toContain('const [inspectedItem, setInspectedItem] = useState<MountingItem | null>(null);');
-      expect(source).toContain('inspectedItem && activeSpecs &&');
-    });
-
-    it('supports modal dismissal via Escape key and backdrop click', () => {
-      expect(source).toContain("e.key === 'Escape'");
-      expect(source).toContain('setInspectedItem(null)');
-      expect(source).toContain('onClick={() => setInspectedItem(null)}');
-      expect(source).toContain('onClick={(e) => e.stopPropagation()}');
-    });
-
-    it('renders accessible dialog container with ARIA tags', () => {
-      expect(source).toContain('role="dialog"');
-      expect(source).toContain('aria-modal="true"');
-      expect(source).toContain('aria-labelledby="cad-dialog-title"');
-      expect(source).toContain('id="cad-dialog-title"');
-    });
-
-    it('has CadDimensionDrawing CAD vector blueprints for all 6 mounting accessories', () => {
-      const keys = ['roof_rail', 'rail_splice', 'l_foot', 'mid_clamp', 'end_clamp', 'grounding_lug'];
-      keys.forEach((key) => {
-        expect(source).toContain(`case '${key}':`);
+    it('renders distinct CAD vector SVG blueprints with millimeter dimensions for all 6 mounting accessories', () => {
+      keys.forEach(({ key, expectedSpec }) => {
+        const html = renderToStaticMarkup(createElement(CadDimensionDrawing, { itemKey: key }));
+        expect(html).toContain('<svg');
+        expect(html).toContain(expectedSpec);
       });
-    });
-
-    it('displays millimeter metrics grid and engineering specification matrix', () => {
-      expect(source).toContain('inspectedItem.dimensions.lengthMm');
-      expect(source).toContain('inspectedItem.dimensions.widthMm');
-      expect(source).toContain('inspectedItem.dimensions.heightMm');
-      expect(source).toContain('inspectedItem.dimensions.thicknessMm');
-      expect(source).toContain('inspectedItem.dimensions?.fastenerSpec');
-      expect(source).toContain('inspectedItem.dimensions?.torqueNm');
-      expect(source).toContain('inspectedItem.material');
-      expect(source).toContain('inspectedItem.finish');
-      expect(source).toContain('inspectedItem.standards');
     });
   });
 });

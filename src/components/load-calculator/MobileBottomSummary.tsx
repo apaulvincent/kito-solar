@@ -1,13 +1,20 @@
-// src/components/load-calculator/MobileBottomSummary.tsx
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
+import { useDismissable } from '@/hooks/useDismissable';
 import { SizingSummaryDashboard } from './SizingSummaryDashboard';
-import { ChevronUp, X, Zap, Box, Sun } from 'lucide-react';
+import { ChevronUp, X } from 'lucide-react';
 
 export const MobileBottomSummary: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const getSizingResult = useApplianceLoadStore((s) => s.getSizingResult);
   const result = getSizingResult();
+
+  const handleClose = useCallback(() => setIsOpen(false), []);
+  useDismissable({
+    isOpen,
+    onClose: handleClose,
+    closeOnOutsideClick: false,
+  });
 
   return (
     <>
@@ -52,10 +59,15 @@ export const MobileBottomSummary: React.FC = () => {
         </div>
       </div>
 
-      {/* Slide-up Drawer Modal */}
       {isOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-h-[85vh] overflow-y-auto rounded-t-[2rem] bg-slate-50 dark:bg-[#0c1220] p-4 border-t border-slate-200 dark:border-slate-800 shadow-2xl">
+        <div
+          onClick={handleClose}
+          className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-h-[85vh] overflow-y-auto rounded-t-[2rem] bg-slate-50 dark:bg-[#0c1220] p-4 border-t border-slate-200 dark:border-slate-800 shadow-2xl"
+          >
             <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-200 dark:border-slate-800">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                 System Sizing & Hardware Summary

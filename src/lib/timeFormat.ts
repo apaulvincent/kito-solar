@@ -19,3 +19,14 @@ export function formatHourDecimal12h(hourDecimal: number): string {
   const { time12, period } = formatHourParts12h(hourDecimal);
   return `${time12} ${period}`;
 }
+
+export function formatDisplayDate(
+  isoString: string | null | undefined,
+  options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' },
+  fallback = 'Recent'
+): string {
+  if (!isoString) return fallback;
+  const parsed = new Date(isoString);
+  if (Number.isNaN(parsed.getTime())) return fallback;
+  return parsed.toLocaleDateString('en-US', options);
+}

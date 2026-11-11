@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import {
   X,
   Bookmark,
@@ -8,7 +7,6 @@ import {
   FolderPlus,
   ArrowRight,
   RefreshCw,
-  Sparkles,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
@@ -16,6 +14,7 @@ import { projectService } from '@/services/projectService';
 import { CreateProjectInput, MAX_PROJECTS_PER_USER, SavedProject } from '@/types/project';
 import { sanitizeProjectTitle, sanitizeProjectNotes } from '@/lib/sanitization';
 import { toProjectSystemType } from '@/lib/systemType';
+import { Modal } from './Modal';
 
 interface SaveProjectModalProps {
   isOpen: boolean;
@@ -46,14 +45,12 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
   const [existingProjectsCount, setExistingProjectsCount] = useState<number>(0);
   const [saveMode, setSaveMode] = useState<'update' | 'new'>('new');
 
-  // Load project count when opened
   useEffect(() => {
     if (isOpen && user) {
       setError(null);
       setSavedProject(null);
       setIsSubmitting(false);
 
-      // Default name suggestion
       const kwp = calculationResult.summary.totalArrayPowerKw;
       const inv = calculationResult.summary.inverterModel;
       const defaultName = activeProjectName || `${kwp} kWp Solar Setup (${inv})`;
@@ -66,19 +63,6 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
       });
     }
   }, [isOpen, user, calculationResult, activeProjectId, activeProjectName]);
-
-  // Escape key handler
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -160,18 +144,13 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
     setActiveView('projects');
   };
 
-  const modalContent = (
-    <div
-      onClick={onClose}
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-150"
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      labelledBy="save-project-title"
+      dialogClassName="relative w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="save-project-title"
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
-      >
         {/* Modal Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50">
           <div className="flex items-center gap-3">
@@ -439,13 +418,6 @@ export function SaveProjectModal({ isOpen, onClose, onSaved }: SaveProjectModalP
             </form>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
-
-  if (typeof document !== 'undefined' && document.body) {
-    return createPortal(modalContent, document.body);
-  }
-
-  return modalContent;
 }

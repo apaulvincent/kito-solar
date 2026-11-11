@@ -1,7 +1,6 @@
-// src/components/ai/SolarCopilotButton.tsx
 import React from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { Sparkles, SunMedium } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 export const SolarCopilotButton: React.FC = () => {
   const isCopilotOpen = useCalculatorStore((state) => state.isCopilotOpen);

@@ -1,4 +1,3 @@
-// src/components/ai/SetupProposalCard.tsx
 import React, { useState } from 'react';
 import { ProjectSizingResult } from '@/types/solar-ai';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
@@ -10,7 +9,6 @@ import {
   SunMedium,
   Layers,
   BatteryCharging,
-  Maximize2,
   Sparkles,
 } from 'lucide-react';
 import { formatPeso } from '@/lib/utils';

@@ -1,8 +1,8 @@
-// src/components/load-calculator/CustomApplianceModal.tsx
 import React, { useState } from 'react';
 import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
-import { ApplianceCategory, LoadType } from '@/lib/applianceSizingEngine';
-import { X, Plus, Zap, AlertCircle, Lightbulb, AirVent, Gauge } from 'lucide-react';
+import { LoadType } from '@/lib/applianceSizingEngine';
+import { Modal } from '@/components/common/Modal';
+import { X, Plus, Zap, Lightbulb, AirVent, Gauge } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -13,17 +13,13 @@ export const CustomApplianceModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const addItem = useApplianceLoadStore((s) => s.addItem);
 
   const [name, setName] = useState('');
-  const [category, setCategory] = useState<ApplianceCategory>('custom');
   const [loadType, setLoadType] = useState<LoadType>('resistive');
   const [runningWatts, setRunningWatts] = useState<number>(300);
   const [surgeMultiplier, setSurgeMultiplier] = useState<number>(1.0);
   const [quantity, setQuantity] = useState<number>(1);
   const [hoursPerDay, setHoursPerDay] = useState<number>(4);
-  const [dutyCycle, setDutyCycle] = useState<number>(1.0);
   const [daytimeRatio, setDaytimeRatio] = useState<number>(0.5);
   const [isCriticalBackup, setIsCriticalBackup] = useState<boolean>(false);
-
-  if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,12 +27,12 @@ export const CustomApplianceModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
     addItem({
       name: name.trim(),
-      category,
+      category: 'custom',
       loadType,
       quantity,
       runningWatts,
       surgeMultiplier,
-      dutyCycle,
+      dutyCycle: 1.0,
       hoursPerDay,
       daytimeRatio,
       isCriticalBackup,
@@ -54,18 +50,22 @@ export const CustomApplianceModal: React.FC<Props> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-lg rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0c1220] p-6 shadow-2xl">
-          {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                <Plus className="w-4 h-4" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Add Custom Appliance
-              </h3>
-            </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      labelledBy="custom-appliance-modal-title"
+      backdropClassName="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+      dialogClassName="w-full max-w-lg rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0c1220] p-6 shadow-2xl"
+    >
+      <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <Plus className="w-4 h-4" />
+          </div>
+          <h3 id="custom-appliance-modal-title" className="text-base font-bold text-slate-900 dark:text-white">
+            Add Custom Appliance
+          </h3>
+        </div>
             <button
               type="button"
               onClick={onClose}
@@ -257,7 +257,6 @@ export const CustomApplianceModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </button>
             </div>
           </form>
-        </div>
-    </div>
+    </Modal>
   );
 };

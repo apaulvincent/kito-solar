@@ -1,4 +1,3 @@
-// src/components/results/DcResultsCard.tsx
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { Zap, Shield, Cable, ArrowRight, Check } from 'lucide-react';
 import { DiagramNodeKey } from '@/types/diagram';

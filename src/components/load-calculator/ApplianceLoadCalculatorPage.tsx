@@ -1,4 +1,3 @@
-// src/components/load-calculator/ApplianceLoadCalculatorPage.tsx
 import React from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { SystemGoalSelector } from './SystemGoalSelector';
@@ -8,7 +7,7 @@ import { ActiveLoadList } from './ActiveLoadList';
 import { SizingSummaryDashboard } from './SizingSummaryDashboard';
 import { MobileBottomSummary } from './MobileBottomSummary';
 import { EngineeringDisclaimer } from '@/components/common/EngineeringDisclaimer';
-import { ArrowLeft, Sparkles, Calculator, Zap, Shield, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Sparkles, Calculator } from 'lucide-react';
 
 export const ApplianceLoadCalculatorPage: React.FC = () => {
   const setActiveView = useCalculatorStore((s) => s.setActiveView);

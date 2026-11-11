@@ -1,4 +1,3 @@
-// src/components/contact/ContactPage.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Mail,
@@ -22,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { Autocomplete } from '@/components/common/Autocomplete';
+import { useTimedFlag } from '@/hooks/useTimedFlag';
 
 type InquiryCategory = 'sizing' | 'quotes' | 'feedback' | 'general';
 
@@ -71,8 +71,7 @@ const SYSTEM_TOPICS = [
   'General Inquiry / Other',
 ];
 
-// Anti-scrape recipient: dynamically assembled from character codes at runtime.
-// Never appears as a plain text string literal in public GitHub code or minified client bundles.
+// Dynamically assembled at runtime to avoid exposing a plaintext address literal in client bundles.
 function getSecureTargetRecipient(): string {
   const bytes = [107, 105, 116, 111, 100, 97, 100, 100, 117, 109, 100, 117, 109, 64, 103, 109, 97, 105, 108, 46, 99, 111, 109];
   return String.fromCharCode(...bytes);
@@ -96,13 +95,22 @@ export function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'bot_detected' | 'error'>('idle');
 
-  // Scraper Obfuscation: Public support email dynamically reconstructed on client
   const [emailRevealed, setEmailRevealed] = useState<boolean>(false);
-  const [hasCopiedEmail, setHasCopiedEmail] = useState<boolean>(false);
+  const [hasCopiedEmail, triggerCopiedEmail] = useTimedFlag(2000);
   const formRef = useRef<HTMLFormElement>(null);
+  const submitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hiddenLinkRef = useRef<HTMLAnchorElement | null>(null);
 
   useEffect(() => {
     setMountTimestamp(Date.now());
+    return () => {
+      if (submitTimerRef.current) {
+        clearTimeout(submitTimerRef.current);
+      }
+      if (hiddenLinkRef.current?.parentNode) {
+        hiddenLinkRef.current.parentNode.removeChild(hiddenLinkRef.current);
+      }
+    };
   }, []);
 
   const getPublicDisplayEmail = () => {
@@ -112,10 +120,8 @@ export function ContactPage() {
   };
 
   const handleCopyEmail = () => {
-    const email = getPublicDisplayEmail();
-    navigator.clipboard.writeText(email);
-    setHasCopiedEmail(true);
-    setTimeout(() => setHasCopiedEmail(false), 2000);
+    navigator.clipboard.writeText(getPublicDisplayEmail());
+    triggerCopiedEmail();
   };
 
   const buildMailtoDispatchUrl = () => {
@@ -136,26 +142,22 @@ export function ContactPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 1. Honeypot check: reject bots filling hidden trap
     if (formData.honeypot.trim() !== '') {
       setSubmitStatus('bot_detected');
       return;
     }
 
-    // 2. Velocity check: reject instant programmatic submissions (<1.2s)
-    const timeToSubmitMs = Date.now() - mountTimestamp;
-    if (timeToSubmitMs < 1200) {
+    // Reject instant programmatic submissions (<1.2s after mount).
+    if (Date.now() - mountTimestamp < 1200) {
       setSubmitStatus('bot_detected');
       return;
     }
 
-    // 3. Human verification check
     if (!isHumanVerified) {
       setSubmitStatus('error');
       return;
     }
 
-    // 4. Required fields check
     if (!formData.fullName.trim() || !formData.email.trim() || !formData.message.trim()) {
       setSubmitStatus('error');
       return;
@@ -163,29 +165,22 @@ export function ContactPage() {
 
     setIsSubmitting(true);
 
-    // Dispatch in background to serverless endpoint
-    try {
-      fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      }).catch((err) => {
-        console.warn('[Contact] Serverless route optional fallback:', err);
-      });
-    } catch {
-      // Ignored: client mailto will dispatch directly
-    }
-
-    // Programmatically trigger mailto link to protected destination
-    const mailtoUrl = buildMailtoDispatchUrl();
     const hiddenLink = document.createElement('a');
-    hiddenLink.href = mailtoUrl;
+    hiddenLink.href = buildMailtoDispatchUrl();
     hiddenLink.style.display = 'none';
     document.body.appendChild(hiddenLink);
+    hiddenLinkRef.current = hiddenLink;
     hiddenLink.click();
 
-    setTimeout(() => {
-      document.body.removeChild(hiddenLink);
+    if (submitTimerRef.current) {
+      clearTimeout(submitTimerRef.current);
+    }
+    submitTimerRef.current = setTimeout(() => {
+      submitTimerRef.current = null;
+      if (hiddenLink.parentNode) {
+        hiddenLink.parentNode.removeChild(hiddenLink);
+      }
+      hiddenLinkRef.current = null;
       setIsSubmitting(false);
       setSubmitStatus('success');
     }, 400);

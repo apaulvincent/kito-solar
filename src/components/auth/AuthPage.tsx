@@ -11,7 +11,6 @@ import {
   Sun,
   Mail,
   RefreshCw,
-  Check,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { generateRandomSolarName } from '@/lib/solarNames';

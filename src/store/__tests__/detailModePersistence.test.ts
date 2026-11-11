@@ -1,39 +1,20 @@
-// src/store/__tests__/detailModePersistence.test.ts
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { installMockLocalStorage } from '@/test/mockLocalStorage';
 
 describe('Detail Mode & LocalStorage Persistence Suite', () => {
-  const storeMap: Record<string, string> = {};
+  let storageHandle: ReturnType<typeof installMockLocalStorage>;
 
   beforeAll(() => {
-    const mockStorage = {
-      getItem: (key: string) => storeMap[key] ?? null,
-      setItem: (key: string, value: string) => {
-        storeMap[key] = String(value);
-      },
-      removeItem: (key: string) => {
-        delete storeMap[key];
-      },
-      clear: () => {
-        for (const k of Object.keys(storeMap)) {
-          delete storeMap[k];
-        }
-      },
-      length: 0,
-      key: () => null,
-    };
-
-    (globalThis as any).localStorage = mockStorage;
-    (globalThis as any).window = globalThis;
+    storageHandle = installMockLocalStorage();
   });
 
   afterAll(() => {
-    delete (globalThis as any).localStorage;
-    delete (globalThis as any).window;
+    storageHandle.restore();
   });
 
   beforeEach(() => {
-    localStorage.clear();
+    storageHandle.reset();
   });
 
   it('defaults both step1DetailMode and step2DetailMode to min', () => {

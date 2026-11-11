@@ -52,6 +52,53 @@ export interface CreateCopilotToolsOptions {
   onProposalBuilt?: (proposal: ProjectSizingResult) => void;
 }
 
+export const GenerateSolarSetupInputSchema = z.object({
+  monthlyBillPhp: z
+    .number()
+    .finite()
+    .min(500, 'Minimum bill is ₱500')
+    .max(10_000_000, 'Maximum residential/commercial bill is ₱10,000,000')
+    .optional()
+    .describe('The user monthly electricity bill in Philippine Pesos (PHP). Example: "7000 bill" -> 7000, "12.5k" -> 12500.'),
+  monthlyKwh: z
+    .number()
+    .finite()
+    .min(30, 'Minimum monthly kWh is 30')
+    .max(1_000_000, 'Maximum monthly kWh is 1,000,000')
+    .optional()
+    .describe('Monthly consumption in kWh if the user provides kWh instead of a peso bill.'),
+  location: z
+    .string()
+    .max(200)
+    .default('Metro Manila / Calabarzon')
+    .describe('User city, province, or electric utility (e.g., Meralco, Laguna, Cebu).'),
+  systemType: z
+    .enum(['grid-tie', 'hybrid', 'off-grid'])
+    .default('hybrid')
+    .describe('System architecture: grid-tie (no battery, daytime savings), hybrid (grid + battery backup), or off-grid.'),
+  preferredInverterBrand: z
+    .string()
+    .max(100)
+    .optional()
+    .describe('Preferred inverter brand if mentioned by the user (e.g., "Deye", "Growatt", "Solis").'),
+  preferredPanelBrand: z
+    .string()
+    .max(100)
+    .optional()
+    .describe('Preferred solar panel brand if mentioned by the user (e.g., "Jinko", "Longi", "Canadian Solar").'),
+  daytimeLoadRatio: z
+    .number()
+    .finite()
+    .min(0.1)
+    .max(1.0)
+    .default(0.6)
+    .describe('Fraction of electricity used during daytime hours (0.1 to 1.0).'),
+  includeBatteryBackup: z
+    .boolean()
+    .default(true)
+    .describe('Whether to include LiFePO4 battery storage in the configuration.'),
+});
+
 export function createCopilotTools(options: CreateCopilotToolsOptions) {
   const executedToolSignatures = new Set<string>();
   let lastProposal: ProjectSizingResult | null = null;
@@ -60,52 +107,7 @@ export function createCopilotTools(options: CreateCopilotToolsOptions) {
     generateSolarSetup: tool({
       description:
         'Calculates a complete solar PV setup from a monthly electric bill or kWh usage and selects matching panels, inverters, and batteries from the catalog.',
-      inputSchema: z.object({
-        monthlyBillPhp: z
-          .number()
-          .finite()
-          .min(500, 'Minimum bill is ₱500')
-          .max(10_000_000, 'Maximum residential/commercial bill is ₱10,000,000')
-          .optional()
-          .describe('The user monthly electricity bill in Philippine Pesos (PHP). Example: "7000 bill" -> 7000, "12.5k" -> 12500.'),
-        monthlyKwh: z
-          .number()
-          .finite()
-          .min(30, 'Minimum monthly kWh is 30')
-          .max(1_000_000, 'Maximum monthly kWh is 1,000,000')
-          .optional()
-          .describe('Monthly consumption in kWh if the user provides kWh instead of a peso bill.'),
-        location: z
-          .string()
-          .max(200)
-          .default('Metro Manila / Calabarzon')
-          .describe('User city, province, or electric utility (e.g., Meralco, Laguna, Cebu).'),
-        systemType: z
-          .enum(['grid-tie', 'hybrid', 'off-grid'])
-          .default('hybrid')
-          .describe('System architecture: grid-tie (no battery, daytime savings), hybrid (grid + battery backup), or off-grid.'),
-        preferredInverterBrand: z
-          .string()
-          .max(100)
-          .optional()
-          .describe('Preferred inverter brand if mentioned by the user (e.g., "Deye", "Growatt", "Solis").'),
-        preferredPanelBrand: z
-          .string()
-          .max(100)
-          .optional()
-          .describe('Preferred solar panel brand if mentioned by the user (e.g., "Jinko", "Longi", "Canadian Solar").'),
-        daytimeLoadRatio: z
-          .number()
-          .finite()
-          .min(0.1)
-          .max(1.0)
-          .default(0.6)
-          .describe('Fraction of electricity used during daytime hours (0.1 to 1.0).'),
-        includeBatteryBackup: z
-          .boolean()
-          .default(true)
-          .describe('Whether to include LiFePO4 battery storage in the configuration.'),
-      }),
+      inputSchema: GenerateSolarSetupInputSchema,
       execute: async (params) => {
         if (options.deduplicate) {
           const signature = `generateSolarSetup:${JSON.stringify(params)}`;

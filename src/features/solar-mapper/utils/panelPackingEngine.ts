@@ -59,7 +59,7 @@ export interface PackingResult {
 export function calculatePanelPacking({
   localVertices,
   slopedAreaSqm,
-  pitchDeg,
+  pitchDeg: _pitchDeg,
   setbackRatio = 0.82,
   panelWattage = 580,
   orientationPreference = 'auto_best',
@@ -70,7 +70,7 @@ export function calculatePanelPacking({
 }: {
   localVertices: LocalPoint[];
   slopedAreaSqm: number;
-  pitchDeg: number;
+  pitchDeg?: number;
   setbackRatio?: number;
   panelWattage?: 550 | 580 | 600 | number;
   orientationPreference?: PanelOrientation;

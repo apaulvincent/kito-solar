@@ -1,92 +1,78 @@
-// src/components/config/__tests__/specAccordion.test.tsx
 import { describe, it, expect } from 'vitest';
-import * as fs from 'fs';
-import * as path from 'path';
-import { createElement } from 'react';
+import { act, createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { InverterSelector } from '../InverterSelector';
 import { PvModuleSelector } from '../PvModuleSelector';
 import { BatterySelector } from '../BatterySelector';
 import { GridConfig } from '../GridConfig';
+import { mountIntoDom } from '@/test/domTestUtils';
 
 describe('STEP 1: Technical Specifications Collapsible Accordion Suite', () => {
-  it('hides Inverter technical spec sheet (SUN-6K-SG05LP1-EU) by default', () => {
-    const markup = renderToStaticMarkup(createElement(InverterSelector));
-    // Header toggle should be visible
-    expect(markup).toContain('View Specs');
-    expect(markup).toContain('aria-expanded="false"');
-    // Inside the toggle button, the model name is displayed
-    expect(markup).toContain('SUN-6K-SG05LP1-EU');
-    // Detailed spec tiles should be collapsed/hidden by default
-    expect(markup).not.toContain('Rated AC Power');
-    expect(markup).not.toContain('Startup Voltage');
-    expect(markup).not.toContain('MPPT Config');
-  });
+  it('collapses Inverter, PV Module, and Battery spec sheets by default and expands them on click', () => {
+    const selectors = [
+      {
+        component: InverterSelector,
+        defaultText: 'SUN-6K-SG05LP1-EU',
+        revealedText: 'Rated AC Power',
+        additionalFields: ['Startup Voltage', 'MPPT Config'],
+      },
+      {
+        component: PvModuleSelector,
+        defaultText: 'View Specs',
+        revealedText: 'Wattage (Pmax)',
+        additionalFields: ['Voc (Open Ckt)', 'Vmp (Max Power)'],
+      },
+      {
+        component: BatterySelector,
+        defaultText: 'View Specs',
+        revealedText: 'Nominal Voltage',
+        additionalFields: ['Single Capacity', 'Recommended MCCB'],
+      },
+    ];
 
-  it('hides PV Module technical spec sheet by default', () => {
-    const markup = renderToStaticMarkup(createElement(PvModuleSelector));
-    expect(markup).toContain('View Specs');
-    expect(markup).toContain('aria-expanded="false"');
-    // Detailed spec tiles should be collapsed/hidden by default
-    expect(markup).not.toContain('Wattage (Pmax)');
-    expect(markup).not.toContain('Voc (Open Ckt)');
-    expect(markup).not.toContain('Vmp (Max Power)');
-  });
+    for (const spec of selectors) {
+      const mounted = mountIntoDom(createElement(spec.component));
+      try {
+        const toggleBtn = mounted.container.querySelector<HTMLButtonElement>('button[aria-expanded]');
+        expect(toggleBtn).not.toBeNull();
+        expect(toggleBtn?.getAttribute('aria-expanded')).toBe('false');
+        expect(mounted.container.textContent).toContain('View Specs');
+        expect(mounted.container.textContent).toContain(spec.defaultText);
+        expect(mounted.container.textContent).not.toContain(spec.revealedText);
 
-  it('hides Battery technical spec sheet by default', () => {
-    const markup = renderToStaticMarkup(createElement(BatterySelector));
-    expect(markup).toContain('View Specs');
-    expect(markup).toContain('aria-expanded="false"');
-    // Detailed spec tiles should be collapsed/hidden by default
-    expect(markup).not.toContain('Nominal Voltage');
-    expect(markup).not.toContain('Single Capacity');
-    expect(markup).not.toContain('Recommended MCCB');
-  });
+        act(() => {
+          toggleBtn?.click();
+        });
 
-  it('includes both ChevronDown and ChevronUp toggle states with accessible Button-in-Button architecture', () => {
-    const invCode = fs.readFileSync(path.resolve(process.cwd(), 'src/components/config/InverterSelector.tsx'), 'utf-8');
-    const pvCode = fs.readFileSync(path.resolve(process.cwd(), 'src/components/config/PvModuleSelector.tsx'), 'utf-8');
-    const batCode = fs.readFileSync(path.resolve(process.cwd(), 'src/components/config/BatterySelector.tsx'), 'utf-8');
-
-    for (const code of [invCode, pvCode, batCode]) {
-      expect(code).toContain('ChevronDown');
-      expect(code).toContain('ChevronUp');
-      expect(code).toContain('aria-expanded={isOpen}');
-      expect(code).toContain('setIsOpen((prev) => !prev)');
-      // Button-in-Button architecture (nested circular pill container)
-      expect(code).toContain('rounded-full bg-slate-100 dark:bg-white/10');
+        expect(toggleBtn?.getAttribute('aria-expanded')).toBe('true');
+        expect(mounted.container.textContent).toContain('Hide Specs');
+        expect(mounted.container.textContent).toContain(spec.revealedText);
+        for (const field of spec.additionalFields) {
+          expect(mounted.container.textContent).toContain(field);
+        }
+      } finally {
+        mounted.unmount();
+      }
     }
+  });
+
+  it('uses clean single-border accordion cards without outer double ring wrappers', () => {
+    const markup = renderToStaticMarkup(createElement(InverterSelector));
+    expect(markup).not.toContain('ring-1 ring-slate-900/10');
+    expect(markup).not.toContain('rounded-2xl bg-slate-900/[0.03]');
+    expect(markup).toContain('rounded-full bg-slate-100 dark:bg-white/10');
   });
 
   it('renders GridConfig with Autocomplete fields for grid voltage and service breaker with clear buttons', () => {
     const markup = renderToStaticMarkup(createElement(GridConfig));
-    // Labels
     expect(markup).toContain('Grid Nominal Voltage (V)');
     expect(markup).toContain('Main Panel Service Breaker (A)');
-    // Input placeholders
     expect(markup).toContain('Search voltage');
     expect(markup).toContain('Search breaker');
-    // Default values in Autocomplete inputs
     expect(markup).toContain('230 V (Single Phase - Standard)');
     expect(markup).toContain('100 A (Standard Residential)');
-    // Clear selection X buttons
     expect(markup).toContain('title="Clear selection"');
     expect(markup).toContain('aria-label="Clear selection"');
-    // Sliders
     expect(markup).toContain('Configured Panel Quantity');
-  });
-
-  it('uses a clean single border for spec accordions without outer double border wrappers', () => {
-    const invCode = fs.readFileSync(path.resolve(process.cwd(), 'src/components/config/InverterSelector.tsx'), 'utf-8');
-    const pvCode = fs.readFileSync(path.resolve(process.cwd(), 'src/components/config/PvModuleSelector.tsx'), 'utf-8');
-    const batCode = fs.readFileSync(path.resolve(process.cwd(), 'src/components/config/BatterySelector.tsx'), 'utf-8');
-
-    for (const code of [invCode, pvCode, batCode]) {
-      // Must not have nested concentric ring/doppelrand wrapper
-      expect(code).not.toContain('ring-1 ring-slate-900/10');
-      expect(code).not.toContain('rounded-2xl bg-slate-900/[0.03]');
-      // Must have clean single border container
-      expect(code).toContain('rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-white/10');
-    }
   });
 });

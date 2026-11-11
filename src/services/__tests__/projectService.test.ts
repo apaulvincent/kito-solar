@@ -1,46 +1,27 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import { projectService, generateShortId } from '../projectService';
 import { CreateProjectInput, MAX_PROJECTS_PER_USER } from '@/types/project';
+import { installMockLocalStorage } from '@/test/mockLocalStorage';
 
 vi.mock('@/lib/supabase', () => ({
   supabase: null,
   isSupabaseConfigured: false,
 }));
 
-
 describe('projectService Suite', () => {
-  const storeMap: Record<string, string> = {};
   const mockUserId = 'usr_test_12345';
+  let storageHandle: ReturnType<typeof installMockLocalStorage>;
 
   beforeAll(() => {
-    const mockStorage = {
-      getItem: (key: string) => storeMap[key] ?? null,
-      setItem: (key: string, value: string) => {
-        storeMap[key] = String(value);
-      },
-      removeItem: (key: string) => {
-        delete storeMap[key];
-      },
-      clear: () => {
-        for (const k of Object.keys(storeMap)) {
-          delete storeMap[k];
-        }
-      },
-      length: 0,
-      key: () => null,
-    };
-
-    (globalThis as any).localStorage = mockStorage;
-    (globalThis as any).window = globalThis;
+    storageHandle = installMockLocalStorage();
   });
 
   afterAll(() => {
-    delete (globalThis as any).localStorage;
-    delete (globalThis as any).window;
+    storageHandle.restore();
   });
 
   beforeEach(() => {
-    localStorage.clear();
+    storageHandle.reset();
   });
 
   const sampleInput: CreateProjectInput = {

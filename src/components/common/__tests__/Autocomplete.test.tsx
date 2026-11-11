@@ -1,4 +1,3 @@
-// src/components/common/__tests__/Autocomplete.test.tsx
 import { describe, it, expect, vi } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -32,21 +31,21 @@ describe('Autocomplete Component Suite', () => {
     expect(html).toContain('placeholder="Search inverter..."');
   });
 
-  it('correctly marks matching text via HighlightMatch helper', () => {
+  it('highlights all repeated occurrences of query without stateful regex drift', () => {
     const html = renderToStaticMarkup(
       createElement(HighlightMatch, {
-        text: 'SUN-5K-SG03LP1-EU',
+        text: '5K-SUN-5K-Hybrid-5k',
         query: '5K',
       })
     );
 
-    expect(html).toContain('<mark');
-    expect(html).toContain('5K');
-    expect(html).toContain('SUN-');
-    expect(html).toContain('-SG03LP1-EU');
+    const markCount = (html.match(/<mark\b/g) || []).length;
+    expect(markCount).toBe(3);
+    expect(html).toContain('>5K</mark>');
+    expect(html).toContain('>5k</mark>');
   });
 
-  it('supports custom renderOption formatting without checkmark', () => {
+  it('renders plain span when HighlightMatch query is empty', () => {
     const html = renderToStaticMarkup(
       createElement(HighlightMatch, {
         text: 'Powerwall 2',

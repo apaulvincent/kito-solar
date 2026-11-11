@@ -8,6 +8,7 @@ import React, {
   ReactNode,
 } from 'react';
 import { Search, ChevronDown, X } from 'lucide-react';
+import { useDismissable } from '@/hooks/useDismissable';
 
 export interface AutocompleteProps<T> {
   options: T[];
@@ -33,9 +34,6 @@ export interface AutocompleteProps<T> {
   ariaLabel?: string;
 }
 
-/**
- * Text highlight helper that highlights the matched query inside an option label
- */
 export function HighlightMatch({
   text,
   query,
@@ -46,13 +44,14 @@ export function HighlightMatch({
   if (!query.trim()) return <span>{text}</span>;
 
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escaped})`, 'gi');
-  const parts = text.split(regex);
+  const splitRegex = new RegExp(`(${escaped})`, 'gi');
+  const exactRegex = new RegExp(`^${escaped}$`, 'i');
+  const parts = text.split(splitRegex);
 
   return (
     <span>
       {parts.map((part, i) =>
-        regex.test(part) ? (
+        exactRegex.test(part) ? (
           <mark
             key={i}
             className="bg-amber-200/80 dark:bg-amber-500/30 text-amber-950 dark:text-amber-200 font-bold rounded-xs px-0.5"
@@ -95,7 +94,6 @@ export function Autocomplete<T>({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
-  // Sync input text with currently selected value when dropdown closes or value changes
   useEffect(() => {
     if (!isOpen) {
       setInputValue(value ? getOptionLabel(value) : '');
@@ -103,7 +101,6 @@ export function Autocomplete<T>({
     }
   }, [value, getOptionLabel, isOpen]);
 
-  // Default equality comparison
   const defaultIsOptionEqualToValue = useCallback(
     (opt: T, val: T): boolean => {
       if (getOptionKey) {
@@ -116,8 +113,7 @@ export function Autocomplete<T>({
 
   const areEqual = isOptionEqualToValue || defaultIsOptionEqualToValue;
 
-  // Filter options based on input value ONLY when user is actively typing a query.
-  // If the user just focused/clicked (hasUserTyped is false), always show ALL options.
+  // When opened by focus/click without typing, show all options instead of filtering to the current label.
   const filteredOptions = useMemo(() => {
     if (!hasUserTyped) {
       return options;
@@ -134,25 +130,20 @@ export function Autocomplete<T>({
     );
   }, [options, inputValue, filterOptions, getOptionLabel, hasUserTyped]);
 
-  // Handle clicking outside to close
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false);
-        setActiveIndex(-1);
-        setHasUserTyped(false);
-        setInputValue(value ? getOptionLabel(value) : '');
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+  const handleCloseMenu = useCallback(() => {
+    setIsOpen(false);
+    setActiveIndex(-1);
+    setHasUserTyped(false);
+    setInputValue(value ? getOptionLabel(value) : '');
   }, [value, getOptionLabel]);
 
-  // Set activeIndex to the currently selected option when the menu opens without active typing
+  useDismissable({
+    isOpen,
+    onClose: handleCloseMenu,
+    containerRef,
+    closeOnEscape: false,
+  });
+
   useEffect(() => {
     if (isOpen && !hasUserTyped && value) {
       const idx = options.findIndex((opt) => areEqual(opt, value));
@@ -162,7 +153,6 @@ export function Autocomplete<T>({
     }
   }, [isOpen, hasUserTyped, value, options, areEqual]);
 
-  // Scroll active item into view
   useEffect(() => {
     if (isOpen && activeIndex >= 0 && listRef.current) {
       const items = listRef.current.querySelectorAll('[data-autocomplete-item]');

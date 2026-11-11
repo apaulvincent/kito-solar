@@ -1,34 +1,59 @@
-// src/components/common/__tests__/SaveProjectButton.test.tsx
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createElement } from 'react';
+import { act, createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { SaveProjectButton } from '../SaveProjectButton';
-import * as fs from 'fs';
-import * as path from 'path';
+import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { createMockUser, mountIntoDom } from '@/test/domTestUtils';
 
 describe('SaveProjectButton', () => {
-  const componentPath = path.resolve(process.cwd(), 'src/components/common/SaveProjectButton.tsx');
-  const sourceCode = fs.readFileSync(componentPath, 'utf-8');
-
   beforeEach(() => {
     vi.clearAllMocks();
+    useCalculatorStore.getState().clearActiveProject();
+    useCalculatorStore.getState().setActiveView('tool');
   });
 
-  it('renders Save Project button in static markup', () => {
+  it('renders Save Project button when logged out or without active project', () => {
     const html = renderToStaticMarkup(createElement(SaveProjectButton, { authUser: null }));
-    expect(html).toBeTruthy();
     expect(html).toContain('Save Project');
   });
 
-  it('includes auth modal for guest users', () => {
-    expect(sourceCode).toContain('LOGIN REQUIRED');
-    expect(sourceCode).toContain('Save Solar Projects');
-    expect(sourceCode).toContain('Create an account or sign in to save up to 20 solar configurations');
-    expect(sourceCode).toContain('Log In to Account');
-    expect(sourceCode).toContain('Register New Account');
+  it('renders Saved label when an activeProjectId is loaded', () => {
+    useCalculatorStore.getState().setActiveProjectId('proj_abc123', 'Test Site');
+    const html = renderToStaticMarkup(
+      createElement(SaveProjectButton, { authUser: createMockUser() })
+    );
+    expect(html).toContain('Saved');
+    expect(html).not.toContain('Save Project</span>');
   });
 
-  it('handles active project saved state label', () => {
-    expect(sourceCode).toContain("activeProjectId ? 'Saved' : 'Save Project'");
+  it('opens auth modal for guest users and navigates to register on click', () => {
+    const mounted = mountIntoDom(createElement(SaveProjectButton, { authUser: null }));
+    try {
+      const trigger = mounted.container.querySelector('button');
+      expect(trigger).not.toBeNull();
+
+      act(() => {
+        trigger?.click();
+      });
+
+      const dialog = document.body.querySelector('[role="dialog"]');
+      expect(dialog).not.toBeNull();
+      expect(dialog?.textContent).toContain('LOGIN REQUIRED');
+      expect(dialog?.textContent).toContain('Save Solar Projects');
+      expect(dialog?.textContent).toContain('Log In to Account');
+      expect(dialog?.textContent).toContain('Register New Account');
+
+      const regBtn = Array.from(dialog?.querySelectorAll('button') || []).find((b) =>
+        b.textContent?.includes('Register New Account')
+      );
+      expect(regBtn).toBeDefined();
+
+      act(() => {
+        regBtn?.click();
+      });
+      expect(useCalculatorStore.getState().activeView).toBe('register');
+    } finally {
+      mounted.unmount();
+    }
   });
 });

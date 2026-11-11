@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { aiCopilotService, CopilotMessage } from '@/services/aiCopilotService';
 import type { ProjectSizingResult } from '@/types/solar-ai';
+import { useDismissable } from '@/hooks/useDismissable';
 import { SetupProposalCard } from './SetupProposalCard';
 import { ChatMessageContent } from './ChatMessageContent';
 import {
@@ -9,13 +10,9 @@ import {
   X,
   Send,
   RotateCcw,
-  BookOpen,
-  Zap,
-  CheckCircle2,
   Bot,
   User,
   Clock,
-  ShieldAlert,
 } from 'lucide-react';
 
 export const ALL_QUICK_SIZING_PROMPTS: string[] = [
@@ -67,7 +64,6 @@ export const SolarCopilotDrawer: React.FC = () => {
   const isCopilotOpen = useCalculatorStore((state) => state.isCopilotOpen);
   const setIsCopilotOpen = useCalculatorStore((state) => state.setIsCopilotOpen);
   const activeProjectId = useCalculatorStore((state) => state.activeProjectId);
-  const activeProjectName = useCalculatorStore((state) => state.activeProjectName);
 
   const [messages, setMessages] = useState<CopilotMessage[]>([
     {
@@ -88,32 +84,15 @@ export const SolarCopilotDrawer: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
 
-  // Click outside to close drawer & Escape key listener
-  useEffect(() => {
-    if (!isCopilotOpen) return;
+  const handleCloseCopilot = useCallback(() => {
+    setIsCopilotOpen(false);
+  }, [setIsCopilotOpen]);
 
-    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      if (drawerRef.current && !drawerRef.current.contains(event.target as Node)) {
-        setIsCopilotOpen(false);
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsCopilotOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isCopilotOpen, setIsCopilotOpen]);
+  useDismissable({
+    isOpen: isCopilotOpen,
+    onClose: handleCloseCopilot,
+    containerRef: drawerRef,
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -125,19 +104,15 @@ export const SolarCopilotDrawer: React.FC = () => {
     }
   }, [messages, isCopilotOpen]);
 
+  const isRateLimited = rateLimitCooldown > 0;
+
   useEffect(() => {
-    if (rateLimitCooldown <= 0) return;
+    if (!isRateLimited) return;
     const timer = setInterval(() => {
-      setRateLimitCooldown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
+      setRateLimitCooldown((prev) => (prev <= 1 ? 0 : prev - 1));
     }, 1000);
     return () => clearInterval(timer);
-  }, [rateLimitCooldown]);
+  }, [isRateLimited]);
 
   if (!isCopilotOpen) return null;
 

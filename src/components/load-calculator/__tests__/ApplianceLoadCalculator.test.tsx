@@ -1,9 +1,6 @@
-// src/components/load-calculator/__tests__/ApplianceLoadCalculator.test.tsx
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect, beforeEach } from 'vitest';
-import * as fs from 'fs';
-import * as path from 'path';
 import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { ApplianceLoadCalculatorPage } from '../ApplianceLoadCalculatorPage';
@@ -15,18 +12,12 @@ describe('Appliance Load Calculator Feature & UI Suite', () => {
     useCalculatorStore.getState().setActiveView('load-calculator');
   });
 
-  it('renders Header with "Load Calculator" navigation tab placed directly next to "Solar Tool"', () => {
-    const headerPath = path.resolve(process.cwd(), 'src/components/header/Header.tsx');
-    const headerContent = fs.readFileSync(headerPath, 'utf-8');
-
-    expect(headerContent).toContain("setActiveView('tool')");
-    expect(headerContent).toContain("setActiveView('load-calculator')");
-    expect(headerContent).toContain('<span>Solar Tool</span>');
-    expect(headerContent).toContain('<span>Load Calculator</span>');
-
+  it('renders Header with "Load Calculator" navigation tab placed directly after "Solar Tool"', () => {
     const html = renderToStaticMarkup(createElement(Header));
-    expect(html).toContain('Solar Tool');
-    expect(html).toContain('Load Calculator');
+    const solarToolIdx = html.indexOf('<span>Solar Tool</span>');
+    const loadCalcIdx = html.indexOf('<span>Load Calculator</span>');
+    expect(solarToolIdx).toBeGreaterThan(-1);
+    expect(loadCalcIdx).toBeGreaterThan(solarToolIdx);
   });
 
   it('renders the ApplianceLoadCalculatorPage with 2-column layout and core sections in static markup', () => {

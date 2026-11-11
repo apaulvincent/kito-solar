@@ -1,7 +1,7 @@
-// src/components/load-calculator/SizingSummaryDashboard.tsx
-import React, { useState } from 'react';
+import React from 'react';
 import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
+import { useTimedFlag } from '@/hooks/useTimedFlag';
 import { InverterStressMeter } from './InverterStressMeter';
 import {
   Zap,
@@ -12,10 +12,25 @@ import {
   Copy,
   Check,
   AlertCircle,
-  HelpCircle,
-  ShieldCheck,
-  Layers,
 } from 'lucide-react';
+
+const TOPOLOGY_META = {
+  grid_tie: {
+    title: 'Grid-Tie Solar (On-Grid)',
+    colorClass:
+      'from-blue-500/20 to-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30',
+  },
+  hybrid: {
+    title: 'Hybrid Solar + LiFePO4 Storage',
+    colorClass:
+      'from-amber-500/20 to-orange-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30',
+  },
+  off_grid: {
+    title: 'Full Off-Grid Solar System',
+    colorClass:
+      'from-emerald-500/20 to-teal-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+  },
+} as const;
 
 export const SizingSummaryDashboard: React.FC = () => {
   const getSizingResult = useApplianceLoadStore((s) => s.getSizingResult);
@@ -26,7 +41,7 @@ export const SizingSummaryDashboard: React.FC = () => {
   const setPanelCountOverride = useCalculatorStore((s) => s.setPanelCountOverride);
   const setBatteryCount = useCalculatorStore((s) => s.setBatteryCount);
 
-  const [copied, setCopied] = useState(false);
+  const [copied, triggerCopied] = useTimedFlag(2000);
   const result = getSizingResult();
 
   const {
@@ -45,30 +60,9 @@ export const SizingSummaryDashboard: React.FC = () => {
     warnings,
   } = result;
 
-  const getTopologyTitle = () => {
-    switch (recommendedTopology) {
-      case 'grid_tie':
-        return 'Grid-Tie Solar (On-Grid)';
-      case 'hybrid':
-        return 'Hybrid Solar + LiFePO4 Storage';
-      case 'off_grid':
-        return 'Full Off-Grid Solar System';
-    }
-  };
-
-  const getTopologyColor = () => {
-    switch (recommendedTopology) {
-      case 'grid_tie':
-        return 'from-blue-500/20 to-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30';
-      case 'hybrid':
-        return 'from-amber-500/20 to-orange-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30';
-      case 'off_grid':
-        return 'from-emerald-500/20 to-teal-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30';
-    }
-  };
+  const topologyMeta = TOPOLOGY_META[recommendedTopology];
 
   const handleTransferToTool = () => {
-    // 1. Find matching inverter in catalog based on recommendedInverterKw and topology
     const isHybrid = recommendedTopology !== 'grid_tie';
     const targetWatts = recommendedInverterKw * 1000;
 
@@ -86,24 +80,21 @@ export const SizingSummaryDashboard: React.FC = () => {
       setInverter(matchedInv);
     }
 
-    // 2. Set panel count override
     if (recommendedPanelCount > 0) {
       setPanelCountOverride(recommendedPanelCount);
     }
 
-    // 3. Set battery count if hybrid or off-grid
     if (recommendedBatteryUnits5kWh > 0) {
       setBatteryCount(recommendedBatteryUnits5kWh);
     }
 
-    // 4. Switch view to tool
     setActiveView('tool');
   };
 
   const handleCopySummary = () => {
     const text = `KITO SOLAR APPLIANCE SIZING SUMMARY
 ---------------------------------------------
-Recommended Architecture: ${getTopologyTitle()}
+Recommended Architecture: ${topologyMeta.title}
 Daily Energy Consumption: ${totalDailyKwh} kWh/day (${daytimeKwh} kWh Day / ${nighttimeKwh} kWh Night)
 Recommended Inverter: ${recommendedInverterKw} kW Continuous (2.0x Surge Headroom)
 Solar PV Array: ${recommendedPvKwp} kWp (${recommendedPanelCount}x ${config.panelWattage}W Panels, ~${estimatedRoofAreaSqm} m²)
@@ -113,15 +104,13 @@ Estimated Brownout Backup Runtime: ~${estimatedBackupHours} Hours
 Generated via Kito Solar (kito-solar.vercel.app)`;
 
     navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    triggerCopied();
   };
 
   return (
     <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0c1220] p-5 sm:p-6 shadow-sm space-y-5">
-        {/* Recommended System Topology Card */}
         <div
-          className={`p-4 rounded-2xl border bg-gradient-to-br ${getTopologyColor()} transition-all duration-300`}
+          className={`p-4 rounded-2xl border bg-gradient-to-br ${topologyMeta.colorClass} transition-all duration-300`}
         >
           <div className="flex items-center justify-between gap-2 mb-2">
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80">
@@ -133,7 +122,7 @@ Generated via Kito Solar (kito-solar.vercel.app)`;
           </div>
 
           <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            {getTopologyTitle()}
+            {topologyMeta.title}
           </h3>
 
           <ul className="mt-2.5 space-y-1.5 text-xs text-slate-700 dark:text-slate-300">

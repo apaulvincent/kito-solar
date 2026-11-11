@@ -1,14 +1,10 @@
-// src/components/load-calculator/SystemGoalSelector.tsx
 import React, { useState } from 'react';
 import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
 import { PrimaryGoal, GridReliability } from '@/lib/applianceSizingEngine';
 import {
-  ShieldCheck,
-  Zap,
   Sliders,
   ChevronDown,
   ChevronUp,
-  Sun,
   Sparkles,
   CircleDollarSign,
   BatteryCharging,

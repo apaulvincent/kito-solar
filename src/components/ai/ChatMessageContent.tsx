@@ -1,5 +1,4 @@
-// src/components/ai/ChatMessageContent.tsx
-import React from 'react';
+import React, { ComponentPropsWithoutRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -76,7 +75,7 @@ export const ChatMessageContent: React.FC<ChatMessageContentProps> = ({ content,
               {children}
             </blockquote>
           ),
-          code: ({ inline, className, children, ...props }: any) => {
+          code: ({ inline, children, ...props }: ComponentPropsWithoutRef<'code'> & { inline?: boolean }) => {
             if (inline) {
               return (
                 <code

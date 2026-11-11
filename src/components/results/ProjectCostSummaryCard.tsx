@@ -1,6 +1,4 @@
-// src/components/results/ProjectCostSummaryCard.tsx
-import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { useState } from 'react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import {
   Receipt,
@@ -21,6 +19,7 @@ import {
 } from 'lucide-react';
 import { formatPeso } from '@/lib/utils';
 import { STORAGE_KEYS, safeStorage } from '@/lib/storage';
+import { Modal } from '@/components/common/Modal';
 
 export function ProjectCostSummaryCard() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
@@ -68,19 +67,10 @@ export function ProjectCostSummaryCard() {
     setEditingKey(null);
   };
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsModalOpen(false);
-    };
-    if (isModalOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isModalOpen]);
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingKey(null);
+  };
 
   return (
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-card dark:shadow-card-dark space-y-6 transition-colors duration-200">
@@ -324,21 +314,14 @@ export function ProjectCostSummaryCard() {
         </>
       )}
 
-      {/* Itemized Bill of Materials Modal */}
-      {isModalOpen &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div
-            onClick={() => setIsModalOpen(false)}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 md:p-8 bg-slate-950/80 backdrop-blur-2xl animate-in fade-in duration-300"
-          >
-            {/* Modal Dialog */}
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="itemized-pricing-modal-title"
-              onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[92vh] flex flex-col rounded-3xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-white/10 p-5 sm:p-8 space-y-6 overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        labelledBy="itemized-pricing-modal-title"
+        lockScroll={true}
+        backdropClassName="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 md:p-8 bg-slate-950/80 backdrop-blur-2xl animate-in fade-in duration-300"
+        dialogClassName="relative w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[92vh] flex flex-col rounded-3xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-white/10 p-5 sm:p-8 space-y-6 overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300"
+      >
                 {/* Modal Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-200/80 dark:border-white/10">
                   <div className="flex items-center gap-4">
@@ -544,19 +527,13 @@ export function ProjectCostSummaryCard() {
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setIsModalOpen(false);
-                      setEditingKey(null);
-                    }}
+                    onClick={handleCloseModal}
                     className="px-8 py-3 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 font-bold text-xs font-mono uppercase tracking-wider shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] cursor-pointer text-center"
                   >
                     Close Schedule
                   </button>
                 </div>
-              </div>
-          </div>,
-          document.body
-        )}
+      </Modal>
     </div>
   );
 }
