@@ -1,115 +1,28 @@
-// src/features/solar-mapper/components/SatelliteRoofCanvas.tsx
-import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertTriangle,
+  Box,
+  Crosshair,
   PenTool,
+  Plus,
   RotateCcw,
   Trash2,
-  Plus,
   ZoomIn,
   ZoomOut,
-  Crosshair,
-  Sparkles,
-  AlertTriangle,
-  Move,
-  Layers,
-  Box,
-  CheckCircle2,
-  Scan,
-  ChevronUp,
-  Check,
-  Globe,
 } from 'lucide-react';
 import { useSolarMapperStore } from '../store/useSolarMapperStore';
-import { GeoPoint, BasemapProvider } from '../types/solarMapper';
-import { calculateHaversineDistanceMeters } from '../utils/geodesicMath';
-import { detectRoofFromMarquee } from '../services/aiRoofDetectionService';
-
-const TILE_SIZE = 256;
-
-interface BasemapOption {
-  id: BasemapProvider;
-  name: string;
-  badge: string;
-  description: string;
-}
-
-const BASEMAP_OPTIONS: BasemapOption[] = [
-  {
-    id: 'google_satellite',
-    name: 'Google Satellite (HD)',
-    badge: 'Ultra-Res • 20x',
-    description: 'Updated high-resolution aerial & satellite imagery across the Philippines.',
-  },
-  {
-    id: 'google_hybrid',
-    name: 'Google Hybrid',
-    badge: 'Satellite + Roads',
-    description: 'Google satellite with street names, barangay borders, and landmarks.',
-  },
-  {
-    id: 'esri_satellite',
-    name: 'Esri World Imagery',
-    badge: 'Global Survey',
-    description: 'ArcGIS survey imagery (native capped at 18x to prevent missing tiles).',
-  },
-  {
-    id: 'osm_streets',
-    name: 'OpenStreetMap Streets',
-    badge: 'Cadastral & Roads',
-    description: 'Clear vector road network and property boundaries.',
-  },
-];
-
-function getTileUrl(provider: BasemapProvider, x: number, y: number, z: number): string {
-  switch (provider) {
-    case 'google_satellite':
-      return `https://mt${(x + y) % 4}.google.com/vt/lyrs=s&x=${x}&y=${y}&z=${z}`;
-    case 'google_hybrid':
-      return `https://mt${(x + y) % 4}.google.com/vt/lyrs=y&x=${x}&y=${y}&z=${z}`;
-    case 'esri_satellite':
-      return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
-    case 'osm_streets':
-      return `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
-    default:
-      return `https://mt${(x + y) % 4}.google.com/vt/lyrs=s&x=${x}&y=${y}&z=${z}`;
-  }
-}
-
-function getMaxNativeZoom(provider: BasemapProvider): number {
-  switch (provider) {
-    case 'google_satellite':
-    case 'google_hybrid':
-      return 20;
-    case 'esri_satellite':
-      return 18;
-    case 'osm_streets':
-      return 19;
-    default:
-      return 20;
-  }
-}
-
-// Mercator Projection Math
-function lngToTileX(lng: number, zoom: number): number {
-  return ((lng + 180) / 360) * Math.pow(2, zoom);
-}
-
-function latToTileY(lat: number, zoom: number): number {
-  const latRad = (lat * Math.PI) / 180;
-  return (
-    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) *
-    Math.pow(2, zoom)
-  );
-}
-
-function tileXToLng(x: number, zoom: number): number {
-  return (x / Math.pow(2, zoom)) * 360 - 180;
-}
-
-function tileYToLat(y: number, zoom: number): number {
-  const n = Math.PI - (2 * Math.PI * y) / Math.pow(2, zoom);
-  return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
-}
+import { GeoPoint } from '../types/solarMapper';
+import {
+  TILE_SIZE,
+  computeVisibleTiles,
+  getMaxNativeZoom,
+  latToTileY,
+  lngToTileX,
+  tileXToLng,
+  tileYToLat,
+} from '../utils/mercator';
+import { SatelliteCompassRose } from './SatelliteCompassRose';
+import { SatelliteBasemapMenu } from './SatelliteBasemapMenu';
 
 export const SatelliteRoofCanvas: React.FC = () => {
   const {
@@ -128,8 +41,6 @@ export const SatelliteRoofCanvas: React.FC = () => {
     clearActivePolygon,
     addRoofSection,
     removeRoofSection,
-    applyDetectedRoofFaces,
-    translateRoofSection,
     setViewMode,
     basemapProvider,
     setBasemapProvider,
@@ -151,8 +62,26 @@ export const SatelliteRoofCanvas: React.FC = () => {
   const wasDraggingRef = useRef(false);
   const dragStartCoordRef = useRef<{ x: number; y: number } | null>(null);
   const dragHasMovedRef = useRef(false);
+  const dragResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Allow canceling vertex move with Escape
+  const scheduleDragFlagReset = useCallback(() => {
+    if (dragResetTimerRef.current !== null) {
+      clearTimeout(dragResetTimerRef.current);
+    }
+    dragResetTimerRef.current = setTimeout(() => {
+      dragResetTimerRef.current = null;
+      wasDraggingRef.current = false;
+    }, 120);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (dragResetTimerRef.current !== null) {
+        clearTimeout(dragResetTimerRef.current);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -164,24 +93,6 @@ export const SatelliteRoofCanvas: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [movingVertex, draggedVertex]);
 
-  // AI Marquee Roof Scanner State
-  const [isMarqueeMode, setIsMarqueeMode] = useState(false);
-  const [marqueeStart, setMarqueeStart] = useState<{ x: number; y: number } | null>(null);
-  const [marqueeCurrent, setMarqueeCurrent] = useState<{ x: number; y: number } | null>(null);
-  const [isAiScanning, setIsAiScanning] = useState(false);
-  const [aiScanStep, setAiScanStep] = useState('Scanning Satellite Spectral Imagery...');
-  const [aiScanBox, setAiScanBox] = useState<{
-    minX: number;
-    maxX: number;
-    minY: number;
-    maxY: number;
-    widthM: number;
-    lengthM: number;
-    areaSqm: number;
-  } | null>(null);
-  const [scanToast, setScanToast] = useState<string | null>(null);
-
-  // Resize observer to keep viewport responsive with RAF throttling
   useEffect(() => {
     if (!containerRef.current) return;
     let rafId: number | null = null;
@@ -202,27 +113,11 @@ export const SatelliteRoofCanvas: React.FC = () => {
     };
   }, []);
 
-  const [isBasemapMenuOpen, setIsBasemapMenuOpen] = useState(false);
-  const basemapMenuRef = useRef<HTMLDivElement>(null);
-
-  // Close basemap menu on click outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (basemapMenuRef.current && !basemapMenuRef.current.contains(e.target as Node)) {
-        setIsBasemapMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Provider-aware native zoom ceiling
   const maxNativeZoom = getMaxNativeZoom(basemapProvider);
   const tileZoom = Math.min(zoom, maxNativeZoom);
   const zoomScale = Math.pow(2, zoom - tileZoom);
   const scaledTileSize = TILE_SIZE * zoomScale;
 
-  // Center coordinate in Web Mercator tile units at tileZoom
   const centerTileX = useMemo(
     () => lngToTileX(coordinates.lng, tileZoom) + panOffset.x / scaledTileSize,
     [coordinates.lng, tileZoom, panOffset.x, scaledTileSize]
@@ -232,19 +127,18 @@ export const SatelliteRoofCanvas: React.FC = () => {
     [coordinates.lat, tileZoom, panOffset.y, scaledTileSize]
   );
 
-  // Convert (lat, lng) to canvas (px, py)
   const geoToPixel = useCallback(
     (pt: GeoPoint) => {
       const tileX = lngToTileX(pt.lng, tileZoom);
       const tileY = latToTileY(pt.lat, tileZoom);
-      const px = dimensions.width / 2 + (tileX - centerTileX) * scaledTileSize;
-      const py = dimensions.height / 2 + (tileY - centerTileY) * scaledTileSize;
-      return { px, py };
+      return {
+        px: dimensions.width / 2 + (tileX - centerTileX) * scaledTileSize,
+        py: dimensions.height / 2 + (tileY - centerTileY) * scaledTileSize,
+      };
     },
     [tileZoom, centerTileX, centerTileY, dimensions.width, dimensions.height, scaledTileSize]
   );
 
-  // Convert canvas (px, py) to (lat, lng)
   const pixelToGeo = useCallback(
     (px: number, py: number): GeoPoint => {
       const tileX = centerTileX + (px - dimensions.width / 2) / scaledTileSize;
@@ -257,7 +151,6 @@ export const SatelliteRoofCanvas: React.FC = () => {
     [centerTileX, centerTileY, dimensions.width, dimensions.height, tileZoom, scaledTileSize]
   );
 
-  // Window-level pointer listeners for silky smooth, fail-safe vertex dragging
   useEffect(() => {
     if (!draggedVertex) return;
 
@@ -276,8 +169,7 @@ export const SatelliteRoofCanvas: React.FC = () => {
         }
       }
 
-      const geo = pixelToGeo(px, py);
-      updateVertexPosition(draggedVertex.sectionId, draggedVertex.index, geo);
+      updateVertexPosition(draggedVertex.sectionId, draggedVertex.index, pixelToGeo(px, py));
     };
 
     const handleWindowPointerUp = () => {
@@ -291,13 +183,14 @@ export const SatelliteRoofCanvas: React.FC = () => {
       setDraggedVertex(null);
       if (dragHasMovedRef.current) {
         wasDraggingRef.current = true;
-        setTimeout(() => {
-          wasDraggingRef.current = false;
-        }, 120);
+        scheduleDragFlagReset();
       } else if (!isDrawingMode) {
-        // Clicked dot without dragging in select mode: toggle click-to-move
         setMovingVertex((prev) => {
-          if (prev && prev.sectionId === draggedVertex.sectionId && prev.index === draggedVertex.index) {
+          if (
+            prev &&
+            prev.sectionId === draggedVertex.sectionId &&
+            prev.index === draggedVertex.index
+          ) {
             return null;
           }
           return { sectionId: draggedVertex.sectionId, index: draggedVertex.index };
@@ -311,172 +204,41 @@ export const SatelliteRoofCanvas: React.FC = () => {
       window.removeEventListener('pointermove', handleWindowPointerMove);
       window.removeEventListener('pointerup', handleWindowPointerUp);
     };
-  }, [draggedVertex, isDrawingMode, pixelToGeo, updateVertexPosition, roofSections]);
+  }, [
+    draggedVertex,
+    isDrawingMode,
+    pixelToGeo,
+    updateVertexPosition,
+    roofSections,
+    setIsDrawingMode,
+    scheduleDragFlagReset,
+  ]);
 
-  // Compute visible tile indices for Slippy map at tileZoom
-  const visibleTiles = useMemo(() => {
-    const tilesAcross = Math.ceil(dimensions.width / scaledTileSize) + 4;
-    const tilesDown = Math.ceil(dimensions.height / scaledTileSize) + 4;
+  const visibleTiles = useMemo(
+    () =>
+      computeVisibleTiles({
+        basemapProvider,
+        tileZoom,
+        scaledTileSize,
+        centerTileX,
+        centerTileY,
+        width: dimensions.width,
+        height: dimensions.height,
+      }),
+    [basemapProvider, tileZoom, scaledTileSize, centerTileX, centerTileY, dimensions.width, dimensions.height]
+  );
 
-    const startTileX = Math.floor(centerTileX - tilesAcross / 2);
-    const startTileY = Math.floor(centerTileY - tilesDown / 2);
-
-    const tiles: { key: string; x: number; y: number; px: number; py: number; size: number; url: string }[] = [];
-    const maxTile = Math.pow(2, tileZoom);
-
-    for (let ty = 0; ty <= tilesDown; ty++) {
-      for (let tx = 0; tx <= tilesAcross; tx++) {
-        const curX = ((startTileX + tx) % maxTile + maxTile) % maxTile;
-        const curY = startTileY + ty;
-
-        if (curY >= 0 && curY < maxTile) {
-          const px = Math.round(dimensions.width / 2 + (startTileX + tx - centerTileX) * scaledTileSize);
-          const py = Math.round(dimensions.height / 2 + (curY - centerTileY) * scaledTileSize);
-
-          const url = getTileUrl(basemapProvider, curX, curY, tileZoom);
-
-          tiles.push({
-            key: `${basemapProvider}-${tileZoom}-${curX}-${curY}`,
-            x: curX,
-            y: curY,
-            px,
-            py,
-            size: scaledTileSize,
-            url,
-          });
-        }
-      }
-    }
-    return tiles;
-  }, [centerTileX, centerTileY, dimensions.width, dimensions.height, tileZoom, scaledTileSize, basemapProvider]);
-
-  // Dynamic marquee bounding box computation
-  const currentMarqueeBounds = useMemo(() => {
-    if (!marqueeStart || !marqueeCurrent) return null;
-    const minX = Math.min(marqueeStart.x, marqueeCurrent.x);
-    const maxX = Math.max(marqueeStart.x, marqueeCurrent.x);
-    const minY = Math.min(marqueeStart.y, marqueeCurrent.y);
-    const maxY = Math.max(marqueeStart.y, marqueeCurrent.y);
-    const widthPx = maxX - minX;
-    const heightPx = maxY - minY;
-
-    const nw = pixelToGeo(minX, minY);
-    const se = pixelToGeo(maxX, maxY);
-    const widthM = calculateHaversineDistanceMeters(nw, { lat: nw.lat, lng: se.lng });
-    const lengthM = calculateHaversineDistanceMeters(nw, { lat: se.lat, lng: nw.lng });
-    const areaSqm = Math.round(widthM * lengthM);
-
-    return { minX, maxX, minY, maxY, widthPx, heightPx, widthM, lengthM, areaSqm };
-  }, [marqueeStart, marqueeCurrent, pixelToGeo]);
-
-  // Execute AI roof detection workflow
-  const executeAiRoofDetection = async (
-    p1: { x: number; y: number },
-    p2: { x: number; y: number }
-  ) => {
-    let minX = Math.min(p1.x, p2.x);
-    let maxX = Math.max(p1.x, p2.x);
-    let minY = Math.min(p1.y, p2.y);
-    let maxY = Math.max(p1.y, p2.y);
-
-    // If click or small marquee, default to a 130px x 90px bounding box centered at click
-    if (maxX - minX < 15 || maxY - minY < 15) {
-      const midX = (minX + maxX) / 2;
-      const midY = (minY + maxY) / 2;
-      minX = midX - 65;
-      maxX = midX + 65;
-      minY = midY - 45;
-      maxY = midY + 45;
-    }
-
-    const nw = pixelToGeo(minX, minY);
-    const se = pixelToGeo(maxX, maxY);
-
-    // Physical dimensions
-    const widthM = calculateHaversineDistanceMeters(nw, { lat: nw.lat, lng: se.lng });
-    const lengthM = calculateHaversineDistanceMeters(nw, { lat: se.lat, lng: nw.lng });
-    const areaSqm = Math.round(widthM * lengthM);
-
-    setIsAiScanning(true);
-    setAiScanBox({ minX, maxX, minY, maxY, widthM, lengthM, areaSqm });
-    setAiScanStep('Scanning Satellite Spectral Imagery...');
-
-    // Offscreen canvas image capture
-    let imageCropBase64: string | undefined = undefined;
-    try {
-      const offscreen = document.createElement('canvas');
-      const boxW = Math.max(64, Math.round(maxX - minX));
-      const boxH = Math.max(64, Math.round(maxY - minY));
-      offscreen.width = Math.min(512, boxW);
-      offscreen.height = Math.min(512, boxH);
-      const ctx = offscreen.getContext('2d');
-      if (ctx && containerRef.current) {
-        const tileImgs = containerRef.current.querySelectorAll<HTMLImageElement>('img');
-        const rect = containerRef.current.getBoundingClientRect();
-        tileImgs.forEach((img) => {
-          const imgRect = img.getBoundingClientRect();
-          const sx = imgRect.left - rect.left;
-          const sy = imgRect.top - rect.top;
-          ctx.drawImage(img, sx - minX, sy - minY, img.width, img.height);
-        });
-        imageCropBase64 = offscreen.toDataURL('image/jpeg', 0.85);
-      }
-    } catch {
-      // Graceful fallback
-    }
-
-    const timer1 = setTimeout(() => {
-      setAiScanStep('Segmenting Roof Planes, Valleys & Ridges...');
-    }, 450);
-
-    const timer2 = setTimeout(() => {
-      setAiScanStep('Calculating Azimuth Heading & Tilt Vectors...');
-    }, 900);
-
-    try {
-      const result = await detectRoofFromMarquee({
-        bounds: { northWest: nw, southEast: se },
-        dimensions: { widthM, lengthM, areaSqm },
-        imageCropBase64,
-      });
-
-      applyDetectedRoofFaces(result.faces);
-
-      setScanToast(
-        `AI Mapped ${result.faces.length} Roof Faces (${result.faces[0]?.pitchDeg || 18}° pitch • ${
-          result.faces[0]?.azimuthDeg || 180
-        }° azimuth)`
-      );
-      setTimeout(() => setScanToast(null), 4500);
-    } catch (err) {
-      console.error('[AI Roof Detection Error]:', err);
-    } finally {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      setIsAiScanning(false);
-      setAiScanBox(null);
-      setIsMarqueeMode(false);
-    }
-  };
-
-  // Pointer event handlers for drawing, dragging vertices, marquee scanning, and panning
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('.map-control-btn') || (e.target as HTMLElement).closest('.vertex-handle')) return;
+    if (
+      (e.target as HTMLElement).closest('.map-control-btn') ||
+      (e.target as HTMLElement).closest('.vertex-handle')
+    ) {
+      return;
+    }
 
     if (e.button === 0) {
       if (movingVertex) {
-        // Clicking canvas while a vertex is being moved places it down
         setMovingVertex(null);
-        return;
-      }
-
-      if (isMarqueeMode) {
-        const rect = containerRef.current?.getBoundingClientRect();
-        if (!rect) return;
-        const px = e.clientX - rect.left;
-        const py = e.clientY - rect.top;
-        setMarqueeStart({ x: px, y: py });
-        setMarqueeCurrent({ x: px, y: py });
         return;
       }
 
@@ -488,21 +250,10 @@ export const SatelliteRoofCanvas: React.FC = () => {
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (isMarqueeMode && marqueeStart) {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const px = e.clientX - rect.left;
-      const py = e.clientY - rect.top;
-      setMarqueeCurrent({ x: px, y: py });
-      return;
-    }
-
     if (movingVertex) {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const px = e.clientX - rect.left;
-      const py = e.clientY - rect.top;
-      const geo = pixelToGeo(px, py);
+      const geo = pixelToGeo(e.clientX - rect.left, e.clientY - rect.top);
       updateVertexPosition(movingVertex.sectionId, movingVertex.index, geo);
       return;
     }
@@ -516,18 +267,8 @@ export const SatelliteRoofCanvas: React.FC = () => {
   };
 
   const handlePointerUp = () => {
-    if (isMarqueeMode && marqueeStart && marqueeCurrent) {
-      const p1 = marqueeStart;
-      const p2 = marqueeCurrent;
-      setMarqueeStart(null);
-      setMarqueeCurrent(null);
-      executeAiRoofDetection(p1, p2);
-      return;
-    }
-
     if (isPanning) {
       setIsPanning(false);
-      // Persist new center when panning concludes
       const newCenter = pixelToGeo(dimensions.width / 2, dimensions.height / 2);
       setCoordinates(newCenter);
       setPanOffset({ x: 0, y: 0 });
@@ -537,27 +278,27 @@ export const SatelliteRoofCanvas: React.FC = () => {
       setDraggedVertex(null);
       if (dragHasMovedRef.current) {
         wasDraggingRef.current = true;
-        setTimeout(() => {
-          wasDraggingRef.current = false;
-        }, 120);
+        scheduleDragFlagReset();
       }
     }
   };
 
-  // Canvas Click: add vertex when in Draw Mode, or deselect when clicking blank area in Select Mode
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (wasDraggingRef.current) {
       wasDraggingRef.current = false;
+      if (dragResetTimerRef.current !== null) {
+        clearTimeout(dragResetTimerRef.current);
+        dragResetTimerRef.current = null;
+      }
       return;
     }
 
     if (movingVertex) {
-      // Click places down the moving vertex
       setMovingVertex(null);
       return;
     }
 
-    if (isMarqueeMode || draggedVertex) return;
+    if (draggedVertex) return;
     if (
       (e.target as HTMLElement).closest('.vertex-handle') ||
       (e.target as HTMLElement).closest('.map-control-btn')
@@ -568,16 +309,9 @@ export const SatelliteRoofCanvas: React.FC = () => {
     if (isDrawingMode) {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
-
-      const px = e.clientX - rect.left;
-      const py = e.clientY - rect.top;
-      const geo = pixelToGeo(px, py);
-
-      addVertexToActiveSection(geo);
-    } else {
-      if (!(e.target as HTMLElement).closest('path')) {
-        setActiveSectionId(null);
-      }
+      addVertexToActiveSection(pixelToGeo(e.clientX - rect.left, e.clientY - rect.top));
+    } else if (!(e.target as HTMLElement).closest('path')) {
+      setActiveSectionId(null);
     }
   };
 
@@ -587,7 +321,6 @@ export const SatelliteRoofCanvas: React.FC = () => {
 
   return (
     <div className="relative rounded-2xl overflow-hidden border border-slate-200/90 dark:border-slate-800/90 bg-slate-950 shadow-lg select-none">
-      {/* Viewport Container */}
       <div
         ref={containerRef}
         onPointerDown={handlePointerDown}
@@ -595,14 +328,9 @@ export const SatelliteRoofCanvas: React.FC = () => {
         onPointerUp={handlePointerUp}
         onClick={handleCanvasClick}
         className={`relative w-full h-[480px] sm:h-[560px] lg:h-[620px] overflow-hidden ${
-          isDrawingMode || isMarqueeMode
-            ? 'cursor-crosshair'
-            : isPanning
-            ? 'cursor-grabbing'
-            : 'cursor-grab'
+          isDrawingMode ? 'cursor-crosshair' : isPanning ? 'cursor-grabbing' : 'cursor-grab'
         }`}
       >
-        {/* Layer 1: Satellite Tiles */}
         <div className="absolute inset-0 pointer-events-none">
           {visibleTiles.map((tile) => (
             <img
@@ -625,15 +353,12 @@ export const SatelliteRoofCanvas: React.FC = () => {
           ))}
         </div>
 
-        {/* Layer 2: Subtle Center Crosshair */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-40 z-10">
           <Crosshair className="w-6 h-6 text-amber-400 stroke-1" />
         </div>
 
-        {/* Layer 3: Interactive SVG Overlay for Polygons, Panels & Measurement Badges */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
           <defs>
-            {/* Solar Panel Module Pattern / Texture */}
             <pattern id="solar-panel-grid" width="4" height="6" patternUnits="userSpaceOnUse">
               <rect width="4" height="6" fill="#1e293b" />
               <line x1="0" y1="0" x2="4" y2="0" stroke="#38bdf8" strokeWidth="0.5" strokeOpacity="0.4" />
@@ -641,7 +366,6 @@ export const SatelliteRoofCanvas: React.FC = () => {
             </pattern>
           </defs>
 
-          {/* Render All Roof Sections */}
           {roofSections.map((sec) => {
             const isActive = sec.id === activeSection?.id;
             const pts = sec.vertices.map(geoToPixel);
@@ -652,11 +376,7 @@ export const SatelliteRoofCanvas: React.FC = () => {
               (pts.length > 2 ? ' Z' : '');
 
             const isBowtie = sec.hasBowtieCross;
-            const strokeColor = isBowtie
-              ? '#f43f5e'
-              : isActive
-              ? '#f59e0b'
-              : '#94a3b8';
+            const strokeColor = isBowtie ? '#f43f5e' : isActive ? '#f59e0b' : '#94a3b8';
             const fillColor = isBowtie
               ? 'rgba(244, 63, 94, 0.25)'
               : isActive
@@ -665,7 +385,6 @@ export const SatelliteRoofCanvas: React.FC = () => {
 
             return (
               <g key={sec.id}>
-                {/* Polygon Area Fill & Stroke */}
                 <path
                   d={pathD}
                   fill={fillColor}
@@ -673,22 +392,20 @@ export const SatelliteRoofCanvas: React.FC = () => {
                   strokeWidth={isActive ? 2.5 : 1.5}
                   strokeDasharray={pts.length < 3 ? '4 4' : undefined}
                   onPointerDown={(e) => {
-                    if (isDrawingMode || isMarqueeMode) return;
+                    if (isDrawingMode) return;
                     e.stopPropagation();
                     setActiveSectionId(sec.id);
                   }}
                   className={`transition-colors duration-200 ${
-                    isDrawingMode || isMarqueeMode
+                    isDrawingMode
                       ? 'pointer-events-none'
                       : 'pointer-events-auto cursor-pointer hover:stroke-amber-400'
                   }`}
                 />
 
-                {/* Render Placed Solar Panels Inside Closed Polygon */}
                 {pts.length >= 3 &&
                   sec.placedPanels.length > 0 &&
                   (() => {
-                    // Precompute meter-to-pixel scale and centroid once for the section
                     const meterToPx =
                       (Math.pow(2, zoom) * 256) /
                       (40075016 * Math.cos((coordinates.lat * Math.PI) / 180));
@@ -725,19 +442,14 @@ export const SatelliteRoofCanvas: React.FC = () => {
                     });
                   })()}
 
-                {/* Edge Length Measurement Badges */}
                 {pts.length >= 2 &&
                   pts.map((p1, i) => {
                     const nextIdx = (i + 1) % pts.length;
                     if (pts.length < 3 && nextIdx === 0) return null;
                     const p2 = pts[nextIdx];
-
                     const midX = (p1.px + p2.px) / 2;
                     const midY = (p1.py + p2.py) / 2;
-                    const lengthM = calculateHaversineDistanceMeters(
-                      sec.vertices[i],
-                      sec.vertices[nextIdx]
-                    );
+                    const lengthM = sec.edgeLengthsMeters[i] ?? 0;
 
                     return (
                       <g key={`edge-${sec.id}-${i}`}>
@@ -767,11 +479,9 @@ export const SatelliteRoofCanvas: React.FC = () => {
                     );
                   })}
 
-                {/* Draggable & Click-to-Move Vertex Corner Handles */}
                 {isActive &&
                   pts.map((p, i) => {
-                    const isMoving =
-                      movingVertex?.sectionId === sec.id && movingVertex?.index === i;
+                    const isMoving = movingVertex?.sectionId === sec.id && movingVertex?.index === i;
                     const isDragging =
                       draggedVertex?.sectionId === sec.id && draggedVertex?.index === i;
                     const isSelected = isMoving || isDragging;
@@ -791,15 +501,7 @@ export const SatelliteRoofCanvas: React.FC = () => {
                         {isDrawingMode && i === 0 && pts.length >= 3 && (
                           <title>Click first corner to close polygon</title>
                         )}
-                        {/* Generous invisible hit-area (28px diameter) so clicks never miss */}
-                        <circle
-                          cx={p.px}
-                          cy={p.py}
-                          r="14"
-                          fill="transparent"
-                        />
-
-                        {/* Outer Ring when selected/moving/dragging */}
+                        <circle cx={p.px} cy={p.py} r="14" fill="transparent" />
                         {isSelected && (
                           <circle
                             cx={p.px}
@@ -812,8 +514,6 @@ export const SatelliteRoofCanvas: React.FC = () => {
                             strokeDasharray="3 2"
                           />
                         )}
-
-                        {/* Hover Ring (Stationary, zero bounce or shift) */}
                         {!isSelected && (
                           <circle
                             cx={p.px}
@@ -825,8 +525,6 @@ export const SatelliteRoofCanvas: React.FC = () => {
                             className="opacity-0 group-hover:opacity-60 transition-opacity"
                           />
                         )}
-
-                        {/* Visible Solid Vertex Dot — Rock Steady, No Bouncing */}
                         <circle
                           cx={p.px}
                           cy={p.py}
@@ -842,127 +540,17 @@ export const SatelliteRoofCanvas: React.FC = () => {
               </g>
             );
           })}
-
-          {/* Active Marquee Bounding Box during dragging */}
-          {currentMarqueeBounds && currentMarqueeBounds.widthPx > 4 && currentMarqueeBounds.heightPx > 4 && (
-            <g>
-              {/* Marquee Area Tint & Pulsing Dashed Border */}
-              <rect
-                x={currentMarqueeBounds.minX}
-                y={currentMarqueeBounds.minY}
-                width={currentMarqueeBounds.widthPx}
-                height={currentMarqueeBounds.heightPx}
-                fill="rgba(245, 158, 11, 0.14)"
-                stroke="#f59e0b"
-                strokeWidth="2"
-                strokeDasharray="6 3"
-              />
-              {/* Corner Calipers (Top-Left, Top-Right, Bottom-Left, Bottom-Right) */}
-              <path
-                d={`M ${currentMarqueeBounds.minX} ${currentMarqueeBounds.minY + 14} L ${currentMarqueeBounds.minX} ${currentMarqueeBounds.minY} L ${currentMarqueeBounds.minX + 14} ${currentMarqueeBounds.minY}`}
-                stroke="#fbbf24"
-                strokeWidth="2.5"
-                fill="none"
-              />
-              <path
-                d={`M ${currentMarqueeBounds.maxX - 14} ${currentMarqueeBounds.minY} L ${currentMarqueeBounds.maxX} ${currentMarqueeBounds.minY} L ${currentMarqueeBounds.maxX} ${currentMarqueeBounds.minY + 14}`}
-                stroke="#fbbf24"
-                strokeWidth="2.5"
-                fill="none"
-              />
-              <path
-                d={`M ${currentMarqueeBounds.minX} ${currentMarqueeBounds.maxY - 14} L ${currentMarqueeBounds.minX} ${currentMarqueeBounds.maxY} L ${currentMarqueeBounds.minX + 14} ${currentMarqueeBounds.maxY}`}
-                stroke="#fbbf24"
-                strokeWidth="2.5"
-                fill="none"
-              />
-              <path
-                d={`M ${currentMarqueeBounds.maxX - 14} ${currentMarqueeBounds.maxY} L ${currentMarqueeBounds.maxX} ${currentMarqueeBounds.maxY} L ${currentMarqueeBounds.maxX} ${currentMarqueeBounds.maxY - 14}`}
-                stroke="#fbbf24"
-                strokeWidth="2.5"
-                fill="none"
-              />
-            </g>
-          )}
         </svg>
 
-        {/* Live Marquee Dimension Chip while dragging */}
-        {currentMarqueeBounds && currentMarqueeBounds.widthPx > 10 && (
-          <div
-            className="absolute pointer-events-none z-30 transition-all"
-            style={{
-              left: `${currentMarqueeBounds.minX}px`,
-              top: `${Math.max(12, currentMarqueeBounds.minY - 32)}px`,
-            }}
-          >
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/90 border border-amber-500/40 text-amber-400 font-mono text-xs font-bold shadow-xl backdrop-blur-md whitespace-nowrap">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              <span>
-                {currentMarqueeBounds.widthM.toFixed(1)}m × {currentMarqueeBounds.lengthM.toFixed(1)}m • {currentMarqueeBounds.areaSqm} m²
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* AI Laser Scanning Radar HUD Overlay */}
-        {isAiScanning && aiScanBox && (
-          <div
-            className="absolute pointer-events-none z-30 overflow-hidden border-2 border-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.4)] rounded-xl bg-amber-500/10 backdrop-blur-[1px]"
-            style={{
-              left: `${aiScanBox.minX}px`,
-              top: `${aiScanBox.minY}px`,
-              width: `${aiScanBox.maxX - aiScanBox.minX}px`,
-              height: `${aiScanBox.maxY - aiScanBox.minY}px`,
-            }}
-          >
-            {/* Animated Laser Beam */}
-            <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-amber-300 to-transparent shadow-[0_0_15px_#f59e0b] animate-laser-sweep" />
-
-            {/* Radar Center HUD Card */}
-            <div className="absolute inset-0 flex items-center justify-center p-2">
-              <div className="p-1 rounded-2xl bg-white/10 backdrop-blur-2xl shadow-2xl max-w-xs">
-                <div className="p-3.5 rounded-xl bg-slate-950/95 border border-amber-500/30 text-center space-y-1.5">
-                  <div className="flex items-center justify-center gap-2 text-amber-400">
-                    <Sparkles className="w-4 h-4 animate-spin text-amber-400" />
-                    <span className="text-xs font-bold font-mono uppercase tracking-wider">AI Photogrammetry</span>
-                  </div>
-                  <p className="text-xs font-semibold text-slate-200">
-                    {aiScanStep}
-                  </p>
-                  <p className="text-[10px] text-slate-400 font-mono">
-                    {aiScanBox.widthM.toFixed(1)}m × {aiScanBox.lengthM.toFixed(1)}m • {aiScanBox.areaSqm} m²
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Top-Center: Active Moving Dot Indicator */}
         {movingVertex && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-amber-500 text-slate-950 font-bold text-xs shadow-xl backdrop-blur-xl flex items-center gap-2 z-30 animate-in fade-in zoom-in-95 duration-150">
             <span className="w-2 h-2 rounded-full bg-slate-950 animate-ping" />
-            <span className="whitespace-nowrap">Moving corner dot · Click anywhere to place (or Esc to cancel)</span>
+            <span className="whitespace-nowrap">
+              Moving corner dot · Click anywhere to place (or Esc to cancel)
+            </span>
           </div>
         )}
 
-        {/* Top-Center: Marquee Guidance Banner */}
-        {isMarqueeMode && !isAiScanning && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-slate-950/90 border border-amber-500/50 text-slate-200 text-xs font-semibold backdrop-blur-xl shadow-2xl flex items-center gap-2 z-30 animate-pulse">
-            <Scan className="w-4 h-4 text-amber-400 flex-shrink-0" />
-            <span className="whitespace-nowrap">Drag a box over any roof to map faces, pitch & orientation with AI</span>
-          </div>
-        )}
-
-        {/* Top-Center: AI Scan Success Toast */}
-        {scanToast && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-slate-950/95 border border-emerald-500/50 text-emerald-300 text-xs font-semibold backdrop-blur-xl shadow-2xl flex items-center gap-2 z-30">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-            <span className="whitespace-nowrap">{scanToast}</span>
-          </div>
-        )}
-
-        {/* Self-Intersection Warning Banner */}
         {activeSection?.hasBowtieCross && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-rose-950/90 border border-rose-500/50 text-rose-200 text-xs font-semibold backdrop-blur-md shadow-lg flex items-center gap-2 z-30">
             <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0" />
@@ -970,53 +558,8 @@ export const SatelliteRoofCanvas: React.FC = () => {
           </div>
         )}
 
-        {/* Top-Left: Precision Satellite Compass Rose */}
-        <div className="absolute top-4 left-4 z-30 flex items-center gap-2 select-none group">
-          <div
-            className="w-11 h-11 rounded-full bg-slate-950/85 border border-white/10 backdrop-blur-xl shadow-xl flex items-center justify-center p-1.5 transition-transform duration-300 group-hover:scale-105"
-            title="Map Orientation: True North (0°)"
-          >
-            <svg viewBox="0 0 44 44" className="w-full h-full">
-              {/* Outer subtle dial ring */}
-              <circle cx="22" cy="22" r="20" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
-              <circle cx="22" cy="22" r="16.5" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.05)" strokeWidth="0.75" />
+        <SatelliteCompassRose />
 
-              {/* Cardinal tick marks */}
-              <line x1="22" y1="2" x2="22" y2="5.5" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="42" y1="22" x2="38.5" y2="22" stroke="rgba(255,255,255,0.3)" strokeWidth="1" strokeLinecap="round" />
-              <line x1="22" y1="42" x2="22" y2="38.5" stroke="rgba(255,255,255,0.3)" strokeWidth="1" strokeLinecap="round" />
-              <line x1="2" y1="22" x2="5.5" y2="22" stroke="rgba(255,255,255,0.3)" strokeWidth="1" strokeLinecap="round" />
-
-              {/* Cardinal Labels */}
-              <text x="22" y="10" textAnchor="middle" fill="#f59e0b" fontSize="5.5" fontWeight="bold" fontFamily="system-ui, sans-serif">N</text>
-              <text x="35.5" y="23.5" textAnchor="middle" fill="#64748b" fontSize="4" fontWeight="600" fontFamily="system-ui, sans-serif">E</text>
-              <text x="22" y="37" textAnchor="middle" fill="#64748b" fontSize="4" fontWeight="600" fontFamily="system-ui, sans-serif">S</text>
-              <text x="8.5" y="23.5" textAnchor="middle" fill="#64748b" fontSize="4" fontWeight="600" fontFamily="system-ui, sans-serif">W</text>
-
-              {/* Compass Needle */}
-              {/* North Arrow (Amber / Gold) */}
-              <polygon points="22,11 24.5,21.5 22,20" fill="#f59e0b" />
-              <polygon points="22,11 19.5,21.5 22,20" fill="#d97706" />
-
-              {/* South Arrow (Slate) */}
-              <polygon points="22,33 24.5,22.5 22,24" fill="#475569" />
-              <polygon points="22,33 19.5,22.5 22,24" fill="#334155" />
-
-              {/* Center Pivot Hub */}
-              <circle cx="22" cy="22" r="2" fill="#0f172a" stroke="#f59e0b" strokeWidth="1" />
-            </svg>
-          </div>
-
-          {/* Orientation Readout Pill */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-950/80 border border-white/10 text-[11px] font-mono text-slate-300 backdrop-blur-md shadow-md opacity-90 transition-opacity">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
-            <span className="font-bold text-amber-400">North 0°</span>
-            <span className="text-slate-500">•</span>
-            <span className="text-slate-400">True North</span>
-          </div>
-        </div>
-
-        {/* Top-Right: Map Mode & View Mode Switcher */}
         <div className="absolute top-4 right-4 flex items-center gap-2 z-30">
           <button
             type="button"
@@ -1029,38 +572,13 @@ export const SatelliteRoofCanvas: React.FC = () => {
           </button>
         </div>
 
-        {/* Floating Drawing & Zoom Studio Dock (Unified, No-Overlap Island) */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[calc(100%-1.5rem)] overflow-x-auto no-scrollbar flex items-center gap-1.5 p-1.5 rounded-full bg-slate-950/90 border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-2xl z-30 select-none">
-          {/* AI Marquee Auto-Map Button - Hidden for the meantime */}
-          {/*
           <button
             type="button"
             onClick={() => {
-              if (isDrawingMode) setIsDrawingMode(false);
-              setIsMarqueeMode(!isMarqueeMode);
-            }}
-            className={`map-control-btn px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 whitespace-nowrap flex-shrink-0 ${
-              isMarqueeMode
-                ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/30'
-                : 'text-amber-300 hover:text-white hover:bg-white/10'
-            }`}
-            title="Marquee Drag over any building roof to auto-detect faces, tilt & azimuth with AI"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-current flex-shrink-0 animate-pulse" />
-            <span className="whitespace-nowrap">{isMarqueeMode ? 'Cancel Marquee' : 'AI Auto-Map'}</span>
-          </button>
-          */}
-
-          {/* Manual Drawing Mode */}
-          <button
-            type="button"
-            onClick={() => {
-              if (isMarqueeMode) setIsMarqueeMode(false);
               const nextDrawing = !isDrawingMode;
               setIsDrawingMode(nextDrawing);
               if (nextDrawing) {
-                // When entering draw mode: if no section active or active section is already closed,
-                // select an empty face or create a fresh section ready for drawing
                 const active = roofSections.find((s) => s.id === activeSectionId);
                 if (!active || active.vertices.length >= 3) {
                   const emptySec = roofSections.find((s) => s.vertices.length === 0);
@@ -1070,11 +588,8 @@ export const SatelliteRoofCanvas: React.FC = () => {
                     addRoofSection();
                   }
                 }
-              } else {
-                // If closing polygon with 0 vertices, clean up the empty section
-                if (activeSection && activeSection.vertices.length === 0) {
-                  removeRoofSection(activeSection.id);
-                }
+              } else if (activeSection && activeSection.vertices.length === 0) {
+                removeRoofSection(activeSection.id);
               }
             }}
             className={`map-control-btn px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 transition-all active:scale-95 whitespace-nowrap flex-shrink-0 ${
@@ -1126,7 +641,6 @@ export const SatelliteRoofCanvas: React.FC = () => {
 
           <div className="w-px h-4 bg-white/10 my-auto flex-shrink-0" />
 
-          {/* Integrated Tactile Zoom Segment with Live Readout */}
           <div className="flex items-center gap-0.5 bg-white/5 rounded-full p-0.5 border border-white/5 flex-shrink-0">
             <button
               type="button"
@@ -1157,99 +671,10 @@ export const SatelliteRoofCanvas: React.FC = () => {
           </div>
         </div>
 
-        {/* Floating High-End Basemap Selector (Bottom-Left) */}
-        <div className="absolute bottom-4 left-4 z-30 select-none" ref={basemapMenuRef}>
-          {/* Popover Card */}
-          {isBasemapMenuOpen && (
-            <div className="absolute bottom-full left-0 mb-2.5 w-72 sm:w-80 rounded-xl bg-slate-900/95 dark:bg-[#0B0F18] border border-white/10 shadow-[0_24px_50px_rgba(0,0,0,0.85)] backdrop-blur-2xl overflow-hidden z-40 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                {/* Header */}
-                <div className="px-3.5 py-2 bg-white/[0.03] border-b border-white/10 flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono font-bold tracking-[0.18em] text-slate-300">
-                    <Layers className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Map Layer Provider</span>
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                    High-Res PH
-                  </span>
-                </div>
-
-                {/* Options List */}
-                <div className="p-1.5 space-y-1">
-                  {BASEMAP_OPTIONS.map((opt) => {
-                    const isSelected = basemapProvider === opt.id;
-                    return (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        onClick={() => {
-                          setBasemapProvider(opt.id);
-                          setIsBasemapMenuOpen(false);
-                        }}
-                        className={`w-full text-left p-2.5 rounded-xl flex items-start gap-2.5 transition-all duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer group ${
-                          isSelected
-                            ? 'bg-amber-500/15 border border-amber-500/40 text-white shadow-xs'
-                            : 'hover:bg-white/[0.05] border border-transparent text-slate-300'
-                        }`}
-                      >
-                        <div
-                          className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                            isSelected
-                              ? 'bg-amber-500 text-slate-950 font-bold'
-                              : 'bg-white/10 text-slate-400 group-hover:text-white'
-                          }`}
-                        >
-                          {isSelected ? (
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                          ) : (
-                            <Globe className="w-3.5 h-3.5" />
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-1.5">
-                            <span className="text-xs font-bold truncate">
-                              {opt.name}
-                            </span>
-                            <span
-                              className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full whitespace-nowrap ${
-                                isSelected
-                                  ? 'bg-amber-400/20 text-amber-300'
-                                  : 'bg-white/5 text-slate-400'
-                              }`}
-                            >
-                              {opt.badge}
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-slate-400 leading-tight mt-0.5 truncate font-normal">
-                            {opt.description}
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-            </div>
-          )}
-
-          {/* Island Trigger Pill */}
-          <button
-            type="button"
-            onClick={() => setIsBasemapMenuOpen(!isBasemapMenuOpen)}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-950/90 border border-white/15 text-slate-200 hover:text-white backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] text-xs font-semibold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-amber-500/40 active:scale-95 cursor-pointer group"
-            title="Switch satellite or road map provider"
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
-            <Layers className="w-3.5 h-3.5 text-amber-400 group-hover:rotate-12 transition-transform" />
-            <span className="hidden sm:inline text-xs font-medium">
-              {BASEMAP_OPTIONS.find((o) => o.id === basemapProvider)?.name || 'Google Satellite (HD)'}
-            </span>
-            <ChevronUp
-              className={`w-3.5 h-3.5 text-slate-400 group-hover:text-amber-400 transition-transform duration-300 ${
-                isBasemapMenuOpen ? 'rotate-180 text-amber-400' : ''
-              }`}
-            />
-          </button>
-        </div>
+        <SatelliteBasemapMenu
+          basemapProvider={basemapProvider}
+          onSelectProvider={setBasemapProvider}
+        />
       </div>
     </div>
   );

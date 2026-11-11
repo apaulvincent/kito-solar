@@ -1,10 +1,9 @@
-// src/features/solar-mapper/utils/geodesicMath.ts
 import { GeoPoint, LocalPoint, OuterTiltSide } from '../types/solarMapper';
+import { degToRad, radToDeg, findEaveAxisAngleRad } from './geometryAngles';
+
+export { degToRad, radToDeg };
 
 export const EARTH_RADIUS_METERS = 6378137; // WGS84 Major Axis Radius
-
-export const degToRad = (deg: number): number => (deg * Math.PI) / 180;
-export const radToDeg = (rad: number): number => (rad * 180) / Math.PI;
 
 /**
  * Calculates great-circle Haversine distance between two coordinates in meters.
@@ -291,31 +290,7 @@ export function getOuterTiltSides(vertices: GeoPoint[]): OuterTiltSide[] {
 
   const centroid = calculateCentroid(vertices);
   const localPts = projectVerticesToLocalMeters(vertices, centroid);
-
-  // Find dominant edge orientation
-  let maxLenSq = -1;
-  let domAngleRad = 0;
-  const n = localPts.length;
-
-  for (let i = 0; i < n; i++) {
-    const next = (i + 1) % n;
-    const dx = localPts[next].x - localPts[i].x;
-    const dy = localPts[next].y - localPts[i].y;
-    const lenSq = dx * dx + dy * dy;
-    if (lenSq > maxLenSq) {
-      maxLenSq = lenSq;
-      domAngleRad = Math.atan2(dy, dx);
-    }
-  }
-
-  while (domAngleRad >= Math.PI / 2) domAngleRad -= Math.PI;
-  while (domAngleRad < -Math.PI / 2) domAngleRad += Math.PI;
-
-  // The eave of a building is the primary horizontal axis (closest to East-West / facing South)
-  let eaveAngleRad = domAngleRad;
-  if (Math.abs(eaveAngleRad) > Math.PI / 4) {
-    eaveAngleRad = eaveAngleRad > 0 ? eaveAngleRad - Math.PI / 2 : eaveAngleRad + Math.PI / 2;
-  }
+  const eaveAngleRad = findEaveAxisAngleRad(localPts);
 
   const cosTheta = Math.cos(eaveAngleRad);
   const sinTheta = Math.sin(eaveAngleRad);

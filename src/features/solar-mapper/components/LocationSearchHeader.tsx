@@ -44,7 +44,6 @@ export const LocationSearchHeader: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Debounced geocoding search prioritizing the Philippines
   useEffect(() => {
     if (query.trim().length < 2) {
       setResults([]);
@@ -52,19 +51,26 @@ export const LocationSearchHeader: React.FC = () => {
       return;
     }
 
+    const controller = new AbortController();
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const found = await searchLocations(query);
+        const found = await searchLocations(query, controller.signal);
+        if (controller.signal.aborted) return;
         setResults(found);
         setSelectedIndex(found.length > 0 ? 0 : -1);
         setIsOpen(true);
       } finally {
-        setIsSearching(false);
+        if (!controller.signal.aborted) {
+          setIsSearching(false);
+        }
       }
     }, 280);
 
-    return () => clearTimeout(timer);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
   }, [query]);
 
   const handleSelectLocation = async (coords: { lat: number; lng: number }, name: string) => {

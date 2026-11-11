@@ -9,9 +9,10 @@ import {
   Check,
   ChevronDown,
 } from 'lucide-react';
-import { useSolarMapperStore } from '../store/useSolarMapperStore';
-import { PshDesignBasis } from '../types/solarMapper';
+import { useTimedFlag } from '@/hooks/useTimedFlag';
 import { useApplianceLoadStore } from '@/store/useApplianceLoadStore';
+import { PshDesignBasis } from '../types/solarMapper';
+import { useSolarMapperStore } from '../store/useSolarMapperStore';
 
 export const SeasonalIrradianceChart: React.FC = () => {
   const {
@@ -22,7 +23,7 @@ export const SeasonalIrradianceChart: React.FC = () => {
   } = useSolarMapperStore();
 
   const setLoadCalculatorConfig = useApplianceLoadStore((s) => s.setConfig);
-  const [synced, setSynced] = useState(false);
+  const [synced, triggerSynced] = useTimedFlag(3000);
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (!irradianceProfile) return null;
@@ -36,15 +37,13 @@ export const SeasonalIrradianceChart: React.FC = () => {
     p25EffectivePsh,
   } = irradianceProfile;
 
-  // Max value for chart scaling (typically 6.5 or 7.0 PSH)
   const maxPsh = Math.max(6.5, ...monthlySeries.map((m) => Math.max(m.rawGhiKwhM2, m.effectivePsh)));
 
   const handleSyncToCalculators = (e: React.MouseEvent) => {
     e.stopPropagation();
     const selectedPsh = getSelectedPsh();
     setLoadCalculatorConfig({ peakSunHours: selectedPsh });
-    setSynced(true);
-    setTimeout(() => setSynced(false), 3000);
+    triggerSynced();
   };
 
   const basisOptions: {
@@ -157,7 +156,7 @@ export const SeasonalIrradianceChart: React.FC = () => {
             <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60">
               <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                 <TrendingUp className="w-3.5 h-3.5 text-amber-500" />
-                <span>Dry Peak Peak (Best)</span>
+                <span>Dry Peak (Best)</span>
               </div>
               <div className="text-lg font-extrabold font-mono text-slate-900 dark:text-white">
                 {bestMonth.effectivePsh}{' '}

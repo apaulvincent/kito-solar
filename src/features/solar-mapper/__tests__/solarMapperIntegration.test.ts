@@ -1,7 +1,5 @@
-// src/features/solar-mapper/__tests__/solarMapperIntegration.test.ts
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useSolarMapperStore } from '../store/useSolarMapperStore';
-import { REGIONAL_PRESETS } from '../services/regionalPresets';
 
 describe('Solar Mapper Zustand Store & Integration Suite', () => {
   beforeEach(() => {
@@ -68,7 +66,7 @@ describe('Solar Mapper Zustand Store & Integration Suite', () => {
 
   it('defaults new and sample roofs to flat (0° pitch)', () => {
     // 1. Manually added section
-    const id = useSolarMapperStore.getState().addRoofSection('Flat House');
+    useSolarMapperStore.getState().addRoofSection('Flat House');
     const sec = useSolarMapperStore.getState().roofSections[0];
     expect(sec.pitchDeg).toBe(0);
     expect(sec.pivotEdgeIndex).toBe(0);

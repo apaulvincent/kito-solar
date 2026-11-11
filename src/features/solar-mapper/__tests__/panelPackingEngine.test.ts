@@ -58,18 +58,16 @@ describe('Panel Packing Engine & Physical Layout Optimization', () => {
       orientationPreference: 'auto_best',
     });
 
-    // 60m² * 0.82 = 49.2 m² usable area
+    // Usable area = 82% setback * 60m^2 = 49.2 m^2; 580W module footprint with clamp gap ~ 2.65 m^2
     expect(packing.usableAreaSqm).toBeCloseTo(49.2, 1);
-
-    // Each 580W panel with 20mm gap is ~1.154m x 2.298m ≈ 2.65 m²
-    // Theoretical max ~ 49.2 / 2.65 ≈ 18 panels
     expect(packing.recommendedMaxPanels).toBeGreaterThanOrEqual(10);
     expect(packing.recommendedMaxPanels).toBeLessThanOrEqual(20);
     expect(packing.placedPanels.length).toBe(packing.recommendedMaxPanels);
 
-    // Total kWp should match panelCount * 580W
-    const expectedKwp = Math.round(((packing.recommendedMaxPanels * 580) / 1000) * 100) / 100;
-    expect(packing.totalArrayKwp).toBe(expectedKwp);
+    // Independent property check: 580W = 0.58 kW per panel, rounded to 0.01 kWp
+    expect(packing.totalArrayKwp).toBeGreaterThanOrEqual(5.8);
+    expect(packing.totalArrayKwp).toBeLessThanOrEqual(11.6);
+    expect(Math.abs(packing.totalArrayKwp - packing.recommendedMaxPanels * 0.58)).toBeLessThan(0.01);
   });
 
   it('handles empty or tiny sub-panel polygons without crashing', () => {

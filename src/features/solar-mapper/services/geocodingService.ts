@@ -46,11 +46,36 @@ function parseCoordinateQuery(query: string): GeocodingResult | null {
   };
 }
 
+interface NominatimAddress {
+  city?: string;
+  town?: string;
+  municipality?: string;
+  city_district?: string;
+  quarter?: string;
+  suburb?: string;
+  village?: string;
+  neighbourhood?: string;
+  road?: string;
+  pedestrian?: string;
+  building?: string;
+  province?: string;
+  state?: string;
+  country_code?: string;
+}
+
+interface NominatimSearchItem {
+  place_id?: number | string;
+  lat: string;
+  lon: string;
+  display_name: string;
+  address?: NominatimAddress;
+}
+
 /**
- * Formats a clean short name from OpenStreetMap address details.
- * Prioritizes Barangay, Suburb, Road, and City/Municipality in the Philippines.
+ * Formats a clean short name from OpenStreetMap address details,
+ * prioritizing Barangay, Suburb, Road, and City/Municipality in the Philippines.
  */
-function formatPhilippineShortName(item: any): string {
+function formatPhilippineShortName(item: NominatimSearchItem): string {
   const addr = item.address || {};
   const locality = addr.city || addr.town || addr.municipality || addr.city_district || '';
   const subLocality = addr.quarter || addr.suburb || addr.village || addr.neighbourhood || '';
@@ -67,9 +92,24 @@ function formatPhilippineShortName(item: any): string {
     return province && province !== locality ? `${locality}, ${province}` : locality;
   }
 
-  // Fallback to first two segments of display_name
   const parts = (item.display_name || '').split(',');
   return parts.slice(0, 2).join(',').trim() || item.display_name;
+}
+
+function mapNominatimItem(item: NominatimSearchItem, forcePhilippine = false): GeocodingResult {
+  const lat = parseFloat(item.lat);
+  const lng = parseFloat(item.lon);
+  const isPhilippine =
+    forcePhilippine || isWithinPhilippineBounds(lat, lng) || item.address?.country_code === 'ph';
+
+  return {
+    placeId: String(item.place_id || `${item.lat}_${item.lon}`),
+    displayName: item.display_name,
+    shortName: formatPhilippineShortName(item),
+    coordinates: { lat, lng },
+    isPhilippine,
+    regionOrProvince: item.address?.province || item.address?.state || 'Philippines',
+  };
 }
 
 /**
@@ -165,25 +205,10 @@ export async function searchLocations(query: string, signal?: AbortSignal): Prom
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        remoteResults = data.map((item: any) => {
-          const lat = parseFloat(item.lat);
-          const lng = parseFloat(item.lon);
-          const isPh = isWithinPhilippineBounds(lat, lng) || item.address?.country_code === 'ph';
-          const short = formatPhilippineShortName(item);
-
-          return {
-            placeId: String(item.place_id || `${item.lat}_${item.lon}`),
-            displayName: item.display_name,
-            shortName: short,
-            coordinates: { lat, lng },
-            isPhilippine: isPh,
-            regionOrProvince: item.address?.province || item.address?.state || 'Philippines',
-          };
-        });
+        remoteResults = (data as NominatimSearchItem[]).map((item) => mapNominatimItem(item));
       }
     }
 
-    // If no PH-specific results returned and query is long, try fallback with ", Philippines" appended
     if (remoteResults.length === 0 && trimmed.length >= 3 && !trimmed.toLowerCase().includes('philippines')) {
       try {
         const fallbackRes = await fetch(
@@ -200,21 +225,13 @@ export async function searchLocations(query: string, signal?: AbortSignal): Prom
         if (fallbackRes.ok) {
           const fallbackData = await fallbackRes.json();
           if (Array.isArray(fallbackData)) {
-            remoteResults = fallbackData.map((item: any) => ({
-              placeId: String(item.place_id || `${item.lat}_${item.lon}`),
-              displayName: item.display_name,
-              shortName: formatPhilippineShortName(item),
-              coordinates: {
-                lat: parseFloat(item.lat),
-                lng: parseFloat(item.lon),
-              },
-              isPhilippine: true,
-              regionOrProvince: item.address?.province || item.address?.state || 'Philippines',
-            }));
+            remoteResults = (fallbackData as NominatimSearchItem[]).map((item) =>
+              mapNominatimItem(item, true)
+            );
           }
         }
-      } catch (_fbErr) {
-        // Fallback silently ignores errors
+      } catch {
+        // Ignore network errors on fallback query
       }
     }
 

@@ -37,7 +37,6 @@ export const SolarMapperPage: React.FC = () => {
 
   return (
     <main className="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-5 space-y-4">
-      {/* Studio Header: Clean Navigation & Context */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-white/10">
         <div className="flex items-center gap-3">
           <button
@@ -64,15 +63,10 @@ export const SolarMapperPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Location & Climatology Search Bar */}
       <LocationSearchHeader />
-
-      {/* Roof Capacity vs Electrical Load Verification Alert */}
       <RoofVsLoadComparisonCard />
 
-      {/* Main Studio Deck (Left: Satellite/3D Viewport, Right: Section Inspector) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left (lg: 7 cols): Canvas Viewport */}
         <div className="lg:col-span-7 min-w-0">
           {viewMode === '2d_satellite' ? (
             <SatelliteRoofCanvas />
@@ -81,13 +75,11 @@ export const SolarMapperPage: React.FC = () => {
           )}
         </div>
 
-        {/* Right (lg: 5 cols): Roof Section Geometry & Physics Inspector */}
         <div className="lg:col-span-5 min-w-0">
           <RoofSectionInspector />
         </div>
       </div>
 
-      {/* Seasonal Irradiance & Thermal Derating Chart */}
       <SeasonalIrradianceChart />
     </main>
   );

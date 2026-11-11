@@ -1,4 +1,3 @@
-// src/features/solar-mapper/types/solarMapper.ts
 import { z } from 'zod';
 
 export type IrradianceSource = 'nasa_power' | 'pvgis_v52' | 'regional_fallback';
@@ -8,13 +7,13 @@ export type BasemapProvider = 'google_satellite' | 'google_hybrid' | 'esri_satel
 
 export interface MonthlyClimatePoint {
   monthIndex: number; // 0 = Jan, 11 = Dec
-  monthLabel: string; // 'Jan', 'Feb', ...
-  rawGhiKwhM2: number; // Global Horizontal Irradiance (kWh/m²/day = raw PSH)
-  tiltedPoaKwhM2: number; // Plane of Array tilted irradiance
-  ambientTempC: number; // T2M (°C)
-  estimatedCellTempC: number; // Operating cell temperature
-  tempDeratingFactor: number; // e.g. 0.89 (-11% loss)
-  effectivePsh: number; // Tilted POA * tempDeratingFactor * orientationFactor
+  monthLabel: string;
+  rawGhiKwhM2: number; // kWh/m2/day
+  tiltedPoaKwhM2: number;
+  ambientTempC: number;
+  estimatedCellTempC: number;
+  tempDeratingFactor: number;
+  effectivePsh: number;
 }
 
 export interface LocationIrradianceProfile {
@@ -24,7 +23,7 @@ export interface LocationIrradianceProfile {
   source: IrradianceSource;
   fetchedAtIso: string;
   optimalTiltDeg: number;
-  optimalAzimuthDeg: number; // 180° = South in Northern Hemisphere
+  optimalAzimuthDeg: number; // 180 = South in Northern Hemisphere
   annualAvgRawPsh: number;
   annualAvgEffectivePsh: number;
   worstMonth: {
@@ -53,12 +52,12 @@ export interface LocalPoint {
 
 export interface PlacedPanel {
   id: string;
-  x: number; // center relative to local polygon centroid (meters)
+  x: number; // relative to local centroid (meters)
   y: number;
   widthM: number;
   lengthM: number;
   orientation: 'portrait' | 'landscape';
-  rotationDeg?: number; // rotation in degrees relative to local axes
+  rotationDeg?: number;
 }
 
 export interface PanelSpec {
@@ -94,11 +93,11 @@ export const PANEL_SPECS: Record<550 | 580 | 600, PanelSpec> = {
 };
 
 export interface OuterTiltSide {
-  sideIndex: number; // 0, 1, 2, 3
-  name: string; // 'Side 1 (South / Eave)', etc.
-  shortName: string; // 'Side 1', 'Side 2', 'Side 3', 'Side 4'
+  sideIndex: number;
+  name: string;
+  shortName: string;
   cardinalDir: 'South' | 'East' | 'North' | 'West';
-  azimuthDeg: number; // Downslope compass heading (e.g. 180°, 90°, 0°, 270°)
+  azimuthDeg: number; // Downslope compass heading
   lengthM: number;
   startMeters: LocalPoint;
   endMeters: LocalPoint;
@@ -109,21 +108,20 @@ export interface RoofPolygonSection {
   id: string;
   name: string;
   vertices: GeoPoint[];
-  pitchDeg: number; // 0° to 45°
-  azimuthDeg: number; // 0° = N, 90° = E, 180° = S, 270° = W
-  rollDeg?: number; // -45° to +45° secondary roll tilt (default 0)
-  baseHeightMeters?: number; // Optional elevation above ground in meters (default 4.0)
-  pivotEdgeIndex?: number; // 0-based index of polygon edge acting as rotation/hinge axis
-  shadingLossPercent: number; // 0% to 50%
-  setbackRatio: number; // default 0.82 (18% reserved for edges & walkways)
+  pitchDeg: number; // 0 to 45 deg
+  azimuthDeg: number; // 0 = N, 90 = E, 180 = S, 270 = W
+  rollDeg?: number; // -45 to +45 deg secondary roll tilt
+  baseHeightMeters?: number; // elevation above ground (m), default 4.0
+  pivotEdgeIndex?: number;
+  shadingLossPercent: number;
+  setbackRatio: number; // default 0.82 (18% walkway/edge clearance)
   panelOrientation: PanelOrientation;
   panelWattage: 550 | 580 | 600;
   customPanelWidthM?: number;
   customPanelLengthM?: number;
   customPanelWattage?: number;
-  panelRotationDeg?: number; // Custom panel alignment angle in degrees (auto-aligns to roof edge if undefined)
+  panelRotationDeg?: number; // auto-aligns to longest edge when undefined
   hasCustomAzimuth?: boolean;
-  // Computed metrics
   flatAreaSqm: number;
   slopedAreaSqm: number;
   usableAreaSqm: number;
@@ -136,23 +134,6 @@ export interface RoofPolygonSection {
   orientationYieldFactor: number;
   estimatedDailyKwh: number;
   hasBowtieCross: boolean;
-}
-
-export interface DetectedRoofFace {
-  name: string;
-  vertices: GeoPoint[];
-  pitchDeg: number;
-  azimuthDeg: number;
-  shadingLossPercent?: number;
-  confidence?: number;
-}
-
-export interface MarqueeBoundingBox {
-  northWest: GeoPoint;
-  southEast: GeoPoint;
-  widthMeters: number;
-  lengthMeters: number;
-  areaSqm: number;
 }
 
 export interface RoofMappingSummary {
@@ -180,11 +161,10 @@ export interface RegionalPreset {
   bestMonthPsh: number;
   optimalTiltDeg: number;
   optimalAzimuthDeg: number;
-  monthlyGhi: number[]; // 12 values
-  monthlyT2m: number[]; // 12 values (°C)
+  monthlyGhi: number[]; // 12 monthly values
+  monthlyT2m: number[]; // 12 monthly values (deg C)
 }
 
-// Zod schemas for NASA POWER Climatology API
 export const NasaPowerClimatologyResponseSchema = z.object({
   properties: z.object({
     parameter: z.object({
@@ -193,9 +173,11 @@ export const NasaPowerClimatologyResponseSchema = z.object({
       SI_EF_OPTIMAL_ANG: z.record(z.string(), z.number()).optional(),
     }),
   }),
-  header: z.object({
-    title: z.string().optional(),
-  }).optional(),
+  header: z
+    .object({
+      title: z.string().optional(),
+    })
+    .optional(),
 });
 
 export type NasaPowerClimatologyResponse = z.infer<typeof NasaPowerClimatologyResponseSchema>;

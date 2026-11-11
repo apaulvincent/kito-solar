@@ -1,16 +1,15 @@
-// src/features/solar-mapper/components/RoofVsLoadComparisonCard.tsx
 import React from 'react';
 import {
-  CheckCircle2,
   AlertTriangle,
   ArrowRight,
   Calculator,
+  CheckCircle2,
 } from 'lucide-react';
-import { useSolarMapperStore } from '../store/useSolarMapperStore';
 import { useRoofVsLoadContext } from '@/store/systemSizingSelector';
+import { useSolarMapperStore } from '../store/useSolarMapperStore';
 
 export const RoofVsLoadComparisonCard: React.FC = () => {
-  const { getSummary, panelWattage } = useSolarMapperStore();
+  const getSummary = useSolarMapperStore((s) => s.getSummary);
   const summary = getSummary();
 
   const { loadResult, setActiveView } = useRoofVsLoadContext();
@@ -26,11 +25,6 @@ export const RoofVsLoadComparisonCard: React.FC = () => {
 
   const hasSpaceDeficit = roofMaxPanels < requiredPanels;
   const sparePanels = roofMaxPanels - requiredPanels;
-  const avgWattage =
-    roofMaxPanels > 0
-      ? Math.round((roofMaxKwp / roofMaxPanels) * 1000)
-      : panelWattage;
-  const spareKwp = Math.round(((Math.abs(sparePanels) * avgWattage) / 1000) * 100) / 100;
 
   return (
     <div

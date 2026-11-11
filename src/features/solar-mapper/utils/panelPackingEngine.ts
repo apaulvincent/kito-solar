@@ -1,6 +1,7 @@
-// src/features/solar-mapper/utils/panelPackingEngine.ts
 import { LocalPoint, PANEL_SPECS, PanelOrientation, PlacedPanel } from '../types/solarMapper';
-import { degToRad } from './geodesicMath';
+import { degToRad, findDominantEdgeAngle } from './geometryAngles';
+
+export { findDominantEdgeAngle };
 
 const CLAMP_GAP_METERS = 0.02; // 20mm mid/end clamp spacing
 
@@ -48,33 +49,6 @@ export interface PackingResult {
   usableAreaSqm: number;
   totalArrayKwp: number;
   dominantAngleDeg: number;
-}
-
-/**
- * Finds the dominant edge angle of a polygon in degrees [-90, 90).
- * Matches the orientation of the longest edge (eave/ridge) of the roof.
- */
-export function findDominantEdgeAngle(localVertices: LocalPoint[]): number {
-  if (localVertices.length < 2) return 0;
-  let maxLenSq = -1;
-  let bestAngleRad = 0;
-
-  for (let i = 0; i < localVertices.length; i++) {
-    const nextIdx = (i + 1) % localVertices.length;
-    const dx = localVertices[nextIdx].x - localVertices[i].x;
-    const dy = localVertices[nextIdx].y - localVertices[i].y;
-    const lenSq = dx * dx + dy * dy;
-    if (lenSq > maxLenSq) {
-      maxLenSq = lenSq;
-      bestAngleRad = Math.atan2(dy, dx);
-    }
-  }
-
-  // Normalize angle to [-PI/2, PI/2)
-  while (bestAngleRad >= Math.PI / 2) bestAngleRad -= Math.PI;
-  while (bestAngleRad < -Math.PI / 2) bestAngleRad += Math.PI;
-
-  return Math.round(((bestAngleRad * 180) / Math.PI) * 10) / 10;
 }
 
 /**

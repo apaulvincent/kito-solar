@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { calculatePanelPacking } from '../utils/panelPackingEngine';
-import { LocalPoint, PANEL_SPECS } from '../types/solarMapper';
+import { LocalPoint } from '../types/solarMapper';
 
 describe('Custom Panel Dimensions & Specs in Packing Engine', () => {
   // A 10m x 10m square flat roof
