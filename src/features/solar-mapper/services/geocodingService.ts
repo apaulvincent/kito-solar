@@ -171,17 +171,13 @@ export async function searchLocations(query: string, signal?: AbortSignal): Prom
     }
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4500);
+  const onExternalAbort = () => controller.abort();
+  signal?.addEventListener('abort', onExternalAbort);
+
   // 4. Remote geocoding: Query OpenStreetMap Nominatim prioritizing the Philippines
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4500);
-
-    const onExternalAbort = () => controller.abort();
-    if (signal) {
-      signal.addEventListener('abort', onExternalAbort);
-    }
-
-    // Use countrycodes=ph to strictly prioritize Philippine results
     const phEndpoint = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
       trimmed
     )}&countrycodes=ph&limit=8&addressdetails=1`;
@@ -194,11 +190,6 @@ export async function searchLocations(query: string, signal?: AbortSignal): Prom
       },
       signal: controller.signal,
     });
-
-    clearTimeout(timeoutId);
-    if (signal) {
-      signal.removeEventListener('abort', onExternalAbort);
-    }
 
     let remoteResults: GeocodingResult[] = [];
 
@@ -273,5 +264,8 @@ export async function searchLocations(query: string, signal?: AbortSignal): Prom
     return combined.slice(0, 8);
   } catch (_e) {
     return localSuggestions.slice(0, 8);
+  } finally {
+    clearTimeout(timeoutId);
+    signal?.removeEventListener('abort', onExternalAbort);
   }
 }

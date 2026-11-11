@@ -239,7 +239,7 @@ export const projectService = {
     }
 
     existing[targetIndex] = updatedProject;
-    existing.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+    existing.sort((a, b) => (Date.parse(b.updated_at) || 0) - (Date.parse(a.updated_at) || 0));
     writeToLocalStorage(userId, existing);
 
     return { success: true, project: updatedProject };

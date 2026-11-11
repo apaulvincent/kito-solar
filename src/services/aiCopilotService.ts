@@ -280,7 +280,8 @@ export class AiCopilotService {
             },
           ],
         };
-      } catch {
+      } catch (err) {
+        console.warn('[Copilot] Offline bill proposal fallback failed:', err);
       }
     }
 
@@ -294,7 +295,8 @@ export class AiCopilotService {
           createdAt: new Date(),
         };
       }
-    } catch {
+    } catch (err) {
+      console.warn('[Copilot] Knowledge base fallback failed:', err);
     }
 
     return {

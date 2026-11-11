@@ -58,7 +58,7 @@ export function useDismissable({
         window.removeEventListener('keydown', handleKeyDown);
       }
       if (lockScroll && typeof document !== 'undefined') {
-        document.body.style.overflow = previousOverflow || 'unset';
+        document.body.style.overflow = previousOverflow ?? '';
       }
     };
   }, [isOpen, onClose, containerRef, closeOnOutsideClick, closeOnEscape, lockScroll]);

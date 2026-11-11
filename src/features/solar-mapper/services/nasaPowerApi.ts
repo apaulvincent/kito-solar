@@ -73,15 +73,12 @@ export async function fetchNasaPowerIrradiance({
 
   const url = `https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=ALLSKY_SFC_SW_DWN,T2M,SI_EF_OPTIMAL_ANG&community=RE&longitude=${roundedLng}&latitude=${roundedLat}&format=JSON`;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  const onExternalAbort = () => controller.abort();
+  signal?.addEventListener('abort', onExternalAbort);
+
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-    const onExternalAbort = () => controller.abort();
-    if (signal) {
-      signal.addEventListener('abort', onExternalAbort);
-    }
-
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -89,11 +86,6 @@ export async function fetchNasaPowerIrradiance({
       },
       signal: controller.signal,
     });
-
-    clearTimeout(timeoutId);
-    if (signal) {
-      signal.removeEventListener('abort', onExternalAbort);
-    }
 
     if (!response.ok) {
       throw new Error(`NASA POWER API HTTP ${response.status}`);
@@ -144,5 +136,8 @@ export async function fetchNasaPowerIrradiance({
     // Graceful offline fallback to nearest regional preset
     const nearestPreset = findNearestRegionalPreset(lat, lng);
     return createProfileFromPreset(nearestPreset, pitchDeg, azimuthDeg, locationName);
+  } finally {
+    clearTimeout(timeoutId);
+    signal?.removeEventListener('abort', onExternalAbort);
   }
 }
