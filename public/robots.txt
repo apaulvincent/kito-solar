@@ -36,3 +36,6 @@ Disallow: /projects/
 User-agent: Google-Extended
 Disallow: /account
 Disallow: /projects/
+
+Sitemap: https://kitosolar.pvdeo.com/sitemap.xml
+

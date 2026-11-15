@@ -1,0 +1,19 @@
+{
+  "name": "Kito Solar - Photovoltaic & Electrical Sizing Studio",
+  "short_name": "Kito Solar",
+  "description": "Deterministic Solar PV Sizing, Electrical Protection Schedules, and Interactive CAD Visualizer",
+  "start_url": "/tool",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#090D16",
+  "theme_color": "#F59E0B",
+  "icons": [
+    {
+      "src": "/solar-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
