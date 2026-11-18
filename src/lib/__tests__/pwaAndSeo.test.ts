@@ -8,6 +8,7 @@ describe('PWA & SEO Configuration Suite', () => {
   const sitemapPath = path.join(rootDir, 'public', 'sitemap.xml');
   const robotsPath = path.join(rootDir, 'public', 'robots.txt');
   const htmlPath = path.join(rootDir, 'index.html');
+  const vercelPath = path.join(rootDir, 'vercel.json');
 
   it('provides a valid web manifest with standalone PWA properties', () => {
     expect(fs.existsSync(manifestPath)).toBe(true);
@@ -52,13 +53,33 @@ describe('PWA & SEO Configuration Suite', () => {
     expect(content).toContain('Sitemap: https://kitosolar.pvdeo.com/sitemap.xml');
   });
 
-  it('links the manifest and mobile meta tags in index.html without em-dashes', () => {
+  it('links the manifest, Open Graph, and mobile meta tags in index.html without em-dashes', () => {
     expect(fs.existsSync(htmlPath)).toBe(true);
     const content = fs.readFileSync(htmlPath, 'utf-8');
 
     expect(content).toContain('href="/site.webmanifest"');
     expect(content).toContain('name="theme-color" content="#F59E0B"');
     expect(content).toContain('rel="apple-touch-icon"');
+    expect(content).toContain('rel="canonical" href="https://kitosolar.pvdeo.com"');
+    expect(content).toContain('property="og:title"');
+    expect(content).toContain('property="og:image"');
+    expect(content).toContain('name="twitter:card" content="summary"');
     expect(content).not.toContain('—'); // Strictly avoid em dashes in HTML title and copy
+  });
+
+  it('configures baseline HTTP security headers in vercel.json', () => {
+    expect(fs.existsSync(vercelPath)).toBe(true);
+    const config = JSON.parse(fs.readFileSync(vercelPath, 'utf-8'));
+
+    expect(Array.isArray(config.headers)).toBe(true);
+    const globalRule = config.headers.find((rule: { source: string }) => rule.source === '/(.*)');
+    expect(globalRule).toBeDefined();
+
+    const headersMap = new Map(
+      globalRule.headers.map((h: { key: string; value: string }) => [h.key, h.value])
+    );
+    expect(headersMap.get('X-Content-Type-Options')).toBe('nosniff');
+    expect(headersMap.get('X-Frame-Options')).toBe('SAMEORIGIN');
+    expect(headersMap.get('Referrer-Policy')).toBe('strict-origin-when-cross-origin');
   });
 });
