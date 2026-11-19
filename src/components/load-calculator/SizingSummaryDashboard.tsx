@@ -101,7 +101,7 @@ Solar PV Array: ${recommendedPvKwp} kWp (${recommendedPanelCount}x ${config.pane
 Battery Storage: ${recommendedBatteryKwh} kWh (${recommendedBatteryUnits5kWh}x 51.2V 100Ah LiFePO4 Modules)
 Estimated Brownout Backup Runtime: ~${estimatedBackupHours} Hours
 ---------------------------------------------
-Generated via Kito Solar (kito-solar.vercel.app)`;
+Generated via Kito Solar (https://kitosolar.pvdeo.com)`;
 
     navigator.clipboard.writeText(text);
     triggerCopied();

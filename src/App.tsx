@@ -2,6 +2,7 @@ import { AccountPage } from '@/components/account/AccountPage';
 import { SolarCopilotButton } from '@/components/ai/SolarCopilotButton';
 import { SolarCopilotDrawer } from '@/components/ai/SolarCopilotDrawer';
 import { AuthPage } from '@/components/auth/AuthPage';
+import { CopySizingSummaryButton } from '@/components/common/CopySizingSummaryButton';
 import { DownloadSizingButton } from '@/components/common/DownloadSizingButton';
 import { EngineeringDisclaimer } from '@/components/common/EngineeringDisclaimer';
 import { ConfigurationPanel } from '@/components/config/ConfigurationPanel';
@@ -149,7 +150,8 @@ export function App() {
               <span>Back to Home</span>
             </button>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <CopySizingSummaryButton />
               <DownloadSizingButton />
             </div>
           </div>
