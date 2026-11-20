@@ -16,10 +16,13 @@ import {
   ChevronUp,
   Eye,
   EyeOff,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { formatPeso } from '@/lib/utils';
 import { STORAGE_KEYS, safeStorage } from '@/lib/storage';
 import { Modal } from '@/components/common/Modal';
+import { downloadBomCsv } from '@/lib/csvExport';
+import { useTimedFlag } from '@/hooks/useTimedFlag';
 
 export function ProjectCostSummaryCard() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
@@ -27,7 +30,13 @@ export function ProjectCostSummaryCard() {
   const customPrices = useCalculatorStore((s) => s.customPrices);
   const { costSummary, summary } = calculationResult;
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [csvExported, triggerCsvExported] = useTimedFlag(2500);
   const [isOpen, setIsOpen] = useState(() => safeStorage.getItem(STORAGE_KEYS.showFinancialRoiDetails) === 'true');
+
+  const handleExportCsv = () => {
+    downloadBomCsv(calculationResult, 'Kito-Solar-BOM');
+    triggerCsvExported();
+  };
 
   const toggleOpen = () => {
     setIsOpen((prev) => {
@@ -174,6 +183,17 @@ export function ProjectCostSummaryCard() {
                 <ChevronDown className="w-3.5 h-3.5 opacity-60" />
               </>
             )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            title="Export Bill of Materials to CSV spreadsheet"
+            aria-label={csvExported ? 'Bill of Materials exported as CSV' : 'Export Bill of Materials to CSV'}
+            className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 font-mono text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>{csvExported ? 'BOM Exported!' : 'Export CSV'}</span>
           </button>
 
           <button
@@ -525,13 +545,24 @@ export function ProjectCostSummaryCard() {
                     )}
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="px-8 py-3 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 font-bold text-xs font-mono uppercase tracking-wider shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] cursor-pointer text-center"
-                  >
-                    Close Schedule
-                  </button>
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={handleExportCsv}
+                      className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs font-mono uppercase tracking-wider transition-all duration-300 active:scale-[0.98] cursor-pointer"
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>{csvExported ? 'BOM Exported!' : 'Export CSV'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleCloseModal}
+                      className="px-8 py-3 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 font-bold text-xs font-mono uppercase tracking-wider shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] cursor-pointer text-center"
+                    >
+                      Close Schedule
+                    </button>
+                  </div>
                 </div>
       </Modal>
     </div>

@@ -27,6 +27,7 @@ describe('ProjectCostSummaryCard ROI & Subtotals Toggle Suite', () => {
     expect(markup).toContain('Estimated Project Investment');
     expect(markup).toContain('ESTIMATED SYSTEM TOTAL INVESTMENT');
     expect(markup).toContain('View Pricing');
+    expect(markup).toContain('Export CSV');
     expect(markup).toContain('>ROI<');
 
     expect(markup).not.toContain('FINANCIAL SAVINGS &amp; ROI ANALYSIS');
