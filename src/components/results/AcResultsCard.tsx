@@ -2,15 +2,26 @@
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { Network, Shield, Cable, ArrowRight } from 'lucide-react';
 import { DiagramNodeKey } from '@/types/diagram';
+import { calculateMaxRunLength, parseConductorSizeMm2 } from '@/engine/voltageDrop';
 
 export function AcResultsCard() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
+  const gridVoltageStore = useCalculatorStore((s) => s.gridVoltageV);
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
   const setHoveredNodeKey = useCalculatorStore((s) => s.setHoveredNodeKey);
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
   const step2DetailMode = useCalculatorStore((s) => s.step2DetailMode);
 
   const { ac } = calculationResult;
+  const wireSizeMm2 = parseConductorSizeMm2(ac.wireSpec) || 6.0;
+  const gridVoltageV = gridVoltageStore || 230;
+  const maxAcRunMeters = calculateMaxRunLength({
+    currentA: ac.computedCurrentA,
+    voltageV: gridVoltageV,
+    conductorSizeMm2: wireSizeMm2,
+    maxDropPercent: 3.0,
+    circuitType: '1phase',
+  });
 
   const triggerLocate = (key: DiagramNodeKey) => {
     setSelectedNodeKey(key);
@@ -81,9 +92,17 @@ export function AcResultsCard() {
             THHN/THWN Copper Multi-Conductor
           </div>
           {step2DetailMode === 'detailed' && (
-            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-              {ac.explanation.wire}
-            </p>
+            <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1">
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
+                {ac.explanation.wire}
+              </p>
+              {maxAcRunMeters > 0 && (
+                <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400 pt-0.5">
+                  <span>Max run (PEC 3% drop):</span>
+                  <span className="font-semibold text-sky-700 dark:text-sky-400">{maxAcRunMeters}m</span>
+                </div>
+              )}
+            </div>
           )}
         </div>
 

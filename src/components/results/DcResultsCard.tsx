@@ -1,6 +1,7 @@
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { Zap, Shield, Cable, ArrowRight, Check } from 'lucide-react';
 import { DiagramNodeKey } from '@/types/diagram';
+import { calculateMaxRunLength, parseConductorSizeMm2 } from '@/engine/voltageDrop';
 
 export function DcResultsCard() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
@@ -9,7 +10,16 @@ export function DcResultsCard() {
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
   const step2DetailMode = useCalculatorStore((s) => s.step2DetailMode);
 
-  const { dc } = calculationResult;
+  const { dc, stringSizing } = calculationResult;
+  const wireSizeMm2 = parseConductorSizeMm2(dc.wireSpec) || 4.0;
+  const stringVoltageV = stringSizing?.voltagePerStringVmp || 400;
+  const maxDcRunMeters = calculateMaxRunLength({
+    currentA: dc.computedCurrentA,
+    voltageV: stringVoltageV,
+    conductorSizeMm2: wireSizeMm2,
+    maxDropPercent: 3.0,
+    circuitType: 'dc',
+  });
 
   const triggerLocate = (key: DiagramNodeKey) => {
     setSelectedNodeKey(key);
@@ -85,9 +95,17 @@ export function DcResultsCard() {
             {dc.wireNote}
           </div>
           {step2DetailMode === 'detailed' && (
-            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-              {dc.explanation.wire}
-            </p>
+            <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1">
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
+                {dc.explanation.wire}
+              </p>
+              {maxDcRunMeters > 0 && (
+                <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400 pt-0.5">
+                  <span>Max run (PEC 3% drop):</span>
+                  <span className="font-semibold text-amber-700 dark:text-amber-400">{maxDcRunMeters}m</span>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
