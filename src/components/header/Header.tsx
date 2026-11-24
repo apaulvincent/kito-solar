@@ -18,11 +18,14 @@ import {
   Menu,
   X,
   WifiOff,
+  Keyboard,
 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useDismissable } from '@/hooks/useDismissable';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { KeyboardShortcutsModal } from '@/components/common/KeyboardShortcutsModal';
 import { ActiveView } from '@/types/calculator';
 
 interface NavItem {
@@ -57,6 +60,13 @@ export function Header() {
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  const {
+    isOpen: isShortcutsOpen,
+    open: openShortcuts,
+    close: closeShortcuts,
+    shortcuts,
+  } = useKeyboardShortcuts();
 
   useDismissable({
     isOpen: isMobileMenuOpen,
@@ -154,6 +164,18 @@ export function Header() {
             <Coffee className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
             <span className="hidden sm:inline">Buy me Coffee</span>
           </a>
+
+          {/* Keyboard Shortcuts Button */}
+          <button
+            type="button"
+            onClick={openShortcuts}
+            title="Studio Keyboard Shortcuts (Press ?)"
+            aria-label="Studio Keyboard Shortcuts"
+            className="p-2 sm:px-3 sm:py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-xs font-mono font-medium text-slate-700 dark:text-slate-200 shadow-xs transition-colors hidden sm:flex items-center gap-1.5"
+          >
+            <Keyboard className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+            <span className="hidden lg:inline text-[10px] text-slate-500 dark:text-slate-400 font-mono">?</span>
+          </button>
 
           {/* Theme Toggle Button */}
           <button
@@ -283,18 +305,38 @@ export function Header() {
               </span>
             )}
 
-            <a
-              href="https://ko-fi.com/mepapap"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400 hover:underline"
-            >
-              <Coffee className="w-3.5 h-3.5" />
-              <span>Ko-fi</span>
-            </a>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  openShortcuts();
+                }}
+                className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 hover:text-amber-600 transition-colors"
+              >
+                <Keyboard className="w-3.5 h-3.5" />
+                <span>Shortcuts</span>
+              </button>
+
+              <a
+                href="https://ko-fi.com/mepapap"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400 hover:underline"
+              >
+                <Coffee className="w-3.5 h-3.5" />
+                <span>Ko-fi</span>
+              </a>
+            </div>
           </div>
         </div>
       )}
+
+      <KeyboardShortcutsModal
+        isOpen={isShortcutsOpen}
+        onClose={closeShortcuts}
+        shortcuts={shortcuts}
+      />
     </header>
   );
 }
