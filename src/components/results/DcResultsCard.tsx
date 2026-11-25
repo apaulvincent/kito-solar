@@ -2,6 +2,7 @@ import { useCalculatorStore } from '@/store/useCalculatorStore';
 import { Zap, Shield, Cable, ArrowRight, Check } from 'lucide-react';
 import { DiagramNodeKey } from '@/types/diagram';
 import { calculateMaxRunLength, parseConductorSizeMm2 } from '@/engine/voltageDrop';
+import { calculateConduitFill, parseConduitDiameterMm } from '@/engine/conduitFill';
 
 export function DcResultsCard() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
@@ -19,6 +20,14 @@ export function DcResultsCard() {
     conductorSizeMm2: wireSizeMm2,
     maxDropPercent: 3.0,
     circuitType: 'dc',
+  });
+
+  const conduitTradeMm = parseConduitDiameterMm(dc.conduitSpec) || 32;
+  const dcConduitFill = calculateConduitFill({
+    conduitTradeMm,
+    conductorSizeMm2: wireSizeMm2,
+    conductorCount: 2,
+    wireType: 'pv_wire',
   });
 
   const triggerLocate = (key: DiagramNodeKey) => {
@@ -178,9 +187,23 @@ export function DcResultsCard() {
             Standard: PVC (RMC / EMT / HDPE alt)
           </div>
           {step2DetailMode === 'detailed' && (
-            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
-              {dc.explanation.conduit}
-            </p>
+            <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1">
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
+                {dc.explanation.conduit}
+              </p>
+              <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400 pt-0.5">
+                <span>Fill (PEC {dcConduitFill.maxAllowableFillPct}% limit):</span>
+                <span
+                  className={`font-semibold ${
+                    dcConduitFill.isCompliant
+                      ? 'text-emerald-700 dark:text-emerald-400'
+                      : 'text-amber-700 dark:text-amber-400'
+                  }`}
+                >
+                  {dcConduitFill.fillPercent}% {dcConduitFill.isCompliant ? '(Compliant)' : '(Overfilled)'}
+                </span>
+              </div>
+            </div>
           )}
         </div>
 
