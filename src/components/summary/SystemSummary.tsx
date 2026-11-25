@@ -1,10 +1,15 @@
 // src/components/summary/SystemSummary.tsx
 import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { Sun, Zap, Battery, Ratio, ShieldAlert, Cpu } from 'lucide-react';
+import { Sun, Zap, Battery, Ratio, ShieldAlert, Cpu, Leaf } from 'lucide-react';
+import { calculateCarbonOffset } from '@/engine/carbonOffset';
 
 export function SystemSummary() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
   const { summary, warnings } = calculationResult;
+
+  const carbon = calculateCarbonOffset({
+    totalArrayPowerKw: summary.totalArrayPowerKw,
+  });
 
   const errorCount = warnings.filter((w) => w.severity === 'error').length;
   const warningCount = warnings.filter((w) => w.severity === 'warning').length;
@@ -130,6 +135,64 @@ export function SystemSummary() {
           </div>
           <div className="text-[10px] font-mono text-slate-600 dark:text-slate-400 mt-1">
             Load: {calculationResult.ac.computedCurrentA} A
+          </div>
+        </div>
+      </div>
+
+      {/* Environmental Offset Banner */}
+      <div className="mt-3.5 pt-3.5 border-t border-slate-200 dark:border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+          <div className="flex items-center gap-2">
+            <Leaf className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Environmental Offset (DOE GEF: {carbon.gridEmissionFactor} kg CO2/kWh)
+            </span>
+          </div>
+          <span className="text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400">
+            {carbon.annualGenerationKwh.toLocaleString()} kWh/yr Clean Generation
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className="p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/50">
+            <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400">Annual CO2 Avoided</div>
+            <div className="text-lg font-black font-mono text-emerald-700 dark:text-emerald-400 mt-0.5">
+              {carbon.annualCo2AvoidedTons} <span className="text-[10px] font-normal text-slate-500">MT/yr</span>
+            </div>
+            <div className="text-[10px] font-mono text-slate-600 dark:text-slate-400 mt-0.5">
+              {carbon.annualCo2AvoidedKg.toLocaleString()} kg CO2e
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/50">
+            <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400">25-Yr Lifetime CO2</div>
+            <div className="text-lg font-black font-mono text-slate-900 dark:text-white mt-0.5">
+              {carbon.lifetimeCo2AvoidedTons} <span className="text-[10px] font-normal text-slate-500">MT</span>
+            </div>
+            <div className="text-[10px] font-mono text-slate-600 dark:text-slate-400 mt-0.5">
+              {carbon.lifetimeGenerationKwh.toLocaleString()} kWh lifetime
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/50">
+            <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400">Trees Seedling Eq.</div>
+            <div className="text-lg font-black font-mono text-emerald-700 dark:text-emerald-400 mt-0.5">
+              {carbon.treesSeedlingsGrown10Yr.toLocaleString()}{' '}
+              <span className="text-[10px] font-normal text-slate-500">trees</span>
+            </div>
+            <div className="text-[10px] font-mono text-slate-600 dark:text-slate-400 mt-0.5">
+              Grown for 10 years
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/50">
+            <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400">Fossil Fuel Avoided</div>
+            <div className="text-lg font-black font-mono text-slate-900 dark:text-white mt-0.5">
+              {carbon.coalAvoidedMetricTons} <span className="text-[10px] font-normal text-slate-500">MT coal</span>
+            </div>
+            <div className="text-[10px] font-mono text-slate-600 dark:text-slate-400 mt-0.5">
+              {carbon.barrelsOilAvoided} barrels oil eq.
+            </div>
           </div>
         </div>
       </div>

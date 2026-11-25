@@ -43,6 +43,12 @@ describe('BOM CSV Export Suite', () => {
       expect(csv).toContain('Switchgear, Protection & Cabling');
       expect(csv).toContain('Grand Total Investment');
 
+      // Check environmental & carbon offset metrics
+      expect(csv).toContain('ENVIRONMENTAL & CARBON OFFSET METRICS');
+      expect(csv).toContain('Annual Clean Energy Yield');
+      expect(csv).toContain('Annual CO2 Avoided');
+      expect(csv).toContain('Lifetime (25-Yr) CO2 Avoided');
+
       // Rule: zero em dashes in generated technical data
       expect(csv).not.toContain('—');
     });

@@ -1,4 +1,5 @@
 import { SystemCalculationResult } from '@/types/calculator';
+import { calculateCarbonOffset } from '@/engine/carbonOffset';
 
 /**
  * Escapes an individual field according to RFC 4180 rules:
@@ -101,6 +102,19 @@ export function generateBomCsv(
     costSummary.grandTotalPhp.toFixed(2),
     costSummary.isFullyEstimated ? 'Fully Estimated' : `Includes ${costSummary.tbdItemCount} TBD item(s)`,
   ]);
+
+  const carbon = calculateCarbonOffset({
+    totalArrayPowerKw: summary.totalArrayPowerKw,
+  });
+
+  rows.push([]);
+  rows.push(['ENVIRONMENTAL & CARBON OFFSET METRICS (PHILIPPINE DOE GEF 0.7122 kg CO2/kWh)']);
+  rows.push(['Metric', 'Value', 'Unit / Basis']);
+  rows.push(['Annual Clean Energy Yield', String(carbon.annualGenerationKwh), 'kWh/year']);
+  rows.push(['Annual CO2 Avoided', String(carbon.annualCo2AvoidedTons), 'Metric Tons CO2e/year']);
+  rows.push(['Lifetime (25-Yr) CO2 Avoided', String(carbon.lifetimeCo2AvoidedTons), 'Metric Tons CO2e']);
+  rows.push(['Equivalent Trees Seedlings Grown 10-Yr', String(carbon.treesSeedlingsGrown10Yr), 'Trees']);
+  rows.push(['Fossil Fuel Coal Avoided', String(carbon.coalAvoidedMetricTons), 'Metric Tons coal']);
 
   return rows.map((row) => row.map(escapeCsvField).join(',')).join('\r\n');
 }
