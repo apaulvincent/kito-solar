@@ -1,14 +1,28 @@
 // src/components/results/PvSizingCard.tsx
 import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { Sun, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Sun, CheckCircle2, AlertTriangle, ArrowRight, Thermometer, ShieldCheck } from 'lucide-react';
+import { calculateTemperatureDerating } from '@/engine/temperatureDerating';
+import { parseMpptVoltageRange } from '@/engine/inverterHelpers';
 
 export function PvSizingCard() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
+  const selectedInverter = useCalculatorStore((s) => s.selectedInverter);
+  const selectedModule = useCalculatorStore((s) => s.selectedModule);
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
   const setPanelCountOverride = useCalculatorStore((s) => s.setPanelCountOverride);
   const step2DetailMode = useCalculatorStore((s) => s.step2DetailMode);
 
   const { pvSizing, stringSizing } = calculationResult;
+
+  const { minMpptV, maxMpptV } = parseMpptVoltageRange(selectedInverter);
+  const tempDerating = calculateTemperatureDerating({
+    moduleVoc: Number(selectedModule.voc_v) || 50,
+    moduleVmp: Number(selectedModule.vmp_v) || 41.5,
+    panelsPerString: stringSizing.panelsPerString,
+    inverterMaxVoltage: Number(selectedInverter.max_pv_input_voltage_v) || 500,
+    inverterMinMpptVoltage: minMpptV,
+    inverterMaxMpptVoltage: maxMpptV,
+  });
 
   return (
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-card dark:shadow-card-dark space-y-5 transition-colors duration-200">
@@ -181,6 +195,95 @@ export function PvSizingCard() {
         {step2DetailMode === 'detailed' && (
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans">
             {stringSizing.explanation}
+          </p>
+        )}
+      </div>
+
+      {/* Photovoltaic Temperature Voltage Derating Section (PEC 2017 / NEC 690.7) */}
+      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-3">
+        <div className="flex items-center justify-between text-xs font-mono">
+          <div className="flex items-center gap-1.5">
+            <Thermometer className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <span className="text-slate-900 dark:text-white font-bold uppercase tracking-wider">
+              Temperature Derating & Safety Verification (PEC 6.90.1.7)
+            </span>
+          </div>
+          <span
+            className={`flex items-center gap-1 px-2 py-0.5 rounded font-bold ${
+              tempDerating.status === 'compliant'
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60'
+                : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60'
+            }`}
+          >
+            {tempDerating.status === 'compliant' ? (
+              <>
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                THERMAL BOUNDS SAFE
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                THERMAL ADVISORY
+              </>
+            )}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs font-mono">
+          <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-subtle">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Cold String Voc ({tempDerating.coldAmbientTempC}°C)</span>
+              <span className={`text-[9px] px-1 rounded font-bold ${tempDerating.isColdCompliant ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50' : 'text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50'}`}>
+                {tempDerating.isColdCompliant ? 'PASS' : 'OVERVOLTAGE'}
+              </span>
+            </div>
+            <span className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 block">
+              {tempDerating.coldStringVocV} V
+            </span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+              Limit: ≤ {tempDerating.maxPvVoltageV} V ({tempDerating.coldVocMarginV >= 0 ? `+${tempDerating.coldVocMarginV}` : tempDerating.coldVocMarginV} V)
+            </span>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-subtle">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Hot String Vmp ({tempDerating.maxCellTempC}°C Cell)</span>
+              <span className={`text-[9px] px-1 rounded font-bold ${tempDerating.isHotCompliant ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50' : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50'}`}>
+                {tempDerating.isHotCompliant ? 'PASS' : 'DROPOUT'}
+              </span>
+            </div>
+            <span className="text-sm font-bold text-sky-700 dark:text-sky-400 mt-0.5 block">
+              {tempDerating.hotStringVmpV} V
+            </span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+              Floor: ≥ {tempDerating.minMpptVoltageV} V ({tempDerating.hotVmpMarginV >= 0 ? `+${tempDerating.hotVmpMarginV}` : tempDerating.hotVmpMarginV} V)
+            </span>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-subtle">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Cold Voc / Module</span>
+            <span className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 block">
+              {tempDerating.coldModuleVocV} V
+            </span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+              STC: {Number(selectedModule.voc_v).toFixed(1)} V (β: -0.28%/°C)
+            </span>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-subtle">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Hot Vmp / Module</span>
+            <span className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 block">
+              {tempDerating.hotModuleVmpV} V
+            </span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+              STC: {Number(selectedModule.vmp_v).toFixed(1)} V (γ: -0.35%/°C)
+            </span>
+          </div>
+        </div>
+
+        {step2DetailMode === 'detailed' && (
+          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans">
+            {tempDerating.advisory}
           </p>
         )}
       </div>
