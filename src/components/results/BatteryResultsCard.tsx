@@ -1,10 +1,12 @@
 // src/components/results/BatteryResultsCard.tsx
 import { useCalculatorStore } from '@/store/useCalculatorStore';
-import { BatteryCharging, Shield, Cable, ArrowRight } from 'lucide-react';
+import { BatteryCharging, Shield, Cable, ArrowRight, Clock, Zap, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { DiagramNodeKey } from '@/types/diagram';
+import { calculateBatteryAutonomy } from '@/engine/batteryAutonomy';
 
 export function BatteryResultsCard() {
   const calculationResult = useCalculatorStore((s) => s.calculationResult);
+  const selectedInverter = useCalculatorStore((s) => s.selectedInverter);
   const setSelectedNodeKey = useCalculatorStore((s) => s.setSelectedNodeKey);
   const setHoveredNodeKey = useCalculatorStore((s) => s.setHoveredNodeKey);
   const selectedNodeKey = useCalculatorStore((s) => s.selectedNodeKey);
@@ -29,6 +31,16 @@ export function BatteryResultsCard() {
   const triggerLocate = (key: DiagramNodeKey) => {
     setSelectedNodeKey(key);
   };
+
+  const ratedInverterPowerW = Number(selectedInverter.rated_ac_power_w) || 0;
+  const autonomy = calculateBatteryAutonomy({
+    nominalEnergyWh: battery.totalEnergyWh,
+    nominalVoltageV: battery.bankVoltageV,
+    capacityAh: battery.totalCapacityAh,
+    dischargeCurrentA: battery.dischargeCurrentA,
+    inverterRatedPowerW: ratedInverterPowerW,
+    batteryModelName: battery.batteryType,
+  });
 
   return (
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-card dark:shadow-card-dark space-y-5 transition-colors duration-200">
@@ -117,10 +129,10 @@ export function BatteryResultsCard() {
             <BatteryCharging className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="text-2xl font-black font-mono text-slate-900 dark:text-white mt-1">
-            {(battery.totalEnergyWh / 1000).toFixed(1)} kWh
+            {autonomy.netUsableCapacityKwh} kWh
           </div>
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-semibold mt-1">
-            {battery.bankVoltageV} V Nominal / {battery.totalCapacityAh} Ah
+            Gross: {(battery.totalEnergyWh / 1000).toFixed(1)} kWh ({autonomy.recommendedDodPct}% DoD)
           </div>
           {step2DetailMode === 'detailed' && (
             <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-2 font-sans leading-relaxed">
@@ -128,6 +140,120 @@ export function BatteryResultsCard() {
             </p>
           )}
         </div>
+      </div>
+
+      {/* Emergency Backup Runtime & Discharge Autonomy Matrix */}
+      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-3">
+        <div className="flex items-center justify-between text-xs font-mono">
+          <div className="flex items-center gap-1.5">
+            <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-slate-900 dark:text-white font-bold uppercase tracking-wider">
+              Emergency Backup Runtime & Discharge Autonomy
+            </span>
+          </div>
+          <span
+            className={`flex items-center gap-1 px-2 py-0.5 rounded font-bold ${
+              autonomy.status === 'optimal'
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60'
+                : autonomy.status === 'throttled'
+                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60'
+                : 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800/60'
+            }`}
+          >
+            {autonomy.status === 'optimal' ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                FULL INVERTER BACKUP READY
+              </>
+            ) : autonomy.status === 'throttled' ? (
+              <>
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                DISCHARGE THROTTLED
+              </>
+            ) : (
+              <>
+                <Zap className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                BACKUP ACTIVE
+              </>
+            )}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-mono">
+          {/* Light Load */}
+          <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-subtle">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Essential Light (300 W)</span>
+            <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400 mt-0.5 block">
+              {autonomy.runtimes.lightLoad.formattedRuntime}
+            </span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+              Wi-Fi, LEDs, Cameras
+            </span>
+          </div>
+
+          {/* Moderate Load */}
+          <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-subtle">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Core Residential (800 W)</span>
+            <span className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 block">
+              {autonomy.runtimes.moderateLoad.formattedRuntime}
+            </span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+              Fridge, fans, workstation
+            </span>
+          </div>
+
+          {/* Heavy Load */}
+          <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-subtle">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Heavy EPS (2,000 W)</span>
+            <span className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 block">
+              {autonomy.runtimes.heavyLoad.formattedRuntime}
+            </span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+              Pumps, freezer cycles
+            </span>
+          </div>
+
+          {/* Full Inverter Load */}
+          <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-subtle">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+              Full Inverter ({ratedInverterPowerW} W)
+            </span>
+            <span className="text-sm font-bold text-sky-700 dark:text-sky-400 mt-0.5 block">
+              {autonomy.runtimes.fullInverterLoad ? autonomy.runtimes.fullInverterLoad.formattedRuntime : 'N/A'}
+            </span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+              Max continuous EPS load
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] font-mono text-slate-600 dark:text-slate-400">
+          <span>
+            Continuous DC Discharge:{' '}
+            <strong className="text-slate-900 dark:text-white">
+              {(autonomy.maxDischargePowerW / 1000).toFixed(1)} kW
+            </strong>{' '}
+            ({autonomy.cRate}C)
+          </span>
+          <span>
+            Inverter EPS Power Coverage:{' '}
+            <strong
+              className={
+                autonomy.inverterPowerCoveragePct >= 100
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : 'text-amber-700 dark:text-amber-400'
+              }
+            >
+              {autonomy.inverterPowerCoveragePct}%
+            </strong>
+          </span>
+        </div>
+
+        {step2DetailMode === 'detailed' && (
+          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans pt-1 border-t border-slate-200 dark:border-slate-800">
+            {autonomy.advisory}
+          </p>
+        )}
       </div>
     </div>
   );
